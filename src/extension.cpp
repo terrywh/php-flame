@@ -1,22 +1,10 @@
 #include "vendor.h"
 #include "net/init.h"
-// #include "server.h"
-// #include "process.h"
-// #include "application.h"
 
-// php::value generator_wrapper(php::value& gn);
-
-
-// php::value generator_wrapper(php::value& gn) {
-// 	while(static_cast<bool>(gn.call("valid"))) {
-// 		php::value y = gn.call("current");
-// 		if(y.is_callable() || y.is_instance_of("Generator")) {
-// 			mill_go(coroutine_runner(y));
-// 		}
-// 		gn.call("next");
-// 	}
-// 	return gn.call("getReturn");
-// }
+php::value strerror(php::parameters& params) {
+	int ec = params[0];
+	return php::value(strerror(ec));
+}
 
 php::value sleep(php::parameters& params) {
 	mill_msleep(mill_now() + (int)params[0]);

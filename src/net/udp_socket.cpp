@@ -6,27 +6,22 @@
 namespace net {
 
 	php::value udp_socket::__construct(php::parameters& params) {
-		std::cout << "type:" << (int)(params[1]) << std::endl;
-		local_addr_ = mill_iplocal(params[0], static_cast<int>(params[1]), 0);
+		local_addr_ = mill_iplocal(params[0], params[1], 0);
 		if(errno != 0) {
-			throw php::exception("failed to create udp socket: mill_iplocal");
+			throw php::exception("failed to create udp socket (iplocal)", errno);
 		}
 		socket_ = mill_udplisten(local_addr_);
 		if(errno != 0) {
-			throw php::exception("failed to create udp socket: mill_udplisten");
+			throw php::exception("failed to create udp socket (udplisten)", errno);
 		}
+		prop("local_port", mill_udpport(socket_));
+		closed_ = false;
+		prop("closed", closed_);
 		return nullptr;
 	}
 
 	php::value udp_socket::__destruct(php::parameters& params) {
 		return close(params);
-	}
-
-	php::value udp_socket::local_addr(php::parameters& params) {
-		php::value addr = php::value::object<net::addr_t>();
-		addr.native<net::addr_t>()->addr_ = local_addr_;
-		addr.native<net::addr_t>()->port_ = mill_udpport(socket_);
-		return std::move(addr);
 	}
 
 	php::value udp_socket::remote_addr(php::parameters& params) {
@@ -42,13 +37,11 @@ AGAIN:
 		std::size_t len = mill_udprecv(socket_, &remote_addr_, buffer_, sizeof(buffer_), dead += 1000);
 		if(errno != 0) {
 			if(errno != ETIMEDOUT) { // 读取到达1秒超时，不是错误
-				std::string message("failed to recv on udp socket: ");
-				message.append(strerror(errno));
-				throw php::exception(message);
+				throw php::exception("failed to recv on udp socket", errno);
 			}
 			goto AGAIN;
 		}
-		return php::value(buffer_, 0, false);
+		return php::value(buffer_, len, false);
 	}
 
 	php::value udp_socket::send(php::parameters& params) {
@@ -63,10 +56,15 @@ AGAIN:
 			message.append(strerror(errno));
 			php::warn(message);
 		}
+		return nullptr;
 	}
 
 	php::value udp_socket::close(php::parameters& params) {
-		mill_udpclose(socket_);
+		if(!closed_) {
+			closed_ = true;
+			prop("closed", closed_);
+			mill_udpclose(socket_);
+		}
 		return nullptr;
 	}
 }

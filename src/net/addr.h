@@ -2,6 +2,7 @@
 
 namespace net {
 	class udp_socket;
+	class tcp_socket;
 	class addr_t: public php::class_base {
 	public:
 		php::value __toString(php::parameters& params);
@@ -11,5 +12,6 @@ namespace net {
 		mill_ipaddr addr_;
 		unsigned short port_;
 		friend class net::udp_socket;
+		friend class net::tcp_socket;
 	};
 }
