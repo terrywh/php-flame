@@ -4,6 +4,7 @@
 #include "udp_socket.h"
 #include "tcp_socket.h"
 #include "tcp_server.h"
+#include "http/init.h"
 
 namespace net {
 	void init(php::extension_entry& extension) {
@@ -52,11 +53,11 @@ namespace net {
 			php::of_string("data"),
 			php::of_integer("deadline"),
 		});
-		mill_tcp_socket.add<&tcp_socket::flush>("flush", {
+		mill_tcp_socket.add<&tcp_socket::send_buffer>("send_buffer", {
+			php::of_string("data"),
 			php::of_integer("deadline"),
 		});
-		mill_tcp_socket.add<&tcp_socket::send_now>("send_now", {
-			php::of_string("data"),
+		mill_tcp_socket.add<&tcp_socket::flush>("flush_buffer", {
 			php::of_integer("deadline"),
 		});
 		mill_tcp_socket.add(php::property_entry("closed", true));
@@ -74,5 +75,7 @@ namespace net {
 		mill_tcp_server.add(php::property_entry("local_port", nullptr));
 		mill_tcp_server.add(php::property_entry("closed", true));
 		extension.add(std::move(mill_tcp_server));
+
+		http::init(extension);
 	}
 }

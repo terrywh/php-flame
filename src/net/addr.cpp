@@ -8,7 +8,10 @@ namespace net {
 		zend_string* buffer = r;
 		mill_ipaddrstr(addr_, buffer->val);
 		buffer->len  = std::strlen(buffer->val);
+#define PHP_SPRINTF sprintf
+#undef sprintf
 		buffer->len += std::sprintf(buffer->val + buffer->len, ":%d", port_);
+#define sprintf PHP_SPRINTF
 		return std::move(r);
 	}
 

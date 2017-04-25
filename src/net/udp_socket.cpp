@@ -21,7 +21,11 @@ namespace net {
 	}
 
 	php::value udp_socket::__destruct(php::parameters& params) {
-		return close(params);
+		if(!closed_) {
+			closed_ = true;
+			mill_udpclose(socket_);
+		}
+		return nullptr;
 	}
 
 	php::value udp_socket::remote_addr(php::parameters& params) {

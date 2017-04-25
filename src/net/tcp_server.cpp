@@ -12,13 +12,17 @@ namespace net {
 		if(errno != 0) {
 			throw php::exception("failed to create tcp server (tcplisten)", errno);
 		}
-		prop("local_port", mill_tcpport(server_));
+		prop("local_port") = mill_tcpport(server_);
 		closed_ = false;
 		prop("closed", closed_);
 		return nullptr;
 	}
 	php::value tcp_server::__destruct(php::parameters& params) {
-		return close(params);
+		if(!closed_) {
+			closed_ = true;
+			mill_tcpclose(server_);
+		}
+		return nullptr;
 	}
 	php::value tcp_server::accept(php::parameters& params) {
 		std::int64_t dead = -1;

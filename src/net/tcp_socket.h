@@ -1,6 +1,9 @@
 #pragma once
 
 namespace net {
+	namespace http {
+		class request;
+	}
 	class tcp_server;
 	class tcp_socket: public php::class_base {
 	public:
@@ -14,9 +17,9 @@ namespace net {
 		// 2. 接收指定任意停止符
 		// 两种形式都支持指定超时
 		php::value recv(php::parameters& params);
-		php::value send(php::parameters& params);
+		php::value send_buffer(php::parameters& params);
 		php::value flush(php::parameters& params);
-		php::value send_now(php::parameters& params);
+		php::value send(php::parameters& params);
 		php::value close(php::parameters& params);
 	private:
 		php::value recv_length(int length, std::int64_t dead);
@@ -25,5 +28,6 @@ namespace net {
 		bool         closed_;
 		mill_ipaddr remote_addr_;
 		friend class tcp_server;
+		friend class http::request;
 	};
 }

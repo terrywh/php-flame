@@ -21,7 +21,11 @@ namespace net {
 		return nullptr;
 	}
 	php::value tcp_socket::__destruct(php::parameters& params) {
-		return close(params);
+		if(!closed_) {
+			closed_ = true;
+			mill_tcpclose(socket_);
+		}
+		return nullptr;
 	}
 	php::value tcp_socket::remote_addr(php::parameters& params) {
 		php::value addr = php::value::object<net::addr_t>();
@@ -64,7 +68,7 @@ AGAIN:
 		}
 		return std::move(b);
 	}
-	php::value tcp_socket::send(php::parameters& params) {
+	php::value tcp_socket::send_buffer(php::parameters& params) {
 		zend_string*  b = params[0];
 		std::int64_t  d = -1;
 		if(params.length() > 1) {
@@ -72,7 +76,7 @@ AGAIN:
 		}
 		std::size_t n = mill_tcpsend(socket_, b->val, b->len, d);
 		if(errno != 0) {
-			throw php::exception("failed to send", errno);
+			throw php::exception("failed to send_buffer", errno);
 		}
 		return php::value((std::int64_t)n);
 	}
@@ -82,9 +86,12 @@ AGAIN:
 			d = mill_now() + static_cast<std::int64_t>(params[1]);
 		}
 		mill_tcpflush(socket_, d);
+		if(errno != 0) {
+			throw php::exception("failed to flush", 0);
+		}
 		return nullptr;
 	}
-	php::value tcp_socket::send_now(php::parameters& params) {
+	php::value tcp_socket::send(php::parameters& params) {
 		zend_string*  b = params[0];
 		std::int64_t d = -1;
 		if(params.length() > 1) {
