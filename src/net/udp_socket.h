@@ -21,6 +21,7 @@ namespace net {
 		// 最近一次接收的来源
 		udp::endpoint   remote_;
 		bool            connected_;
+		bool            is_ipv6_;
 		void init_local_prop();
 	};
 }

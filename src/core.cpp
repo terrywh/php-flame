@@ -8,6 +8,8 @@ php::value core::error(const boost::system::error_code& err) {
 	ex.call("__construct", err.message(), err.value());
 	return std::move(ex);
 }
+// 为了提高 sleep 函数的效率，考虑复用少量 timer
+static std::forward_list<boost::asio::deadline_timer*> timers;
 
 void core::init(php::extension_entry& extension) {
 	extension.on_module_startup(core::module_startup);
@@ -16,12 +18,20 @@ void core::init(php::extension_entry& extension) {
 	extension.add<core::go>("flame\\go");
 	extension.add<core::run>("flame\\run");
 	extension.add<core::sleep>("flame\\sleep");
+	extension.add<core::_fork>("flame\\fork");
 }
 bool core::module_startup(php::extension_entry& extension) {
 	core::io_ = new boost::asio::io_service();
+	for(int i=0;i<16;++i) {
+		timers.push_front(new boost::asio::deadline_timer(core::io()));
+	}
 	return true;
 }
 bool core::module_shutdown(php::extension_entry& extension) {
+	while(!timers.empty()) {
+		delete timers.front();
+		timers.pop_front();
+	}
 	delete core::io_;
 	return true;
 }
@@ -84,20 +94,33 @@ php::value core::go(php::parameters& params) {
 	}
 	return nullptr;
 }
+static bool started = false;
 // 程序启动
 php::value core::run(php::parameters& params) {
+	started = true;
 	if(params.length() > 0) {
 		go(params);
 	}
 	core::io().run();
 	return nullptr;
 }
-// 异步流程 1
+// sleep 对 timer 进行预分配的重用优化，实际上这个流程可能不会有台式机的优化效果，
+// 这里的优化更多的是对后面其他对象、函数实现的一种示范
 php::value core::sleep(php::parameters& params) {
 	int duration = params[0];
 
 	return php::value([duration] (php::parameters& params) -> php::value {
-		auto timer = std::make_shared<boost::asio::deadline_timer>(core::io());
+		std::shared_ptr<boost::asio::deadline_timer> timer;
+
+		if(timers.empty()) { // 没有空闲的预分配 timer 需要创建新的
+			timer.reset(new boost::asio::deadline_timer(core::io()));
+		}else{ // 重复使用这些 timer 效率会较高
+			timer.reset(timers.front(), [] (boost::asio::deadline_timer *timer) {
+				timers.push_front(timer); // 用完放回去
+			});
+			timers.pop_front();
+		}
+
 		timer->expires_from_now(boost::posix_time::milliseconds(duration));
 		php::callable done = params[0];
 		timer->async_wait([timer, done] (const boost::system::error_code& ec) mutable {
@@ -109,4 +132,26 @@ php::value core::sleep(php::parameters& params) {
 		});
 		return nullptr;
 	});
+}
+
+static bool forked = false;
+php::value core::_fork(php::parameters& params) {
+#ifndef SO_REUSEPORT
+	throw php::exception("failed to fork: SO_REUSEPORT needed");
+#endif
+	if(started) {
+		throw php::exception("failed to fork: already running");
+	}
+	if(forked) {
+		throw php::exception("failed to fork: already forked");
+	}
+	forked = true;
+	int count = params[0];
+	if(count <= 0) {
+		count = 1;
+	}
+	for(int i=0;i<count;++i) {
+		if(fork() == 0) break;
+	}
+	return nullptr;
 }

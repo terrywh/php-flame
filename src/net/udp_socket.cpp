@@ -36,30 +36,55 @@ namespace net {
 	}
 
 	udp_socket::udp_socket()
-	: socket_(core::io()) {
+	: socket_(core::io())
+	, connected_(false)
+	, is_ipv6_(true) { // 默认按 IPv6
 
 	}
 	php::value udp_socket::__construct(php::parameters& params) {
 		boost::system::error_code err;
-		socket_.open(udp::v4(), err);
+		socket_.open(udp::v6(), err); // 优先使用 v6 协议（能够兼容 v4）
 		if(err) {
+			is_ipv6_ = false;
 			socket_.open(udp::v4(), err);
 		}
 		if(err) {
-			throw php::exception("failed to create udp socket", err.value());
+			throw php::exception("failed to create: " + err.message(), err.value());
 		}
 		return nullptr;
 	}
 
 	php::value udp_socket::bind(php::parameters& params) {
 		boost::system::error_code err;
-		std::string addr = params[0];
+		std::string addr = params[0].is_null() ? "" : params[0];
 		int port = params[1];
-		socket_.bind(udp::endpoint(address::from_string(addr), port), err);
+#ifdef SO_REUSEPORT
+		// 服务端需要启用下面选项，以支持更高性能的多进程形式
+		int opt = 1;
+		if(0 != setsockopt(socket_.native_handle(), SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof (opt))) {
+			throw php::exception("failed to bind (SO_REUSEPORT)", errno);
+		}
+#endif
+		auto addr_ = address::from_string(addr);
+		if(is_ipv6_ && addr_.is_v4()) {
+			try{
+				addr_ = boost::asio::ip::address_v6::v4_mapped(addr_.to_v4());
+			}catch(std::bad_cast& ex) {
+				throw php::exception("failed to bind: using IPv6 but IPv4 addr given", 0);
+			}
+		}else if(!is_ipv6_ && addr_.is_v6()) {
+			try{
+				addr_ = addr_.to_v6().to_v4();
+			}catch(std::bad_cast& ex) {
+				throw php::exception("failed to bind: using IPv4 but IPv6 addr given", 0);
+			}
+		}
+		socket_.bind(udp::endpoint(addr_, port), err);
 		if(err) {
-			throw php::exception("failed to bind", err.value());
+			throw php::exception("failed to bind: " + err.message(), err.value());
 		}
 		init_local_prop();
+		return nullptr;
 	}
 	php::value udp_socket::connect(php::parameters& params) {
 		boost::system::error_code err;
@@ -68,10 +93,11 @@ namespace net {
 		remote_ = udp::endpoint(address::from_string(addr), port);
 		socket_.connect(remote_, err);
 		if(err) {
-			throw php::exception("failed to connect", err.value());
+			throw php::exception("failed to connect: " + err.message(), err.value());
 		}
 		connected_ = true;
 		init_local_prop();
+		return nullptr;
 	}
 
 	void udp_socket::init_local_prop() {

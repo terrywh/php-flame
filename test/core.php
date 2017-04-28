@@ -1,5 +1,6 @@
 <?php
 dl("flame.so");
+flame\fork(1);
 // 启动 “协程”
 // “协程” 将在 run 之后被分别调度执行
 flame\go(test1());

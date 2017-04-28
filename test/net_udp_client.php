@@ -11,7 +11,7 @@ flame\run(function() {
 		}catch(Exception $e) {
 			var_dump($e);
 		}
-		yield flame\sleep(5000);
+		yield flame\sleep(10);
 	}
 	// close 操作可选，析构时会自动清理
 	// $socket->close();

@@ -16,4 +16,5 @@ private:
 	static php::value go(php::parameters& params);
 	static php::value run(php::parameters& params);
 	static php::value sleep(php::parameters& params);
+	static php::value _fork(php::parameters& params);
 };
