@@ -108,7 +108,7 @@ namespace net { namespace http {
 	}
 
 	php::value request::parse(php::parameters& params) {
-		php::value tcp_= params[0];
+		php::value    tcp_= params[0];
 		std::int64_t dead = -1;
 		if(params.length()>1) {
 			dead = mill_now() + static_cast<std::int64_t>(params[1]);
@@ -121,10 +121,11 @@ namespace net { namespace http {
 		// 解析并填充 request
 		// 注意，由于下面 buffer 的限制，HTTP 头每行最大 4096 字节
 		char buffer[4096];
+		std::printf("socket: %08x %08x %ld\n", tcp, tcp->socket_, dead);
 		// 1. 第一行 {METHOD} {URI} {HTTP_VERSION}\r\n
 		std::size_t n = mill_tcprecvuntil(tcp->socket_, buffer, sizeof(buffer), "\n", 1, dead);
-		if(errno == ENOBUFS) {
-			throw php::exception("request overflow");
+		if(errno != 0) {
+			throw php::exception("bad request");
 		}
 		parse_first(buffer, n, req);
 		// 2. query
@@ -138,9 +139,14 @@ namespace net { namespace http {
 		}
 		// 3. headers
 		php::value hdr = php::value::array(0);
-		// \r\n 空行时停止
-		while((n = mill_tcprecvuntil(tcp->socket_, buffer, sizeof(buffer), "\n", 1, dead)) != 2) {
+
+NEXT_HEADER:
+		n = mill_tcprecvuntil(tcp->socket_, buffer, sizeof(buffer), "\n", 1, dead);
+		if(errno != 0) {
+			throw php::exception("bad request");
+		}else if(n != 2) { // \r\n 空行时停止
 			parse_header(buffer, n, hdr, req);
+			goto NEXT_HEADER;
 		}
 		req.prop("header") = hdr;
 		// 4. content-length

@@ -37,7 +37,8 @@ namespace net {
 		}
 		sock->remote_addr_ = mill_tcpaddr(sock->socket_);
 		sock->closed_ = false;
-		sock->prop("closed", sock->closed_);
+		sock->prop("closed") = sock->closed_;
+		std::printf("accepted: %08x %08x\n", sock, sock->socket_);
 		return std::move(sock_);
 	}
 	php::value tcp_server::close(php::parameters& params) {

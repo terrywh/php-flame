@@ -1,74 +1,159 @@
 #include "../vendor.h"
-#include "addr.h"
 #include "udp_socket.h"
-#include <iostream>
+#include "../core.h"
 
 namespace net {
 
+	void udp_socket::init(php::extension_entry& extension) {
+		php::class_entry<udp_socket> ce_udp_socket("flame\\net\\udp_socket");
+		ce_udp_socket.add<&udp_socket::__construct>("__construct", {
+			php::of_string("addr"),
+			php::of_integer("port"),
+		});
+		ce_udp_socket.add<&udp_socket::__destruct>("__destruct");
+		ce_udp_socket.add<&udp_socket::bind>("bind", {
+			php::of_string("addr"),
+			php::of_integer("port"),
+		});
+		ce_udp_socket.add<&udp_socket::connect>("connect", {
+			php::of_string("addr"),
+			php::of_integer("port"),
+		});
+		ce_udp_socket.add<&udp_socket::remote_addr>("remote_addr");
+		ce_udp_socket.add<&udp_socket::remote_port>("remote_port");
+		ce_udp_socket.add<&udp_socket::read>("read");
+		ce_udp_socket.add<&udp_socket::write>("write", {
+			php::of_string("data"),
+		});
+		ce_udp_socket.add<&udp_socket::write_to>("write_to", {
+			php::of_string("data"),
+			php::of_string("addr"),
+			php::of_integer("port"),
+		});
+		ce_udp_socket.add(php::property_entry("local_port", nullptr));
+		ce_udp_socket.add<&udp_socket::close>("close");
+		extension.add(std::move(ce_udp_socket));
+	}
+
+	udp_socket::udp_socket()
+	: socket_(core::io()) {
+
+	}
 	php::value udp_socket::__construct(php::parameters& params) {
-		local_addr_ = mill_iplocal(params[0], params[1], 0);
-		if(errno != 0) {
-			throw php::exception("failed to create udp socket (iplocal)", errno);
+		boost::system::error_code err;
+		socket_.open(udp::v4(), err);
+		if(err) {
+			socket_.open(udp::v4(), err);
 		}
-		socket_ = mill_udplisten(local_addr_);
-		if(errno != 0) {
-			throw php::exception("failed to create udp socket (udplisten)", errno);
+		if(err) {
+			throw php::exception("failed to create udp socket", err.value());
 		}
-		prop("local_port", mill_udpport(socket_));
-		closed_ = false;
-		prop("closed", closed_);
 		return nullptr;
 	}
 
-	php::value udp_socket::__destruct(php::parameters& params) {
-		if(!closed_) {
-			closed_ = true;
-			mill_udpclose(socket_);
+	php::value udp_socket::bind(php::parameters& params) {
+		boost::system::error_code err;
+		std::string addr = params[0];
+		int port = params[1];
+		socket_.bind(udp::endpoint(address::from_string(addr), port), err);
+		if(err) {
+			throw php::exception("failed to bind", err.value());
 		}
+		init_local_prop();
+	}
+	php::value udp_socket::connect(php::parameters& params) {
+		boost::system::error_code err;
+		std::string addr = params[0];
+		int port = params[1];
+		remote_ = udp::endpoint(address::from_string(addr), port);
+		socket_.connect(remote_, err);
+		if(err) {
+			throw php::exception("failed to connect", err.value());
+		}
+		connected_ = true;
+		init_local_prop();
+	}
+
+	void udp_socket::init_local_prop() {
+		auto ep = socket_.local_endpoint();
+		prop("local_addr") = ep.address().to_string();
+		prop("local_port") = ep.port();
+	}
+
+	php::value udp_socket::__destruct(php::parameters& params) {
+		boost::system::error_code err;
+		socket_.close(err); // 存在重复关闭的可能，排除错误
 		return nullptr;
 	}
 
 	php::value udp_socket::remote_addr(php::parameters& params) {
-		php::value addr = php::value::object<net::addr_t>();
-		addr.native<net::addr_t>()->addr_ = remote_addr_;
-		addr.native<net::addr_t>()->port_ = mill_ipport(remote_addr_);
-		return std::move(addr);
+		return remote_.address().to_string();
+	}
+	php::value udp_socket::remote_port(php::parameters& params) {
+		return remote_.port();
 	}
 
-	php::value udp_socket::recv(php::parameters& params) {
-		std::int64_t dead = mill_now();
-AGAIN:
-		std::size_t len = mill_udprecv(socket_, &remote_addr_, buffer_, sizeof(buffer_), dead += 1000);
-		if(errno != 0) {
-			if(errno != ETIMEDOUT) { // 读取到达1秒超时，不是错误
-				throw php::exception("failed to recv on udp socket", errno);
-			}
-			goto AGAIN;
+	php::value udp_socket::read(php::parameters& params) {
+		return php::value([this] (php::parameters& params) -> php::value {
+			php::callable done = params[0];
+			socket_.async_receive_from(
+				boost::asio::buffer(buffer_), remote_,
+				[this, done] (const boost::system::error_code& err, std::size_t n) mutable {
+					if(err) {
+						done(core::error(err));
+					}else{
+						done(nullptr, php::value(buffer_, n));
+					}
+				});
+			return nullptr;
+		});
+	}
+
+	php::value udp_socket::write_to(php::parameters& params) {
+		if(connected_) {
+			throw php::exception("connected socket should use 'write' instead of 'write_to'");
 		}
-		return php::value(buffer_, len, false);
-	}
-
-	php::value udp_socket::send(php::parameters& params) {
-		std::int64_t dead = mill_now();
-	 	zend_string* data = params[0];
-		const char*  addr = params[1];
+		zend_string* data = params[0];
+		zend_string* addr = params[1];
 		int          port = params[2];
-		mill_ipaddr  addr_= mill_ipremote(addr, port, 0, dead + 1000);
-		mill_udpsend(socket_, addr_, data->val, data->len);
-		if(errno != 0) {
-			std::string message("failed to recv on udp socket: ");
-			message.append(strerror(errno));
-			php::warn(message);
-		}
-		return nullptr;
+		remote_.address(address::from_string(std::string(addr->val, addr->len)));
+		remote_.port(port);
+		return php::value([this, data] (php::parameters& params) -> php::value {
+			php::callable done = params[0];
+			// asio::buffer 会将 zend_string -> val 长度解为 1
+			socket_.async_send_to(
+				boost::asio::buffer(reinterpret_cast<char*>(data->val), data->len),
+				remote_, [this, done] (const boost::system::error_code& err, std::size_t n) mutable {
+					if(err) {
+						done(core::error(err));
+					}else{
+						done(nullptr, static_cast<std::int64_t>(n));
+					}
+				});
+			return nullptr;
+		});
+	}
+	php::value udp_socket::write(php::parameters& params) {
+		zend_string* data = params[0];
+		return php::value([this, data] (php::parameters& params) -> php::value {
+			php::callable done = params[0];
+			// asio::buffer 会将 zend_string -> val 长度解为 1
+			socket_.async_send(
+				boost::asio::buffer(reinterpret_cast<char*>(data->val), data->len),
+				[this, done] (const boost::system::error_code& err, std::size_t n) mutable {
+					if(err) {
+						done(core::error(err));
+					}else{
+						done(nullptr, static_cast<std::int64_t>(n));
+					}
+				});
+			return nullptr;
+		});
 	}
 
 	php::value udp_socket::close(php::parameters& params) {
-		if(!closed_) {
-			closed_ = true;
-			prop("closed", closed_);
-			mill_udpclose(socket_);
-		}
+		boost::system::error_code err;
+		socket_.close(err); // 存在重复关闭的可能，排除错误
 		return nullptr;
 	}
 }

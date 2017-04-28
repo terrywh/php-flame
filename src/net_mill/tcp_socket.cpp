@@ -12,6 +12,7 @@ namespace net {
 		if(errno != 0) {
 			throw php::exception("failed to connect (dns)", errno);
 		}
+		std::printf("tcp_socket::__construct\n");
 		socket_ = mill_tcpconnect(remote_addr_, dead);
 		if(errno != 0) {
 			throw php::exception("failed to connect (tcp)", errno);
@@ -23,7 +24,9 @@ namespace net {
 	php::value tcp_socket::__destruct(php::parameters& params) {
 		if(!closed_) {
 			closed_ = true;
+			std::printf("before close: %08x %08x\n", this, socket_);
 			mill_tcpclose(socket_);
+			std::printf("after close: %08x %08x\n", this, socket_);
 		}
 		return nullptr;
 	}
@@ -92,7 +95,8 @@ AGAIN:
 		return nullptr;
 	}
 	php::value tcp_socket::send(php::parameters& params) {
-		zend_string*  b = params[0];
+		std::printf("socket::send: %08x %08x\n", this, socket_);
+		zend_string* b = params[0];
 		std::int64_t d = -1;
 		if(params.length() > 1) {
 			d = mill_now() + static_cast<std::int64_t>(params[1]);
@@ -111,7 +115,9 @@ AGAIN:
 		if(!closed_) {
 			closed_ = true;
 			prop("closed", closed_);
+			std::printf("before close: %08x %08x\n", this, socket_);
 			mill_tcpclose(socket_);
+			std::printf("after close: %08x %08x\n", this, socket_);
 		}
 		return nullptr;
 	}

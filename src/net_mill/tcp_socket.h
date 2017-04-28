@@ -7,7 +7,7 @@ namespace net {
 	class tcp_server;
 	class tcp_socket: public php::class_base {
 	public:
-		tcp_socket():closed_(true) {}
+		tcp_socket():socket_(nullptr),closed_(true) {}
 		// 通过指定连接地址构造一个 tcp_socket，支持指定超时时间
 		php::value __construct(php::parameters& params);
 		php::value __destruct(php::parameters& params);
