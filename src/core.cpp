@@ -3,7 +3,7 @@
 
 boost::asio::io_service* core::io_ = nullptr;
 
-php::value core::error(const boost::system::error_code& err) {
+php::value core::error_to_exception(const boost::system::error_code& err) {
 	php::object ex = php::object::create("Exception");
 	ex.call("__construct", err.message(), err.value());
 	return std::move(ex);
@@ -104,7 +104,7 @@ php::value core::run(php::parameters& params) {
 	core::io().run();
 	return nullptr;
 }
-// sleep 对 timer 进行预分配的重用优化，实际上这个流程可能不会有台式机的优化效果，
+// sleep 对 timer 进行预分配的重用优化，实际上这个流程可能不会有太实际的优化效果，
 // 这里的优化更多的是对后面其他对象、函数实现的一种示范
 php::value core::sleep(php::parameters& params) {
 	int duration = params[0];
@@ -114,7 +114,7 @@ php::value core::sleep(php::parameters& params) {
 
 		if(timers.empty()) { // 没有空闲的预分配 timer 需要创建新的
 			timer.reset(new boost::asio::deadline_timer(core::io()));
-		}else{ // 重复使用这些 timer 效率会较高
+		}else{ // 重复使用这些 timer
 			timer.reset(timers.back(), [] (boost::asio::deadline_timer *timer) {
 				timers.push_back(timer); // 用完放回去
 			});

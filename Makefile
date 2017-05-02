@@ -16,7 +16,7 @@ INCLUDE=-I${ROOT_TERRYWH}/libphpext `${PHP_CONFIG} --includes`
 LIBRARY=${VENDOR_LIBRARY}
 
 # SOURCES=$(wildcard src/*.cpp) $(wildcard src/**/*.cpp) $(wildcard src/**/**/*.cpp)
-SOURCES=src/extension.cpp src/core.cpp src/net/init.cpp src/net/udp_socket.cpp
+SOURCES=src/extension.cpp src/core.cpp src/net/init.cpp src/net/udp_socket.cpp src/net/tcp_socket.cpp src/net/tcp_server.cpp
 OBJECTS=$(SOURCES:%.cpp=%.o)
 
 EXTENSION=${EXTENSION_NAME}.so

@@ -8,7 +8,7 @@ public:
 		return *io_;
 	}
 	static void init(php::extension_entry& extension);
-	static php::value error(const boost::system::error_code& err);
+	static php::value error_to_exception(const boost::system::error_code& err);
 private:
 	static boost::asio::io_service* io_;
 	static bool module_startup (php::extension_entry& extension);
