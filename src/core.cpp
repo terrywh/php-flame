@@ -1,5 +1,6 @@
 #include "vendor.h"
 #include "core.h"
+//#include "zend_generators.h"
 
 boost::asio::io_service* core::io_ = nullptr;
 
@@ -36,9 +37,20 @@ bool core::module_shutdown(php::extension_entry& extension) {
 	return true;
 }
 // 核心调度
-static void generator_runner(php::object g, bool exception = false) {
+static void generator_runner(php::object g) {
+
+    if(EG(exception)) {
+        core::io().stop();
+        return ;
+    }
 	if(!g.scall("valid").is_true()) {
-		return;
+        /*if(exception) {*/
+            //core::io().stop();
+        /*}*/
+        //zend_object* og = g;
+        //zend_generator* zg = (zend_generator)og;
+        /*std::printf("exception: %08x\n", EG(exception));*/ 
+        return;
 	}
 	core::io().post([g] () mutable {
 		php::value v = g.call("current");
@@ -59,15 +71,15 @@ static void generator_runner(php::object g, bool exception = false) {
 					}else{
 						g.call("next");
 					}
-					generator_runner(g, false);
+					generator_runner(g);
 				}else if(params[0].is_instance_of("Exception")) { // 内置 exception
 					g.call("throw", params[0]);
-					generator_runner(g, true);
+                    generator_runner(g);
 				}else{ // 其他错误信息
 					php::object ex = php::object::create("Exception");
 					ex.call("__construct", params[0].to_string());
 					g.call("throw", std::move(ex));
-					generator_runner(g, true);
+					generator_runner(g);
 				}
 				return nullptr;
 			}));
