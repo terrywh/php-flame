@@ -1,8 +1,9 @@
 #include "vendor.h"
 #include "core.h"
-//#include "zend_generators.h"
+#include "task_runner.h"
 
 boost::asio::io_service* core::io_ = nullptr;
+task_runner*             core::tr_ = nullptr;
 
 php::value core::error_to_exception(const boost::system::error_code& err) {
 	php::object ex = php::object::create("Exception");
@@ -20,9 +21,14 @@ void core::init(php::extension_entry& extension) {
 	extension.add<core::run>("flame\\run");
 	extension.add<core::sleep>("flame\\sleep");
 	extension.add<core::_fork>("flame\\fork");
+	extension.add<core::async>("flame\\async");
 }
+static bool core_forked  = false;
+static bool core_started = false;
+
 bool core::module_startup(php::extension_entry& extension) {
 	core::io_ = new boost::asio::io_service();
+	core::tr_ = new task_runner();
 	for(int i=0;i<16;++i) {
 		timers.push_back(new boost::asio::deadline_timer(core::io()));
 	}
@@ -33,6 +39,7 @@ bool core::module_shutdown(php::extension_entry& extension) {
 		delete timers.back();
 		timers.pop_back();
 	}
+	delete core::tr_;
 	delete core::io_;
 	return true;
 }
@@ -90,14 +97,14 @@ php::value core::go(php::parameters& params) {
 	}
 	return nullptr;
 }
-static bool started = false;
 // 程序启动
 php::value core::run(php::parameters& params) {
-	started = true;
+	core_started = true;
 	if(params.length() > 0) {
 		go(params);
 	}
 	core::io().run();
+	core::tr().stop_wait();
 	return nullptr;
 }
 // sleep 对 timer 进行预分配的重用优化，实际上这个流程可能不会有太实际的优化效果，
@@ -129,19 +136,17 @@ php::value core::sleep(php::parameters& params) {
 		return nullptr;
 	});
 }
-
-static bool forked = false;
 php::value core::_fork(php::parameters& params) {
 #ifndef SO_REUSEPORT
 	throw php::exception("failed to fork: SO_REUSEPORT needed");
 #endif
-	if(started) {
+	if(core_started) {
 		throw php::exception("failed to fork: already running");
 	}
-	if(forked) {
+	if(core_forked) {
 		throw php::exception("failed to fork: already forked");
 	}
-	forked = true;
+	core_forked = true;
 	int count = params[0];
 	if(count <= 0) {
 		count = 1;
@@ -150,4 +155,12 @@ php::value core::_fork(php::parameters& params) {
 		if(fork() == 0) break;
 	}
 	return nullptr;
+}
+// 这里的 async_task 提供用户端将指定的(同步)函数交由 task_runner 在额外工作线程内执行，
+// 并能将执行的结果以 done 回调的形式带回 Generator
+php::value core::async(php::parameters& params) {
+	php::callable task = params[0];
+	return core::tr().async([task] (php::callable done) mutable {
+		task(done); // 此 done 非彼 done
+	});
 }

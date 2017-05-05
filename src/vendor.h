@@ -19,3 +19,4 @@
 using boost::asio::ip::tcp;
 using boost::asio::ip::udp;
 using boost::asio::ip::address;
+#include <boost/lockfree/queue.hpp>

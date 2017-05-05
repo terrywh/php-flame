@@ -28,8 +28,15 @@ function test2() {
 
 function test3() {
 	for($i=0;$i<10;++$i) {
-		yield $i;
-		sleep(1); // PHP 原生提供的大部分函数均是阻塞形式，无法行程 “调度”，是真实的阻塞
+		yield flame\async(function($done) { // 将同步任务转化为异步任务（线程池）
+			sleep(10); // 系统 sleep 是阻塞函数
+			done();
+		});
 		echo "[3] ", time(), " -> ", $i,"\n";
 	}
+}
+function test4() {
+	echo yield flame\async(function($done) {
+		done(null, "aaaaaaaaaa")
+	}), "\n";
 }

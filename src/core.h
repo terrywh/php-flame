@@ -1,5 +1,5 @@
 #pragma once
-
+class task_runner;
 class core {
 public:
 	// io_servcie 需要在 module 的 startup 流程中启动 shutdown 流程中销毁
@@ -7,14 +7,19 @@ public:
 	static inline boost::asio::io_service& io() {
 		return *io_;
 	}
+	static inline task_runner& tr() {
+		return *tr_;
+	}
 	static void init(php::extension_entry& extension);
 	static php::value error_to_exception(const boost::system::error_code& err);
 private:
 	static boost::asio::io_service* io_;
+	static task_runner*             tr_;
 	static bool module_startup (php::extension_entry& extension);
 	static bool module_shutdown(php::extension_entry& extension);
 	static php::value go(php::parameters& params);
 	static php::value run(php::parameters& params);
 	static php::value sleep(php::parameters& params);
+	static php::value async(php::parameters& params);
 	static php::value _fork(php::parameters& params);
 };
