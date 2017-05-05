@@ -37,54 +37,38 @@ bool core::module_shutdown(php::extension_entry& extension) {
 	return true;
 }
 // 核心调度
-static void generator_runner(php::object g) {
-
-    if(EG(exception)) {
-        core::io().stop();
-        return ;
-    }
-	if(!g.scall("valid").is_true()) {
-        /*if(exception) {*/
-            //core::io().stop();
-        /*}*/
-        //zend_object* og = g;
-        //zend_generator* zg = (zend_generator)og;
-        /*std::printf("exception: %08x\n", EG(exception));*/ 
-        return;
+static void generator_runner(php::generator g) {
+	if(EG(exception)) {
+		core::io().stop();
+		return;
+	}else if(!g.valid()) {
+		return;
 	}
 	core::io().post([g] () mutable {
-		php::value v = g.call("current");
+		php::value v = g.current();
 		if(v.is_callable()) {
 			php::callable cb = v;
 			// 传入的 函数 用于将异步执行结果回馈到 "协程" 中
 			cb(php::value([g] (php::parameters& params) mutable -> php::value {
 				int len = params.length();
 				if(len == 0) {
-					g.call("next");
-					generator_runner(g);
-					return nullptr;
-				}
-				// 首个参数表达错误信息
-				if(params[0].is_empty()) { // 没有错误
+					g.next();
+				}else if(params[0].is_empty()) { // 没有错误
 					if(len > 1) { // 有回调数据
-						g.call("send", params[1]);
+						g.send(params[1]);
 					}else{
-						g.call("next");
+						g.next();
 					}
-					generator_runner(g);
 				}else if(params[0].is_instance_of("Exception")) { // 内置 exception
-					g.call("throw", params[0]);
-                    generator_runner(g);
+					g.throw_exception(params[0]);
 				}else{ // 其他错误信息
-					php::object ex = php::object::create("Exception");
-					ex.call("__construct", params[0].to_string());
-					g.call("throw", std::move(ex));
-					generator_runner(g);
+					g.throw_exception(params[0], 0);
 				}
+				generator_runner(g);
 				return nullptr;
 			}));
 		}else{
-			g.call("send", v);
+			g.send(v);
 			generator_runner(g);
 		}
 	});
@@ -99,7 +83,7 @@ php::value core::go(php::parameters& params) {
 		r = params[0];
 	}
 	if(r.is_object() && r.is_instance_of("Generator")) {
-		generator_runner(r);
+		generator_runner(static_cast<zend_object*>(r));
 		return nullptr;
 	}else{
 		return std::move(r);
