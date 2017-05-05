@@ -1,4 +1,5 @@
-ROOT_TERRYWH=/data/wuhao/cpdocs/github.com/terrywh
+#ROOT_TERRYWH=/data/wuhao/cpdocs/github.com/terrywh
+ROOT_TERRYWH=../
 
 EXTENSION_NAME=flame
 EXTENSION_VERSION=0.1.0
@@ -16,7 +17,7 @@ INCLUDE=-I${ROOT_TERRYWH}/libphpext `${PHP_CONFIG} --includes`
 LIBRARY=${VENDOR_LIBRARY}
 
 # SOURCES=$(wildcard src/*.cpp) $(wildcard src/**/*.cpp) $(wildcard src/**/**/*.cpp)
-SOURCES=src/extension.cpp src/core.cpp src/net/init.cpp src/net/udp_socket.cpp src/net/tcp_socket.cpp src/net/tcp_server.cpp
+SOURCES=src/extension.cpp src/core.cpp src/net/init.cpp src/net/udp_socket.cpp src/net/tcp_socket.cpp src/net/tcp_server.cpp src/net_mill/http/init.cpp src/net_mill/http/request.cpp src/net_mill/http/response.cpp
 OBJECTS=$(SOURCES:%.cpp=%.o)
 
 EXTENSION=${EXTENSION_NAME}.so
