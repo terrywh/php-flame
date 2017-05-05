@@ -28,7 +28,9 @@ function test2() {
 
 function test3() {
 	for($i=0;$i<10;++$i) {
-		yield flame\async(function($done) { // 将同步任务转化为异步任务（线程池）
+		// 使用 async 函数，将同步任务转化为异步（借助线程池）
+		// 请一定谨慎使用，错误的使用会因多线程并发而引起各种诡异的错乱问题
+		yield flame\async(function($done) {
 			sleep(10); // 系统 sleep 是阻塞函数
 			done();
 		});
