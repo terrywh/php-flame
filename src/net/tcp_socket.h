@@ -2,7 +2,7 @@
 
 namespace net {
 	class tcp_server;
-    namespace http { class request; }
+    namespace http { class request; class response; }
 	class tcp_socket: public php::class_base {
 	public:
 		static void init(php::extension_entry& extension);
@@ -24,5 +24,6 @@ namespace net {
 		void set_prop_local_addr();
 		friend class tcp_server;
         friend class http::request;
+        friend class http::response;
 	};
 }
