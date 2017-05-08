@@ -10,10 +10,10 @@ task_wrapper::task_wrapper(const std::function<void(php::callable)>& t, const ph
 task_runner::task_runner()
 : stopped_(false) {
 	for(int i=0;i<thread_.size();++i) {
-		thread_[i] = std::thread(run, this, i);
+		thread_[i] = std::thread(run, this);
 	}
 }
-void task_runner::run(task_runner* self, int index) {
+void task_runner::run(task_runner* self) {
 	task_wrapper* tr = nullptr;
 NEXT_TASK:
 	if(!self->queue_.pop(tr)) {
@@ -45,7 +45,7 @@ NEXT_TASK:
 			});
 		}
 		return nullptr;
-	}), i);
+	}));
 	// !!! 这里有个潜藏的问题，用户有可能不掉用上面定义的回调函数，程序就暂停了
 	if(!self->stopped_) {
 		goto NEXT_TASK;

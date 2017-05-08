@@ -15,7 +15,7 @@ public:
 		return thread_.size();
 	}
 private:
-	static void run(task_runner* t, int index);
+	static void run(task_runner* t);
 	std::array<std::thread, 1>            thread_;
 	boost::lockfree::queue<task_wrapper*> queue_;
 	bool stopped_;
