@@ -3,15 +3,17 @@
 #include "task_runner.h"
 
 task_wrapper::task_wrapper(const std::function<void(php::callable)>& t, const php::callable& d)
-: task(t), done(d), work(core::io()) {
+: task(t)
+, done(d)
+, work(core::io()) {
 
 }
 
 task_runner::task_runner()
-: stopped_(false) {
-	for(int i=0;i<thread_.size();++i) {
-		thread_[i] = std::thread(run, this);
-	}
+: stopped_(false)
+, master_id_(std::this_thread::get_id())
+, thread_(run, this) {
+
 }
 void task_runner::run(task_runner* self) {
 	task_wrapper* tr = nullptr;
@@ -20,8 +22,8 @@ NEXT_TASK:
 		if(self->stopped_) {
 			return;
 		}
-		std::fprintf(stderr, ".\n");
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		// 这个等待时间可能会导致在线程内执行的动作额外延迟，故不能过大
+		std::this_thread::sleep_for(std::chrono::microseconds(50));
 		goto NEXT_TASK;
 	}
 	tr->task(php::value([tr] (php::parameters& params) mutable -> php::value {
@@ -47,24 +49,21 @@ NEXT_TASK:
 		return nullptr;
 	}));
 	// !!! 这里有个潜藏的问题，用户有可能不掉用上面定义的回调函数，程序就暂停了
+	// !!! 会导致“间接”内存泄漏（tr 没有回收）
 	if(!self->stopped_) {
 		goto NEXT_TASK;
 	}
-	std::fprintf(stderr, "x\n");
 }
 
 void task_runner::stop_wait() {
 	stopped_ = true;
-	for(int i=0;i<thread_.size();++i) {
-		if(thread_[i].joinable()) {
-			thread_[i].join();
-		}
-	}
+	if(thread_.joinable()) thread_.join();
 }
 
 php::value task_runner::async(const std::function<void( php::callable )>& task) {
 	return php::value([this, task] (php::parameters& params) mutable -> php::value {
 		php::callable done = params[0];
+		// TODO 启用 task_wrapper 的内存池，减少频繁消耗
 		queue_.push(new task_wrapper(task, done));
 		return nullptr;
 	});

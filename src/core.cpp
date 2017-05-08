@@ -11,7 +11,7 @@ php::value core::error_to_exception(const boost::system::error_code& err) {
 	return std::move(ex);
 }
 // 为了提高 sleep 函数的效率，考虑复用少量 timer
-static std::vector<boost::asio::deadline_timer*> timers;
+static std::vector<boost::asio::steady_timer*> timers;
 
 void core::init(php::extension_entry& extension) {
 	extension.on_module_startup(core::module_startup);
@@ -30,7 +30,7 @@ bool core::module_startup(php::extension_entry& extension) {
 	core::io_ = new boost::asio::io_service();
 	core::tr_ = new task_runner();
 	for(int i=0;i<16;++i) {
-		timers.push_back(new boost::asio::deadline_timer(core::io()));
+		timers.push_back(new boost::asio::steady_timer(core::io()));
 	}
 	return true;
 }
@@ -113,22 +113,22 @@ php::value core::sleep(php::parameters& params) {
 	int duration = params[0];
 
 	return php::value([duration] (php::parameters& params) -> php::value {
-		std::shared_ptr<boost::asio::deadline_timer> timer;
+		std::shared_ptr<boost::asio::steady_timer> timer;
 
 		if(timers.empty()) { // 没有空闲的预分配 timer 需要创建新的
-			timer.reset(new boost::asio::deadline_timer(core::io()));
+			timer.reset(new boost::asio::steady_timer(core::io()));
 		}else{ // 重复使用这些 timer
-			timer.reset(timers.back(), [] (boost::asio::deadline_timer *timer) {
+			timer.reset(timers.back(), [] (boost::asio::steady_timer *timer) {
 				timers.push_back(timer); // 用完放回去
 			});
 			timers.pop_back();
 		}
 
-		timer->expires_from_now(boost::posix_time::milliseconds(duration));
+		timer->expires_from_now(std::chrono::milliseconds(duration));
 		php::callable done = params[0];
 		timer->async_wait([timer, done] (const boost::system::error_code& ec) mutable {
 			if(ec) {
-				done(ec.message());
+				done(core::error_to_exception(ec));
 			}else{
 				done(nullptr);
 			}
