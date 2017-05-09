@@ -125,7 +125,7 @@ namespace net {
 		return remote_.port();
 	}
 	php::value udp_socket::read(php::parameters& params) {
-		if(connected_) throw php::exception("connected socket should use 'write' instead of 'write_to'");
+		if(connected_) throw php::exception("read failed: bind or connect required");
 		return php::value([this] (php::parameters& params) -> php::value {
 			php::callable done = params[0];
 			socket_.async_receive_from(
@@ -141,7 +141,7 @@ namespace net {
 		});
 	}
 	php::value udp_socket::write_to(php::parameters& params) {
-		if(connected_) throw php::exception("connected socket should use 'write' instead of 'write_to'");
+		if(connected_) throw php::exception("write_to failed: use 'write' instead");
 		zend_string* data = params[0];
 		zend_string* addr = params[1];
 		int          port = params[2];
@@ -163,6 +163,7 @@ namespace net {
 		});
 	}
 	php::value udp_socket::write(php::parameters& params) {
+		if(!connected_) throw php::exception("write failed: not connected");
 		zend_string* data = params[0];
 		return php::value([this, data] (php::parameters& params) -> php::value {
 			php::callable done = params[0];
