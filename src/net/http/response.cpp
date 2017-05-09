@@ -5,7 +5,47 @@
 #include "request.h"
 
 namespace net { namespace http {
-    std::map<uint32_t, std::string> response::status_list;
+    std::map<uint32_t, std::string> response::status_list = {
+        { 100, "Continue" }, 
+        { 101, "Switching Protocols" }, 
+        { 200, "OK" }, 
+        { 201, "Created" }, 
+        { 202, "Accepted" }, 
+        { 203, "Non-Authoritative Information" }, 
+        { 204, "No Content" }, 
+        { 205, "Reset Content" }, 
+        { 206, "Partial Content" }, 
+        { 300, "Multiple Choices" }, 
+        { 301, "Moved Permanently" }, 
+        { 302, "Found" }, 
+        { 303, "See Other" }, 
+        { 304, "Not Modified" }, 
+        { 305, "Use Proxy" }, 
+        { 307, "Temporary Redirect" }, 
+        { 400, "Bad Request" }, 
+        { 401, "Unauthorized" }, 
+        { 402, "Payment Required" }, 
+        { 403, "Forbidden" }, 
+        { 404, "Not Found" }, 
+        { 405, "Method Not Allowed" }, 
+        { 406, "Not Acceptable" }, 
+        { 407, "Proxy Authentication Required" }, 
+        { 408, "Request Time-out" }, 
+        { 409, "Conflict" }, 
+        { 410, "Gone" }, 
+        { 411, "Length Required" }, 
+        { 412, "Precondition Failed" }, 
+        { 413, "Request Entity Too Large" }, 
+        { 414, "Request-URI Too Large" }, 
+        { 415, "Unsupported Media Type" }, 
+        { 416, "Requested range not satisfiable" }, 
+        { 417, "Expectation Failed" }, 
+        { 500, "Internal Server Error" }, 
+        { 501, "Not Implemented" }, 
+        { 502, "Bad Gateway" }, 
+        { 503, "Service Unavailable" }, 
+        { 504, "Gateway Time-out" }, 
+        { 505, "HTTP Version not supported" }};
 
     void response::init(php::extension_entry& extension) {
         php::class_entry<response> http_response("flame\\net\\http\\response");
@@ -22,11 +62,9 @@ namespace net { namespace http {
         php::object req_obj= params[0];
         request* req = req_obj.native<request>();
 
-        php::object rsp_obj = php::object::create<response>(); /*= php::value::object<request>()*/
+        php::object rsp_obj = php::object::create<response>();
         response* rsp = rsp_obj.native<response>();
         rsp->req     = req;
-        //rsp->tcp_    = req->tcp_;
-        /*rsp->req_hdr = php::value(req->hdr);*/
         rsp->rsp_hdr.at("content-type", 12) = php::value("text/plain; charset=utf-8", 25);
         rsp->rsp_hdr.at("connection"  , 10) = php::value("close", 5);
         rsp->prop("header") = rsp->rsp_hdr;
@@ -34,7 +72,7 @@ namespace net { namespace http {
         return std::move(rsp_obj);
     }
 
-    void response::set_status_code(/*std::string http_version, */int status_code) {
+    void response::set_status_code(int status_code) {
         if(response::status_list.find(status_code) == response::status_list.end()) {
             status_code = 500;      // 默认200 - Internal Server Error
         }

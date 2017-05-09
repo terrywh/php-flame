@@ -189,7 +189,7 @@ namespace net { namespace http {
             throw php::exception("type error: object of mill\\net\\tcp_socket expected");
         }
 
-        php::object req = php::object::create<request>(); /*= php::value::object<request>()*/
+        php::object req = php::object::create<request>();
         request* r = req.native<request>();
         r->tcp_ = tcp_.native<net::tcp_socket>();
 

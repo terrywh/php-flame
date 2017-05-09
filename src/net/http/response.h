@@ -13,7 +13,7 @@ namespace net {
         php::value write(php::parameters& params);
         php::value end(php::parameters& params);
     private:
-        void set_status_code(/*std::string http_version, */int status_code);
+        void set_status_code(int status_code);
         void add_header(const char* key, uint32_t key_len, const char* val, uint32_t val_len);
 
     private:
@@ -28,4 +28,5 @@ namespace net {
 
         friend class request;
 	};
+
 } }

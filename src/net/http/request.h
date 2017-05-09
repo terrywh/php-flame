@@ -5,7 +5,6 @@ namespace net {
     namespace http {
         class request: public php::class_base {
             public:
-                //request() = default ;
                 static void init(php::extension_entry& extension);
                 static php::value parse(php::parameters& params);
                 php::value __construct(php::parameters& params);
