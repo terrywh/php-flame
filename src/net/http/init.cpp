@@ -1,10 +1,12 @@
 #include "../../vendor.h"
 #include "init.h"
 #include "request.h"
+#include "response.h"
 
 namespace net { namespace http {
 	void init(php::extension_entry& extension) {
         request::init(extension);
+        response::init(extension);
 		/*php::class_entry<request> mill_http_request("mill\\http\\request");*/
 		//mill_http_request.add<request::parse>("parse");
 		//mill_http_request.add<&request::__construct>("__construct");

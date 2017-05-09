@@ -2,6 +2,7 @@
 #include "../../core.h"
 #include "../../net/tcp_socket.h"
 #include "request.h"
+#include "response.h"
 
 namespace net { namespace http {
 
@@ -15,7 +16,7 @@ namespace net { namespace http {
         http_request.add(php::property_entry("query", nullptr));
         http_request.add(php::property_entry("cookie", nullptr));
         http_request.add(php::property_entry("body", nullptr));
-        http_request.add<&request::parse>("parse");
+        http_request.add<request::parse>("parse");
         extension.add(std::move(http_request));
         return ;
     }
@@ -48,6 +49,7 @@ namespace net { namespace http {
 			case 2: // VERSION
 				if(std::isspace(buffer[i])) {
 					req.prop("version") = php::value(php::strtoupper(buffer+p, i-p), i-p);
+                    //fprintf(stderr, "version = %.*s\n", i - p, buffer + p);
 					// TODO 确认协议形式是否正确？
 					return; // 解析结束
 				}
@@ -100,6 +102,7 @@ namespace net { namespace http {
                     continue;
 				}else if(buffer[i] == '\r') {
 					hdr.at(key, key_len) = php::value(buffer + val_beg, val_end - val_beg);
+                    fprintf(stderr, "%.*s = %.*s\n", key_len, key, val_end - val_beg, buffer + val_beg);
 					if(std::memcmp(key, "cookie", key_len) == 0) {
 						req.prop("cookie") = php::parse_str(';', buffer + val_beg, val_end - val_beg);
 					}
@@ -113,8 +116,8 @@ namespace net { namespace http {
 	}
 
 	static std::size_t parse_content_length(php::array& hdr) {
-        php::array h = hdr;
-		php::value len = h.at("content-length", 14);
+        //php::array h = hdr;
+		php::value len = hdr.at("content-length", 14);
 		if(len.is_null()) {
 			return 0;
 		}
@@ -122,52 +125,61 @@ namespace net { namespace http {
         return /*std::atoi(static_cast<const char*>(len.to_string()))*/len.to_long();
 	}
 
-	void request::parse_request_line(php::object& req, size_t n) {
-        php::string request_line(n);
-        buffer_.sgetn(request_line.data(), n);
-        //buffer_.consume(n);
-        parse_first(request_line.data(), n, req);
-        //char* p = strstr(request_line.data(), "\r\n") + 2;
-        //header.rev(request_line.data() - p);
-        //size_t len = request_line.data() + request_line.length() - p;
-        //if(len) std::memcpy(header.rev(len), p, len);
-        size_t len = buffer_.size();
-        if(len) {
-            buffer_.sgetn(header.put(len), len);
-            //buffer_.consume(len);
+	void request::parse_request_head(request* r, php::object req, size_t n, php::callable done) {
+        buffer_.sgetn(head.put(n), n);
+
+        size_t request_line_len = std::strstr(head.data(), "\r\n") + 2 - head.data();
+        parse_first(head.data(), request_line_len, req);
+
+        // parse head
+        size_t request_header_len = head.size() - request_line_len;
+        parse_header(head.data() + request_line_len, request_header_len, r->hdr, req);
+        req.prop("header") = r->hdr;
+
+        // parse body
+        if(buffer_.size() > 0) {
+            buffer_.sgetn(body.put(buffer_.size()), buffer_.size());
+        }
+
+        std::size_t content_length = parse_content_length(r->hdr);
+        if(content_length < body.size()) {
+            auto body_buff = r->buffer_.prepare(content_length-body.size());
+            boost::asio::async_read(r->tcp_->socket_, body_buff, 
+                    [r, req, done] (const boost::system::error_code err, std::size_t n) mutable {
+                    if(err) {
+                        done(core::error_to_exception(err));
+                    } else {
+                        r->parse_request_body(r, req);
+                        done(nullptr, req);
+                    }
+                    });
+
+        } else if(content_length == 0) {
+            done(nullptr, req);
+        } else {
+            r->parse_request_body(r, req);
+            done(nullptr, req);
         }
     }
 
-    void request::parse_request_header(php::object& req, size_t n) {
-        // header string 
-        buffer_.sgetn(header.put(n), n);
-        //buffer_.consume(n);
 
-        // parse header
-        parse_header(((zend_string*)header)->val, header.size(), hdr, req);
-        req.prop("header") = hdr;
-    }
-
-	void request::parse_request_body(php::object& req, size_t n) {
-        php::string body(n);
-        buffer_.commit(n);
-        buffer_.sgetn(body.data(), n);
-
-        php::value   type_ = hdr.at("content-type", 12);
+	void request::parse_request_body(request* r, php::object& req) {
+        php::value   type_ = r->hdr.at("content-type", 12);
+        zend_string* type = type_;
+        php::strtolower(type->val, type->len);
         // 下述两种 content-type 自动解析：
         // 1. application/x-www-form-urlencoded 33
         // 2. application/json 16
-        zend_string* type = type_;
-        php::strtolower(type->val, type->len);
+        r->buffer_.sgetn(r->body.put(buffer_.size()), buffer_.size());
         if(type->len >=33 && std::memcmp(type->val, "application/x-www-form-urlencoded", 33) == 0) {
             //zend_string* str = body.c_str();
-            req.prop("body") = php::parse_str('&', body.data(), body.length());
+            req.prop("body") = php::parse_str('&', r->body.data(), r->body.size());
         }else if(type->len >=16 && std::memcmp(type->val, "application/json", 16) == 0) {
             //zend_string* str = body.c_str();
-            req.prop("body") = php::json_decode(body.data(), body.length());
+            req.prop("body") = php::json_decode(r->body.data(), r->body.size());
         }else{
             // 其他 content-type 返回原始 body 内容
-            req.prop("body") = body;
+            req.prop("body") = r->body.data();
         }
     }
 
@@ -179,47 +191,22 @@ namespace net { namespace http {
 
         php::object req = php::object::create<request>(); /*= php::value::object<request>()*/
         request* r = req.native<request>();
-        r->tcp = tcp_.native<net::tcp_socket>();
+        r->tcp_ = tcp_.native<net::tcp_socket>();
 
         return php::value([r, req](php::parameters& params) mutable -> php::value {
                 php::callable done = params[0];
                     // parse request line
-                boost::asio::async_read_until(r->tcp->socket_, r->buffer_, "\r\n", 
+                boost::asio::async_read_until(r->tcp_->socket_, r->buffer_, "\r\n\r\n", 
                     [r, req, done](const boost::system::error_code err, std::size_t n) mutable {
-                    if(err) {
+                    if(err == boost::asio::error::eof) {
+                        done(nullptr, nullptr);
+                    } else if(err) {
                         done(core::error_to_exception(err));
                     } else {
-                        r->parse_request_line(req, n);
-                        // parse header
-                        boost::asio::async_read_until(r->tcp->socket_, r->buffer_, "\r\n\r\n", 
-                            [r, req, done](const boost::system::error_code err, std::size_t n) mutable {
-                            if(err) {
-                                done(core::error_to_exception(err));
-                            } else {
-                                r->parse_request_header(req, n);
-                                std::size_t content_length = parse_content_length(r->hdr);
-                                if(content_length > 0) {
-                                    auto body_buff = r->buffer_.prepare(content_length);
-                                    // parse body
-                                    //boost::asio::async_read_until(tcp, body_buff, "\r\n", 
-                                    //[r, req](const boost::system::error_code err, std::size_t n) mutable {
-                                    boost::asio::async_read(r->tcp->socket_, body_buff, 
-                                            [r, req, done] (const boost::system::error_code err, std::size_t n) mutable {
-                                        if(err) {
-                                            done(core::error_to_exception(err));
-                                        } else {
-                                            r->parse_request_body(req, n);
-                                            done(nullptr, req);
-                                        }
-                                        });
-                                } else {
-                                    done(nullptr, req);
-                                }
-                            }
-                            });
-
+                        r->parse_request_head(r, req, n, done);
                     }
                     });
+                return nullptr;
         });
 
 	}
