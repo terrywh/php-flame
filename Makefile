@@ -16,9 +16,7 @@ CXXFLAGS?= -g -O0
 INCLUDE=-I${ROOT_TERRYWH}/libphpext `${PHP_CONFIG} --includes`
 LIBRARY=${VENDOR_LIBRARY}
 
-SOURCES=$(wildcard src/*.cpp) $(wildcard src/**/*.cpp) $(wildcard src/**/**/*.cpp)
-# SOURCES=src/extension.cpp src/core.cpp src/task_runner.cpp src/net/init.cpp src/net/udp_socket.cpp src/net/tcp_socket.cpp src/net/tcp_server.cpp src/net/http/init.cpp src/net/http/request.cpp src/net/http/response.cpp
-
+SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 
 EXTENSION=${EXTENSION_NAME}.so
