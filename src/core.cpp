@@ -10,13 +10,15 @@ php::value core::error_to_exception(const boost::system::error_code& err) {
 	ex.call("__construct", err.message(), err.value());
 	return std::move(ex);
 }
+php::value core::error(const std::string& message, int code) {
+	php::object ex = php::object::create("Exception");
+	ex.call("__construct", message, code);
+	return std::move(ex);
+}
 // 为了提高 sleep 函数的效率，考虑复用少量 timer
 static std::vector<boost::asio::steady_timer*> timers;
 
 void core::init(php::extension_entry& extension) {
-	extension.on_module_startup(core::module_startup);
-	extension.on_module_shutdown(core::module_shutdown);
-
 	extension.add<core::go>("flame\\go");
 	extension.add<core::run>("flame\\run");
 	extension.add<core::sleep>("flame\\sleep");
@@ -26,23 +28,6 @@ void core::init(php::extension_entry& extension) {
 static bool core_forked  = false;
 static bool core_started = false;
 
-bool core::module_startup(php::extension_entry& extension) {
-	core::io_ = new boost::asio::io_service();
-	core::tr_ = new task_runner();
-	for(int i=0;i<16;++i) {
-		timers.push_back(new boost::asio::steady_timer(core::io()));
-	}
-	return true;
-}
-bool core::module_shutdown(php::extension_entry& extension) {
-	while(!timers.empty()) {
-		delete timers.back();
-		timers.pop_back();
-	}
-	delete core::tr_;
-	delete core::io_;
-	return true;
-}
 // 核心调度
 static void generator_runner(php::generator g) {
 	if(EG(exception)) {
@@ -78,10 +63,12 @@ static void generator_runner(php::generator g) {
 			g.send(v);
 			generator_runner(g);
 		}
+
 	});
 }
 // 所谓“协程”
 php::value core::go(php::parameters& params) {
+	if(!core_started) throw php::exception("failed to start coroutine: core not running");
 	php::value r;
 	if(params[0].is_callable()) {
 		php::callable c = params[0];
@@ -95,16 +82,31 @@ php::value core::go(php::parameters& params) {
 	}else{
 		return std::move(r);
 	}
-	return nullptr;
 }
 // 程序启动
 php::value core::run(php::parameters& params) {
 	core_started = true;
+	// 初始化 core
+	core::io_ = new boost::asio::io_service();
+	core::tr_ = new task_runner();
+	for(int i=0;i<16;++i) {
+		timers.push_back(new boost::asio::steady_timer(core::io()));
+	}
+	core::tr_->start();
+
 	if(params.length() > 0) {
 		go(params);
 	}
 	core::io().run();
 	core::tr().stop_wait();
+	// 销毁
+	while(!timers.empty()) {
+		delete timers.back();
+		timers.pop_back();
+	}
+	delete core::tr_;
+	delete core::io_;
+
 	return nullptr;
 }
 // sleep 对 timer 进行预分配的重用优化，实际上这个流程可能不会有太实际的优化效果，

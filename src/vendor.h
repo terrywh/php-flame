@@ -20,3 +20,6 @@ using boost::asio::ip::udp;
 using boost::asio::ip::address;
 #include <boost/lockfree/queue.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/logic/tribool.hpp>
+using namespace boost::logic;
+#include <boost/format.hpp>

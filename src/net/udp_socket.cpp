@@ -106,6 +106,7 @@ namespace net {
 					done(nullptr);
 				}
 			});
+			return nullptr;
 		});
 	}
 	void udp_socket::set_prop_local_addr() {

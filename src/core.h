@@ -12,11 +12,10 @@ public:
 	}
 	static void init(php::extension_entry& extension);
 	static php::value error_to_exception(const boost::system::error_code& err);
+	static php::value error(const std::string& message, int code = 0);
 private:
 	static boost::asio::io_service* io_;
 	static task_runner*             tr_;
-	static bool module_startup (php::extension_entry& extension);
-	static bool module_shutdown(php::extension_entry& extension);
 	static php::value go(php::parameters& params);
 	static php::value run(php::parameters& params);
 	static php::value sleep(php::parameters& params);

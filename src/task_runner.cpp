@@ -11,8 +11,8 @@ task_wrapper::task_wrapper(const std::function<void(php::callable)>& t, const ph
 
 task_runner::task_runner()
 : stopped_(false)
-, master_id_(std::this_thread::get_id())
-, thread_(run, this) {
+, queue_(64)
+, master_id_(std::this_thread::get_id()) {
 
 }
 void task_runner::run(task_runner* self) {
@@ -23,7 +23,7 @@ NEXT_TASK:
 			return;
 		}
 		// 这个等待时间可能会导致在线程内执行的动作额外延迟，故不能过大
-		std::this_thread::sleep_for(std::chrono::microseconds(50));
+		std::this_thread::sleep_for(std::chrono::microseconds(200));
 		goto NEXT_TASK;
 	}
 	tr->task(php::value([tr] (php::parameters& params) mutable -> php::value {
@@ -54,7 +54,10 @@ NEXT_TASK:
 		goto NEXT_TASK;
 	}
 }
-
+void task_runner::start() {
+	std::thread r(run, this);
+	thread_ = std::move(r);
+}
 void task_runner::stop_wait() {
 	stopped_ = true;
 	if(thread_.joinable()) thread_.join();

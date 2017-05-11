@@ -9,6 +9,7 @@ public:
 class task_runner {
 public:
 	task_runner();
+	void start();
 	void stop_wait();
 	php::value async(const std::function<void(php::callable)>& task);
 	inline bool is_master() {

@@ -26,7 +26,7 @@ namespace net {
 	}
 	tcp_socket::tcp_socket(bool connected)
 	: socket_(core::io())
-	, buffer_(8*1024*1024) // TODO buffer_ 最大尺寸？
+	, buffer_(8 * 1024 * 1024) // TODO buffer_ 最大尺寸？
 	, connected_(connected)
 	, is_ipv6_(true) { // 默认按 IPv6
 
@@ -59,6 +59,7 @@ namespace net {
 					done(nullptr);
 				}
 			});
+			return nullptr;
 		});
 	}
 	void tcp_socket::set_prop_local_addr() {
@@ -68,6 +69,7 @@ namespace net {
 	}
 	php::value tcp_socket::__destruct(php::parameters& params) {
 		boost::system::error_code err;
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, err);
 		socket_.close(err); // 存在重复关闭的可能，排除错误
 		return nullptr;
 	}
@@ -95,6 +97,7 @@ namespace net {
 						done(nullptr, buf);
 					}
 				});
+				return nullptr;
 			});
 		}else if(params[0].is_string()) { // 2. 读取到指定分隔符
 			std::string delim = params[0];
@@ -106,10 +109,10 @@ namespace net {
 					}else{
 						php::string buf(n);
 						buffer_.sgetn(buf.data(), n);
-						buffer_.consume(n);
 						done(nullptr, buf);
 					}
 				});
+				return nullptr;
 			});
 		}else{
 			throw php::exception("failed to read: unknown read method");
@@ -136,6 +139,7 @@ namespace net {
 	}
 	php::value tcp_socket::close(php::parameters& params) {
 		boost::system::error_code err;
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, err);
 		socket_.close(err); // 存在重复关闭的可能，排除错误
 		connected_ = false;
 		return nullptr;
