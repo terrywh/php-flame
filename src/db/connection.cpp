@@ -22,7 +22,7 @@ namespace db {
 		}
 	}
 	php::value connection::preserve(php::parameters& params) {
-		php::object obj = params[0];
+		php::object& obj = params[0];
 		int itv = 300; // interval 间隔
 		if(params.length() > 1) {
 			itv = params[1];
@@ -35,7 +35,7 @@ namespace db {
 		conn->timer_.push_back(tmr);
 		await_timer(tmr, obj, itv, fn);
 	}
-	void connection::await_timer(boost::asio::steady_timer* tmr, php::object obj, int itv, const std::string& fn) {
+	void connection::await_timer(boost::asio::steady_timer* tmr, php::object& obj, int itv, const std::string& fn) {
 		tmr->expires_from_now(std::chrono::seconds(itv));
 		tmr->async_wait([tmr, obj, itv, fn] (const boost::system::error_code& err) mutable {
 			if(!err) {

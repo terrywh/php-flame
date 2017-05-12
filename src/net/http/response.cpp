@@ -80,9 +80,9 @@ namespace net { namespace http {
 	}
 
 	php::value response::build(php::parameters& params) {
-		php::object res_= php::object::create<response>();
-		response*   res = res_.native<response>();
-		php::object req_= params[0];
+		php::object  res_= php::object::create<response>();
+		response*    res = res_.native<response>();
+		php::object& req_= params[0];
 		if(!req_.is_instance_of<request>()) {
 			throw php::exception("failed to build response: object of 'request' expected");
 		}
@@ -104,7 +104,7 @@ namespace net { namespace http {
 	php::value response::write_header(php::parameters& params) {
 		build_header(params[0]);
 		return php::value([this] (php::parameters& params) mutable -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 			boost::asio::async_write(
 				*socket_, buffer_,
 				[this, done] (boost::system::error_code err, std::size_t n) mutable {
@@ -130,29 +130,27 @@ namespace net { namespace http {
 
 		for(auto it = header_.begin(); it != header_.end(); ++it) {
 			// 由于采用 chunked 编码，理论上不应该在处理 content-length 头部
-			zend_string* data = it->second.to_string();
 			buffer_.emplace_back((boost::format("%s: %s\r\n")
-				% it->first.data() % data->val).str());
+				% it->first.to_string() % it->second.to_string()).str());
 		}
 		buffer_.emplace_back(std::string("\r\n",2));
 	}
-
 
 	php::value response::write(php::parameters& params) {
 		if(ended_) {
 			throw php::exception("write failed: reponse sent");
 		}
-		php::string body = params[0];
+		php::string& body = params[0];
 		if(!header_sent_) {
 			build_header(200);
 		}
 		buffer_.emplace_back((boost::format("%x\r\n") % body.length()).str());
 		buffer_.emplace_back(body.data(), body.length());
 		buffer_.emplace_back(std::string("\r\n",2));
-		return php::value([this, body] (php::parameters& params) mutable -> php::value {
-			php::callable done = params[0];
+		return php::value([this] (php::parameters& params) mutable -> php::value {
+			php::callable& done = params[0];
 			boost::asio::async_write(*socket_, buffer_,
-				[this, done, body] (boost::system::error_code err, std::size_t n) mutable {
+				[this, done] (boost::system::error_code err, std::size_t n) mutable {
 					buffer_.clear();
 					if(err) {
 						done(core::error_to_exception(err));
@@ -173,16 +171,16 @@ namespace net { namespace http {
 		}
 		ended_ = true;
 		if(params.length() > 0) {
-			php::string body = params[0];
+			php::string& body = params[0];
 			if(body.length() > 0) {
 				buffer_.emplace_back((boost::format("%x\r\n") % body.length()).str());
-				buffer_.emplace_back(write_buffer(body.data(), body.length()));
+				buffer_.emplace_back(write_buffer(body.c_str(), body.length()));
 				buffer_.emplace_back(std::string("\r\n",2));
 			}
 		}
 		buffer_.emplace_back(std::string("0\r\n\r\n",5));
 		return php::value([this] (php::parameters& params) mutable -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 			boost::asio::async_write(*socket_, buffer_,
 				[this, done] (boost::system::error_code err, std::size_t n) mutable {
 					buffer_.clear();

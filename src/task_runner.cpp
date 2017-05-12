@@ -65,7 +65,7 @@ void task_runner::stop_wait() {
 
 php::value task_runner::async(const std::function<void( php::callable )>& task) {
 	return php::value([this, task] (php::parameters& params) mutable -> php::value {
-		php::callable done = params[0];
+		php::callable& done = params[0];
 		// TODO 启用 task_wrapper 的内存池，减少频繁消耗
 		queue_.push(new task_wrapper(task, done));
 		return nullptr;

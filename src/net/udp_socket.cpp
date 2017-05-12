@@ -96,7 +96,7 @@ namespace net {
 		int port = params[1];
 		remote_ = udp::endpoint(addr_from_str(addr, is_ipv6_), port);
 		return php::value([this] (php::parameters& params) -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 			socket_.async_connect(remote_, [this, done] (const boost::system::error_code& err) mutable {
 				if(err) {
 					done(core::error_to_exception(err));
@@ -128,7 +128,7 @@ namespace net {
 	php::value udp_socket::read(php::parameters& params) {
 		if(connected_) throw php::exception("read failed: bind or connect required");
 		return php::value([this] (php::parameters& params) -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 			socket_.async_receive_from(
 				boost::asio::buffer(buffer_), remote_,
 				[this, done] (const boost::system::error_code& err, std::size_t n) mutable {
@@ -149,9 +149,9 @@ namespace net {
 		remote_.address(address::from_string(std::string(addr->val, addr->len)));
 		remote_.port(port);
 		return php::value([this, data] (php::parameters& params) -> php::value {
-			php::callable done = params[0];
-			// 需要进行类型转换，否则 asio::buffer 会将 zend_string -> val 长度解为 1
+			php::callable& done = params[0];
 			socket_.async_send_to(
+				// 需要进行类型转换，否则 asio::buffer 会将 zend_string -> val 长度解为 1
 				boost::asio::buffer(reinterpret_cast<char*>(data->val), data->len),
 				remote_, [this, done] (const boost::system::error_code& err, std::size_t n) mutable {
 					if(err) {
@@ -167,7 +167,7 @@ namespace net {
 		if(!connected_) throw php::exception("write failed: not connected");
 		zend_string* data = params[0];
 		return php::value([this, data] (php::parameters& params) -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 			// asio::buffer 会将 zend_string -> val 长度解为 1
 			socket_.async_send(
 				boost::asio::buffer(reinterpret_cast<char*>(data->val), data->len),

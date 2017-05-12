@@ -17,9 +17,3 @@ flame\run(function() {
 
 	var_dump($data);
 });
-
-
-// resource::preserve($mysqli);
-// $conn = manager_mysql::get("key1");
-// manager_redis::init("key2", $config);
-// $conn = manager_redis::get("key2");

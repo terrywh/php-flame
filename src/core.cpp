@@ -29,7 +29,7 @@ static bool core_forked  = false;
 static bool core_started = false;
 
 // 核心调度
-static void generator_runner(php::generator g) {
+static void generator_runner(php::generator& g) {
 	if(EG(exception)) {
 		core::io().stop();
 		return;
@@ -39,9 +39,8 @@ static void generator_runner(php::generator g) {
 	core::io().post([g] () mutable {
 		php::value v = g.current();
 		if(v.is_callable()) {
-			php::callable cb = v;
 			// 传入的 函数 用于将异步执行结果回馈到 "协程" 中
-			cb(php::value([g] (php::parameters& params) mutable -> php::value {
+			static_cast<php::callable&>(v)(php::value([g] (php::parameters& params) mutable -> php::value {
 				int len = params.length();
 				if(len == 0) {
 					g.next();
@@ -51,7 +50,7 @@ static void generator_runner(php::generator g) {
 					}else{
 						g.next();
 					}
-				}else if(params[0].is_instance_of("Exception")) { // 内置 exception
+				}else if(params[0].is_exception()) { // 内置 exception
 					g.throw_exception(params[0]);
 				}else{ // 其他错误信息
 					g.throw_exception(params[0], 0);
@@ -71,13 +70,12 @@ php::value core::go(php::parameters& params) {
 	if(!core_started) throw php::exception("failed to start coroutine: core not running");
 	php::value r;
 	if(params[0].is_callable()) {
-		php::callable c = params[0];
-		r = c();
+		r = static_cast<php::callable&>(params[0])();
 	}else{
 		r = params[0];
 	}
-	if(r.is_object() && r.is_instance_of("Generator")) {
-		generator_runner(static_cast<zend_object*>(r));
+	if(r.is_generator()) {
+		generator_runner(r);
 		return nullptr;
 	}else{
 		return std::move(r);
@@ -127,7 +125,7 @@ php::value core::sleep(php::parameters& params) {
 		}
 
 		timer->expires_from_now(std::chrono::milliseconds(duration));
-		php::callable done = params[0];
+		php::callable& done = params[0];
 		timer->async_wait([timer, done] (const boost::system::error_code& ec) mutable {
 			if(ec) {
 				done(core::error_to_exception(ec));
@@ -161,7 +159,7 @@ php::value core::_fork(php::parameters& params) {
 // 这里的 async_task 提供用户端将指定的(同步)函数交由 task_runner 在额外工作线程内执行，
 // 并能将执行的结果以 done 回调的形式带回 Generator
 php::value core::async(php::parameters& params) {
-	php::callable task = params[0];
+	php::callable& task = params[0];
 	return core::tr().async([task] (php::callable done) mutable {
 		task(done); // 此 done 非彼 done
 	});

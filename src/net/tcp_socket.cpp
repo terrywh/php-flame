@@ -49,7 +49,7 @@ namespace net {
 		int port = params[1];
 		remote_ = tcp::endpoint(addr_from_str(addr, is_ipv6_), port);
 		return php::value([this] (php::parameters& params) -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 			socket_.async_connect(remote_, [this, done] (const boost::system::error_code& err) mutable {
 				if(err) {
 					done(core::error_to_exception(err));
@@ -83,7 +83,7 @@ namespace net {
 		if(!connected_) throw php::exception("read failed: not connected");
 		// 考虑提供两种方式的数据读取机制：
 		if(params[0].is_long()) { // 1. 读取指定长度
-			std::size_t length = static_cast<std::int64_t>(params[0]);
+			std::size_t length = params[0];
 			return php::value([this, length] (php::parameters& params) -> php::value {
 				auto buf = buffer_.prepare(length);
 				php::callable done = params[0];
@@ -102,7 +102,7 @@ namespace net {
 		}else if(params[0].is_string()) { // 2. 读取到指定分隔符
 			std::string delim = params[0];
 			return php::value([this, delim] (php::parameters& params) -> php::value {
-				php::callable done = params[0];
+				php::callable& done = params[0];
 				boost::asio::async_read_until(socket_, buffer_, delim, [this, done] (const boost::system::error_code& err, std::size_t n) mutable {
 					if(err) {
 						done(core::error_to_exception(err));
@@ -122,10 +122,10 @@ namespace net {
 		if(!connected_) throw php::exception("write failed: not connected");
 		zend_string* data = params[0];
 		return php::value([this, data] (php::parameters& params) -> php::value {
-			php::callable done = params[0];
-			// 需要进行类型转换，否则 asio::buffer 会将 zend_string -> val 长度解为 1
+			php::callable& done = params[0];
 			boost::asio::async_write(
 				socket_,
+				// 需要进行类型转换，否则 asio::buffer 会将 zend_string -> val 长度解为 1
 				boost::asio::buffer(reinterpret_cast<char*>(data->val), data->len),
 				[this, done] (const boost::system::error_code& err, std::size_t n) mutable {
 					if(err) {

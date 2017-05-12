@@ -71,7 +71,7 @@ namespace net {
 	php::value tcp_server::accept(php::parameters& params) {
 		if(!listened_) throw php::exception("accept failed: not listened");
 		return php::value([this] (php::parameters& params) -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 
 			php::object cli = php::object::create<tcp_socket>();
 			tcp_socket* cli_= cli.native<tcp_socket>();

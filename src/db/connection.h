@@ -9,6 +9,6 @@ namespace db {
 		~connection();
 	private:
 		std::vector<boost::asio::steady_timer*> timer_;
-		static void await_timer(boost::asio::steady_timer* tmr, php::object obj, int itv, const std::string& fn);
+		static void await_timer(boost::asio::steady_timer* tmr, php::object& obj, int itv, const std::string& fn);
 	};
 }

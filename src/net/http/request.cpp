@@ -22,7 +22,7 @@ namespace net { namespace http {
 	}
 
 	php::value request::parse(php::parameters& params) {
-		php::object tcp_socket = params[0];
+		php::object& tcp_socket = params[0];
 		if(!tcp_socket.is_instance_of<net::tcp_socket>()) {
 			throw php::exception("failed to parse request: object of flame\\net\\tcp_socket expected");
 		}
@@ -32,7 +32,7 @@ namespace net { namespace http {
 		self->socket_ = &tcp_socket.native<net::tcp_socket>()->socket_;
 		// 异步流程
 		return php::value([self, req](php::parameters& params) mutable -> php::value {
-			php::callable done = params[0];
+			php::callable& done = params[0];
 			self->read_head(req, done);
 			return nullptr;
 		});
@@ -114,9 +114,9 @@ namespace net { namespace http {
 	bool request::is_keep_alive() {
 		php::value* c = header_.find("connection");
 		if(c == nullptr) return false;
-		php::string s = *c;
+		php::string& s = *c;
 		php::strtolower(s.data(), s.length());
-		if(std::strncmp(s.data(), "keep-alive", std::min(std::size_t(10), s.length())) == 0) {
+		if(std::strncmp(s.c_str(), "keep-alive", std::min(std::size_t(10), s.length())) == 0) {
 			return true;
 		}
 		return false;

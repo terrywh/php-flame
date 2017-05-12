@@ -20,7 +20,9 @@ namespace net { namespace http {
 		// 	used_ = data_.data();
 		// 	size_ = buf.size_;
 		// }
-		// !!! 复制流程有可能会对应到 (1) 的对象，但就目前用法来说，没有问题
+		// !!! 复制流程有可能会对应到 (1) 的对象，但就目前用法来说，没有问题：
+		// boost::asio::async_write 流程中可能会若干次的 copy 上层的容器，间接
+		// 复制 write_buffer 元素，这里为了减少复制开销，不复制实际 data_ 字符串
 		write_buffer(const write_buffer& buf)
 		: data_() {
 			used_ = buf.used_;
