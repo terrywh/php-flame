@@ -1,13 +1,16 @@
 #include "../../vendor.h"
 #include "../../core.h"
 #include "../../net/tcp_socket.h"
-#include "request.h"
-#include "request_header_parser.h"
+#include "server_request.h"
+#include "header_parser.h"
 
 namespace net { namespace http {
 
-	void request::init(php::extension_entry& extension) {
-		php::class_entry<request> net_http_request("flame\\net\\http\\request");
+	void server_request::init(php::extension_entry& extension) {
+		extension.add<server_request::parse>("flame\\net\\http\\parse", {
+			php::of_object("socket", "flame\\net\\tcp_socket")
+		});
+		php::class_entry<server_request> net_http_request("flame\\net\\http\\server_request");
 		net_http_request.add(php::property_entry("version", "HTTP/1.1"));
 		net_http_request.add(php::property_entry("method", "GET"));
 		net_http_request.add(php::property_entry("path", "/"));
@@ -15,32 +18,29 @@ namespace net { namespace http {
 		net_http_request.add(php::property_entry("header", nullptr));
 		net_http_request.add(php::property_entry("cookie", nullptr));
 		net_http_request.add(php::property_entry("post", nullptr));
-		net_http_request.add<request::parse>("parse", {
-			php::of_object("socket", "flame\\net\\tcp_socket")
-		});
-		net_http_request.add<&request::body>("body");
+		net_http_request.add<&server_request::body>("body");
 		extension.add(std::move(net_http_request));
 		return ;
 	}
 
-	php::value request::parse(php::parameters& params) {
+	php::value server_request::parse(php::parameters& params) {
 		php::object& tcp_socket = params[0];
 		if(!tcp_socket.is_instance_of<net::tcp_socket>()) {
 			throw php::exception("failed to parse request: object of flame\\net\\tcp_socket expected");
 		}
 
-		php::object req = php::object::create<request>();
-		request* self = req.native<request>();
-		self->socket_ = &tcp_socket.native<net::tcp_socket>()->socket_;
+		php::object     req_= php::object::create<server_request>();
+		server_request* req = req_.native<server_request>();
+		req->socket_ = &tcp_socket.native<net::tcp_socket>()->socket_;
 		// 异步流程
-		return php::value([self, req](php::parameters& params) mutable -> php::value {
+		return php::value([req_, req](php::parameters& params) mutable -> php::value {
 			php::callable& done = params[0];
-			self->read_head(req, done);
+			req->read_head(req_, done);
 			return nullptr;
 		});
 	}
 
-	void request::read_head(php::object& req, php::callable& done) {
+	void server_request::read_head(php::object& req, php::callable& done) {
 		boost::asio::async_read_until(*socket_, buffer_, "\r\n\r\n",
 			[this, req, done] (const boost::system::error_code err, std::size_t n) mutable {
 				if(err == boost::asio::error::eof) {
@@ -50,18 +50,18 @@ namespace net { namespace http {
 					done(core::error_to_exception(err));
 				} else {
 					php::array header(std::size_t(0));
-					request_header_parser parser(this, header);
+					header_parser parser(this, header);
 					if(!parser.parse(buffer_, n) || !parser.complete()) {
 						done(core::error("failed to read request: illegal request"));
 						return;
 					}
-					header_ = reinterpret_cast<php::array*>(&prop("header", header, true));
+					header_ = reinterpret_cast<php::array*>(&sprop("header", header));
 					read_body(req, done);
 				}
 			});
 	}
 
-	void request::read_body(php::object& req, php::callable& done) {
+	void server_request::read_body(php::object& req, php::callable& done) {
 		// 不支持 chunked 形式的请求
 		// 简化的 content-length 逻辑（存在 content-length 存在 body 否则无 body）
 		php::value* length_= header_->find("content-length", 14);
@@ -94,7 +94,7 @@ namespace net { namespace http {
 		}
 	}
 
-	void request::parse_body() {
+	void server_request::parse_body() {
 		zend_string* type_ = header_->at("content-type", 12);
 		php::strtolower_inplace(type_->val, type_->len);
 		// 下述两种 content-type 自动解析：
@@ -107,7 +107,7 @@ namespace net { namespace http {
 		// 其他 content-type 原始 body 内容调用 body() 方法获取
 	}
 
-	php::value request::body(php::parameters& params) {
+	php::value server_request::body(php::parameters& params) {
 		php::string r(buffer_.size());
 		// !!! 这里的 body 数据是 “复制” 的，代价还是比较大的；
 		// TODO 考虑提供流方式的 body 获取方式？
@@ -115,7 +115,7 @@ namespace net { namespace http {
 		return std::move(r);
 	}
 
-	bool request::is_keep_alive() {
+	bool server_request::is_keep_alive() {
 		php::value* c = header_->find("connection");
 		if(c == nullptr) return false;
 		php::string& s = *c;

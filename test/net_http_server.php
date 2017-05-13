@@ -9,11 +9,11 @@ flame\run(function() {
 		// 启动“协程”，不阻塞 accept 过程
 		flame\go(function() use($socket) {
 			try{
-				while($req = yield flame\net\http\request::parse($socket)) {
-					$res = flame\net\http\response::build($req);
+				while($req = yield flame\net\http\parse($socket)) {
+					$res = flame\net\http\build($req);
 					// $response 仅支持 Transfer-Encoding: chunked 方式
 					// 请不要改变这一逻辑，例如，不要 不要 做下面的代码：
-					// 
+					//
 					// 	$res->header["Content-Length"] = 12;
 					// 	unset($res->header["Transfer-Encoding"]);
 					yield $res->write_header(200);

@@ -3,8 +3,8 @@
 namespace net {
 	class tcp_server;
 	namespace http {
-		class request;
-		class response;
+		class server_request;
+		class server_response;
 	}
 	class tcp_socket: public php::class_base {
 	public:
@@ -26,7 +26,7 @@ namespace net {
 		bool            is_ipv6_;
 		void set_prop_local_addr();
 		friend class tcp_server;
-		friend class http::request;
-		friend class http::response;
+		friend class http::server_request;
+		friend class http::server_response;
 	};
 }

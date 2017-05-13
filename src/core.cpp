@@ -24,6 +24,26 @@ void core::init(php::extension_entry& extension) {
 	extension.add<core::sleep>("flame\\sleep");
 	extension.add<core::_fork>("flame\\fork");
 	extension.add<core::async>("flame\\async");
+	extension.on_module_startup([] (php::extension_entry& extension) -> bool {
+		// 初始化 core
+		core::io_ = new boost::asio::io_service();
+		core::tr_ = new task_runner();
+		for(int i=0;i<16;++i) {
+			timers.push_back(new boost::asio::steady_timer(core::io()));
+		}
+		return true;
+	});
+	extension.on_module_shutdown([] (php::extension_entry& extension) -> bool {
+		// 销毁 core
+		while(!timers.empty()) {
+			delete timers.back();
+			timers.pop_back();
+		}
+		delete core::tr_;
+		delete core::io_;
+		return true;
+	});
+
 }
 static bool core_forked  = false;
 static bool core_started = false;
@@ -84,27 +104,13 @@ php::value core::go(php::parameters& params) {
 // 程序启动
 php::value core::run(php::parameters& params) {
 	core_started = true;
-	// 初始化 core
-	core::io_ = new boost::asio::io_service();
-	core::tr_ = new task_runner();
-	for(int i=0;i<16;++i) {
-		timers.push_back(new boost::asio::steady_timer(core::io()));
-	}
-	core::tr_->start();
 
+	core::tr_->start();
 	if(params.length() > 0) {
 		go(params);
 	}
 	core::io().run();
 	core::tr().stop_wait();
-	// 销毁
-	while(!timers.empty()) {
-		delete timers.back();
-		timers.pop_back();
-	}
-	delete core::tr_;
-	delete core::io_;
-
 	return nullptr;
 }
 // sleep 对 timer 进行预分配的重用优化，实际上这个流程可能不会有太实际的优化效果，

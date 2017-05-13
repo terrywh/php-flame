@@ -1,10 +1,10 @@
 #include "../../vendor.h"
-#include "request_header_parser.h"
-#include "request.h"
+#include "header_parser.h"
+#include "server_request.h"
 
 namespace net { namespace http {
 
-	bool request_header_parser::parse(boost::asio::streambuf& buffer, std::size_t n) {
+	bool header_parser::parse(boost::asio::streambuf& buffer, std::size_t n) {
 		while(n > 0) {
 			char c = buffer.sbumpc();
 REPEAT:
@@ -19,7 +19,7 @@ REPEAT:
 		}
 		return true;
 	}
-	tribool request_header_parser::parse(char c) {
+	tribool header_parser::parse(char c) {
 		switch(status_) {
 		case METHOD_BEFORE:
 			if(c == ' ') return false;

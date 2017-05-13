@@ -7,6 +7,8 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <map>
+#include <forward_list>
 
 #include <sys/signalfd.h>
 #include <signal.h>

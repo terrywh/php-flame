@@ -1,8 +1,8 @@
 #pragma once
 
 namespace net { namespace http {
-	class request;
-	class request_header_parser {
+	class server_request;
+	class header_parser {
 	private:
 		enum {
 			METHOD_BEFORE,
@@ -26,7 +26,7 @@ namespace net { namespace http {
 			HEADER_COMPLETE_2, // \n
 		};
 	public:
-		request_header_parser(request* req, php::array& hdr)
+		header_parser(server_request* req, php::array& hdr)
 			: status_(METHOD_BEFORE)
 			, req_(req)
 			, hdr_(hdr) {}
@@ -37,11 +37,11 @@ namespace net { namespace http {
 			return status_ == HEADER_COMPLETE_2;
 		}
 	private:
-		int         status_;
-		request*    req_;
-		php::array& hdr_;
+		int             status_;
+		server_request* req_;
+		php::array&     hdr_;
 		// 缓存解析数据
-		std::string field_;
-		std::string value_;
+		std::string     field_;
+		std::string     value_;
 	};
 }}

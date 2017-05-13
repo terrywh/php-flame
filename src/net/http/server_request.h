@@ -4,7 +4,7 @@ namespace net {
 	class tcp_socket;
 	namespace http {
 		class request_header_parser;
-		class request: public php::class_base {
+		class server_request: public php::class_base {
 		public:
 			static void init(php::extension_entry& extension);
 			static php::value parse(php::parameters& params);
@@ -18,7 +18,7 @@ namespace net {
 			boost::asio::streambuf buffer_;
 			tcp::socket*           socket_;
 
-			friend class response;
+			friend class server_response;
 			friend class request_header_parser;
 		};
 	} }

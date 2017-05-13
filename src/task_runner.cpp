@@ -23,7 +23,7 @@ NEXT_TASK:
 			return;
 		}
 		// 这个等待时间可能会导致在线程内执行的动作额外延迟，故不能过大
-		std::this_thread::sleep_for(std::chrono::microseconds(200));
+		std::this_thread::sleep_for(std::chrono::microseconds(500));
 		goto NEXT_TASK;
 	}
 	tr->task(php::value([tr] (php::parameters& params) mutable -> php::value {
@@ -64,6 +64,7 @@ void task_runner::stop_wait() {
 }
 
 php::value task_runner::async(const std::function<void( php::callable )>& task) {
+	if(!is_master()) throw php::exception("async operations can only be arranged in main thread");
 	return php::value([this, task] (php::parameters& params) mutable -> php::value {
 		php::callable& done = params[0];
 		// TODO 启用 task_wrapper 的内存池，减少频繁消耗

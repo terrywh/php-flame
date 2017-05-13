@@ -4,10 +4,10 @@ namespace net {
 	class tcp_socket;
 namespace http {
 	class write_buffer;
-	class request;
-	class response: public php::class_base {
+	class server_request;
+	class server_response: public php::class_base {
 	public:
-		response()
+		server_response()
 		: header_sent_(false)
 		, ended_(false)
 		, header_(std::size_t(0)) {
@@ -28,6 +28,6 @@ namespace http {
 		std::vector<write_buffer> buffer_;
 		static std::map<uint32_t, std::string> status_map;
 
-		friend class request;
+		friend class server_request;
 	};
 } }

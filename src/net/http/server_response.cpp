@@ -2,11 +2,11 @@
 #include "../../core.h"
 #include "../../net/tcp_socket.h"
 #include "write_buffer.h"
-#include "response.h"
-#include "request.h"
+#include "server_response.h"
+#include "server_request.h"
 
 namespace net { namespace http {
-	std::map<uint32_t, std::string> response::status_map {
+	std::map<uint32_t, std::string> server_response::status_map {
 		{100, "Continue"},
 		{101, "Switching Protocols"},
 		{102, "Processing"},
@@ -68,27 +68,27 @@ namespace net { namespace http {
 		{511, "Network Authentication Required"},
 	};
 
-	void response::init(php::extension_entry& extension) {
-		php::class_entry<response> net_http_response("flame\\net\\http\\response");
-		net_http_response.add<&response::write_header>("write_header");
-		net_http_response.add<&response::write>("write");
-		net_http_response.add<&response::end>("end");
-		net_http_response.add(php::property_entry("header", nullptr));
-		net_http_response.add<response::build>("build", {
-			php::of_object("request", "flame\\net\\http\\request")
+	void server_response::init(php::extension_entry& extension) {
+		extension.add<server_response::build>("flame\\net\\http\\build", {
+			php::of_object("request", "flame\\net\\http\\server_request")
 		});
+		php::class_entry<server_response> net_http_response("flame\\net\\http\\server_response");
+		net_http_response.add<&server_response::write_header>("write_header");
+		net_http_response.add<&server_response::write>("write");
+		net_http_response.add<&server_response::end>("end");
+		net_http_response.add(php::property_entry("header", nullptr));
 		extension.add(std::move(net_http_response));
 		return ;
 	}
 
-	php::value response::build(php::parameters& params) {
+	php::value server_response::build(php::parameters& params) {
 		php::object& req_= params[0];
-		if(!req_.is_instance_of<request>()) {
+		if(!req_.is_instance_of<server_request>()) {
 			throw php::exception("failed to build response: object of 'request' expected");
 		}
-		request* req     = req_.native<request>();
-		php::object  res_= php::object::create<response>();
-		response*    res = res_.native<response>();
+		server_request*  req = req_.native<server_request>();
+		php::object      res_= php::object::create<server_response>();
+		server_response* res = res_.native<server_response>();
 
 		res->socket_ = req->socket_;
 		php::array header(std::size_t(0));
@@ -99,13 +99,13 @@ namespace net { namespace http {
 		}else{
 			header.at("Connection",10) = php::value("Close", 5);
 		}
-		res->header_ = reinterpret_cast<php::array*>(&res->prop("header", header, true));
+		res->header_ = reinterpret_cast<php::array*>(&res->sprop("header", header));
 		// 响应头部的 HTTP 版本
 		res->buffer_.emplace_back(static_cast<std::string>(req->prop("version")));
 		return std::move(res_);
 	}
 
-	php::value response::write_header(php::parameters& params) {
+	php::value server_response::write_header(php::parameters& params) {
 		build_header(params[0]);
 		return php::value([this] (php::parameters& params) mutable -> php::value {
 			php::callable& done = params[0];
@@ -123,14 +123,14 @@ namespace net { namespace http {
 			});
 	}
 
-	void response::build_header(int status_code) {
+	void server_response::build_header(int status_code) {
 		if(header_sent_) {
 			throw php::exception("write header failed: header already sent");
 		}
 		header_sent_ = true;
 
 		buffer_.emplace_back((boost::format(" %d %s\r\n")
-			% status_code % response::status_map[status_code]).str());
+			% status_code % server_response::status_map[status_code]).str());
 
 		for(auto it = header_->begin(); it != header_->end(); ++it) {
 			buffer_.emplace_back((boost::format("%s: %s\r\n")
@@ -139,7 +139,7 @@ namespace net { namespace http {
 		buffer_.emplace_back(std::string("\r\n",2));
 	}
 
-	php::value response::write(php::parameters& params) {
+	php::value server_response::write(php::parameters& params) {
 		if(ended_) {
 			throw php::exception("write failed: reponse sent");
 		}
@@ -160,12 +160,12 @@ namespace net { namespace http {
 					} else {
 						done(nullptr, true);
 					}
-				});
-				return nullptr;
 			});
+			return nullptr;
+		});
 	}
 
-	php::value response::end(php::parameters& params) {
+	php::value server_response::end(php::parameters& params) {
 		if(ended_) {
 			throw php::exception("write failed: response sent");
 		}

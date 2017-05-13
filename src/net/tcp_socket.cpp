@@ -69,7 +69,7 @@ namespace net {
 	}
 	php::value tcp_socket::__destruct(php::parameters& params) {
 		boost::system::error_code err;
-		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, err);
+		socket_.shutdown(tcp::socket::shutdown_both, err);
 		socket_.close(err); // 存在重复关闭的可能，排除错误
 		return nullptr;
 	}
@@ -139,7 +139,7 @@ namespace net {
 	}
 	php::value tcp_socket::close(php::parameters& params) {
 		boost::system::error_code err;
-		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, err);
+		socket_.shutdown(tcp::socket::shutdown_both, err);
 		socket_.close(err); // 存在重复关闭的可能，排除错误
 		connected_ = false;
 		return nullptr;
