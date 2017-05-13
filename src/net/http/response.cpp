@@ -74,30 +74,34 @@ namespace net { namespace http {
 		net_http_response.add<&response::write>("write");
 		net_http_response.add<&response::end>("end");
 		net_http_response.add(php::property_entry("header", nullptr));
-		net_http_response.add<response::build>("build");
+		net_http_response.add<response::build>("build", {
+			php::of_object("request", "flame\\net\\http\\request")
+		});
 		extension.add(std::move(net_http_response));
 		return ;
 	}
 
 	php::value response::build(php::parameters& params) {
-		php::object  res_= php::object::create<response>();
-		response*    res = res_.native<response>();
 		php::object& req_= params[0];
 		if(!req_.is_instance_of<request>()) {
 			throw php::exception("failed to build response: object of 'request' expected");
 		}
-		request* req = req_.native<request>();
+		request* req     = req_.native<request>();
+		php::object  res_= php::object::create<response>();
+		response*    res = res_.native<response>();
+
 		res->socket_ = req->socket_;
-		res->header_["Content-Type"] = php::value("text/plain; charset=utf-8", 25);
-		res->header_["Transfer-Encoding"] = php::value("chunked", 7);
+		php::array header(std::size_t(0));
+		header.at("Content-Type",12) = php::value("text/plain; charset=utf-8", 25);
+		header.at("Transfer-Encoding", 17) = php::value("chunked", 7);
 		if(req->is_keep_alive()) {
-			res->header_["Connection"] =  php::value("Keep-Alive", 10);
+			header.at("Connection",10) = php::value("Keep-Alive", 10);
 		}else{
-			res->header_["Connection"] =  php::value("Close", 5);
+			header.at("Connection",10) = php::value("Close", 5);
 		}
-		res->prop("header") = res->header_;
+		res->header_ = reinterpret_cast<php::array*>(&res->prop("header", header, true));
 		// 响应头部的 HTTP 版本
-		res->buffer_.emplace_back(std::string("HTTP/1.1"));
+		res->buffer_.emplace_back(static_cast<std::string>(req->prop("version")));
 		return std::move(res_);
 	}
 
@@ -128,8 +132,7 @@ namespace net { namespace http {
 		buffer_.emplace_back((boost::format(" %d %s\r\n")
 			% status_code % response::status_map[status_code]).str());
 
-		for(auto it = header_.begin(); it != header_.end(); ++it) {
-			// 由于采用 chunked 编码，理论上不应该在处理 content-length 头部
+		for(auto it = header_->begin(); it != header_->end(); ++it) {
 			buffer_.emplace_back((boost::format("%s: %s\r\n")
 				% it->first.to_string() % it->second.to_string()).str());
 		}

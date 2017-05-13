@@ -15,7 +15,9 @@ namespace net { namespace http {
 		net_http_request.add(php::property_entry("header", nullptr));
 		net_http_request.add(php::property_entry("cookie", nullptr));
 		net_http_request.add(php::property_entry("post", nullptr));
-		net_http_request.add<request::parse>("parse");
+		net_http_request.add<request::parse>("parse", {
+			php::of_object("socket", "flame\\net\\tcp_socket")
+		});
 		net_http_request.add<&request::body>("body");
 		extension.add(std::move(net_http_request));
 		return ;
@@ -47,11 +49,13 @@ namespace net { namespace http {
 				} else if(err) {
 					done(core::error_to_exception(err));
 				} else {
-					request_header_parser parser(this);
+					php::array header(std::size_t(0));
+					request_header_parser parser(this, header);
 					if(!parser.parse(buffer_, n) || !parser.complete()) {
 						done(core::error("failed to read request: illegal request"));
 						return;
 					}
+					header_ = reinterpret_cast<php::array*>(&prop("header", header, true));
 					read_body(req, done);
 				}
 			});
@@ -60,12 +64,12 @@ namespace net { namespace http {
 	void request::read_body(php::object& req, php::callable& done) {
 		// 不支持 chunked 形式的请求
 		// 简化的 content-length 逻辑（存在 content-length 存在 body 否则无 body）
-		php::value* length_= header_.find("content-length");
+		php::value* length_= header_->find("content-length", 14);
 		if(length_ == nullptr) {
 			done(nullptr, req);
 			return;
 		}
-		std::size_t length = header_["content-length"].to_long();
+		std::size_t length = header_->at("content-length", 14).to_long();
 		if(length <= 0) {
 			done(nullptr, req);
 			return;
@@ -91,8 +95,8 @@ namespace net { namespace http {
 	}
 
 	void request::parse_body() {
-		zend_string* type_ = header_.at("content-type", 12);
-		php::strtolower(type_->val, type_->len);
+		zend_string* type_ = header_->at("content-type", 12);
+		php::strtolower_inplace(type_->val, type_->len);
 		// 下述两种 content-type 自动解析：
 		// 1. application/x-www-form-urlencoded 33
 		// 2. application/json 16
@@ -112,10 +116,10 @@ namespace net { namespace http {
 	}
 
 	bool request::is_keep_alive() {
-		php::value* c = header_.find("connection");
+		php::value* c = header_->find("connection");
 		if(c == nullptr) return false;
 		php::string& s = *c;
-		php::strtolower(s.data(), s.length());
+		php::strtolower_inplace(s.data(), s.length());
 		if(std::strncmp(s.c_str(), "keep-alive", std::min(std::size_t(10), s.length())) == 0) {
 			return true;
 		}

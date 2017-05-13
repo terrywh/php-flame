@@ -26,9 +26,10 @@ namespace net { namespace http {
 			HEADER_COMPLETE_2, // \n
 		};
 	public:
-		request_header_parser(request* req)
+		request_header_parser(request* req, php::array& hdr)
 			: status_(METHOD_BEFORE)
-			, request_(req) {}
+			, req_(req)
+			, hdr_(hdr) {}
 
 		bool parse(boost::asio::streambuf& buffer, std::size_t n);
 		tribool parse(char c);
@@ -37,7 +38,8 @@ namespace net { namespace http {
 		}
 	private:
 		int         status_;
-		request*    request_;
+		request*    req_;
+		php::array& hdr_;
 		// 缓存解析数据
 		std::string field_;
 		std::string value_;

@@ -8,9 +8,9 @@ namespace http {
 	class response: public php::class_base {
 	public:
 		response()
-		: header_(std::size_t(0))
-		, header_sent_(false)
-		, ended_(false) {
+		: header_sent_(false)
+		, ended_(false)
+		, header_(std::size_t(0)) {
 			buffer_.reserve(64);
 		}
 		static void init(php::extension_entry& extension);
@@ -24,8 +24,7 @@ namespace http {
 		tcp::socket* socket_;
 		bool         header_sent_;
 		bool         ended_;
-		// php::buffer  header_buffer_;
-		php::array   header_;
+		php::array*  header_;
 		std::vector<write_buffer> buffer_;
 		static std::map<uint32_t, std::string> status_map;
 

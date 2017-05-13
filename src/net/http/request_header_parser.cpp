@@ -35,7 +35,7 @@ REPEAT:
 			break;
 		case METHOD_AFTER_1:
 		 	boost::algorithm::to_upper(value_);
-			request_->prop("method") = value_;
+			req_->prop("method") = value_;
 			value_.clear();
 			status_ = PATH_BEFORE;
 			break;
@@ -62,9 +62,9 @@ REPEAT:
 			value_.push_back(c);
 			break;
 		case QUERY_AFTER_1:
-			request_->prop("path") = field_;
+			req_->prop("path") = field_;
 			if(value_.length()) {
-				request_->prop("get")  = php::parse_str('&', value_.c_str(), value_.length());
+				req_->prop("get")  = php::parse_str('&', value_.c_str(), value_.length());
 			}
 			field_.clear();
 			value_.clear();
@@ -83,7 +83,7 @@ REPEAT:
 			value_.push_back(c);
 			break;
 		case VERSION_AFTER_1:
-			request_->prop("version") = value_;
+			req_->prop("version") = value_;
 			value_.clear();
 			status_ = VERSION_AFTER_2;
 			break;
@@ -122,9 +122,9 @@ REPEAT:
 		case HEADER_VALUE_AFTER_1:
 			status_ = HEADER_VALUE_AFTER_2;
 			boost::algorithm::to_lower(field_);
-			request_->header_[field_] = value_;
+			hdr_[field_] = value_;
 			if(field_ == "cookie") {
-				request_->prop("cookie") = php::parse_str(';', value_.c_str(), value_.length());
+				req_->prop("cookie") = php::parse_str(';', value_.c_str(), value_.length());
 			}
 			break;
 		case HEADER_VALUE_AFTER_2:

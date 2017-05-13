@@ -11,7 +11,11 @@ flame\run(function() {
 			try{
 				while($req = yield flame\net\http\request::parse($socket)) {
 					$res = flame\net\http\response::build($req);
-
+					// $response 仅支持 Transfer-Encoding: chunked 方式
+					// 请不要改变这一逻辑，例如，不要 不要 做下面的代码：
+					// 
+					// 	$res->header["Content-Length"] = 12;
+					// 	unset($res->header["Transfer-Encoding"]);
 					yield $res->write_header(200);
 					yield $res->end("hello world!");
 				}
