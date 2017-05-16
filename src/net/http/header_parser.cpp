@@ -126,6 +126,8 @@ REPEAT:
 			if(field_ == "cookie") {
 				req_->prop("cookie") = php::parse_str(';', value_.c_str(), value_.length());
 			}
+			field_.clear();
+			value_.clear();
 			break;
 		case HEADER_VALUE_AFTER_2:
 			if(c != '\n') return false;
