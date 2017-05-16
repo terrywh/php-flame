@@ -5,15 +5,26 @@ namespace net {
 	public:
 		static void init(php::extension_entry& extension);
 		tcp_server();
-		php::value __construct(php::parameters& params);
+		~tcp_server();
 		php::value __destruct(php::parameters& params);
 		php::value listen(php::parameters& params);
+		php::value local_addr(php::parameters& params);
+		php::value local_port(php::parameters& params);
 		php::value accept(php::parameters& params);
 		php::value close(php::parameters& params);
 	private:
-		tcp::acceptor     acceptor_;
-		bool              is_ipv6_;
-		bool              listened_;
-		void set_prop_local_addr();
+		struct evconnlistener*   listener_;
+		bool              binded_;
+		// 兼容 v4/v6 地址
+		union {
+			sockaddr     va;
+			sockaddr_in  v4;
+			sockaddr_in6 v6;
+		} local_addr_;
+		php::callable     cb_;
+		evutil_socket_t create_socket(int af);
+		static void error_handler(struct evconnlistener *lis, void *ptr);
+		static void accept_handler(struct evconnlistener *listener,
+			evutil_socket_t fd, struct sockaddr *addr, int len, void *ptr);
 	};
 }

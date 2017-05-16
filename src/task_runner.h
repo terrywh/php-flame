@@ -1,25 +1,30 @@
 #pragma once
-class task_wrapper {
-public:
-	task_wrapper(const std::function<void(php::callable)>& t,const php::callable& d);
-	std::function<void(php::callable)> task;
-	php::callable done;
-	boost::asio::io_service::work work;
+
+struct task_wrapper {
+	event                              ev;
+	php::callable                      fn;
+	php::callable                      cb;
+	php::value                         ex;
+	php::value                         rv;
 };
 class task_runner {
 public:
+	static void init(php::extension_entry& extension);
 	task_runner();
-	void start();
-	void stop_wait();
-	php::value async(const std::function<void(php::callable)>& task);
+	~task_runner();
+	static php::value async(php::parameters& params);
 	inline bool is_master() {
 		return std::this_thread::get_id() != master_id_;
 	}
+	void start();
+	void wait();
+	void stop();
 private:
-	static void run(task_runner* t);
-	std::thread                           thread_;
-	// 目前没有限制任务生产者一定来自主线程，故不能使用 spsc_queue 类型队列
-	boost::lockfree::queue<task_wrapper*> queue_;
-	bool stopped_;
+	static void async_todo(evutil_socket_t fd, short events, void* data);
+	static void async_done(evutil_socket_t fd, short events, void* data);
+	static void run(task_runner* self);
+	event_base*            base_;
+	event*                 ev_;
+	std::thread            worker_;
 	const std::thread::id& master_id_;
 };

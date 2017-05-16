@@ -5,16 +5,11 @@ dl("flame.so");
 // 共计 3 个进程会执行下面代码
 flame\run(function() {
 	$server = new flame\net\udp_server();
-	// 接收来自指定端口的数据
-	try{
-		$server->bind("0.0.0.0", 6676);
-	}catch(Exception $ex) {
-		echo $ex, "\n";
-		exit;
-	}
+	// 绑定接收来自指定端口的数据
+	yield $server->bind("0.0.0.0", 6676);
 	while(true) {
 		$packet = yield $server->read();
-		// remote_addr() / remote_port() 与 local_* 不同，前者为方法，后者为属性
+		// remote_addr() / remote_port()
 	 	echo "from: ", $server->remote_addr(), ":", $server->remote_port(), " => ", $packet, "\n";
 	}
 	// close 动作可选，对象销毁时会自动 close 底层的 socket

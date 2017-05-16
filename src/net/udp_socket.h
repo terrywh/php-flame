@@ -5,23 +5,42 @@ namespace net {
 	public:
 		static void init(php::extension_entry& extension);
 		udp_socket();
-		php::value __construct(php::parameters& params);
+		~udp_socket();
 		php::value __destruct(php::parameters& params);
-		php::value bind(php::parameters& params);
 		php::value connect(php::parameters& params);
 		php::value remote_addr(php::parameters& params);
 		php::value remote_port(php::parameters& params);
+		php::value local_addr(php::parameters& params);
+		php::value local_port(php::parameters& params);
 		php::value close(php::parameters& params);
 		php::value read(php::parameters& params);
-		php::value write_to(php::parameters& params);
+		php::value write2(php::parameters& params);
 		php::value write(php::parameters& params);
-	private:
-		udp::socket     socket_;
-		char            buffer_[64*1024];
-		// 最近一次接收的来源
-		udp::endpoint   remote_;
+
+		php::value bind(php::parameters& params);
+	protected:
+		void create_socket(int af);
+		evutil_socket_t socket_;
+		zend_string*    rbuffer_;
+		zend_string*    wbuffer_;
+		// 兼容 v4/v6 地址
+		union {
+			sockaddr     va;
+			sockaddr_in  v4;
+			sockaddr_in6 v6;
+		} local_addr_;
+		union {
+			sockaddr     va;
+			sockaddr_in  v4;
+			sockaddr_in6 v6;
+		} remote_addr_;
 		bool            connected_;
-		bool            is_ipv6_;
-		void set_prop_local_addr();
+		bool            binded_;
+
+		event           ev_;
+		php::callable   cb_;
+		static void read_handler(evutil_socket_t fd, short events, void* data);
+		static void write_handler(evutil_socket_t fd, short events, void* data);
+		static void write2handler(evutil_socket_t fd, short events, void* data);
 	};
 }

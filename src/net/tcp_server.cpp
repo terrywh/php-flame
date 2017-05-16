@@ -7,90 +7,137 @@
 namespace net {
 
 	void tcp_server::init(php::extension_entry& extension) {
-		php::class_entry<tcp_server> ce_tcp_server("flame\\net\\tcp_server");
-		ce_tcp_server.add<&tcp_server::__construct>("__construct");
-		ce_tcp_server.add<&tcp_server::__destruct>("__destruct");
-		ce_tcp_server.add<&tcp_server::listen>("listen", {
+		php::class_entry<tcp_server> class_tcp_server("flame\\net\\tcp_server");
+		// class_tcp_server.add<&tcp_server::__construct>("__construct");
+		class_tcp_server.add<&tcp_server::__destruct>("__destruct");
+		class_tcp_server.add<&tcp_server::listen>("listen", {
 			php::of_string("addr"),
 			php::of_integer("port"),
 		});
-		ce_tcp_server.add<&tcp_server::accept>("accept");
-		ce_tcp_server.add(php::property_entry("local_addr", nullptr));
-		ce_tcp_server.add(php::property_entry("local_port", nullptr));
-		ce_tcp_server.add<&tcp_server::close>("close");
-		extension.add(std::move(ce_tcp_server));
+		class_tcp_server.add<&tcp_server::accept>("accept");
+		class_tcp_server.add(php::property_entry("local_addr", nullptr));
+		class_tcp_server.add(php::property_entry("local_port", nullptr));
+		class_tcp_server.add<&tcp_server::close>("close");
+		extension.add(std::move(class_tcp_server));
 	}
 	tcp_server::tcp_server()
-	: acceptor_(core::io())
-	, is_ipv6_(true) // 默认按 IPv6
-	, listened_(false) {
+	: listener_(nullptr)
+	, binded_(false) {
 
 	}
-	php::value tcp_server::__construct(php::parameters& params) {
-		boost::system::error_code err;
-		acceptor_.open(tcp::v6(), err); // 优先使用 v6 协议（能够兼容 v4）
-		if(err) {
-			is_ipv6_ = false;
-			acceptor_.open(tcp::v4(), err);
+	tcp_server::~tcp_server() {
+		if(listener_ != nullptr) {
+			evconnlistener_free(listener_);
 		}
-		if(err) {
-			throw php::exception("failed to create: " + err.message(), err.value());
-		}
-		return nullptr;
 	}
-	php::value tcp_server::listen(php::parameters& params) {
-		boost::system::error_code err;
-		std::string addr = params[0].is_null() ? "" : params[0];
-		int port = params[1];
-#ifdef SO_REUSEPORT
-		// 服务端需要启用下面选项，以支持更高性能的多进程形式
-		int opt = 1;
-		if(0 != setsockopt(acceptor_.native_handle(), SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof (opt))) {
-			throw php::exception("failed to bind (SO_REUSEPORT)", errno);
-		}
-#endif
-		acceptor_.bind(tcp::endpoint(addr_from_str(addr, is_ipv6_), port), err);
-		if(err) {
-			throw php::exception("failed to bind: " + err.message(), err.value());
-		}
-		acceptor_.listen();
-		set_prop_local_addr();
-		listened_ = true;
-		return nullptr;
-	}
-	void tcp_server::set_prop_local_addr() {
-		auto ep = acceptor_.local_endpoint();
-		prop("local_addr") = ep.address().to_string();
-		prop("local_port") = ep.port();
-	}
+
 	php::value tcp_server::__destruct(php::parameters& params) {
-		boost::system::error_code err;
-		acceptor_.close(err); // 存在重复关闭的可能，排除错误
+		if(listener_ != nullptr) {
+			evconnlistener_disable(listener_);
+			evutil_closesocket(evconnlistener_get_fd(listener_));
+		}
+		binded_ = false;
 		return nullptr;
 	}
-	php::value tcp_server::accept(php::parameters& params) {
-		if(!listened_) throw php::exception("accept failed: not listened");
-		return php::value([this] (php::parameters& params) -> php::value {
-			php::callable& done = params[0];
 
-			php::object cli = php::object::create<tcp_socket>();
-			tcp_socket* cli_= cli.native<tcp_socket>();
-			acceptor_.async_accept(cli_->socket_, cli_->remote_,
-				[this, done, cli, cli_] (const boost::system::error_code& err) mutable {
-					if(err) {
-						done(core::error_to_exception(err));
-					}else{
-						cli_->connected_ = true;
-						done(nullptr, cli);
-					}
-				});
+	evutil_socket_t tcp_server::create_socket(int af) {
+		evutil_socket_t socket_ = socket(af, SOCK_STREAM, IPPROTO_TCP);
+		if(socket_ < 0) {
+			throw php::exception(
+				(boost::format("create tcp socket failed: %s") % strerror(errno)).str(),
+				errno
+			);
+		}
+		evutil_make_socket_nonblocking(socket_);
+		evutil_make_listen_socket_reuseable(socket_);
+		evutil_make_listen_socket_reuseable_port(socket_);
+		if(af == AF_INET6) {
+			int opt = 0;
+			setsockopt(socket_, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
+		}
+		return socket_;
+	}
+
+	void tcp_server::error_handler(struct evconnlistener *lis, void *ptr) {
+		tcp_server* self = reinterpret_cast<tcp_server*>(ptr);
+		int error = EVUTIL_SOCKET_ERROR();
+		if(self->cb_.is_empty()) {
+			throw php::exception(
+				(boost::format("accept failed: %s") % evutil_socket_error_to_string(error)).str(),
+				error);
+		}else{
+			// callback 调用逻辑请参考 tcp_socket 相关说明
+			php::callable cb = std::move(self->cb_);
+			cb(core::make_exception(
+				boost::format("accept failed: %s") % evutil_socket_error_to_string(error),
+				error
+			));
+		}
+	}
+
+	php::value tcp_server::listen(php::parameters& params) {
+		int len = sizeof(local_addr_);
+		zend_string* addr = params[0];
+		parse_addr_port(
+			addr->val, static_cast<int>(params[1]),
+			reinterpret_cast<struct sockaddr*>(&local_addr_), &len
+		);
+		evutil_socket_t socket_ = create_socket(local_addr_.va.sa_family);
+		if(::bind(socket_,
+			reinterpret_cast<struct sockaddr*>(&local_addr_),
+			sizeof(local_addr_)) != 0) {
+			throw php::exception(
+				(boost::format("bind failed: %s") % strerror(errno)).str(), errno);
+		}
+		binded_ = true;
+		listener_ = evconnlistener_new(core::base, tcp_server::accept_handler, this,
+			LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | LEV_OPT_DISABLED, 1024, socket_);
+		evconnlistener_set_error_cb(listener_, tcp_server::error_handler);
+		return nullptr;
+	}
+
+	php::value tcp_server::local_addr(php::parameters& params) {
+		php::string str(64);
+		parse_addr(local_addr_.va.sa_family, reinterpret_cast<struct sockaddr*>(&local_addr_), str.data(), str.length());
+		return std::move(str);
+	}
+
+	php::value tcp_server::local_port(php::parameters& params) {
+		return ntohs(local_addr_.v4.sin_port); // v4 和 v6 sin_port 位置重合
+	}
+
+	php::value tcp_server::accept(php::parameters& params) {
+		if(!binded_) throw php::exception("accept failed: not listened");
+
+		return php::value([this] (php::parameters& params) -> php::value {
+			cb_ = params[0];
+			evconnlistener_enable(listener_);
 			return nullptr;
 		});
 	}
+
+	void tcp_server::accept_handler(struct evconnlistener *listener, evutil_socket_t fd, struct sockaddr *addr, int size_of_addr, void *ptr) {
+		php::object cli_= php::object::create<tcp_socket>();
+		tcp_socket* cli = cli_.native<tcp_socket>();
+		cli->socket_ = bufferevent_socket_new(core::base, fd, BEV_OPT_CLOSE_ON_FREE);
+		bufferevent_setcb(cli->socket_, tcp_socket::read_handler,
+			tcp_socket::write_handler, tcp_socket::event_handler, cli);
+		cli->connected_ = true;
+		// 远端地址的处理
+		std::memcpy(&cli->remote_addr_, addr, size_of_addr);
+
+		tcp_server* self = reinterpret_cast<tcp_server*>(ptr);
+		// cb 调用方式请参考 tcp_socket 中相关说明
+		php::callable cb = std::move(self->cb_);
+		cb(nullptr, std::move(cli_));
+	}
+
 	php::value tcp_server::close(php::parameters& params) {
-		boost::system::error_code err;
-		acceptor_.close(err); // 存在重复关闭的可能，排除错误
-		listened_ = false;
+		if(listener_ != nullptr) {
+			evconnlistener_disable(listener_);
+			evutil_closesocket(evconnlistener_get_fd(listener_));
+		}
+		binded_ = false;
 		return nullptr;
 	}
 }

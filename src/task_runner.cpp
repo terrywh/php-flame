@@ -2,74 +2,70 @@
 #include "core.h"
 #include "task_runner.h"
 
-task_wrapper::task_wrapper(const std::function<void(php::callable)>& t, const php::callable& d)
-: task(t)
-, done(d)
-, work(core::io()) {
-
+void task_runner::init(php::extension_entry& extension) {
+	extension.add<task_runner::async>("flame\\async");
 }
 
 task_runner::task_runner()
-: stopped_(false)
-, queue_(64)
+: base_(event_base_new())
+, ev_(event_new(base_, -1, EV_READ, [] (evutil_socket_t fd, short events, void* data) {}, nullptr))
 , master_id_(std::this_thread::get_id()) {
-
-}
-void task_runner::run(task_runner* self) {
-	task_wrapper* tr = nullptr;
-NEXT_TASK:
-	if(!self->queue_.pop(tr)) {
-		if(self->stopped_) {
-			return;
-		}
-		// 这个等待时间可能会导致在线程内执行的动作额外延迟，故不能过大
-		std::this_thread::sleep_for(std::chrono::microseconds(500));
-		goto NEXT_TASK;
-	}
-	tr->task(php::value([tr] (php::parameters& params) mutable -> php::value {
-		// 对 tr->done 的调用过程需要恢复到 io_service 主线程
-		if(params.length() > 1) {
-			php::value ex = params[0], rv = params[1];
-			core::io().post([tr, ex, rv] () mutable {
-				tr->done(ex, rv);
-				delete tr;
-			});
-		}else if(params.length() > 0) {
-			php::value ex = params[0];
-			core::io().post([tr, ex] () mutable {
-				tr->done(ex);
-				delete tr;
-			});
-		}else{
-			core::io().post([tr] () mutable {
-				tr->done();
-				delete tr;
-			});
-		}
-		return nullptr;
-	}));
-	// !!! 这里有个潜藏的问题，用户有可能不掉用上面定义的回调函数，程序就暂停了
-	// !!! 会导致“间接”内存泄漏（tr 没有回收）
-	if(!self->stopped_) {
-		goto NEXT_TASK;
-	}
-}
-void task_runner::start() {
-	std::thread r(run, this);
-	thread_ = std::move(r);
-}
-void task_runner::stop_wait() {
-	stopped_ = true;
-	if(thread_.joinable()) thread_.join();
+	event_add(ev_, nullptr);
 }
 
-php::value task_runner::async(const std::function<void( php::callable )>& task) {
-	if(!is_master()) throw php::exception("async operations can only be arranged in main thread");
-	return php::value([this, task] (php::parameters& params) mutable -> php::value {
-		php::callable& done = params[0];
-		// TODO 启用 task_wrapper 的内存池，减少频繁消耗
-		queue_.push(new task_wrapper(task, done));
+task_runner::~task_runner() {
+	event_free(ev_);
+	event_base_free(base_);
+}
+static int i = 0;
+php::value task_runner::async(php::parameters& params) {
+	// TODO 禁止从 worker 线程再次 async 异步操作
+	task_wrapper* tw = new task_wrapper;
+	event_assign(&tw->ev, core::task->base_, -1, EV_READ, async_todo, tw);
+	tw->fn = params[0];
+	event_add(&tw->ev, nullptr);
+	return php::value([tw] (php::parameters& params) mutable -> php::value {
+		tw->cb = params[0];
+		event_active(&tw->ev, EV_WRITE, 0);
 		return nullptr;
 	});
 
+}
+
+void task_runner::async_todo(evutil_socket_t fd, short events, void* data) {
+	task_wrapper* tw = reinterpret_cast<task_wrapper*>(data);
+	event_assign(&tw->ev, core::base, -1, EV_READ, task_runner::async_done, tw);
+	event_add(&tw->ev, nullptr);
+	tw->fn(php::value([tw] (php::parameters& params) mutable -> php::value {
+		if(params.length() > 1) {
+			tw->ex = params[0];
+			tw->rv = params[1];
+		}else if(params.length() > 0) {
+			tw->ex = params[0];
+		}
+		event_active(&tw->ev, EV_WRITE, 0);
+		return nullptr;
+	}));
+}
+
+void task_runner::async_done(evutil_socket_t fd, short events, void* data) {
+	task_wrapper* tw = reinterpret_cast<task_wrapper*>(data);
+	tw->cb(tw->ex, tw->rv);
+	// event_free(tw->ev);
+	delete tw;
+}
+void task_runner::start() {
+	std::thread r(run, this);
+	worker_ = std::move(r);
+}
+void task_runner::run(task_runner* self) {
+	event_base_dispatch(self->base_);
+}
+void task_runner::wait() {
+	event_active(ev_, EV_READ, 0);
+	worker_.join();
+}
+void task_runner::stop() {
+	event_base_loopbreak(base_);
+	worker_.join();
 }
