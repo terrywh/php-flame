@@ -22,7 +22,6 @@ namespace net {
 			sockaddr_in6 v6;
 		} local_addr_;
 		php::callable     cb_;
-		evutil_socket_t create_socket(int af);
 		static void error_handler(struct evconnlistener *lis, void *ptr);
 		static void accept_handler(struct evconnlistener *listener,
 			evutil_socket_t fd, struct sockaddr *addr, int len, void *ptr);

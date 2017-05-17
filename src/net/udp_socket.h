@@ -19,7 +19,6 @@ namespace net {
 
 		php::value bind(php::parameters& params);
 	protected:
-		void create_socket(int af);
 		evutil_socket_t socket_;
 		zend_string*    rbuffer_;
 		zend_string*    wbuffer_;

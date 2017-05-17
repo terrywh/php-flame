@@ -29,7 +29,7 @@ ${EXTENSION}: ${OBJECTS} ${ROOT_TERRYWH}/libphpext/libphpext.a
 	${CXX} -std=c++11 -fPIC -DEXTENSION_NAME=\"${EXTENSION_NAME}\" -DEXTENSION_VERSION=\"${EXTENSION_VERSION}\" ${CXXFLAGS} ${INCLUDE} -c $^ -o $@
 
 clean:
-	rm -f ${EXTENSION} ${OBJECTS}
+	rm -f ${EXTENSION} ${OBJECTS} $(shell find ./src -name "*.o")
 install: ${EXTENSION}
 	cp -f ${EXTENSION} `${PHP_CONFIG} --extension-dir`
 

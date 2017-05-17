@@ -4,13 +4,16 @@
 #include "udp_socket.h"
 #include "tcp_socket.h"
 #include "tcp_server.h"
+#include "http/init.h"
 
 namespace net {
 	void init(php::extension_entry& extension) {
 		udp_socket::init(extension);
 		tcp_socket::init(extension);
 		tcp_server::init(extension);
+		http::init(extension);
 	}
+
 	void parse_addr_port(const char* address, int port, struct sockaddr* addr, int *size_of_addr) {
 		char buffer[64];
 		if(std::strstr(address, ":") != nullptr) { // IPv6
@@ -18,12 +21,13 @@ namespace net {
 		}else if(std::strlen(address) > 0) { // IPv4
 			sprintf(buffer, "%s:%d", address, port);
 		}else{ // 默认按 IPv6 兼容 IPv4 地址
-			sprintf(buffer, "[::1]:%d", port);
+			sprintf(buffer, "[::]:%d", port);
 		}
 		if(-1 == evutil_parse_sockaddr_port(buffer, addr, size_of_addr)) {
 			throw php::exception("parse failed: illegal address");
 		}
 	}
+
 	void parse_addr(int af, struct sockaddr* addr, char* dst, size_t& len) {
 		if(af == AF_INET) {
 			sockaddr_in* r = (sockaddr_in*)addr;
@@ -37,18 +41,34 @@ namespace net {
 			assert(0);
 		}
 	}
+
 	void parse_mili(int mili, struct timeval* to) {
 		to->tv_sec = mili / 1000;
 		to->tv_usec = mili * 1000 % 1000000;
 	}
-	void server_socket_reusable(evutil_socket_t fd) {
-#ifdef SO_REUSEPORT
-		// 服务端需要启用下面选项，以支持更高性能的多进程形式
-		int opt = 1;
-		if(0 != setsockopt(fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof (opt))) {
+
+	evutil_socket_t create_socket(int af, int type, int proto, bool svr) {
+		evutil_socket_t socket_ = socket(af, type, proto);
+		if(socket_ < 0) {
 			throw php::exception(
-				(boost::format("bind failed: %s") % strerror(errno)).str(), errno);
+				(boost::format("create socket failed: %s") % strerror(errno)).str(),
+				errno
+			);
 		}
-#endif
+		evutil_make_socket_nonblocking(socket_);
+		if(svr) {
+			evutil_make_listen_socket_reuseable(socket_);
+			evutil_make_listen_socket_reuseable_port(socket_);
+		}
+		if(af == AF_INET6) {
+			int opt = 0;
+			if(-1 == setsockopt(socket_, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt))) {
+				throw php::exception(
+					(boost::format("create socket failed: %s") % strerror(errno)).str(),
+					errno
+				);
+			}
+		}
+		return socket_;
 	}
 }

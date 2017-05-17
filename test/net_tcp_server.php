@@ -3,7 +3,7 @@ dl("flame.so");
 
 flame\run(function() {
 	$server = new flame\net\tcp_server();
-	$server->listen("", 6676);
+	$server->listen("::", 6676);
 	while(true) {
 		$socket = yield $server->accept();
 		// 启动“协程”，不阻塞 accept 过程

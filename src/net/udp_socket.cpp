@@ -60,16 +60,6 @@ namespace net {
 			zend_string_release(rbuffer_);
 		}
 	}
-	void udp_socket::create_socket(int af) {
-		socket_ = socket(af, SOCK_DGRAM, IPPROTO_UDP);
-		if(socket_ < 0) {
-			throw php::exception(
-				(boost::format("create udp socket failed: %s") % strerror(errno)).str(),
-				errno
-			);
-		}
-		evutil_make_socket_nonblocking(socket_);
-	}
 
 	php::value udp_socket::bind(php::parameters& params) {
 		int len = sizeof(local_addr_);
@@ -78,9 +68,7 @@ namespace net {
 			addr->val, static_cast<int>(params[1]),
 			reinterpret_cast<struct sockaddr*>(&local_addr_), &len
 		);
-		create_socket(local_addr_.va.sa_family);
-		evutil_make_listen_socket_reuseable(socket_);
-		evutil_make_listen_socket_reuseable_port(socket_);
+		socket_ = create_socket(local_addr_.va.sa_family, SOCK_DGRAM, IPPROTO_UDP, true);
 		if(::bind(socket_,
 			reinterpret_cast<struct sockaddr*>(&local_addr_),
 			sizeof(local_addr_)) != 0) {
@@ -98,7 +86,7 @@ namespace net {
 			addr->val, static_cast<int>(params[1]),
 			reinterpret_cast<struct sockaddr*>(&remote_addr_), (int*)&rlen
 		);
-		create_socket(remote_addr_.va.sa_family);
+		socket_ = create_socket(remote_addr_.va.sa_family, SOCK_DGRAM, IPPROTO_UDP, false);
 		// TODO 使用 dns_base 解析域名后再进行 “连接”
 		if(-1 == ::connect(socket_,
 			reinterpret_cast<struct sockaddr*>(&remote_addr_), sizeof(remote_addr_))) {
@@ -153,9 +141,14 @@ namespace net {
 		udp_socket* self = reinterpret_cast<udp_socket*>(data);
 		if(events & EV_READ) {
 			socklen_t len = sizeof(self->remote_addr_);
-			self->rbuffer_->len = recvfrom(
-				fd, self->rbuffer_->val, UDP_SOCKET_RBUFFER_SIZE,
-				0, reinterpret_cast<struct sockaddr*>(&self->remote_addr_), &len);
+			if(self->connected_) {
+				self->rbuffer_->len = recv( fd, self->rbuffer_->val,
+					UDP_SOCKET_RBUFFER_SIZE, 0);
+			}else if(self->binded_) {
+				self->rbuffer_->len = recvfrom(
+					fd, self->rbuffer_->val, UDP_SOCKET_RBUFFER_SIZE,
+					0, reinterpret_cast<struct sockaddr*>(&self->remote_addr_), &len);
+			}
 			php::callable cb = std::move(self->cb_);
 			if(self->rbuffer_->len < 0) {
 				cb(core::make_exception(
@@ -200,13 +193,17 @@ namespace net {
 
 	void udp_socket::write_handler(evutil_socket_t socket_, short events, void* data) {
 		udp_socket* self = reinterpret_cast<udp_socket*>(data);
-		if(events & EV_WRITE) {
+		if(self->wbuffer_ == nullptr) {
+			php::callable cb = std::move(self->cb_);
+			cb(nullptr, true);
+		}else{
 			ssize_t n = ::send(
 				socket_, self->wbuffer_->val, self->wbuffer_->len, MSG_NOSIGNAL);
-			php::callable cb = std::move(self->cb_);
 			if(n > 0) {
-				cb(nullptr, n);
+				self->wbuffer_ = nullptr;
+				event_add(&self->ev_, nullptr); // 等待缓冲数据发送完成
 			}else{
+				php::callable cb = std::move(self->cb_);
 				cb(core::make_exception(
 					boost::format("write failed: %s") % strerror(errno),
 					errno));

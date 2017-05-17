@@ -34,14 +34,12 @@ void core::init(php::extension_entry& extension) {
 	});
 }
 
-static bool core_forked  = false;
-static bool core_started = false;
-struct core_event_wrapper {
+struct core_generator_wrapper {
 	php::generator  gn;
 	event           ev;
 };
 // 核心调度逻辑
-static bool generator_runner_continue(core_event_wrapper* ew) {
+static bool generator_continue(core_generator_wrapper* ew) {
 	if(EG(exception) != nullptr) {
 		--core::count;
 		delete ew;
@@ -51,15 +49,17 @@ static bool generator_runner_continue(core_event_wrapper* ew) {
 		delete ew;
 		--core::count;
 		if(core::count == 0) {
-			event_base_loopexit(core::base, nullptr);
+			event_base_loopbreak(core::base);
 		}
 		return false;
+	}else{
+		event_active(&ew->ev, EV_READ, 0);
+		return true;
 	}
-	return true;
 }
 // 核心运行逻辑
-static void generator_runner_callback(evutil_socket_t fd, short events, void* data) {
-	core_event_wrapper* ew = reinterpret_cast<core_event_wrapper*>(data);
+static void generator_callback(evutil_socket_t fd, short events, void* data) {
+	core_generator_wrapper* ew = reinterpret_cast<core_generator_wrapper*>(data);
 	php::value v = ew->gn.current();
 	if(v.is_callable()) {
 		// 传入的 函数 用于将异步执行结果回馈到 "协程" 中
@@ -78,71 +78,73 @@ static void generator_runner_callback(evutil_socket_t fd, short events, void* da
 			}else{ // 其他错误信息
 				ew->gn.throw_exception(params[0], 0);
 			}
-			if(generator_runner_continue(ew)) {
-				event_active(&ew->ev, EV_READ, 0);
-			}
+			generator_continue(ew);
 			return nullptr;
 		}));
 	}else{
 		ew->gn.send(v);
-		if(generator_runner_continue(ew)) {
-			event_active(&ew->ev, EV_READ, 0);
-		}
+		generator_continue(ew);
 	}
 }
 // 所谓“协程”
-php::value core::go(php::parameters& params) {
-	if(!core_started) throw php::exception("failed to start coroutine: core not running");
-	php::value r;
-	if(params[0].is_callable()) {
-		r = static_cast<php::callable&>(params[0])();
-	}else{
-		r = params[0];
-	}
+php::value core::generator_start(const php::value& r) {
 	if(r.is_generator()) {
-		core_event_wrapper* ew = new core_event_wrapper;
-		event_assign(&ew->ev, core::base, -1, EV_READ, generator_runner_callback, ew);
+		core_generator_wrapper* ew = new core_generator_wrapper;
+		event_assign(&ew->ev, core::base, -1, EV_READ, generator_callback, ew);
 		ew->gn = r;
 		event_add(&ew->ev, nullptr);
 		event_active(&ew->ev, EV_READ, 0);
 		++core::count;
 		return nullptr;
 	}else{
-		return std::move(r);
+		if(core::count == 0) {
+			event_base_loopbreak(core::base);
+		}
+		return r;
+	}
+}
+static bool core_forked  = false;
+static bool core_started = false;
+
+php::value core::go(php::parameters& params) {
+	if(!core_started) throw php::exception("failed to start coroutine: core not running");
+	if(params[0].is_callable()) {
+		return generator_start(static_cast<php::callable>(params[0]).invoke());
+	}else{
+		return generator_start(params[0]);
 	}
 }
 // 程序启动
 php::value core::run(php::parameters& params) {
+	if(params.length() == 0) {
+		throw php::exception("run failed: callable or generator is required");
+	}
 	core_started = true;
 	core::task->start();
 	core::keep->start();
-	if(params.length() > 0) {
-		go(params);
+	core::go(params);
+	if(core::count > 0) {
+		event_base_dispatch(core::base);
 	}
-	event_base_dispatch(core::base);
-	if(event_base_got_break(core::base)) {
-		core::task->stop();
-	}else{
-		core::task->wait();
-	}
+	core::task->wait();
 	core::keep->stop();
 	return nullptr;
 }
 
-struct timer_wrapper {
+struct core_timer_wrapper {
 	struct timeval to;
 	event          ev;
 	php::callable  cb;
 };
 php::value core::sleep(php::parameters& params) {
 	int duration = params[0];
-	timer_wrapper* tw = new timer_wrapper;
+	core_timer_wrapper* tw = new core_timer_wrapper;
 	tw->to = (struct timeval) {
 		duration / 1000,
 		duration * 1000 % 1000000
 	};
 	event_assign(&tw->ev, core::base, -1, 0, [] (evutil_socket_t fd, short events, void* data) {
-		auto tw = reinterpret_cast<timer_wrapper*>(data);
+		auto tw = reinterpret_cast<core_timer_wrapper*>(data);
 		tw->cb();
 		delete tw;
 	}, tw);

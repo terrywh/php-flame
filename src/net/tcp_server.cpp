@@ -40,24 +40,6 @@ namespace net {
 		return nullptr;
 	}
 
-	evutil_socket_t tcp_server::create_socket(int af) {
-		evutil_socket_t socket_ = socket(af, SOCK_STREAM, IPPROTO_TCP);
-		if(socket_ < 0) {
-			throw php::exception(
-				(boost::format("create tcp socket failed: %s") % strerror(errno)).str(),
-				errno
-			);
-		}
-		evutil_make_socket_nonblocking(socket_);
-		evutil_make_listen_socket_reuseable(socket_);
-		evutil_make_listen_socket_reuseable_port(socket_);
-		if(af == AF_INET6) {
-			int opt = 0;
-			setsockopt(socket_, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
-		}
-		return socket_;
-	}
-
 	void tcp_server::error_handler(struct evconnlistener *lis, void *ptr) {
 		tcp_server* self = reinterpret_cast<tcp_server*>(ptr);
 		int error = EVUTIL_SOCKET_ERROR();
@@ -82,7 +64,7 @@ namespace net {
 			addr->val, static_cast<int>(params[1]),
 			reinterpret_cast<struct sockaddr*>(&local_addr_), &len
 		);
-		evutil_socket_t socket_ = create_socket(local_addr_.va.sa_family);
+		evutil_socket_t socket_ = create_socket(local_addr_.va.sa_family, SOCK_STREAM, IPPROTO_TCP, true);
 		if(::bind(socket_,
 			reinterpret_cast<struct sockaddr*>(&local_addr_),
 			sizeof(local_addr_)) != 0) {

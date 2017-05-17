@@ -2,9 +2,8 @@
 dl("flame.so");
 
 flame\run(function() {
-	echo "before create", "\n";
 	$socket = new flame\net\tcp_socket();
-	echo "before connect", "\n";
+	echo "socket created\n";
 	yield $socket->connect("127.0.0.1", 6676);
 	echo "local_addr: ", $socket->local_addr(), ":", $socket->local_port(), "\n";
 	while(true) {
