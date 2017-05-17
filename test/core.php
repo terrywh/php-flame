@@ -9,12 +9,12 @@ flame\run(function() {
 	// “协程” 允许使用以下两种形式：
 	// 1. 带有 yield 形式的函数定义（调用后会返回 Generator 对象）;
 	// 2. Generator 对象；
-	// flame\go(test2);
+	flame\go(test2);
 	flame\go(test3());
 });
 
 function test1() {
-	for($i=0;$i<1;++$i) {
+	for($i=0;$i<10;++$i) {
 		// 需要使用 yield 形式调用 flame 提供的 sleep 函数，以此来实现 “调度式阻塞” 并行逻辑
 		yield flame\sleep(100);
 		echo "[1] " . time() . " -> " . $i . "\n";

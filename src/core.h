@@ -10,6 +10,7 @@ public:
 	static task_runner* task;
 	static evdns_base*  base_dns;
 	static keeper*      keep;
+	static std::size_t  count;
 	static void init(php::extension_entry& extension);
 	static void stop();
 	static php::value make_exception(const boost::format& message, int code = 0) {

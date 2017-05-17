@@ -6,48 +6,48 @@
 namespace net {
 #define UDP_SOCKET_RBUFFER_SIZE 64 * 1024
 	void udp_socket::init(php::extension_entry& extension) {
-		php::class_entry<udp_socket> ce_udp_socket("flame\\net\\udp_socket");
-		ce_udp_socket.add<&udp_socket::__destruct>("__destruct");
-		ce_udp_socket.add<&udp_socket::connect>("connect", {
+		php::class_entry<udp_socket> class_udp_socket("flame\\net\\udp_socket");
+		class_udp_socket.add<&udp_socket::__destruct>("__destruct");
+		class_udp_socket.add<&udp_socket::connect>("connect", {
 			php::of_string("addr"),
 			php::of_integer("port"),
 		});
-		// ce_udp_server 不提供 connect 方法
-		ce_udp_socket.add<&udp_socket::remote_addr>("remote_addr");
-		ce_udp_socket.add<&udp_socket::remote_port>("remote_port");
-		ce_udp_socket.add<&udp_socket::remote_addr>("local_addr");
-		ce_udp_socket.add<&udp_socket::remote_port>("local_port");
-		ce_udp_socket.add<&udp_socket::read>("read");
-		ce_udp_socket.add<&udp_socket::write>("write", {
+		// class_udp_server 不提供 connect 方法
+		class_udp_socket.add<&udp_socket::remote_addr>("remote_addr");
+		class_udp_socket.add<&udp_socket::remote_port>("remote_port");
+		class_udp_socket.add<&udp_socket::local_addr>("local_addr");
+		class_udp_socket.add<&udp_socket::local_port>("local_port");
+		class_udp_socket.add<&udp_socket::read>("read");
+		class_udp_socket.add<&udp_socket::write>("write", {
 			php::of_string("data"),
 		});
-		ce_udp_socket.add<&udp_socket::write2>("write2", {
+		class_udp_socket.add<&udp_socket::write2>("write2", {
 			php::of_string("data"),
 			php::of_string("addr"),
 			php::of_integer("port"),
 		});
-		ce_udp_socket.add<&udp_socket::close>("close");
-		extension.add(std::move(ce_udp_socket));
+		class_udp_socket.add<&udp_socket::close>("close");
+		extension.add(std::move(class_udp_socket));
 
-		php::class_entry<udp_socket> ce_udp_server("flame\\net\\udp_server");
-		ce_udp_server.add<&udp_socket::__destruct>("__destruct");
-		ce_udp_server.add<&udp_socket::bind>("bind", {
+		php::class_entry<udp_socket> class_udp_server("flame\\net\\udp_server");
+		class_udp_server.add<&udp_socket::__destruct>("__destruct");
+		class_udp_server.add<&udp_socket::bind>("bind", {
 			php::of_string("addr"),
 			php::of_integer("port"),
 		});
-		// ce_udp_server 不提供 connect 方法
-		ce_udp_server.add<&udp_socket::remote_addr>("remote_addr");
-		ce_udp_server.add<&udp_socket::remote_port>("remote_port");
-		ce_udp_server.add<&udp_socket::local_addr>("local_addr");
-		ce_udp_server.add<&udp_socket::local_port>("local_port");
-		ce_udp_server.add<&udp_socket::read>("read");
-		ce_udp_server.add<&udp_socket::write2>("write2", {
+		// class_udp_server 不提供 connect 方法
+		class_udp_server.add<&udp_socket::remote_addr>("remote_addr");
+		class_udp_server.add<&udp_socket::remote_port>("remote_port");
+		class_udp_server.add<&udp_socket::local_addr>("local_addr");
+		class_udp_server.add<&udp_socket::local_port>("local_port");
+		class_udp_server.add<&udp_socket::read>("read");
+		class_udp_server.add<&udp_socket::write2>("write2", {
 			php::of_string("data"),
 			php::of_string("addr"),
 			php::of_integer("port"),
 		});
-		ce_udp_server.add<&udp_socket::close>("close");
-		extension.add(std::move(ce_udp_server));
+		class_udp_server.add<&udp_socket::close>("close");
+		extension.add(std::move(class_udp_server));
 	}
 
 	udp_socket::udp_socket()

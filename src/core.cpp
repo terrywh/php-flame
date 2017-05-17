@@ -7,6 +7,7 @@ event_base*  core::base = nullptr;
 task_runner* core::task = nullptr;
 evdns_base*  core::base_dns = nullptr;
 keeper*      core::keep = nullptr;
+std::size_t core::count = 0;
 
 void core::init(php::extension_entry& extension) {
 	extension.add<core::go>("flame\\go");
@@ -24,9 +25,7 @@ void core::init(php::extension_entry& extension) {
 	});
 	extension.on_module_shutdown([] (php::extension_entry& extension) -> bool {
 		// 销毁 core
-		if(core::base_dns != nullptr) { // 由于 base_dns 会使 core::base 一直存活，可能会被提前销毁
-			evdns_base_free(core::base_dns, 1);
-		}
+		evdns_base_free(core::base_dns, 1);
 		event_base_free(core::base);
 		delete core::task;
 		delete core::keep;
@@ -44,14 +43,15 @@ struct core_event_wrapper {
 // 核心调度逻辑
 static bool generator_runner_continue(core_event_wrapper* ew) {
 	if(EG(exception) != nullptr) {
+		--core::count;
+		delete ew;
 		event_base_loopbreak(core::base);
 		return false;
 	}else if(!ew->gn.valid()) {
 		delete ew;
-		if(event_base_get_num_events(core::base, EVENT_BASE_COUNT_ADDED) == 2) {
-			core::keep->stop();
-			evdns_base_free(core::base_dns, 0);
-			core::base_dns = nullptr;
+		--core::count;
+		if(core::count == 0) {
+			event_base_loopexit(core::base, nullptr);
 		}
 		return false;
 	}
@@ -105,6 +105,7 @@ php::value core::go(php::parameters& params) {
 		ew->gn = r;
 		event_add(&ew->ev, nullptr);
 		event_active(&ew->ev, EV_READ, 0);
+		++core::count;
 		return nullptr;
 	}else{
 		return std::move(r);
@@ -124,7 +125,7 @@ php::value core::run(php::parameters& params) {
 	}else{
 		core::task->wait();
 	}
-	// !!! 若 keep 还未 stop 程序不会走到这里
+	core::keep->stop();
 	return nullptr;
 }
 
