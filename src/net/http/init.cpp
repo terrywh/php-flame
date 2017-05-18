@@ -1,8 +1,9 @@
 #include "../../vendor.h"
 #include "init.h"
 #include "server.h"
-#include "request.h"
-#include "response.h"
+#include "server_request.h"
+#include "server_response.h"
+#include "header.h"
 
 namespace net { namespace http {
 	evbuffer*  REPLY_NOT_FOUND  = nullptr;
@@ -13,7 +14,8 @@ namespace net { namespace http {
 		evbuffer_add(REPLY_NOT_FOUND, "page not found", 14);
 
 		server::init(extension);
-		request::init(extension);
-		response::init(extension);
+		server_request::init(extension);
+		server_response::init(extension);
+		header::init(extension);
 	}
 }}

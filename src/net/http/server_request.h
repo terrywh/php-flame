@@ -5,6 +5,8 @@ namespace net { namespace http {
 	class server_request: public php::class_base {
 	public:
 		static void init(php::extension_entry& extension);
+		void init(evhttp_request* evreq);
+		php::value body(php::parameters& params);
 		friend class server;
 	private:
 		struct evhttp_request* req_;

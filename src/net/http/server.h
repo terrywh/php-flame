@@ -6,14 +6,14 @@ namespace net { namespace http {
 		static void init(php::extension_entry& extension);
 		server();
 		~server();
+		php::value __destruct(php::parameters& params);
 		php::value listen_and_serve(php::parameters& params);
 		php::value local_addr(php::parameters& params);
 		php::value local_port(php::parameters& params);
 		php::value handle(php::parameters& params);
 		php::value close(php::parameters& params);
 	private:
-		static evbuffer*  reply_not_found;
-		static evbuffer*  reply_internal_error;
+
 		static void request_handler(struct evhttp_request* req, void* ctx);
 		static void error_handler(struct evconnlistener *lis, void *ptr);
 		// 兼容 v4/v6 地址
