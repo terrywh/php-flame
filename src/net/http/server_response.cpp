@@ -20,6 +20,7 @@ namespace net { namespace http {
 		class_server_response.add(php::property_entry("header", nullptr));
 		extension.add(std::move(class_server_response));
 	}
+	
 	void server_response::init(evhttp_request* evreq) {
 		req_ = evreq;
 		evhttp_request_set_on_complete_cb(req_, server_response::complete_handler, this);
