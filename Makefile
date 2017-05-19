@@ -24,7 +24,7 @@ EXTENSION=${EXTENSION_NAME}.so
 .PHONY: install clean
 
 ${EXTENSION}: ${OBJECTS} ${ROOT_TERRYWH}/libphpext/libphpext.a
-	${CXX} -shared ${OBJECTS} ${LIBRARY} -Wl,-rpath='$$ORIGIN/' -Wl,-rpath='/usr/local/gcc6/lib64/' -o ${EXTENSION_NAME}.so
+	${CXX} -shared ${OBJECTS} ${LIBRARY} -Wl,-rpath='$$ORIGIN/' -Wl,-rpath='/usr/local/gcc6/lib64/' -u get_module -o ${EXTENSION_NAME}.so
 %.o: %.cpp
 	${CXX} -std=c++11 -fPIC -DEXTENSION_NAME=\"${EXTENSION_NAME}\" -DEXTENSION_VERSION=\"${EXTENSION_VERSION}\" ${CXXFLAGS} ${INCLUDE} -c $^ -o $@
 
