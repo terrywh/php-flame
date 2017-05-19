@@ -1,128 +1,76 @@
 #include "../../vendor.h"
-#include "../../core.h"
-#include "../../net/tcp_socket.h"
 #include "server_request.h"
-#include "header_parser.h"
+#include "header.h"
 
 namespace net { namespace http {
-
 	void server_request::init(php::extension_entry& extension) {
-		extension.add<server_request::parse>("flame\\net\\http\\parse", {
-			php::of_object("socket", "flame\\net\\tcp_socket")
-		});
-		php::class_entry<server_request> net_http_request("flame\\net\\http\\server_request");
-		net_http_request.add(php::property_entry("version", "HTTP/1.1"));
-		net_http_request.add(php::property_entry("method", "GET"));
-		net_http_request.add(php::property_entry("path", "/"));
-		net_http_request.add(php::property_entry("get", nullptr));
-		net_http_request.add(php::property_entry("header", nullptr));
-		net_http_request.add(php::property_entry("cookie", nullptr));
-		net_http_request.add(php::property_entry("post", nullptr));
-		net_http_request.add<&server_request::body>("body");
-		extension.add(std::move(net_http_request));
-		return ;
+		php::class_entry<server_request> class_server_request("flame\\http\\server_request");
+		class_server_request.add(php::property_entry("method",      ""));
+		class_server_request.add(php::property_entry("path",        ""));
+		class_server_request.add(php::property_entry("get",    nullptr));
+		class_server_request.add(php::property_entry("header", nullptr));
+		class_server_request.add(php::property_entry("cookie", nullptr));
+		class_server_request.add(php::property_entry("body",        ""));
+		class_server_request.add(php::property_entry("post",   nullptr));
+		extension.add(std::move(class_server_request));
 	}
-
-	php::value server_request::parse(php::parameters& params) {
-		php::object& tcp_socket = params[0];
-		if(!tcp_socket.is_instance_of<net::tcp_socket>()) {
-			throw php::exception("failed to parse request: object of flame\\net\\tcp_socket expected");
+	static php::string command2method(evhttp_cmd_type cmd) {
+		switch(cmd) {
+			case EVHTTP_REQ_GET:
+				return php::string("GET", 3);
+			case EVHTTP_REQ_POST:
+				return php::string("POST", 4);
+			case EVHTTP_REQ_HEAD:
+				return php::string("HEAD", 4);
+			case EVHTTP_REQ_PUT:
+				return php::string("PUT", 3);
+			case EVHTTP_REQ_DELETE:
+				return php::string("DELETE", 6);
+			case EVHTTP_REQ_OPTIONS:
+				return php::string("OPTIONS", 7);
+			case EVHTTP_REQ_TRACE:
+				return php::string("TRACE", 5);
+			case EVHTTP_REQ_CONNECT:
+				return php::string("CONNECT", 7);
+			case EVHTTP_REQ_PATCH:
+				return php::string("PATCH", 5);
 		}
-
-		php::object     req_= php::object::create<server_request>();
-		server_request* req = req_.native<server_request>();
-		req->socket_ = &tcp_socket.native<net::tcp_socket>()->socket_;
-		// 异步流程
-		return php::value([req_, req](php::parameters& params) mutable -> php::value {
-			php::callable& done = params[0];
-			req->read_head(req_, done);
-			return nullptr;
-		});
 	}
-
-	void server_request::read_head(php::object& req, php::callable& done) {
-		boost::asio::async_read_until(*socket_, buffer_, "\r\n\r\n",
-			[this, req, done] (const boost::system::error_code err, std::size_t n) mutable {
-				if(err == boost::asio::error::eof) {
-					// 未接到请求，客户端关闭了连接
-					done(nullptr, nullptr);
-				} else if(err) {
-					done(core::error_to_exception(err));
-				} else {
-					php::array header(std::size_t(0));
-					header_parser parser(this, header);
-					if(!parser.parse(buffer_, n) || !parser.complete()) {
-						done(core::error("failed to read request: illegal request"));
-						return;
-					}
-					header_ = reinterpret_cast<php::array*>(&sprop("header", header));
-					read_body(req, done);
-				}
-			});
-	}
-
-	void server_request::read_body(php::object& req, php::callable& done) {
-		// 不支持 chunked 形式的请求
-		// 简化的 content-length 逻辑（存在 content-length 存在 body 否则无 body）
-		php::value* length_= header_->find("content-length", 14);
-		if(length_ == nullptr) {
-			done(nullptr, req);
-			return;
-		}
-		std::size_t length = header_->at("content-length", 14).to_long();
-		if(length <= 0) {
-			done(nullptr, req);
-			return;
-		}
-
-		if(buffer_.size() < length) { // 现在 buffer_ 中还没有完整接收 body
-			boost::asio::async_read(*socket_, buffer_,
-				boost::asio::transfer_exactly(length - buffer_.size()),
-				[this, req, done] (const boost::system::error_code err, std::size_t n) mutable {
-					if(err) {
-						done(core::error_to_exception(err));
-					}else{
-						parse_body();
-						done(nullptr, req);
-					}
-				});
-		}else if(buffer_.size() == length) {
-			parse_body();
-			done(nullptr, req);
+	void server_request::init(evhttp_request* evreq) {
+		req_ = evreq;
+		// METHOD
+		prop("method", 6) = command2method(evhttp_request_get_command(req_));
+		// PATH and GET QUERY
+		char* uri   = const_cast<char*>(evhttp_request_get_uri(req_));
+		char* query = std::strstr(uri, "?");
+		if(query == nullptr) {
+			prop("path", 4) = php::value(uri, std::strlen(uri));
 		}else{
-			done(std::string("failed to read body: illegal request"), 0);
+			prop("path", 4) = php::value(uri, query - uri);
+			prop("get",  3)  = php::parse_str('&', query+1, std::strlen(query+1));
 		}
-	}
-
-	void server_request::parse_body() {
-		zend_string* type_ = header_->at("content-type", 12);
-		php::strtolower_inplace(type_->val, type_->len);
-		// 下述两种 content-type 自动解析：
-		// 1. application/x-www-form-urlencoded 33
-		// 2. application/json 16
-		if(type_->len >=33 && std::memcmp(type_->val, "application/x-www-form-urlencoded", 33) == 0) {
-			//zend_string* str = body.c_str();
-			prop("post") = php::parse_str('&', buffer_, buffer_.size());
+		// HEADER
+		php::object hdr_= php::object::create<header>();
+		header*     hdr = hdr_.native<header>();
+		evkeyvalq* headers = evhttp_request_get_input_headers(req_);
+		hdr->init(headers);
+		prop("header", 6) = std::move(hdr_);
+		// COOKIE
+		const char* cookie = evhttp_find_header(headers, "Cookie");
+		if(cookie != nullptr) {
+			// !!! 这里 cookie 同 key 覆盖，相当于后者生效（与 PHP 的默认行为不符）
+			prop("cookie", 6) = php::parse_str(';', cookie, std::strlen(cookie));
 		}
-		// 其他 content-type 原始 body 内容调用 body() 方法获取
-	}
-
-	php::value server_request::body(php::parameters& params) {
-		php::string r(buffer_.size());
-		// !!! 这里的 body 数据是 “复制” 的，代价还是比较大的；
-		// TODO 考虑提供流方式的 body 获取方式？
-		buffer_.sgetn(r.data(), buffer_.size());
-		return std::move(r);
-	}
-
-	bool server_request::is_keep_alive() {
-		php::value* c = header_->find("connection");
-		if(c == nullptr) return false;
-		php::string& s = *c;
-		php::strtolower_inplace(s.data(), s.length());
-		if(std::strncmp(s.c_str(), "keep-alive", std::min(std::size_t(10), s.length())) == 0) {
-			return true;
+		// BODY
+		evbuffer* body = evhttp_request_get_input_buffer(req_);
+		php::string post(evbuffer_get_length(body));
+		// TODO 这个内存复制代价有可能会比较大，是否有希望能变为 流 的方式来返回？
+		evbuffer_remove(body, post.data(), post.length());
+		prop("body", 4) = post;
+		// POST
+		const char* ctype = evhttp_find_header(headers, "Content-Type");
+		if(ctype != nullptr && std::strncmp("application/x-www-form-urlencoded", ctype, 33) == 0) {
+			prop("post", 4) = php::parse_str('&', post.data(), post.length());
 		}
-		return false;
 	}
 }}

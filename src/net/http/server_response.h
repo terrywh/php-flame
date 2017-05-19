@@ -1,33 +1,30 @@
 #pragma once
 
-namespace net {
-	class tcp_socket;
-namespace http {
-	class write_buffer;
-	class server_request;
+namespace net { namespace http {
+	class server;
+	class header;
 	class server_response: public php::class_base {
 	public:
-		server_response()
-		: header_sent_(false)
-		, ended_(false)
-		, header_(std::size_t(0)) {
-			buffer_.reserve(64);
-		}
 		static void init(php::extension_entry& extension);
-		static php::value build(php::parameters& params);
+		void init(evhttp_request* evreq);
+		server_response();
+		~server_response();
+		// response 对象销毁时结束请求
+		php::value __destruct(php::parameters& params);
+		// response 对象倾向于使用 transfer-encoding: chunked；
+		// 否则请当指定 content-length 头并自行填充长度信息
 		php::value write_header(php::parameters& params);
 		php::value write(php::parameters& params);
 		php::value end(php::parameters& params);
 	private:
-		void build_header(int status_code);
-
-		tcp::socket* socket_;
-		bool         header_sent_;
-		bool         ended_;
-		php::array*  header_;
-		std::vector<write_buffer> buffer_;
-		static std::map<uint32_t, std::string> status_map;
-
-		friend class server_request;
+		static void complete_handler(struct evhttp_request* req_, void* ctx);
+		bool                   header_sent_;
+		bool                   completed_;
+		header*                header_;
+		struct evhttp_request* req_;
+		evbuffer*              chunk_;
+		std::list<php::string> wbuffer_;
+		php::callable          cb_;
+		friend class server;
 	};
-} }
+}}

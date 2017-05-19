@@ -1,199 +1,116 @@
 #include "../../vendor.h"
 #include "../../core.h"
-#include "../../net/tcp_socket.h"
-#include "write_buffer.h"
 #include "server_response.h"
-#include "server_request.h"
+#include "header.h"
 
 namespace net { namespace http {
-	std::map<uint32_t, std::string> server_response::status_map {
-		{100, "Continue"},
-		{101, "Switching Protocols"},
-		{102, "Processing"},
-		{200, "OK"},
-		{201, "Created"},
-		{202, "Accepted"},
-		{203, "Non-Authoritative Information"},
-		{204, "No Content"},
-		{205, "Reset Content"},
-		{206, "Partial Content"},
-		{207, "Multi-Status"},
-		{208, "Already Reported"},
-		{226, "IM Used"},
-		{300, "Multiple Choices"},
-		{301, "Moved Permanently"},
-		{302, "Found"},
-		{303, "See Other"},
-		{304, "Not Modified"},
-		{305, "Use Proxy"},
-		{307, "Temporary Redirect"},
-		{308, "Permanent Redirect"},
-		{400, "Bad Request"},
-		{401, "Unauthorized"},
-		{402, "Payment Required"},
-		{403, "Forbidden"},
-		{404, "Not Found"},
-		{405, "Method Not Allowed"},
-		{406, "Not Acceptable"},
-		{407, "Proxy Authentication Required"},
-		{408, "Request Timeout"},
-		{409, "Conflict"},
-		{410, "Gone"},
-		{411, "Length Required"},
-		{412, "Precondition Failed"},
-		{413, "Payload Too Large"},
-		{414, "URI Too Long"},
-		{415, "Unsupported Media Type"},
-		{416, "Range Not Satisfiable"},
-		{417, "Expectation Failed"},
-		{421, "Misdirected Request"},
-		{422, "Unprocessable Entity"},
-		{423, "Locked"},
-		{424, "Failed Dependency"},
-		{426, "Upgrade Required"},
-		{428, "Precondition Required"},
-		{429, "Too Many Requests"},
-		{431, "Request Header Fields Too Large"},
-		{451, "Unavailable For Legal Reasons"},
-		{500, "Internal Server Error"},
-		{501, "Not Implemented"},
-		{502, "Bad Gateway"},
-		{503, "Service Unavailable"},
-		{504, "Gateway Timeout"},
-		{505, "HTTP Version Not Supported"},
-		{506, "Variant Also Negotiates"},
-		{507, "Insufficient Storage"},
-		{508, "Loop Detected"},
-		{510, "Not Extended"},
-		{511, "Network Authentication Required"},
-	};
-
 	void server_response::init(php::extension_entry& extension) {
-		extension.add<server_response::build>("flame\\net\\http\\build", {
-			php::of_object("request", "flame\\net\\http\\server_request")
+		php::class_entry<server_response> class_server_response("flame\\net\\http\\server_response");
+		class_server_response.add<&server_response::__destruct>("__destruct");
+		class_server_response.add<&server_response::write_header>("write_header", {
+			php::of_integer("code"),
+			php::of_string("reason"),
 		});
-		php::class_entry<server_response> net_http_response("flame\\net\\http\\server_response");
-		net_http_response.add<&server_response::write_header>("write_header");
-		net_http_response.add<&server_response::write>("write");
-		net_http_response.add<&server_response::end>("end");
-		net_http_response.add(php::property_entry("header", nullptr));
-		extension.add(std::move(net_http_response));
-		return ;
+		class_server_response.add<&server_response::write>("write", {
+			php::of_string("data"),
+		});
+		class_server_response.add<&server_response::end>("end", {
+			php::of_string("data"),
+		});
+		class_server_response.add(php::property_entry("header", nullptr));
+		extension.add(std::move(class_server_response));
+	}
+	
+	void server_response::init(evhttp_request* evreq) {
+		req_ = evreq;
+		evhttp_request_set_on_complete_cb(req_, server_response::complete_handler, this);
+		php::object hdr = php::object::create<header>();
+		header_ = hdr.native<header>();
+		header_->init(evhttp_request_get_output_headers(req_));
+		prop("header") = hdr;
 	}
 
-	php::value server_response::build(php::parameters& params) {
-		php::object& req_= params[0];
-		if(!req_.is_instance_of<server_request>()) {
-			throw php::exception("failed to build response: object of 'request' expected");
-		}
-		server_request*  req = req_.native<server_request>();
-		php::object      res_= php::object::create<server_response>();
-		server_response* res = res_.native<server_response>();
+	server_response::server_response()
+	: header_sent_(false)
+	, completed_(false)
+	, chunk_(evbuffer_new()) {}
 
-		res->socket_ = req->socket_;
-		php::array header(std::size_t(0));
-		header.at("Content-Type",12) = php::value("text/plain; charset=utf-8", 25);
-		header.at("Transfer-Encoding", 17) = php::value("chunked", 7);
-		if(req->is_keep_alive()) {
-			header.at("Connection",10) = php::value("Keep-Alive", 10);
-		}else{
-			header.at("Connection",10) = php::value("Close", 5);
+	server_response::~server_response() {
+		evbuffer_free(chunk_);
+	}
+
+	php::value server_response::__destruct(php::parameters& params) {
+		if(!completed_) {
+			completed_ = true;
+			// 由于当前对象将销毁，不能继续捕捉请求完成的回调
+			evhttp_request_set_on_complete_cb(req_, nullptr, nullptr);
+			if(!header_sent_) {
+				evhttp_send_reply_start(req_, 204, nullptr);
+			}
+			evhttp_send_reply_end(req_);
 		}
-		res->header_ = reinterpret_cast<php::array*>(&res->sprop("header", header));
-		// 响应头部的 HTTP 版本
-		res->buffer_.emplace_back(static_cast<std::string>(req->prop("version")));
-		return std::move(res_);
+		return nullptr;
 	}
 
 	php::value server_response::write_header(php::parameters& params) {
-		build_header(params[0]);
-		return php::value([this] (php::parameters& params) mutable -> php::value {
-			php::callable& done = params[0];
-			boost::asio::async_write(
-				*socket_, buffer_,
-				[this, done] (boost::system::error_code err, std::size_t n) mutable {
-					buffer_.clear();
-					if(err) {
-						done(core::error_to_exception(err));
-					} else {
-						done(nullptr, std::int64_t(n));
-					}
-				});
-				return nullptr;
-			});
-	}
-
-	void server_response::build_header(int status_code) {
-		if(header_sent_) {
-			throw php::exception("write header failed: header already sent");
+		if(header_sent_) throw php::exception("write_header failed: header already sent");
+		if(params.length() > 1) {
+			zend_string* reason = params[1];
+			evhttp_send_reply_start(req_, params[0], reason->val);
+		}else{
+			evhttp_send_reply_start(req_, params[0], nullptr);
 		}
 		header_sent_ = true;
-
-		buffer_.emplace_back((boost::format(" %d %s\r\n")
-			% status_code % server_response::status_map[status_code]).str());
-
-		for(auto it = header_->begin(); it != header_->end(); ++it) {
-			buffer_.emplace_back((boost::format("%s: %s\r\n")
-				% it->first.to_string() % it->second.to_string()).str());
-		}
-		buffer_.emplace_back(std::string("\r\n",2));
+		// libevent 没有提供 evhttp_send_reply_start 完成回调的功能，
+		// 参见：v2.1.8 http.c:2838
+		return nullptr;
 	}
 
 	php::value server_response::write(php::parameters& params) {
-		if(ended_) {
-			throw php::exception("write failed: reponse sent");
-		}
-		php::string& body = params[0];
+		if(completed_) throw php::exception("write failed: response aready ended");
 		if(!header_sent_) {
-			build_header(200);
+			evhttp_send_reply_start(req_, 200, nullptr);
 		}
-		buffer_.emplace_back((boost::format("%x\r\n") % body.length()).str());
-		buffer_.emplace_back(body.data(), body.length());
-		buffer_.emplace_back(std::string("\r\n",2));
-		return php::value([this] (php::parameters& params) mutable -> php::value {
-			php::callable& done = params[0];
-			boost::asio::async_write(*socket_, buffer_,
-				[this, done] (boost::system::error_code err, std::size_t n) mutable {
-					buffer_.clear();
-					if(err) {
-						done(core::error_to_exception(err));
-					} else {
-						done(nullptr, true);
-					}
-			});
+		wbuffer_.push_back(params[0]);
+		php::string& data = wbuffer_.back();
+		evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
+		return php::value([this] (php::parameters& params) -> php::value {
+			cb_ = params[0];
+			evhttp_send_reply_chunk_with_cb(req_, chunk_,
+				reinterpret_cast<void (*)(struct evhttp_connection*, void*)>(server_response::complete_handler), this);
 			return nullptr;
 		});
 	}
 
-	php::value server_response::end(php::parameters& params) {
-		if(ended_) {
-			throw php::exception("write failed: response sent");
-		}
-		if(!header_sent_) {
-			build_header(200);
-		}
-		ended_ = true;
-		if(params.length() > 0) {
-			php::string& body = params[0];
-			if(body.length() > 0) {
-				buffer_.emplace_back((boost::format("%x\r\n") % body.length()).str());
-				buffer_.emplace_back(write_buffer(body.c_str(), body.length()));
-				buffer_.emplace_back(std::string("\r\n",2));
-			}
-		}
-		buffer_.emplace_back(std::string("0\r\n\r\n",5));
-		return php::value([this] (php::parameters& params) mutable -> php::value {
-			php::callable& done = params[0];
-			boost::asio::async_write(*socket_, buffer_,
-				[this, done] (boost::system::error_code err, std::size_t n) mutable {
-					buffer_.clear();
-					if(err) {
-						done(core::error_to_exception(err));
-					} else {
-						done(nullptr, std::int64_t(n));
-					}
-				});
-				return nullptr;
-			});
+	void server_response::complete_handler(struct evhttp_request* _, void* ctx) {
+		// 注意：上面 evhttp_request* 指针不能使用（有强制类型转换的释放方式）
+		server_response* self = reinterpret_cast<server_response*>(ctx);
+		// 发送完毕后需要清理缓存（参数引用）
+		self->wbuffer_.clear();
+		if(self->cb_.is_empty()) return;
+		// callback 调用机制请参考 tcp_socket 内相关说明
+		php::callable cb = std::move(self->cb_);
+		cb();
 	}
+
+	php::value server_response::end(php::parameters& params) {
+		if(completed_) throw php::exception("end failed: response already ended");
+		if(!header_sent_) {
+			evhttp_send_reply_start(req_, 200, nullptr);
+		}
+		if(params.length() > 0) {
+			wbuffer_.push_back(params[0]);
+			php::string& data = wbuffer_.back();
+			evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
+			evhttp_send_reply_chunk(req_, chunk_);
+		}
+		completed_ = true;
+		return php::value([this] (php::parameters& params) -> php::value {
+			cb_ = params[0];
+			evhttp_send_reply_end(req_);
+			return nullptr;
+		});
+	}
+
+
 }}
