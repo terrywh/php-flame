@@ -2,6 +2,7 @@
 
 namespace net { namespace http {
 	class server;
+	class server_request;
 	class header;
 	class server_response: public php::class_base {
 	public:
@@ -20,11 +21,11 @@ namespace net { namespace http {
 		static void complete_handler(struct evhttp_request* req_, void* ctx);
 		bool                   header_sent_;
 		bool                   completed_;
-		header*                header_;
 		struct evhttp_request* req_;
 		evbuffer*              chunk_;
 		std::list<php::string> wbuffer_;
 		php::callable          cb_;
 		friend class server;
+		friend class server_request;
 	};
 }}

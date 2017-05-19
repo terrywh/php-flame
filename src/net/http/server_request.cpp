@@ -1,6 +1,7 @@
 #include "../../vendor.h"
 #include "server_request.h"
 #include "header.h"
+#include "init.h"
 
 namespace net { namespace http {
 	void server_request::init(php::extension_entry& extension) {
@@ -14,28 +15,7 @@ namespace net { namespace http {
 		class_server_request.add(php::property_entry("post",   nullptr));
 		extension.add(std::move(class_server_request));
 	}
-	static php::string command2method(evhttp_cmd_type cmd) {
-		switch(cmd) {
-			case EVHTTP_REQ_GET:
-				return php::string("GET", 3);
-			case EVHTTP_REQ_POST:
-				return php::string("POST", 4);
-			case EVHTTP_REQ_HEAD:
-				return php::string("HEAD", 4);
-			case EVHTTP_REQ_PUT:
-				return php::string("PUT", 3);
-			case EVHTTP_REQ_DELETE:
-				return php::string("DELETE", 6);
-			case EVHTTP_REQ_OPTIONS:
-				return php::string("OPTIONS", 7);
-			case EVHTTP_REQ_TRACE:
-				return php::string("TRACE", 5);
-			case EVHTTP_REQ_CONNECT:
-				return php::string("CONNECT", 7);
-			case EVHTTP_REQ_PATCH:
-				return php::string("PATCH", 5);
-		}
-	}
+
 	void server_request::init(evhttp_request* evreq) {
 		req_ = evreq;
 		// METHOD
@@ -52,11 +32,10 @@ namespace net { namespace http {
 		// HEADER
 		php::object hdr_= php::object::create<header>();
 		header*     hdr = hdr_.native<header>();
-		evkeyvalq* headers = evhttp_request_get_input_headers(req_);
-		hdr->init(headers);
+		hdr->init(evhttp_request_get_input_headers(req_));
 		prop("header", 6) = std::move(hdr_);
 		// COOKIE
-		const char* cookie = evhttp_find_header(headers, "Cookie");
+		const char* cookie = evhttp_find_header(hdr->queue_, "Cookie");
 		if(cookie != nullptr) {
 			// !!! 这里 cookie 同 key 覆盖，相当于后者生效（与 PHP 的默认行为不符）
 			prop("cookie", 6) = php::parse_str(';', cookie, std::strlen(cookie));
@@ -68,7 +47,7 @@ namespace net { namespace http {
 		evbuffer_remove(body, post.data(), post.length());
 		prop("body", 4) = post;
 		// POST
-		const char* ctype = evhttp_find_header(headers, "Content-Type");
+		const char* ctype = evhttp_find_header(hdr->queue_, "Content-Type");
 		if(ctype != nullptr && std::strncmp("application/x-www-form-urlencoded", ctype, 33) == 0) {
 			prop("post", 4) = php::parse_str('&', post.data(), post.length());
 		}

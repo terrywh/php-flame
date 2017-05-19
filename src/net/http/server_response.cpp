@@ -20,14 +20,13 @@ namespace net { namespace http {
 		class_server_response.add(php::property_entry("header", nullptr));
 		extension.add(std::move(class_server_response));
 	}
-	
+
 	void server_response::init(evhttp_request* evreq) {
 		req_ = evreq;
 		evhttp_request_set_on_complete_cb(req_, server_response::complete_handler, this);
-		php::object hdr = php::object::create<header>();
-		header_ = hdr.native<header>();
-		header_->init(evhttp_request_get_output_headers(req_));
-		prop("header") = hdr;
+		php::object  hdr_= php::object::create<header>();
+		hdr_.native<header>()->init(evhttp_request_get_output_headers(req_));
+		prop("header") = std::move(hdr_);
 	}
 
 	server_response::server_response()
