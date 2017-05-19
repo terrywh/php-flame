@@ -4,13 +4,13 @@
 namespace net { namespace http {
 	void header::init(php::extension_entry& extension) {
 		php::class_entry<header> class_header("flame\\net\\http\\header");
-		class_header.implements("Iterator");
+		class_header.implements_iterator();
 		class_header.add<&header::current>("current");
 		class_header.add<&header::key>("key");
 		class_header.add<&header::next>("next");
 		class_header.add<&header::rewind>("rewind");
 		class_header.add<&header::valid>("valid");
-		class_header.implements("ArrayAccess");
+		class_header.implements_arrayaccess();
 		class_header.add<&header::offsetExists>("offsetExists", {
 			php::of_mixed("offset"),
 		});
