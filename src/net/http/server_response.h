@@ -7,7 +7,7 @@ namespace net { namespace http {
 	class server_response: public php::class_base {
 	public:
 		static void init(php::extension_entry& extension);
-		void init(evhttp_request* evreq);
+		void init(evhttp_request* evreq, server* svr);
 		server_response();
 		~server_response();
 		// response 对象销毁时结束请求
@@ -25,6 +25,7 @@ namespace net { namespace http {
 		evbuffer*              chunk_;
 		std::list<php::string> wbuffer_;
 		php::callable          cb_;
+		server*                svr_;
 		friend class server;
 		friend class server_request;
 	};

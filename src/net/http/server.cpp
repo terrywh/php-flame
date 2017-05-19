@@ -17,8 +17,9 @@ namespace net { namespace http {
 	}
 
 	server::server()
-	: server_(evhttp_new(core::base)) {
-		handler_default_ = php::value([this] (php::parameters& params) -> php::value {
+	: server_(evhttp_new(core::base))
+	, closed_(true) {
+		handler_default_.handler = php::value([this] (php::parameters& params) -> php::value {
 			php::object        res_= params[1];
 			server_response*   res = res_.native<server_response>();
 			evbuffer*   buf = evbuffer_new();
@@ -26,18 +27,17 @@ namespace net { namespace http {
 			evhttp_send_reply(res->req_, 404, nullptr, buf);
 			return nullptr;
 		});
+		handler_default_.self = this;
 	}
 
 	server::~server() {
-		// 可能在 close 动作中已释放
-		if(server_ != nullptr) {
-			evhttp_free(server_);
-		}
+		if(server_ != nullptr) evhttp_free(server_);
 	}
 
 	php::value server::__destruct(php::parameters& params) {
-		if(server_ != nullptr) {
+		if(!cb_.is_empty()) { // 有可能已经调用过了
 			cb_();
+			// cb_.reset();
 		}
 	}
 
@@ -49,8 +49,8 @@ namespace net { namespace http {
 			addr->val, static_cast<int>(params[1]),
 			reinterpret_cast<struct sockaddr*>(&local_addr_), &len
 		);
-		evutil_socket_t socket_ = net::create_socket(local_addr_.va.sa_family, SOCK_STREAM, IPPROTO_TCP, true);
-		if(::bind(socket_,
+		evutil_socket_t fd = net::create_socket(local_addr_.va.sa_family, SOCK_STREAM, IPPROTO_TCP, true);
+		if(::bind(fd,
 			reinterpret_cast<struct sockaddr*>(&local_addr_),
 			sizeof(local_addr_)) != 0) {
 			throw php::exception(
@@ -58,18 +58,20 @@ namespace net { namespace http {
 		}
 		evconnlistener* listener_ = evconnlistener_new(
 			core::base, nullptr, nullptr,
-			LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | LEV_OPT_DEFERRED_ACCEPT, 1024, socket_);
+			LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | LEV_OPT_DEFERRED_ACCEPT, 1024, fd);
 		evconnlistener_set_error_cb(listener_, server::error_handler);
-
+		// 默认处理逻辑
 		evhttp_set_gencb(server_, server::request_handler, &handler_default_);
 		// 初始化一些配置信息
 		evhttp_set_default_content_type(server_, "text/plain");
 		// TODO 提供 ini 配置？
 		evhttp_set_max_headers_size(server_, 8*1024);
 		evhttp_set_max_body_size(server_, 8*1024*1024);
-		if(evhttp_bind_listener(server_, listener_) == nullptr) {
+		socket_ = evhttp_bind_listener(server_, listener_);
+		if(socket_ == nullptr) {
 			throw php::exception("listen failed: cannot listen on socket");
 		}
+		closed_ = false;
 		return php::value([this] (php::parameters& params) -> php::value {
 			cb_ = params[0];
 			return nullptr;
@@ -90,29 +92,54 @@ namespace net { namespace http {
 	php::value server::handle(php::parameters& params) {
 		if(server_ == nullptr) throw php::exception("listen_and_serve failed: server already closed");
 		zend_string* path = params[0];
-		php::callable& handler = params[1];
-		handler_.push_back(handler);
+		handler_wrapper hw = handler_wrapper { params[1], this };
+		handler_.push_back(hw);
 		evhttp_set_cb(server_, path->val, server::request_handler, &handler_.back());
 		return nullptr;
 	}
 
 	php::value server::close(php::parameters& params) {
-		evhttp_free(server_);
-		server_ = nullptr;
-		cb_();
+		if(!closed_) {
+			// 为平滑关闭，先摘除 socket_
+			evhttp_del_accept_socket(server_, socket_);
+			socket_ = nullptr;
+			closed_ = true;
+			// 有可能现在就没有需要处理的请求
+			if(request_count_ == 0) {
+				evhttp_free(server_);
+				server_ = nullptr;
+				if(!cb_.is_empty()) {
+					cb_();
+					cb_.reset();
+				}
+			}
+		}
 		return nullptr;
 	}
 
 	void server::request_handler(struct evhttp_request* evreq, void* ctx) {
-		php::callable* handler = reinterpret_cast<php::callable*>(ctx);
+		handler_wrapper* hw = reinterpret_cast<handler_wrapper*>(ctx);
 		php::object     req_= php::object::create<server_request>();
 		server_request* req = req_.native<server_request>();
-		req->init(evreq);
+		req->init(evreq, hw->self);
 		php::object      res_= php::object::create<server_response>();
 		server_response* res = res_.native<server_response>();
-		res->init(evreq);
+		res->init(evreq, hw->self);
 		// 将构建的 request 及 response 对象回调给指定对应的 handler
-		core::generator_start(handler->invoke(req_, res_));
+		core::generator_start(hw->handler.invoke(req_, res_));
+	}
+
+	void server::request_finish() {
+		--request_count_;
+		// 所有活跃请求处理完毕，释放服务器
+		if(request_count_ == 0 && closed_) {
+			evhttp_free(server_);
+			server_ = nullptr;
+			if(!cb_.is_empty()) {
+				cb_();
+				cb_.reset();
+			}
+		}
 	}
 
 	void server::error_handler(struct evconnlistener *lis, void *ptr) {

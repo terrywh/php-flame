@@ -1,5 +1,6 @@
 #include "../../vendor.h"
 #include "../../core.h"
+#include "server.h"
 #include "server_response.h"
 #include "header.h"
 
@@ -21,8 +22,9 @@ namespace net { namespace http {
 		extension.add(std::move(class_server_response));
 	}
 
-	void server_response::init(evhttp_request* evreq) {
+	void server_response::init(evhttp_request* evreq, server* svr) {
 		req_ = evreq;
+		svr_ = svr;
 		evhttp_request_set_on_complete_cb(req_, server_response::complete_handler, this);
 		php::object  hdr_= php::object::create<header>();
 		hdr_.native<header>()->init(evhttp_request_get_output_headers(req_));
@@ -86,6 +88,8 @@ namespace net { namespace http {
 		server_response* self = reinterpret_cast<server_response*>(ctx);
 		// 发送完毕后需要清理缓存（参数引用）
 		self->wbuffer_.clear();
+		// 通知 server 请求完成（server 关闭流程）
+		self->svr_->request_finish();
 		if(self->cb_.is_empty()) return;
 		// callback 调用机制请参考 tcp_socket 内相关说明
 		php::callable cb = std::move(self->cb_);

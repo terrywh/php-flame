@@ -34,7 +34,6 @@ namespace net {
 	php::value tcp_server::__destruct(php::parameters& params) {
 		if(listener_ != nullptr) {
 			evconnlistener_disable(listener_);
-			evutil_closesocket(evconnlistener_get_fd(listener_));
 		}
 		binded_ = false;
 		return nullptr;
@@ -116,8 +115,8 @@ namespace net {
 
 	php::value tcp_server::close(php::parameters& params) {
 		if(listener_ != nullptr) {
-			evconnlistener_disable(listener_);
-			evutil_closesocket(evconnlistener_get_fd(listener_));
+			evconnlistener_free(listener_);
+			listener_ = nullptr;
 		}
 		binded_ = false;
 		return nullptr;

@@ -10,12 +10,15 @@ namespace net { namespace http {
 	void client_request::init(php::extension_entry& extension) {
 		php::class_entry<client_request> class_client_request("flame\\net\\http\\client_request");
 		class_client_request.add<&client_request::__construct>("__construct");
+		class_client_request.add(php::property_entry("header", nullptr));
+		class_client_request.add(php::property_entry("body", std::string("")));
 		extension.add(std::move(class_client_request));
 	}
 
 	client_request::client_request()
-	: req_(evhttp_request_new(client_request::complete_handler, this))
-	, uri_(nullptr) {
+	: req_(evhttp_request_new(client::complete_handler, this))
+	, uri_(nullptr)
+	, cli_(nullptr) {
 
 	}
 	client_request::~client_request() {
@@ -54,55 +57,34 @@ namespace net { namespace http {
 		return nullptr;
 	}
 
-	void client_request::complete_handler(struct evhttp_request* req_, void* ctx) {
-		client_request* self = reinterpret_cast<client_request*>(ctx);
-		// 构建 response 对象
-		php::object res_= php::object::create<client_response>();
-		client_response* res = res_.native<client_response>();
-		res->init(self->req_);
-		// 当请求完成后，连接还未释放，表示可以重用
-		if(self->conn_ != nullptr) {
-			self->cli_->release(self->key_, self->conn_);
-		}
-		// 返回 client_response 对象
-		php::callable cb = std::move(self->cb_);
-		cb(nullptr, res_);
-	}
-
-	php::value client_request::execute(client* cli) {
+	int client_request::execute(client* cli) {
 		cli_ = cli;
-		return php::value([this] (php::parameters& params) -> php::value {
-			cb_ = params[0];
-			conn_ = cli_->acquire(key_);
-			if(conn_ == nullptr) {
-				// 无可复用的连接，建立新连接
-				conn_ = evhttp_connection_base_new(
-					core::base, core::base_dns,
-					evhttp_uri_get_host(uri_),
-					evhttp_uri_get_port(uri_)
-				);
-			}
-			evhttp_connection_set_closecb(conn_, client_request::close_handler, this);
-			if(conn_ == nullptr) {
-				// !!! 此种错误发生的概率也不会很大
-				php::callable cb = std::move(cb_);
-				cb(php::make_exception("execute failed: failed to create connection", 0));
-				return nullptr;
-			}
-			std::string uri = (boost::format("%s?%s")
-				% evhttp_uri_get_path(uri_) % evhttp_uri_get_query(uri_)).str();
-			if(-1 == evhttp_make_request(conn_, req_, cmd_, uri.c_str())) {
-				// !!! 此种错误应该不太可能发生？
-				cli_->release(key_, conn_);
-				php::callable cb = std::move(cb_);
-				cb(php::make_exception("execute failed", 0));
-			}
-			return nullptr;
-		});
+		// 准备连接
+		conn_ = cli_->acquire(key_);
+		if(conn_ == nullptr) {
+			// 无可复用的连接，建立新连接
+			conn_ = evhttp_connection_base_new(
+				core::base, core::base_dns,
+				evhttp_uri_get_host(uri_),
+				evhttp_uri_get_port(uri_)
+			);
+		}
+		evhttp_connection_set_closecb(conn_, client::close_handler, this);
+		if(conn_ == nullptr) {
+			return -1;
+		}
+		// 填充 body 内容到输出缓冲区
+		php::string& body = prop("body");
+		evbuffer_add_reference(evhttp_request_get_output_buffer(req_), body.data(), body.length(), nullptr, nullptr);
+		// 请求地址
+		std::string uri = (boost::format("%s?%s")
+			% evhttp_uri_get_path(uri_) % evhttp_uri_get_query(uri_)).str();
+
+		if(-1 == evhttp_make_request(conn_, req_, cmd_, uri.c_str())) {
+			return -2;
+		}
+		return 0;
 	}
 
-	void client_request::close_handler(struct evhttp_connection* conn_, void* ctx) {
-		client_request* self = reinterpret_cast<client_request*>(ctx);
-		self->conn_ = nullptr;
-	}
+
 }}

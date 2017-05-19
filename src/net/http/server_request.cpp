@@ -16,7 +16,7 @@ namespace net { namespace http {
 		extension.add(std::move(class_server_request));
 	}
 
-	void server_request::init(evhttp_request* evreq) {
+	void server_request::init(evhttp_request* evreq, server* svr) {
 		req_ = evreq;
 		// METHOD
 		prop("method", 6) = command2method(evhttp_request_get_command(req_));
