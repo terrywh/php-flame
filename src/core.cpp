@@ -49,7 +49,7 @@ static bool generator_continue(core_generator_wrapper* ew) {
 		delete ew;
 		--core::count;
 		if(core::count == 0) {
-			event_base_loopbreak(core::base);
+			event_base_loopexit(core::base, nullptr);
 		}
 		return false;
 	}else{
