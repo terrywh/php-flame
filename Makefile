@@ -6,15 +6,15 @@ EXTENSION_VERSION=0.3.0
 
 ROOT_PROJECT=${ROOT_TERRYWH}/php-${EXTENSION_NAME}
 
-# PHP_PREFIX=/usr/local/php-7.0.19-test
-PHP_PREFIX=/usr/local/php
+PHP_PREFIX=/usr/local/php-7.0.19-test
+# PHP_PREFIX=/usr/local/php
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 
 CXX?=g++
 CXXFLAGS?= -g -O0
-INCLUDE= -I${ROOT_TERRYWH}/libphpext -I/data/vendor/libevent/include `${PHP_CONFIG} --includes`
-LIBRARY= ${ROOT_TERRYWH}/libphpext/libphpext.a /data/vendor/libevent/lib/libevent.a /data/vendor/libevent/lib/libevent_pthreads.a -lpthread
+INCLUDE= -I${ROOT_TERRYWH}/libphpext -I/data/vendor/libevent/include -I/data/vendor/lmdb/include `${PHP_CONFIG} --includes`
+LIBRARY= ${ROOT_TERRYWH}/libphpext/libphpext.a /data/vendor/libevent/lib/libevent.a /data/vendor/lmdb/lib/liblmdb.a /data/vendor/libevent/lib/libevent_pthreads.a -lpthread
 
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
