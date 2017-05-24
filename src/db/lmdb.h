@@ -22,6 +22,7 @@ namespace db {
 		MDB_env*    ev_;
 		MDB_dbi     db_;
 		MDB_cursor* cs_;
+		MDB_val     key_;
 		bool        end_;
 	};
 }

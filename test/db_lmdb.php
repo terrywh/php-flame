@@ -18,7 +18,6 @@ $db->set("test_key3", "test_value");
 var_dump($db->get("test_key3"));
 echo "test_key4: ";
 var_dump($db->incr("test_key4", 1));
-var_dump($db->get("test_key4"));
 echo "test_key5: ";
 var_dump($db->get("test_key5"));
 var_dump($db->has("test_key5"));
@@ -27,8 +26,7 @@ echo "iterator through before2:\n";
 foreach($db as $key=>$val) {
 	echo "[$key] => ($val)\n";
 	if($key == "test_key2") {
-		// 暂不支持在 遍历 过程内 进行删除（会导致不可预期的结果）
-		// $db->del($key); 
+		$db->del($key); 
 	}
 }
 echo "iterator through after1:\n";

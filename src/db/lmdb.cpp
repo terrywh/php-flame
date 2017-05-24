@@ -33,7 +33,6 @@ namespace db {
 		);
 	}
 	php::value lmdb::__construct(php::parameters& params) {
-		end_ = false;
 		int err = 0;
 		throw_if_error( mdb_env_create(&ev_) );
 		zend_string* path = params[0];
@@ -158,12 +157,20 @@ namespace db {
 	php::value lmdb::del(php::parameters& params) {
 		int err = 0;
 		MDB_txn* tx;
+		MDB_cursor* cs;
 		mdb_txn_begin(ev_, nullptr, 0, &tx);
 		MDB_val mdb_key, mdb_val;
 		zend_string* php_key = params[0];
 		mdb_key.mv_size = php_key->len;
 		mdb_key.mv_data = php_key->val;
-		err = mdb_del(tx, db_, &mdb_key, &mdb_val);
+		if(mdb_key.mv_size == key_.mv_size && std::memcmp(mdb_key.mv_data, key_.mv_data, mdb_key.mv_size) == 0) {
+			// 若当前删除的是循环当前 key 需要将 当前 key 重置为前置 key
+			mdb_cursor_open(tx, db_, &cs);
+			err = mdb_cursor_get(cs, &key_, &mdb_val, MDB_SET);
+			err = mdb_cursor_get(cs, &key_, &mdb_val, MDB_PREV);
+			mdb_cursor_close(cs);
+		}
+		err = mdb_del(tx, db_, &mdb_key, nullptr);
 		mdb_txn_commit(tx);
 		return err == 0;
 	}
@@ -209,68 +216,56 @@ namespace db {
 		mdb_txn_commit(tx);
 		return std::move(rv);
 	}
+	php::value lmdb::rewind(php::parameters& params) {
+		int err = 0;
+		MDB_val mdb_val;
+		MDB_txn*    tx;
+		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
+		mdb_cursor_renew(tx, cs_);
+		err = mdb_cursor_get(cs_, &key_, &mdb_val, MDB_FIRST);
+		if(err != 0) {
+			end_ = true;
+		}else{
+			end_ = false;
+		}
+		// mdb_cursor_close(cs_);
+		mdb_txn_commit(tx);
+		return nullptr;
+	}
+	php::value lmdb::valid(php::parameters& params) {
+		return !end_;
+	}
 	// Iterator
 	php::value lmdb::current(php::parameters& params) {
 		int err = 0;
 		MDB_txn* tx;
-		MDB_val mdb_key, mdb_val;
-		php::value rv;
+		MDB_val mdb_val;
+		php::value  rv;
 		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
-		// mdb_cursor_renew(tx, cs_);
-		err = mdb_cursor_get(cs_, &mdb_key, &mdb_val, MDB_GET_CURRENT);
+		mdb_cursor_renew(tx, cs_);
+		err = mdb_cursor_get(cs_, &key_, &mdb_val, MDB_SET_KEY);
 		if(err == 0) {
 			mv_to_rv(mdb_val, rv);
 		}
+		// mdb_cursor_close(cs_);
 		mdb_txn_commit(tx);
 		return std::move(rv);
 	}
 	php::value lmdb::key(php::parameters& params) {
-		int err = 0;
-		MDB_txn* tx;
-		MDB_val mdb_key, mdb_val;
-		php::value rv;
-		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
-		// mdb_cursor_renew(tx, cs_);
-		err = mdb_cursor_get(cs_, &mdb_key, &mdb_val, MDB_GET_CURRENT);
-		if(err == 0) {
-			rv = php::string(reinterpret_cast<char*>(mdb_key.mv_data), mdb_key.mv_size);
-		}
-		mdb_txn_commit(tx);
-		return std::move(rv);
+		php::string key(reinterpret_cast<char*>(key_.mv_data), key_.mv_size);
+		return std::move(key);
 	}
 	php::value lmdb::next(php::parameters& params) {
 		int err = 0;
 		MDB_txn* tx;
-		MDB_val mdb_key, mdb_val;
+		MDB_val mdb_val;
 		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
-		// mdb_cursor_renew(tx, cs_);
-		err = mdb_cursor_get(cs_, &mdb_key, &mdb_val, MDB_NEXT);
+		mdb_cursor_renew(tx, cs_);
+		err = mdb_cursor_get(cs_, &key_, &mdb_val, MDB_SET);
+		err = mdb_cursor_get(cs_, &key_, &mdb_val, MDB_NEXT);
+		// mdb_cursor_close(cs_);
 		mdb_txn_commit(tx);
 		end_ = (err != 0);
 		return nullptr;
-	}
-
-	php::value lmdb::rewind(php::parameters& params) {
-		int err = 0;
-		MDB_txn* tx;
-		MDB_val mdb_key, mdb_val;
-		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
-		// err = mdb_cursor_renew(tx, cs_);
-		err = mdb_cursor_get(cs_, &mdb_key, &mdb_val, MDB_FIRST);
-		end_ = false;
-		mdb_txn_commit(tx);
-		return nullptr;
-	}
-
-	php::value lmdb::valid(php::parameters& params) {
-		if(end_) return false;
-		int err = 0;
-		MDB_txn* tx;
-		MDB_val mdb_key, mdb_val;
-		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
-		// err = mdb_cursor_renew(tx, cs_);
-		err = mdb_cursor_get(cs_, &mdb_key, &mdb_val, MDB_GET_CURRENT);
-		mdb_txn_commit(tx);
-		return err == 0;
 	}
 }
