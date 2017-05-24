@@ -6,8 +6,8 @@ EXTENSION_VERSION=0.3.0
 
 ROOT_PROJECT=${ROOT_TERRYWH}/php-${EXTENSION_NAME}
 
-PHP_PREFIX=/usr/local/php-7.0.19-test
-# PHP_PREFIX=/usr/local/php
+# PHP_PREFIX=/usr/local/php-7.0.19-test
+PHP_PREFIX=/usr/local/php
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 

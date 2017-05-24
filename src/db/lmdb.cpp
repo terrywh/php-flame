@@ -140,7 +140,7 @@ namespace db {
 	}
 	php::value lmdb::get(php::parameters& params) {
 		int err = 0;
-		php::value rv;
+		php::value rv = nullptr;
 		MDB_txn* tx;
 		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
 		MDB_val mdb_key, mdb_val;
@@ -148,11 +148,9 @@ namespace db {
 		mdb_key.mv_size = php_key->len;
 		mdb_key.mv_data = php_key->val;
 		err = mdb_get(tx, db_, &mdb_key, &mdb_val);
-		if(err != 0) {
-			mdb_txn_abort(tx);
-			return nullptr;
+		if(err == 0) {
+			mv_to_rv(mdb_val, rv);
 		}
-		mv_to_rv(mdb_val, rv);
 		mdb_txn_commit(tx);
 		return std::move(rv);
 	}
@@ -175,9 +173,9 @@ namespace db {
 		// 删除 db 并重新建立
 		mdb_txn_begin(ev_, nullptr, 0, &tx);
 		err = mdb_drop(tx, db_, 1);
-		mdb_dbi_open(tx, nullptr, 0, &db_);
+		err = mdb_dbi_open(tx, nullptr, 0, &db_);
 		mdb_txn_commit(tx);
-		// 重新打开 cursor 
+		// 重新打开 cursor
 		mdb_txn_begin(ev_, nullptr, MDB_RDONLY, &tx);
 		mdb_cursor_open(tx, db_, &cs_);
 		mdb_txn_commit(tx);
@@ -197,15 +195,16 @@ namespace db {
 		mdb_key.mv_data = php_key->val;
 		err = mdb_get(tx, db_, &mdb_key, &mdb_val);
 		mdb_val.mv_size = size_from_rv(rv);
-		if(err != 0) { // 一般为 key 不存在的情况
-			mdb_put(tx, db_, &mdb_key, &mdb_val, MDB_RESERVE);
-			rv_to_mv(rv, mdb_val); // 设置默认值
-		}else{
+		if(err == 0) { // 已存在的 key 获取当前值
 			php::value php_val;
 			mv_to_rv(mdb_val, php_val);
+			// TODO 若当前值类型不正确怎么办？
 			mdb_put(tx, db_, &mdb_key, &mdb_val, MDB_RESERVE);
 			rv = static_cast<std::int64_t>(php_val) + static_cast<std::int64_t>(rv);
 			rv_to_mv(rv, mdb_val);
+		}else{ // 一般为 key 不存在的情况
+			mdb_put(tx, db_, &mdb_key, &mdb_val, MDB_RESERVE);
+			rv_to_mv(rv, mdb_val); // 设置默认值
 		}
 		mdb_txn_commit(tx);
 		return std::move(rv);

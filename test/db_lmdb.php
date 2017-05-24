@@ -28,9 +28,19 @@ foreach($db as $key=>$val) {
 	echo "[$key] => ($val)\n";
 }
 $db->flush();
-echo "iterator through before:\n";
+echo "iterator through after:\n";
 foreach($db as $key=>$val) {
 	echo "[$key] => ($val)\n";
 }
-echo "----------------------------\n";
+echo microtime(true),"\n";
+for($i=0;$i<10000000;++$i) {
+	$db->set("test_key1", false);
+	$db->get("test_key1");
+	$db->set("test_key2", 123456);
+	$db->get("test_key2");
+	$db->set("test_key3", "test_value");
+	$db->get("test_key3");
+	$db->incr("test_key4", 1);
+}
+echo microtime(true),"\n";
 var_dump($db);
