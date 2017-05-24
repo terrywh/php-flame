@@ -10,7 +10,18 @@ flame\run(function() {
 	// 1. 带有 yield 形式的函数定义（调用后会返回 Generator 对象）;
 	// 2. Generator 对象；
 	flame\go(test2);
-	flame\go(test3());
+	
+	for($i=0;$i<10;++$i) {
+		echo "[3] $i\n";
+		// 使用 async 函数，将同步任务转化为异步（借助一个工作线程）
+		// 请一定谨慎使用，错误的使用会因多线程并发而引起各种诡异的错乱问题
+		// 注意，额外的工作线程仅有 一个，故不能用于解决多核问题
+		// （CPU 消耗过高，或过多的阻塞任务一样会占用这个工作线程）
+		echo yield flame\async(function($done) use($i) {
+			usleep(300000);
+			$done(null, "[3] " . time() . " -> ". $i . "\n");
+		});
+	}
 });
 
 function test1() {
@@ -24,19 +35,5 @@ function test2() {
 	for($i=0;$i<10;++$i) {
 		yield flame\sleep(200);
 		echo "[2] " . time() . " -> " . $i . "\n";
-	}
-}
-
-function test3() {
-	for($i=0;$i<10;++$i) {
-		echo "[3] $i\n";
-		// 使用 async 函数，将同步任务转化为异步（借助一个工作线程）
-		// 请一定谨慎使用，错误的使用会因多线程并发而引起各种诡异的错乱问题
-		// 注意，额外的工作线程仅有 一个，故不能用于解决多核问题
-		// （CPU 消耗过高，或过多的阻塞任务一样会占用这个工作线程）
-		echo yield flame\async(function($done) use($i) {
-			usleep(300000);
-			$done(null, "[3] " . time() . " -> ". $i . "\n");
-		});
 	}
 }

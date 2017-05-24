@@ -97,7 +97,9 @@ php::value core::generator_start(const php::value& r) {
 		++core::count;
 		return nullptr;
 	}else{
-		if(core::count == 0) {
+		if(EG(exception) != nullptr) {
+			event_base_loopbreak(core::base);
+		}else if(core::count == 0) {
 			event_base_loopexit(core::base, nullptr);
 		}
 		return r;

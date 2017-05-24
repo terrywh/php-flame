@@ -2,7 +2,7 @@
 dl("flame.so");
 
 $db = new flame\db\lmdb("/tmp/php-lmdb.mdb");
-echo "iterator through before:\n";
+echo "iterator through before1:\n";
 foreach($db as $key=>$val) {
 	echo "[$key] => ($val)\n";
 }
@@ -22,13 +22,21 @@ var_dump($db->get("test_key4"));
 echo "test_key5: ";
 var_dump($db->get("test_key5"));
 var_dump($db->has("test_key5"));
-$db->del("test_key3");
-echo "iterator through after:\n";
+
+echo "iterator through before2:\n";
+foreach($db as $key=>$val) {
+	echo "[$key] => ($val)\n";
+	if($key == "test_key2") {
+		// 暂不支持在 遍历 过程内 进行删除（会导致不可预期的结果）
+		// $db->del($key); 
+	}
+}
+echo "iterator through after1:\n";
 foreach($db as $key=>$val) {
 	echo "[$key] => ($val)\n";
 }
 $db->flush();
-echo "iterator through after:\n";
+echo "iterator through after2:\n";
 foreach($db as $key=>$val) {
 	echo "[$key] => ($val)\n";
 }

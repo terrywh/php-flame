@@ -158,6 +158,7 @@ namespace net {
 			}else if(self->rbuffer_->len == 0) {
 				cb(php::make_exception("read failed: EOF", -1));
 			}else{
+				self->rbuffer_->val[self->rbuffer_->len] = '\0';
 				cb(nullptr, php::value(self->rbuffer_));
 			}
 		}

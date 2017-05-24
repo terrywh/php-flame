@@ -1,9 +1,10 @@
 #pragma once
 
 struct keeper_wrapper {
-	php::object conn;
-	std::string ping;
+	php::object    conn;
+	std::string    ping;
 	struct timeval time;
+	int            ttl;
 };
 // keeper 负责管理 mysql 、redis、mongodb 连接维护连接的活跃（防止服务端断开）
 class keeper: public php::class_base {

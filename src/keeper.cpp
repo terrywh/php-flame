@@ -7,7 +7,7 @@ void keeper::init(php::extension_entry& extension) {
 	extension.add<keeper::take>("flame\\take");
 }
 keeper::keeper() {
-	event_assign(&ev_, core::base, -1, EV_READ | EV_PERSIST, keeper::timer_handler, this);
+	event_assign(&ev_, core::base, -1, 0, keeper::timer_handler, this);
 }
 keeper::~keeper() {
 	event_del(&ev_);
@@ -28,14 +28,15 @@ php::value keeper::keep(php::parameters& params) {
 	zend_object*    key = params[0];
 	keeper_wrapper& kw  = core::keep->map_[key];
 	kw.conn = params[0];
-	if(0 == event_base_gettimeofday_cached(core::base, &kw.time)) {
+	if(0 != event_base_gettimeofday_cached(core::base, &kw.time)) {
 		throw php::exception("keep failed: failed to gettimeofday");
 	}
 	if(params.length() > 1) {
-		kw.time.tv_sec += static_cast<int>(params[1]);
+		kw.ttl = static_cast<int>(params[1]);
 	}else{
-		kw.time.tv_sec += 60;
+		kw.ttl = 60;
 	}
+	kw.time.tv_sec += kw.ttl;
 	if(params.length() > 2) {
 		kw.ping = static_cast<std::string>(params[2]);
 	}else{
@@ -45,13 +46,17 @@ php::value keeper::keep(php::parameters& params) {
 }
 
 void keeper::timer_handler(evutil_socket_t fd, short events, void* data) {
+	std::printf("timer_handler\n");
 	keeper* self = reinterpret_cast<keeper*>(data);
 	struct timeval now;
 	event_base_gettimeofday_cached(core::base, &now);
 	for(auto i=self->map_.begin(); i!= self->map_.end(); ++i) {
-		if(i->second.time.tv_sec > now.tv_sec) {
+		if(i->second.time.tv_sec <= now.tv_sec) {
 			i->second.conn.call(i->second.ping);
 			i->second.time = now;
+			i->second.time.tv_sec += i->second.ttl;
 		}
 	}
+	struct timeval timeout = { 10, 0 };
+	event_add(&self->ev_, &timeout);
 }
