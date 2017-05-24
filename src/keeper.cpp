@@ -46,7 +46,6 @@ php::value keeper::keep(php::parameters& params) {
 }
 
 void keeper::timer_handler(evutil_socket_t fd, short events, void* data) {
-	std::printf("timer_handler\n");
 	keeper* self = reinterpret_cast<keeper*>(data);
 	struct timeval now;
 	event_base_gettimeofday_cached(core::base, &now);
