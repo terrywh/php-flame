@@ -20,6 +20,13 @@ flame\run(function() {
 		$res->header["content-type"] = "text/plain";
 		yield $res->write_file(__DIR__."/error.php");
 	});
+	$server->handle("/test4", function($req, $res) {
+
+	});
+	$server->handle_default(function($req, $res) {
+		$res->write_header(404);
+		yield $res->end("this is a error(404)");
+	});
 	echo "handler added\n";
 	yield $server->listen_and_serve("::", 6676);
 	echo "closed\n";

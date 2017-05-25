@@ -11,6 +11,7 @@ namespace net { namespace http {
 		php::class_entry<server> class_server("flame\\http\\server");
 		class_server.add<&server::__destruct>("__destruct");
 		class_server.add<&server::handle>("handle");
+		class_server.add<&server::handle_default>("handle_default");
 		class_server.add<&server::close>("close");
 		class_server.add<&server::listen_and_serve>("listen_and_serve");
 		extension.add(std::move(class_server));
@@ -32,6 +33,15 @@ namespace net { namespace http {
 
 	server::~server() {
 		if(server_ != nullptr) evhttp_free(server_);
+	}
+
+	php::value server::handle_default(php::parameters& params) {
+		if(params.length() > 0 && params[0].is_callable()) {
+			handler_default_.handler = params[0];
+			handler_default_.self = this;
+		}else{
+			throw php::exception("handle_default failed: handler must be a callable");
+		}
 	}
 
 	php::value server::__destruct(php::parameters& params) {

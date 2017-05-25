@@ -15,6 +15,7 @@ namespace net { namespace http {
 		php::value local_addr(php::parameters& params);
 		php::value local_port(php::parameters& params);
 		php::value handle(php::parameters& params);
+		php::value handle_default(php::parameters& params);
 		php::value close(php::parameters& params);
 		void request_finish();
 	private:
