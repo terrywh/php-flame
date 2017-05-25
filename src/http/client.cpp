@@ -96,11 +96,13 @@ namespace http {
 	}
 
 	void client::complete_handler(struct evhttp_request* req_, void* ctx) {
+		std::printf("complete\n");
 		client_request* req = reinterpret_cast<client_request*>(ctx);
+		if(req->cb_.is_empty()) return; // 发生错误已经被处理过了
 		client* self = req->cli_;
-		if(req_ == nullptr) { // 请求发生了错误
+		if(req_ == nullptr || evhttp_request_get_response_code(req_) == 0) { // 其他未知错误
 			php::callable cb = std::move(req->cb_);
-			cb(php::make_exception("request failed: unknown network error", 0));
+			cb(php::make_exception("request failed: unknown error", 0));
 			return;
 		}
 		// 构建 response 对象
@@ -114,6 +116,38 @@ namespace http {
 		if(req->conn_ != nullptr) {
 			self->release(req->key_, req->conn_);
 			req->conn_ = nullptr;
+		}
+	}
+
+	void client::error_handler(enum evhttp_request_error err, void* ctx) {
+		std::printf("error\n");
+		client_request* req = reinterpret_cast<client_request*>(ctx);
+		std::string error = "request failed: ";
+		php::callable cb = std::move(req->cb_);
+		switch(err) {
+		case EVREQ_HTTP_TIMEOUT:
+			error.append("ETIMEOUT");
+			cb(php::make_exception(error, ETIMEDOUT));
+			break;
+		case EVREQ_HTTP_INVALID_HEADER:
+			break;
+		case EVREQ_HTTP_EOF:
+			error.append("EOF");
+			cb(php::make_exception(error, -1));
+			break;
+		case EVREQ_HTTP_BUFFER_ERROR:
+			error.append("buffer error");
+			cb(php::make_exception(error, 0));
+			break;
+		case EVREQ_HTTP_REQUEST_CANCEL:
+			cb(nullptr, nullptr);
+			break;
+		case EVREQ_HTTP_DATA_TOO_LONG:
+			error.append("data overflow");
+			cb(php::make_exception(error, EOVERFLOW));
+			break;
+		default:
+			assert(0); // 理论上不可达的错误
 		}
 	}
 

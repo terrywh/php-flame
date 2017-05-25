@@ -72,14 +72,15 @@ namespace http {
 
 	php::value server_response::write(php::parameters& params) {
 		if(completed_) throw php::exception("write failed: response aready ended");
-		if(!header_sent_) {
-			evhttp_send_reply_start(req_, 200, nullptr);
-		}
 		wbuffer_.push_back(params[0]);
 		php::string& data = wbuffer_.back();
 		evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
 		return php::value([this] (php::parameters& params) -> php::value {
 			cb_ = params[0];
+			if(!header_sent_) {
+				evhttp_send_reply_start(req_, 200, nullptr);
+				header_sent_ = true;
+			}
 			evhttp_send_reply_chunk_with_cb(req_, chunk_,
 				reinterpret_cast<void (*)(struct evhttp_connection*, void*)>(server_response::complete_handler), this);
 			return nullptr;
@@ -128,18 +129,19 @@ namespace http {
 
 	php::value server_response::end(php::parameters& params) {
 		if(completed_) throw php::exception("end failed: response already ended");
-		if(!header_sent_) {
-			evhttp_send_reply_start(req_, 200, nullptr);
-		}
 		if(params.length() > 0) {
 			wbuffer_.push_back(params[0]);
 			php::string& data = wbuffer_.back();
 			evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
-			evhttp_send_reply_chunk(req_, chunk_);
 		}
 		return php::value([this] (php::parameters& params) -> php::value {
 			completed_ = true;
 			cb_ = params[0];
+			if(!header_sent_) {
+				evhttp_send_reply_start(req_, 200, nullptr);
+				header_sent_ = true;
+			}
+			evhttp_send_reply_chunk(req_, chunk_);
 			evhttp_send_reply_end(req_);
 			return nullptr;
 		});

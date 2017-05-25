@@ -11,10 +11,12 @@ flame\run(function() {
 	// 通过 client 指定请求，并获得响应
 	$response = yield $client->execute($request);
 	var_dump($response);
-	for($i=0;$i<100000;++$i) {
-		// 简化请求方式
-		$response = yield $client->get("http://127.0.0.1:6676/test2");
-		// $response = yield $client->post("http://127.0.0.1:6676/test2", "post data here");
-	}
+	$response = yield $client->get("http://127.0.0.1:6676/test2");
+	var_dump($response);
+	// for($i=0;$i<100000;++$i) {
+	// 	// 简化请求方式
+	// 	$response = yield $client->get("http://127.0.0.1:6676/test2");
+	// 	// $response = yield $client->post("http://127.0.0.1:6676/test2", "post data here");
+	// }
 	echo microtime(true),"\n";
 });

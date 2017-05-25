@@ -19,7 +19,7 @@ namespace http {
 	: req_(evhttp_request_new(client::complete_handler, this))
 	, uri_(nullptr)
 	, cli_(nullptr) {
-
+		evhttp_request_set_error_cb(req_, client::error_handler);
 	}
 	client_request::~client_request() {
 		// 请求对象 req_ 交由 client_response 释放

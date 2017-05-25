@@ -24,6 +24,7 @@ namespace http {
 	private:
 		static void sweep_handler(evutil_socket_t fd, short events, void* ctx);
 		static void complete_handler(struct evhttp_request* req_, void* ctx);
+		static void error_handler(enum evhttp_request_error err, void* ctx);
 		static void close_handler(struct evhttp_connection* conn_, void* ctx);
 		std::multimap<std::string, connection_wrapper> connection_;
 		event ev_;
