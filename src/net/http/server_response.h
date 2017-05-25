@@ -16,6 +16,7 @@ namespace net { namespace http {
 		// 否则请当指定 content-length 头并自行填充长度信息
 		php::value write_header(php::parameters& params);
 		php::value write(php::parameters& params);
+		php::value write_file(php::parameters& params);
 		php::value end(php::parameters& params);
 	private:
 		static void complete_handler(struct evhttp_request* req_, void* ctx);

@@ -15,10 +15,12 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/signalfd.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <phpext.h>
 #include <event2/event_struct.h>

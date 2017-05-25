@@ -15,6 +15,9 @@ namespace net { namespace http {
 		class_server_response.add<&server_response::write>("write", {
 			php::of_string("data"),
 		});
+		class_server_response.add<&server_response::write_file>("write_file", {
+			php::of_string("file"),
+		});
 		class_server_response.add<&server_response::end>("end", {
 			php::of_string("data"),
 		});
@@ -96,6 +99,33 @@ namespace net { namespace http {
 		cb();
 	}
 
+	php::value server_response::write_file(php::parameters& params) {
+		if(completed_) throw php::exception("write_file failed: response aready ended");
+		if(header_sent_) throw php::exception("write_file failed: header aready sent");
+		zend_string* file = params[0];
+		int fd = ::open(file->val, O_RDONLY);
+		if(fd == -1) {
+			throw php::exception(
+				(boost::format("write_file failed: %s") % strerror(errno)).str(),
+				errno);
+		}
+		struct stat st;
+		if(fstat(fd, &st) == -1) {
+			throw php::exception(
+				(boost::format("write_file failed: %s") % strerror(errno)).str(),
+				errno);
+		}
+		if(st.st_size <= 0 || evbuffer_add_file(chunk_, fd, 0, st.st_size) == -1) {
+			throw php::exception("write_file failed: EBADF", EBADF);
+		}
+		return php::value([this] (php::parameters& params) -> php::value {
+			completed_ = true;
+			cb_ = params[0];
+			evhttp_send_reply(req_, 200, "OK", chunk_);
+			return nullptr;
+		});
+	}
+
 	php::value server_response::end(php::parameters& params) {
 		if(completed_) throw php::exception("end failed: response already ended");
 		if(!header_sent_) {
@@ -107,8 +137,8 @@ namespace net { namespace http {
 			evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
 			evhttp_send_reply_chunk(req_, chunk_);
 		}
-		completed_ = true;
 		return php::value([this] (php::parameters& params) -> php::value {
+			completed_ = true;
 			cb_ = params[0];
 			evhttp_send_reply_end(req_);
 			return nullptr;
