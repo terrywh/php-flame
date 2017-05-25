@@ -1,4 +1,4 @@
-#include "../../vendor.h"
+#include "../vendor.h"
 #include "init.h"
 #include "header.h"
 #include "server.h"
@@ -8,7 +8,7 @@
 #include "client_request.h"
 #include "client_response.h"
 
-namespace net { namespace http {
+namespace http {
 	evbuffer*  REPLY_NOT_FOUND  = nullptr;
 
 	void init(php::extension_entry& extension) {
@@ -71,4 +71,4 @@ namespace net { namespace http {
 			throw php::exception("unsupported request method");
 		}
 	}
-}}
+}

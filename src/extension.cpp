@@ -3,6 +3,7 @@
 #include "task_runner.h"
 #include "keeper.h"
 #include "net/init.h"
+#include "http/init.h"
 #include "db/init.h"
 
 void extension_init(php::extension_entry& extension) {
@@ -11,5 +12,6 @@ void extension_init(php::extension_entry& extension) {
 	task_runner::init(extension);
 	keeper::init(extension);
 	net::init(extension);
+	http::init(extension);
 	db::init(extension);
 }

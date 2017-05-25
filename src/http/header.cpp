@@ -1,9 +1,9 @@
-#include "../../vendor.h"
+#include "../vendor.h"
 #include "header.h"
 
-namespace net { namespace http {
+namespace http {
 	void header::init(php::extension_entry& extension) {
-		php::class_entry<header> class_header("flame\\net\\http\\header");
+		php::class_entry<header> class_header("flame\\http\\header");
 		class_header.implements_iterator();
 		class_header.add<&header::current>("current");
 		class_header.add<&header::key>("key");
@@ -99,4 +99,4 @@ namespace net { namespace http {
 	php::value header::remove(php::parameters& params) {
 		return offsetUnset(params);
 	}
-}}
+}

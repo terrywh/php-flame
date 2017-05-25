@@ -1,11 +1,11 @@
-#include "../../vendor.h"
+#include "../vendor.h"
 #include "header.h"
 #include "client_response.h"
 
 
-namespace net { namespace http {
+namespace http {
 	void client_response::init(php::extension_entry& extension) {
-		php::class_entry<client_response> class_client_response("flame\\net\\http\\client_response");
+		php::class_entry<client_response> class_client_response("flame\\http\\client_response");
 		class_client_response.add<&client_response::__toString>("__toString");
 		class_client_response.add(php::property_entry("status", 404));
 		class_client_response.add(php::property_entry("header", nullptr));
@@ -39,5 +39,4 @@ namespace net { namespace http {
 	php::value client_response::__toString(php::parameters& params) {
 		return prop("body");
 	}
-
-}}
+}

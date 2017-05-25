@@ -1,12 +1,12 @@
-#include "../../vendor.h"
-#include "../../core.h"
+#include "../vendor.h"
+#include "../core.h"
 #include "server.h"
 #include "server_request.h"
 #include "server_response.h"
-#include "../init.h"
+#include "../net/init.h"
 #include "init.h"
 
-namespace net { namespace http {
+namespace http {
 	void server::init(php::extension_entry& extension) {
 		php::class_entry<server> class_server("flame\\http\\server");
 		class_server.add<&server::__destruct>("__destruct");
@@ -91,7 +91,7 @@ namespace net { namespace http {
 
 	php::value server::local_addr(php::parameters& params) {
 		php::string str(64);
-		parse_addr(local_addr_.va.sa_family, reinterpret_cast<struct sockaddr*>(&local_addr_), str.data(), str.length());
+		net::parse_addr(local_addr_.va.sa_family, reinterpret_cast<struct sockaddr*>(&local_addr_), str.data(), str.length());
 		return std::move(str);
 	}
 
@@ -157,4 +157,4 @@ namespace net { namespace http {
 		int error = EVUTIL_SOCKET_ERROR();
 		std::printf("socket error: %s\n", evutil_socket_error_to_string(error));
 	}
-}}
+}

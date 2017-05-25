@@ -2,10 +2,10 @@
 dl("flame.so");
 
 flame\run(function() {
-	$client = new flame\net\http\client();
+	$client = new flame\http\client();
 	echo microtime(true),"\n";
 	// 构造 request 对象
-	$request = new flame\net\http\client_request("POST", "http://127.0.0.1:6676/test2");
+	$request = new flame\http\client_request("POST", "http://127.0.0.1:6676/test2");
 	$request->header["xxxxx"] = aaaaa;
 	$request->body = json_encode(["key"=>"val"]);
 	// 通过 client 指定请求，并获得响应

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace net { namespace http {
+namespace http {
 	class server: public php::class_base {
 	public:
 		struct handler_wrapper {
@@ -35,4 +35,4 @@ namespace net { namespace http {
 		std::list<handler_wrapper>  handler_;
 		php::callable               cb_;
 	};
-}}
+}

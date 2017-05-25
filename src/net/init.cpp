@@ -4,14 +4,12 @@
 #include "udp_socket.h"
 #include "tcp_socket.h"
 #include "tcp_server.h"
-#include "http/init.h"
 
 namespace net {
 	void init(php::extension_entry& extension) {
 		udp_socket::init(extension);
 		tcp_socket::init(extension);
 		tcp_server::init(extension);
-		http::init(extension);
 	}
 
 	void parse_addr_port(const char* address, int port, struct sockaddr* addr, int *size_of_addr) {

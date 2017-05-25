@@ -1,9 +1,9 @@
-#include "../../vendor.h"
+#include "../vendor.h"
 #include "server_request.h"
 #include "header.h"
 #include "init.h"
 
-namespace net { namespace http {
+namespace http {
 	void server_request::init(php::extension_entry& extension) {
 		php::class_entry<server_request> class_server_request("flame\\http\\server_request");
 		class_server_request.add(php::property_entry("method",      ""));
@@ -52,4 +52,4 @@ namespace net { namespace http {
 			prop("post", 4) = php::parse_str('&', post.data(), post.length());
 		}
 	}
-}}
+}

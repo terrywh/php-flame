@@ -1,6 +1,6 @@
 #pragma once
 
-namespace net { namespace http {
+namespace http {
 	class server;
 	class server_request;
 	class header;
@@ -30,4 +30,4 @@ namespace net { namespace http {
 		friend class server;
 		friend class server_request;
 	};
-}}
+}

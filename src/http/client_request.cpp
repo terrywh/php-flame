@@ -1,14 +1,14 @@
-#include "../../vendor.h"
-#include "../../core.h"
+#include "../vendor.h"
+#include "../core.h"
 #include "init.h"
 #include "header.h"
 #include "client.h"
 #include "client_request.h"
 #include "client_response.h"
 
-namespace net { namespace http {
+namespace http {
 	void client_request::init(php::extension_entry& extension) {
-		php::class_entry<client_request> class_client_request("flame\\net\\http\\client_request");
+		php::class_entry<client_request> class_client_request("flame\\http\\client_request");
 		class_client_request.add<&client_request::__construct>("__construct");
 		class_client_request.add(php::property_entry("header", nullptr));
 		class_client_request.add(php::property_entry("body", std::string("")));
@@ -85,6 +85,4 @@ namespace net { namespace http {
 		}
 		return 0;
 	}
-
-
-}}
+}

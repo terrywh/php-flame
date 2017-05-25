@@ -1,12 +1,12 @@
-#include "../../vendor.h"
-#include "../../core.h"
+#include "../vendor.h"
+#include "../core.h"
 #include "server.h"
 #include "server_response.h"
 #include "header.h"
 
-namespace net { namespace http {
+namespace http {
 	void server_response::init(php::extension_entry& extension) {
-		php::class_entry<server_response> class_server_response("flame\\net\\http\\server_response");
+		php::class_entry<server_response> class_server_response("flame\\http\\server_response");
 		class_server_response.add<&server_response::__destruct>("__destruct");
 		class_server_response.add<&server_response::write_header>("write_header", {
 			php::of_integer("code"),
@@ -144,6 +144,4 @@ namespace net { namespace http {
 			return nullptr;
 		});
 	}
-
-
-}}
+}

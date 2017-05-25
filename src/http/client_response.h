@@ -1,6 +1,6 @@
 #pragma once
 
-namespace net { namespace http {
+namespace http {
 	class client;
 	class client_request;
 	class client_response: public php::class_base {
@@ -18,4 +18,4 @@ namespace net { namespace http {
 		friend class client;
 		friend class client_request;
 	};
-}}
+}

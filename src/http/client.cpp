@@ -1,12 +1,12 @@
-#include "../../vendor.h"
-#include "../../core.h"
+#include "../vendor.h"
+#include "../core.h"
 #include "client.h"
 #include "client_request.h"
 #include "client_response.h"
 
-namespace net { namespace http {
+namespace http {
 	void client::init(php::extension_entry& extension) {
-		php::class_entry<client> class_client("flame\\net\\http\\client");
+		php::class_entry<client> class_client("flame\\http\\client");
 		class_client.add<&client::__construct>("__construct");
 		class_client.add<&client::get>("get");
 		class_client.add<&client::get>("post");
@@ -152,4 +152,4 @@ namespace net { namespace http {
 			}
 		}
 	}
-}}
+}
