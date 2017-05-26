@@ -13,7 +13,7 @@ void core::init(php::extension_entry& extension) {
 	extension.add<core::go>("flame\\go");
 	extension.add<core::run>("flame\\run");
 	extension.add<core::sleep>("flame\\sleep");
-	extension.add<core::fork>("flame\\fork");
+	// extension.add<core::fork>("flame\\fork");
 	extension.on_module_startup([] (php::extension_entry& extension) -> bool {
 		// 初始化 core
 		evthread_use_pthreads();
@@ -21,6 +21,9 @@ void core::init(php::extension_entry& extension) {
 		core::task = new task_runner();
 		core::base_dns = evdns_base_new(core::base, EVDNS_BASE_INITIALIZE_NAMESERVERS);
 		core::keep = new keeper();
+#ifndef SO_REUSEPORT
+ 		php::warn("SO_REUSEPORT is needed if multiprocess is expected");
+#endif
 		return true;
 	});
 	extension.on_module_shutdown([] (php::extension_entry& extension) -> bool {
@@ -105,7 +108,7 @@ php::value core::generator_start(const php::value& r) {
 		return r;
 	}
 }
-static bool core_forked  = false;
+// static bool core_forked  = false;
 static bool core_started = false;
 
 php::value core::go(php::parameters& params) {
@@ -156,23 +159,23 @@ php::value core::sleep(php::parameters& params) {
 		return nullptr;
 	});
 }
-php::value core::fork(php::parameters& params) {
-#ifndef SO_REUSEPORT
-	throw php::exception("failed to fork: SO_REUSEPORT needed");
-#endif
-	if(core_started) {
-		throw php::exception("failed to fork: already running");
-	}
-	if(core_forked) {
-		throw php::exception("failed to fork: already forked");
-	}
-	core_forked = true;
-	int count = params[0];
-	if(count <= 0) {
-		count = 1;
-	}
-	for(int i=0;i<count;++i) {
-		if(::fork() == 0) break;
-	}
-	return nullptr;
-}
+// php::value core::fork(php::parameters& params) {
+// #ifndef SO_REUSEPORT
+// 	throw php::exception("failed to fork: SO_REUSEPORT needed");
+// #endif
+// 	if(core_started) {
+// 		throw php::exception("failed to fork: already running");
+// 	}
+// 	if(core_forked) {
+// 		throw php::exception("failed to fork: already forked");
+// 	}
+// 	core_forked = true;
+// 	int count = params[0];
+// 	if(count <= 0) {
+// 		count = 1;
+// 	}
+// 	for(int i=0;i<count;++i) {
+// 		if(::fork() == 0) break;
+// 	}
+// 	return nullptr;
+// }

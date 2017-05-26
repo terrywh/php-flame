@@ -150,7 +150,7 @@ namespace net {
 					0, reinterpret_cast<struct sockaddr*>(&self->remote_addr_), &len);
 			}
 			php::callable cb = std::move(self->cb_);
-			if(self->rbuffer_->len < 0) {
+			if(ssize_t(self->rbuffer_->len) < 0) {
 				cb(core::make_exception(
 					boost::format("read failed: %s") % strerror(errno),
 					errno
