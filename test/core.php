@@ -1,7 +1,6 @@
 <?php
 dl("flame.so");
-// 创建子进程 1 个（目前没有提供区分、识别父子进程的方式，理论上父子进程运行代码相同）
-// flame\fork(1);
+
 flame\run(function() {
 	// 启动 “协程”
 	// “协程” 将在 run 之后被分别调度执行
@@ -10,7 +9,7 @@ flame\run(function() {
 	// 1. 带有 yield 形式的函数定义（调用后会返回 Generator 对象）;
 	// 2. Generator 对象；
 	flame\go(test2);
-	
+
 	for($i=0;$i<10;++$i) {
 		echo "[3] $i\n";
 		// 使用 async 函数，将同步任务转化为异步（借助一个工作线程）

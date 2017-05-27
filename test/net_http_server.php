@@ -28,6 +28,6 @@ flame\run(function() {
 		yield $res->end("this is a error(404)");
 	});
 	echo "handler added\n";
-	yield $server->listen_and_serve("::", 6676);
+	yield $server->listen_and_serve("0.0.0.0", 6676);
 	echo "closed\n";
 });

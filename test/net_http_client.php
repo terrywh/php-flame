@@ -13,10 +13,10 @@ flame\run(function() {
 	var_dump($response);
 	$response = yield $client->get("http://127.0.0.1:6676/test2");
 	var_dump($response);
-	// for($i=0;$i<100000;++$i) {
-	// 	// 简化请求方式
-	// 	$response = yield $client->get("http://127.0.0.1:6676/test2");
-	// 	// $response = yield $client->post("http://127.0.0.1:6676/test2", "post data here");
-	// }
+	for($i=0;$i<100000;++$i) {
+		// 简化请求方式
+		$response = yield $client->get("http://127.0.0.1:6676/test2");
+		// $response = yield $client->post("http://127.0.0.1:6676/test2", "post data here");
+	}
 	echo microtime(true),"\n";
 });
