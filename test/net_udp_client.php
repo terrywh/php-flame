@@ -1,5 +1,6 @@
 <?php
 dl("flame.so");
+
 flame\run(function() {
 	$socket = new flame\net\udp_socket();
 	echo "created\n";

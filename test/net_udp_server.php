@@ -1,8 +1,6 @@
 <?php
 dl("flame.so");
-// 启动 2 个子进程
-// flame\fork(1);
-// 共计 3 个进程会执行下面代码
+
 flame\run(function() {
 	$server = new flame\net\udp_server();
 	// 绑定接收来自指定端口的数据

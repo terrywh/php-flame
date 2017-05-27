@@ -1,6 +1,6 @@
 <?php
 dl("flame.so");
-// flame\fork(1);
+
 flame\run(function() {
 	$server = new flame\http\server();
 	echo "server created\n";
