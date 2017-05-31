@@ -8,8 +8,8 @@ flame\run(function() {
 	});
 	// 数据库连接在长时间 idle 时会被服务端主动断开，这里将数据库对象交由
 	flame\db\connection::keep($db);
-	// preserve 函数原型
-	// preserve($db[, $method = "ping"[, $interval=60]]);
+	// keep 函数原型
+	// keep($db[, $method = "ping"[, $interval=60]]);
 	// 将 mysql 的查询过程交到工作线程中去，模拟异步流程，减少对主线程的阻塞
 	// 建议：不要在 async 内外同时使用 $db 相关对象（防止出现由于工作线程和主线程同时使用引起的竞争问题）
 	$data = yield flame\async(function($done) use($db) {

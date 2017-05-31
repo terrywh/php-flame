@@ -16,7 +16,12 @@ public:
 	static php::value make_exception(const boost::format& message, int code = 0) {
 		return php::make_exception(message.str(), code);
 	}
-	static php::value generator_start(const php::value& gn);
+	struct generator_wrapper {
+		php::generator  gn;
+		event           ev;
+		php::callable   cb;
+	};
+	static generator_wrapper* generator_start(const php::generator& gn);
 private:
 	static php::value go(php::parameters& params);
 	static php::value run(php::parameters& params);

@@ -36,19 +36,17 @@ void core::init(php::extension_entry& extension) {
 		return true;
 	});
 }
-
-struct core_generator_wrapper {
-	php::generator  gn;
-	event           ev;
-};
 // 核心调度逻辑
-static bool generator_continue(core_generator_wrapper* ew) {
+static bool generator_continue(core::generator_wrapper* ew) {
 	if(EG(exception) != nullptr) {
 		--core::count;
 		delete ew;
 		event_base_loopbreak(core::base);
 		return false;
 	}else if(!ew->gn.valid()) {
+		if(!ew->cb.is_empty()) {
+			ew->cb();
+		}
 		delete ew;
 		--core::count;
 		if(core::count == 0) {
@@ -62,7 +60,7 @@ static bool generator_continue(core_generator_wrapper* ew) {
 }
 // 核心运行逻辑
 static void generator_callback(evutil_socket_t fd, short events, void* data) {
-	core_generator_wrapper* ew = reinterpret_cast<core_generator_wrapper*>(data);
+	core::generator_wrapper* ew = reinterpret_cast<core::generator_wrapper*>(data);
 	php::value v = ew->gn.current();
 	if(v.is_callable()) {
 		// 传入的 函数 用于将异步执行结果回馈到 "协程" 中
@@ -90,33 +88,37 @@ static void generator_callback(evutil_socket_t fd, short events, void* data) {
 	}
 }
 // 所谓“协程”
-php::value core::generator_start(const php::value& r) {
-	if(r.is_generator()) {
-		core_generator_wrapper* ew = new core_generator_wrapper;
-		event_assign(&ew->ev, core::base, -1, EV_READ, generator_callback, ew);
-		ew->gn = r;
-		event_add(&ew->ev, nullptr);
-		event_active(&ew->ev, EV_READ, 0);
-		++core::count;
-		return nullptr;
-	}else{
-		if(EG(exception) != nullptr) {
-			event_base_loopbreak(core::base);
-		}else if(core::count == 0) {
-			event_base_loopexit(core::base, nullptr);
-		}
-		return r;
-	}
+core::generator_wrapper* core::generator_start(const php::generator& gn) {
+	core::generator_wrapper* ew = new core::generator_wrapper { gn };
+	event_assign(&ew->ev, core::base, -1, EV_READ, generator_callback, ew);
+	// ew->gn = gn;
+	event_add(&ew->ev, nullptr);
+	event_active(&ew->ev, EV_READ, 0);
+	++core::count;
+	return ew;
 }
 // static bool core_forked  = false;
 static bool core_started = false;
 
 php::value core::go(php::parameters& params) {
 	if(!core_started) throw php::exception("failed to start coroutine: core not running");
-	if(params[0].is_callable()) {
-		return generator_start(static_cast<php::callable>(params[0]).invoke());
+	php::value v = params[0];
+	if(v.is_callable()) {
+		v = static_cast<php::callable>(v).invoke();
+	}
+	if(v.is_generator()) {
+		core::generator_wrapper* ew = generator_start(v);
+		return php::value([ew] (php::parameters& params) -> php::value {
+			ew->cb = params[0];
+			return nullptr;
+		});
 	}else{
-		return generator_start(params[0]);
+		if(EG(exception) != nullptr) {
+			event_base_loopbreak(core::base);
+		}else if(core::count == 0) {
+			event_base_loopexit(core::base, nullptr);
+		}
+		return v;
 	}
 }
 // 程序启动
