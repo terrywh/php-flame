@@ -125,20 +125,24 @@ namespace net {
 			length_ = 0;
 		}else if(params[0].is_long()) { // 2. 读取指定长度
 			length_ = params[0];
+			if(length_ > TCP_MAX_BUFFER_SIZE) {
+				throw php::exception("read failed: data overflow", EOVERFLOW);
+			}
 		}else{ // 3. 读取到指定分隔符
 			length_ = -1;
 			delim_  = params[0];
 		}
 		return php::value([this] (php::parameters& params) -> php::value {
 			cb_ = params[0];
-			bufferevent_enable(socket_, EV_READ);
+			// 执行 read_handler 以确认当前剩余 buffer 是否足够满足条件
+			tcp_socket::read_handler(socket_, this);
 			return nullptr;
 		});
 	}
 	void tcp_socket::read_handler(struct bufferevent *socket_, void *ctx) {
 		tcp_socket* self = reinterpret_cast<tcp_socket*>(ctx);
+		size_t length = evbuffer_get_length(bufferevent_get_input(socket_));
 		if(self->length_ > 0) { // 按长度读取方式
-			size_t length = evbuffer_get_length(bufferevent_get_input(socket_));
 			if(length >= self->length_) {
 				php::string data(self->length_);
 				bufferevent_read(socket_, data.data(), self->length_);
@@ -146,17 +150,10 @@ namespace net {
 				bufferevent_disable(socket_, EV_READ);
 				php::callable cb = std::move(self->cb_);
 				cb(nullptr, std::move(data));
-			}else if(length > TCP_MAX_BUFFER_SIZE) {
-				// 当读取到的数据已经足够多，还未找到结束符时，抛出错误
-				// !!!! 注意 disable 调用必须在 cb_ 调用之前
-				bufferevent_disable(socket_, EV_READ);
-				php::callable cb = std::move(self->cb_);
-				cb(php::make_exception("read failed: data overflow", EOVERFLOW));
 			}else{
-				return;
+				bufferevent_enable(socket_, EV_READ);
 			}
 		}else if(self->length_ == 0) { // 有多少读多少
-			size_t length = evbuffer_get_length(bufferevent_get_input(socket_));
 			php::string data(length);
 			bufferevent_read(socket_, data.data(), length);
 			// !!!! 注意 disable 调用必须在 cb_ 调用之前
@@ -172,18 +169,19 @@ namespace net {
 			if(p.pos >= 0) {
 				php::string data(p.pos + self->delim_->len);
 				bufferevent_read(socket_, data.data(), data.length());
+				data.length() = data.length() - self->delim_->len; // 排除间隔符
 				// !!!! 注意 disable 调用必须在 cb_ 调用之前
 				bufferevent_disable(socket_, EV_READ);
 				php::callable cb = std::move(self->cb_);
 				cb(nullptr, std::move(data));
-			}else if(evbuffer_get_length(bufferevent_get_input(socket_)) > TCP_MAX_BUFFER_SIZE) {
+			}else if(length > TCP_MAX_BUFFER_SIZE) {
 				// 当读取到的数据已经足够多，还未找到结束符时，抛出错误
 				// !!!! 注意 disable 调用必须在 cb_ 调用之前
 				bufferevent_disable(socket_, EV_READ);
 				php::callable cb = std::move(self->cb_);
 				cb(php::make_exception("read failed: data overflow", EOVERFLOW));
 			}else{
-				return;
+				bufferevent_enable(socket_, EV_READ);
 			}
 		}
 	}
