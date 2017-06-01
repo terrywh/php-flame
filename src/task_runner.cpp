@@ -67,5 +67,5 @@ void task_runner::wait() {
 }
 void task_runner::stop() {
 	event_base_loopbreak(base_);
-	worker_.join();
+	if(worker_.joinable()) worker_.join();
 }

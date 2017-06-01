@@ -30,6 +30,7 @@ void core::init(php::extension_entry& extension) {
 		// 销毁 core
 		evdns_base_free(core::base_dns, 1);
 		event_base_free(core::base);
+		core::task->stop();
 		delete core::task;
 		delete core::keep;
 		libevent_global_shutdown();

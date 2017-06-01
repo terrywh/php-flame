@@ -10,8 +10,8 @@ flame\run(function() {
 	// 2. Generator 对象；
 	flame\go(test2);
 	// 等待协程
-	yield flame\go(test3);
-	echo "test3 ended.\n";
+	$i = yield flame\go(test3);
+	echo "test3 ended (".$i.").\n";
 });
 
 function test1() {
@@ -39,4 +39,5 @@ function test3() {
 			$done(null, "[3] " . time() . " -> ". $i . "\n");
 		});
 	}
+	return $i;
 }
