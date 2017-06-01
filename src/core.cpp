@@ -36,6 +36,12 @@ void core::init(php::extension_entry& extension) {
 		return true;
 	});
 }
+static void generator_finished(core::generator_wrapper* ew) {
+	if(!ew->cb.is_empty()) {
+		ew->cb(nullptr);
+	}
+	delete ew;
+}
 // 核心调度逻辑
 static bool generator_continue(core::generator_wrapper* ew) {
 	if(EG(exception) != nullptr) {
@@ -45,7 +51,7 @@ static bool generator_continue(core::generator_wrapper* ew) {
 		return false;
 	}else if(!ew->gn.valid()) {
 		if(!ew->cb.is_empty()) {
-			ew->cb();
+			ew->cb(nullptr, ew->gn.get_return());
 		}
 		delete ew;
 		--core::count;
