@@ -136,7 +136,10 @@ namespace http {
 		server_response* res = res_.native<server_response>();
 		res->init(evreq, hw->self);
 		// 将构建的 request 及 response 对象回调给指定对应的 handler
-		core::generator_start(hw->handler.invoke(req_, res_));
+		php::value rv = hw->handler.invoke(req_, res_);
+		if(rv.is_generator()) {
+			core::generator_start(rv);
+		}
 	}
 
 	void server::request_finish() {
