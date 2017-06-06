@@ -3,6 +3,7 @@
 #include "server.h"
 #include "server_response.h"
 #include "header.h"
+#include "zlib.h"
 
 namespace http {
 	void server_response::init(php::extension_entry& extension) {
@@ -21,6 +22,7 @@ namespace http {
 		class_server_response.add<&server_response::end>("end", {
 			php::of_string("data"),
 		});
+		class_server_response.add<&server_response::enable_gzip>("enable_gzip");
 		class_server_response.add(php::property_entry("header", nullptr));
 		extension.add(std::move(class_server_response));
 	}
@@ -29,8 +31,9 @@ namespace http {
 		req_ = evreq;
 		svr_ = svr;
 		evhttp_request_set_on_complete_cb(req_, server_response::complete_handler, this);
-		php::object  hdr_= php::object::create<header>();
-		hdr_.native<header>()->init(evhttp_request_get_output_headers(req_));
+		php::object hdr_= php::object::create<header>();
+        hdr_.native<header>()->init(evhttp_request_get_output_headers(req_));
+        hdr = hdr_.native<header>();
 		prop("header") = std::move(hdr_);
 	}
 
@@ -41,6 +44,7 @@ namespace http {
 
 	server_response::~server_response() {
 		evbuffer_free(chunk_);
+        if(is_gzip) deflateEnd(&strm_);
 	}
 
 	php::value server_response::__destruct(php::parameters& params) {
@@ -55,31 +59,113 @@ namespace http {
 		}
 		return nullptr;
 	}
+    php::value server_response::enable_gzip(php::parameters& params) {
+        strm_.zalloc = nullptr;
+        strm_.zfree  = nullptr;
+        strm_.opaque = nullptr;
+        strm_.next_in = (Bytef*)zin.data();
+        strm_.avail_in = 0;
+        // z_stream, level, method, windowBits(gzip => 15 < n < 32), memLevel(default = 1), strategy
+        int ret = deflateInit2(&strm_, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 31, 1, Z_DEFAULT_STRATEGY);
+        if(ret != Z_OK) {
+            throw php::exception("deflate init failure", ret);
+        }
+        evhttp_add_header(hdr->queue_, "Content-Encoding", "gzip");
+        //evhttp_add_header(hdr->queue_, "Content-Type", "text/html");
+        is_gzip = true;
+    }
 
 	php::value server_response::write_header(php::parameters& params) {
 		if(header_sent_) throw php::exception("write_header failed: header already sent");
 		if(params.length() > 1) {
 			zend_string* reason = params[1];
-			evhttp_send_reply_start(req_, params[0], reason->val);
+            evhttp_send_reply_start(req_, params[0], reason->val);
 		}else{
-			evhttp_send_reply_start(req_, params[0], nullptr);
+            evhttp_send_reply_start(req_, params[0], nullptr);
 		}
-		header_sent_ = true;
+        header_sent_ = true;
 		// libevent 没有提供 evhttp_send_reply_start 完成回调的功能，
 		// 参见：v2.1.8 http.c:2838
 		return nullptr;
 	}
 
+#define OUT_LEN 512
+    // TODO 内存使用优化
+    int32_t server_response::gzip_add() {
+        if(zin.length() == 0) return 0;
+        zout.reset();
+        uint32_t len;
+        strm_.next_in = (Bytef *)zin.data();
+        strm_.avail_in = zin.length();
+
+        do {
+            char out[OUT_LEN];
+            strm_.next_out  = reinterpret_cast<Bytef*>(out);
+            strm_.avail_out = OUT_LEN;
+            int32_t ret = deflate(&strm_, Z_NO_FLUSH);
+            if(ret == Z_BUF_ERROR) {
+                std::printf("buffer error is not fatal, deflate can call again to continue compressing\n");
+            } else if (ret < 0){
+                return ret;
+            }
+            uint32_t len = OUT_LEN - strm_.avail_out;
+            if(len > 0) memcpy(zout.put(len), out, len);
+        } while(strm_.avail_in != 0);
+
+        return len;
+    }
+
+    // TODO 内存使用优化
+    int32_t server_response::gzip_end() {
+        if(zin.length() != 0) {
+            strm_.next_in = (Bytef*)zin.data();
+            strm_.avail_in = zin.length();
+        } else {
+            strm_.next_in = nullptr;
+            strm_.avail_in = 0;
+        }
+        zout.reset();
+        int32_t ret = 0;
+        do {
+            char out[OUT_LEN];
+            strm_.next_out  = reinterpret_cast<Bytef*>(out);
+            strm_.avail_out = OUT_LEN;
+
+            ret = deflate(&strm_, Z_FINISH);
+            if(ret == Z_BUF_ERROR) {
+                std::printf("buffer error is not fatal, deflate can call again to continue compressing\n");
+            } else if (ret < 0) {
+                return ret;
+            }
+            uint32_t len = OUT_LEN - strm_.avail_out;
+            if(len > 0) {
+                memcpy(zout.put(len), out, len);
+            }
+        } while(ret != Z_STREAM_END);
+        return ret;
+    }
+
 	php::value server_response::write(php::parameters& params) {
-		if(completed_) throw php::exception("write failed: response aready ended");
-		wbuffer_.push_back(params[0]);
+		if(completed_)       throw php::exception("write failed: response aready ended");
+
+        if(is_gzip) {
+            zin = params[0];
+            int32_t ret = gzip_add();
+            if(ret < 0)          throw php::exception("gzip error: unknown exception", ret);
+            if(zout.size() == 0)
+                return nullptr;
+            wbuffer_.push_back(php::string(zout.data(), zout.size()));
+        } else {
+            wbuffer_.push_back(params[0]);
+        }
+
 		php::string& data = wbuffer_.back();
 		evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
 		return php::value([this] (php::parameters& params) -> php::value {
 			cb_ = params[0];
 			if(!header_sent_) {
 				evhttp_send_reply_start(req_, 200, nullptr);
-				header_sent_ = true;
+                header_sent_ = true;
 			}
 			evhttp_send_reply_chunk_with_cb(req_, chunk_,
 				reinterpret_cast<void (*)(struct evhttp_connection*, void*)>(server_response::complete_handler), this);
@@ -128,18 +214,25 @@ namespace http {
 	}
 
 	php::value server_response::end(php::parameters& params) {
-		if(completed_) throw php::exception("end failed: response already ended");
-		if(params.length() > 0) {
-			wbuffer_.push_back(params[0]);
-			php::string& data = wbuffer_.back();
-			evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
-		}
+		if(completed_)  throw php::exception("end failed: response already ended");
+        if(is_gzip) {
+            zin = params[0];
+            int32_t ret = gzip_end();
+            if(ret < 0) throw php::exception("gzip error: unknown exception", ret);
+            wbuffer_.push_back(php::string(zout.data(), zout.size()));
+            php::string& data = wbuffer_.back();
+            evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
+        } else if(params.length() > 0) {
+            wbuffer_.push_back(params[0]);
+            php::string& data = wbuffer_.back();
+            evbuffer_add_reference(chunk_, data.data(), data.length(), nullptr, nullptr);
+        }
 		return php::value([this] (php::parameters& params) -> php::value {
 			completed_ = true;
 			cb_ = params[0];
 			if(!header_sent_) {
 				evhttp_send_reply_start(req_, 200, nullptr);
-				header_sent_ = true;
+                header_sent_ = true;
 			}
 			evhttp_send_reply_chunk(req_, chunk_);
 			evhttp_send_reply_end(req_);

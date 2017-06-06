@@ -36,3 +36,4 @@
 #include <event2/http.h>
 #include <boost/format.hpp>
 #include <lmdb.h>
+#include <zlib.h>
