@@ -89,7 +89,41 @@ namespace http {
 		return nullptr;
 	}
 
-#define OUT_LEN 512
+#define OUT_LEN 1024
+    // TODO 内存使用优化
+    int32_t server_response::gzip_file(int fd, uint32_t size) {
+        if(size <= 0) {
+            return -1;
+        } else {
+            strm_.next_in = (Bytef*)mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+            strm_.avail_in = size;
+            if(strm_.next_in == MAP_FAILED) return -1;
+        }
+
+        int32_t ret = 0;
+        do {
+            int flush = Z_NO_FLUSH;
+            char out[OUT_LEN];
+            strm_.next_out  = reinterpret_cast<Bytef*>(out);
+            strm_.avail_out = OUT_LEN;
+            if(strm_.avail_in <= 0) flush = Z_FINISH;
+
+            ret = deflate(&strm_, flush);
+            if(ret == Z_BUF_ERROR) {
+                std::printf("buffer error is not fatal, deflate can call again to continue compressing\n");
+            } else if (ret < 0) {
+                munmap(strm_.next_in, size);
+                return ret;
+            }
+            uint32_t len = OUT_LEN - strm_.avail_out;
+            if(len > 0) {
+                evbuffer_add(chunk_, out, len);
+            }
+        } while(ret != Z_STREAM_END);
+        munmap(strm_.next_in, size);
+        return 0;
+    }
+
     // TODO 内存使用优化
     int32_t server_response::gzip_add() {
         if(zin.length() == 0) return 0;
@@ -108,7 +142,7 @@ namespace http {
             } else if (ret < 0){
                 return ret;
             }
-            uint32_t len = OUT_LEN - strm_.avail_out;
+            len = OUT_LEN - strm_.avail_out;
             if(len > 0) memcpy(zout.put(len), out, len);
         } while(strm_.avail_in != 0);
 
@@ -202,13 +236,23 @@ namespace http {
 				(boost::format("write_file failed: %s") % strerror(errno)).str(),
 				errno);
 		}
-		if(st.st_size <= 0 || evbuffer_add_file(chunk_, fd, 0, st.st_size) == -1) {
-			throw php::exception("write_file failed: EBADF", EBADF);
-		}
+        if(is_gzip) {
+            int ret = gzip_file(fd, st.st_size);
+            close(fd);
+            if(ret) {
+                throw php::exception("gzip file failed: unknows error", ret);
+            }
+        } else {
+            if(st.st_size <= 0 || evbuffer_add_file(chunk_, fd, 0, st.st_size) == -1) {
+                throw php::exception("write_file failed: EBADF", EBADF);
+            }
+        }
 		return php::value([this] (php::parameters& params) -> php::value {
 			completed_ = true;
 			cb_ = params[0];
-			evhttp_send_reply(req_, 200, "OK", chunk_);
+			evhttp_send_reply_start(req_, 200, "OK");
+            evhttp_send_reply_chunk(req_, chunk_);
+            evhttp_send_reply_end(req_);
 			return nullptr;
 		});
 	}

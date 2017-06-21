@@ -47,6 +47,7 @@ namespace http {
 				php::callable cb = std::move(req->cb_);
 				cb(php::make_exception("execute failed: unknown"));
 			}
+            reqs_.insert(std::pair<void*, php::object>(req, req_));
 			// req->cb_ 等待 complete_handler 调用
 			return nullptr;
 		});
@@ -96,12 +97,12 @@ namespace http {
 	}
 
 	void client::complete_handler(struct evhttp_request* req_, void* ctx) {
-		std::printf("complete\n");
+		//std::printf("complete\n");
 		client_request* req = reinterpret_cast<client_request*>(ctx);
 		if(req->cb_.is_empty()) return; // 发生错误已经被处理过了
 		client* self = req->cli_;
+        php::callable cb = std::move(req->cb_);
 		if(req_ == nullptr || evhttp_request_get_response_code(req_) == 0) { // 其他未知错误
-			php::callable cb = std::move(req->cb_);
 			cb(php::make_exception("request failed: unknown error", 0));
 			return;
 		}
@@ -109,14 +110,14 @@ namespace http {
 		php::object res_= php::object::create<client_response>();
 		client_response* res = res_.native<client_response>();
 		res->init(req_);
-		// 返回 client_response 对象
-		php::callable cb = std::move(req->cb_);
-		cb(nullptr, res_);
 		// 当请求完成后，连接还未释放，表示可以重用
 		if(req->conn_ != nullptr) {
 			self->release(req->key_, req->conn_);
 			req->conn_ = nullptr;
 		}
+        self->reqs_.erase(req);
+        // 返回 client_response 对象
+		cb(nullptr, res_);
 	}
 
 	void client::error_handler(enum evhttp_request_error err, void* ctx) {
@@ -170,6 +171,13 @@ namespace http {
 				std::make_pair(key, (connection_wrapper){ttl_, conn})
 			);
 		}else{
+            bufferevent* bev_ = evhttp_connection_get_bufferevent(conn);
+            SSL* ssl_ = bufferevent_openssl_get_ssl(bev_);
+            if(ssl_ != nullptr) {
+                SSL_free(ssl_);
+                SSL_CTX* ssl_ctx_ = SSL_get_SSL_CTX(ssl_);
+                SSL_CTX_free(ssl_ctx_);
+            }
 			evhttp_connection_free(conn);
 		}
 	}
@@ -179,8 +187,8 @@ namespace http {
 		for(auto i=self->connection_.begin();i!=self->connection_.end(); ) {
 			i->second.ttl -= 5;
 			if(i->second.ttl <= 0) {
-				evhttp_connection_free(i->second.conn);
-				i = self->connection_.erase(i);
+                evhttp_connection_free(i->second.conn);
+                i = self->connection_.erase(i);
 			}else{
 				++i;
 			}

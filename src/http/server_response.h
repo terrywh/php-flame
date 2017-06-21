@@ -21,6 +21,7 @@ namespace http {
 		php::value end(php::parameters& params);
 	private:
 		static void complete_handler(struct evhttp_request* req_, void* ctx);
+        int32_t gzip_file(int fd, uint32_t size);
         int32_t gzip_add();
         int32_t gzip_end();
 		bool                   header_sent_;

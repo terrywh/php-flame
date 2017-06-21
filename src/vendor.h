@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
@@ -31,9 +32,12 @@
 #include <event2/util.h>
 #include <event2/dns.h>
 #include <event2/bufferevent.h>
+#include <event2/bufferevent_ssl.h>
 #include <event2/buffer.h>
 #include <event2/listener.h>
 #include <event2/http.h>
 #include <boost/format.hpp>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include <lmdb.h>
 #include <zlib.h>

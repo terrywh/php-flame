@@ -18,6 +18,8 @@ namespace net {
 		php::value write(php::parameters& params);
 
 		php::value bind(php::parameters& params);
+    private:
+        struct addrinfo* resolver(const char* host, const char* port, int sock_type);
 	protected:
 		evutil_socket_t socket_;
 		zend_string*    rbuffer_;

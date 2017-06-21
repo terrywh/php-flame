@@ -14,7 +14,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 CXX?=g++
 CXXFLAGS?= -g -O0
 INCLUDE= -I${ROOT_TERRYWH}/libphpext -I/data/vendor/libevent/include -I/data/vendor/lmdb/include `${PHP_CONFIG} --includes`
-LIBRARY= ${ROOT_TERRYWH}/libphpext/libphpext.a /data/vendor/libevent/lib/libevent.a /data/vendor/lmdb/lib/liblmdb.a /data/vendor/libevent/lib/libevent_pthreads.a -lpthread
+LIBRARY= ${ROOT_TERRYWH}/libphpext/libphpext.a /data/vendor/libevent/lib/libevent.a /data/vendor/libevent/lib/libevent_openssl.a /data/vendor/lmdb/lib/liblmdb.a /data/vendor/libevent/lib/libevent_pthreads.a -lpthread
 
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)

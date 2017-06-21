@@ -79,13 +79,42 @@ namespace net {
 		return nullptr;
 	}
 
+    struct addrinfo* udp_socket::resolver(const char* host, const char* port, int sock_type) {
+        struct addrinfo  hint;
+        struct addrinfo* result;
+        memset(&hint, 0x00, sizeof(hint));
+        hint.ai_family   = AF_UNSPEC;
+        hint.ai_socktype = sock_type;
+        hint.ai_flags    = 0;
+        hint.ai_protocol = 0;
+
+        int ret = getaddrinfo(host, port, &hint, &result);
+        if(ret < 0) {
+			throw php::exception(
+				(boost::format("getaddrinfo failed: %s") % strerror(errno)).str(), errno);
+        }
+        return result;
+    }
+
 	php::value udp_socket::connect(php::parameters& params) {
 		int rlen = sizeof(remote_addr_);
 		zend_string* addr = params[0];
-		parse_addr_port(
-			addr->val, static_cast<int>(params[1]),
-			reinterpret_cast<struct sockaddr*>(&remote_addr_), (int*)&rlen
-		);
+        struct addrinfo* remote = resolver(addr->val, std::to_string(static_cast<int>(params[1])).c_str(), SOCK_DGRAM);
+
+        for(struct addrinfo* ai = remote; ai; ai = ai->ai_next) {
+            char addr[128];
+            if(ai->ai_family == AF_INET) {
+                sockaddr_in v4;
+                memcpy(&v4, ai->ai_addr, sizeof(v4));
+                printf("%d;%s:%d\n", AF_INET, inet_ntop(AF_INET, &v4.sin_addr, addr, 128), ntohs(v4.sin_port));
+            } else if(ai->ai_family = AF_INET6) {
+                sockaddr_in6 v6;
+                memcpy(&v6, ai->ai_addr, sizeof(v6));
+                printf("%d;%s:%d\n", AF_INET, inet_ntop(AF_INET6, &v6.sin6_addr, addr, 128), ntohs(v6.sin6_port));
+            }
+        }
+        memcpy(&remote_addr_, remote->ai_addr, sizeof(struct sockaddr));
+
 		socket_ = create_socket(remote_addr_.va.sa_family, SOCK_DGRAM, IPPROTO_UDP, false);
 		// TODO 使用 dns_base 解析域名后再进行 “连接”
 		if(-1 == ::connect(socket_,
