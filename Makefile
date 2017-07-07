@@ -1,34 +1,48 @@
-#ROOT_TERRYWH=/data/wuhao/cpdocs/github.com/terrywh
-ROOT_TERRYWH=..
+LIBEXTPHP_ROOT=../libphpext
 
-EXTENSION_NAME=flame
-EXTENSION_VERSION=0.6.0
+EXT_NAME=flame
+EXT_VER=0.7.0
 
-ROOT_PROJECT=${ROOT_TERRYWH}/php-${EXTENSION_NAME}
-
-# PHP_PREFIX=/usr/local/php-7.0.19-test
-PHP_PREFIX=/usr/local/php
+PHP_PREFIX=/usr/local/php-7.0.19-test
+# PHP_PREFIX=/usr/local/php
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 
 CXX?=g++
 CXXFLAGS?= -g -O0
-INCLUDE= -I${ROOT_TERRYWH}/libphpext -I/data/vendor/libevent/include -I/data/vendor/lmdb/include `${PHP_CONFIG} --includes`
-LIBRARY= ${ROOT_TERRYWH}/libphpext/libphpext.a /data/vendor/libevent/lib/libevent.a /data/vendor/libevent/lib/libevent_openssl.a /data/vendor/lmdb/lib/liblmdb.a /data/vendor/libevent/lib/libevent_pthreads.a -lpthread
+LDFLAGS?=-Wl,-rpath=/usr/local/gcc7/lib64/
+LDFLAGS_DEFAULT= -u get_module -Wl,-rpath='$$ORIGIN/'
+
+INCLUDE= `${PHP_CONFIG} --includes` \
+ -I${LIBEXTPHP_ROOT} \
+ -I/data/vendor/libuv/include
+CXXFLAGS_DEFAULT= -std=c++11 -fPIC \
+ -include ./deps/deps.h
+
+LIBRARY=${LIBEXTPHP_ROOT}/libphpext.a \
+ /data/vendor/libuv/lib/libuv.a
 
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
+HEADERX=deps/deps.h.gch
 
-EXTENSION=${EXTENSION_NAME}.so
+EXTENSION=${EXT_NAME}.so
 
-.PHONY: install clean
+.PHONY: all install clean
 
-${EXTENSION}: ${OBJECTS} ${ROOT_TERRYWH}/libphpext/libphpext.a
-	${CXX} -shared ${OBJECTS} ${LIBRARY} -Wl,-rpath='$$ORIGIN/' -Wl,-rpath='/usr/local/gcc6/lib64/' -u get_module -o ${EXTENSION_NAME}.so
+all: ${EXTENSION}
+
+${EXTENSION}: ${HEADERX} ${OBJECTS}
+	${CXX} -shared ${OBJECTS} ${LIBRARY} ${LDFLAGS_DEFAULT} ${LDFLAGS} -o $@
+${HEADERX}: deps/deps.h
+	${CXX} -x c++ ${CXXFLAGS_DEFAULT} ${CXXFLAGS} ${INCLUDE} -c $^ -o $@
+src/extension.o: src/extension.cpp
+	${CXX} ${CXXFLAGS_DEFAULT} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDE} -c $^ -o $@
 %.o: %.cpp
-	${CXX} -std=c++11 -fPIC -DEXTENSION_NAME=\"${EXTENSION_NAME}\" -DEXTENSION_VERSION=\"${EXTENSION_VERSION}\" ${CXXFLAGS} ${INCLUDE} -c $^ -o $@
+	${CXX} ${CXXFLAGS_DEFAULT} ${CXXFLAGS} ${INCLUDE} -c $^ -o $@
 
 clean:
+	rm -f ${HEADERX}
 	rm -f ${EXTENSION} ${OBJECTS} $(shell find ./src -name "*.o")
 install: ${EXTENSION}
 	cp -f ${EXTENSION} `${PHP_CONFIG} --extension-dir`
