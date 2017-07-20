@@ -1,49 +1,54 @@
-
-**flame** 是一个 PHP 框架，借用 PHP Generator 实现 协程式 的编程服务。目前，flame 中提供了如下功能：
+## Flame
+**Flame** 是一个 PHP 框架，借用 PHP Generator 实现 协程式 的编程服务。目前，flame 中提供了如下功能：
 1. 协程 API；
-2. 伪异步任务（工作线程）API；
-3. 协程式网络 API；
+2. 协程式网络 API；
 	1. HTTP 客户端、服务端；
 	2. Unix Socket 客户端、服务端； 
 	3. TCP 客户端、服务端；
 	4. UDP 客户端、服务端；
-4. 协程式驱动 API：
+3. 协程式驱动 API：
 	1. MySQL 客户端；
 	2. Redis 客户端；
 
-### flame
+## `namespace flame`
 
-#### flame\go
-功能：
-	启动一个“协程”；注意协程**不会立刻启动**（等待 `flame\run()` 函数的调度执行），但本函数会立即返回；
-原型：
-```
-	function flame\go(generator g);
-```
-示例：
-```
+最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
+
+#### `flame\go(callable cb)`
+**功能**：
+	生成一个“协程”；
+
+**示例**：
+``` php
 function g1() {
 	yield 1;
 	yield 2;
 }
-// 形式1：传入 Generator 函数的定义：
+// 传入 Generator 函数的定义：
 flame\go(g1);
-// 形式2：传入 Generator 函数的调用（Generator 对象）；
-flame\go(g1());
+flame\go(function() {
+	yield 3;
+	yield 4;
+
+});
 ```
 
-#### flame\run
-功能：
-	框架入口，所有协程调度在此处开始执行，直到结束；注意 run() 一般放置在入口执行文件的最后，开始后本函数会阻塞，直到所有协程执行结束；
-原型：
-```
-	function flame\run();
-```
-示例：
-```
-function g1() { 
-	// ...
-}
-flame\go(g1);
+**注意**：
+* `cb` 必须是 `Generator Function` 即 函数中包含 `yield` 表达式；
+* 协程**不会立刻启动**（需要等待 `flame\run()` 函数的调度执行），但本函数会立即返回；
+
+#### `flame\run()`
+**功能**：
+	框架入口，所有协程调度在此处开始执行，直到所有“协程”结束；
+
+
+**示例**：
+``` php
+flame\go(function() {
+	// yield ...
+});
 flame\run();
 ```
+
+**注意**:
+* 此函数调用一般放置在入口执行文件的最后，开始后本函数会阻塞，直到所有协程执行结束；
