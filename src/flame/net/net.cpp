@@ -1,4 +1,5 @@
 #include "net.h"
+#include "stream_socket.h"
 #include "tcp_socket.h"
 #include "tcp_server.h"
 
