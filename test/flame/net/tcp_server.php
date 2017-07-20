@@ -16,7 +16,7 @@ flame\go(function() {
 			}
 		}
 	});
-	$server->bind("127.0.0.1", 7678);
+	$server->bind("::", 7678);
 	// 在 $server->close() 之前，会“阻塞”在此处
 	yield $server->run();
 });

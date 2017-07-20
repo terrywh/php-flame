@@ -58,6 +58,16 @@ namespace net {
 		}
 		return error;
 	}
+	void enable_socket_reuseport(uv_handle_t* h) {
+#ifdef SO_REUSEPORT
+		uv_os_fd_t fd;
+		uv_fileno(h, &fd);
+		int opt = 1;
+		if(-1 == setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
+			php::warn("failed to enable SO_REUSEPORT:", strerror(errno));
+		}
+#endif
+	}
 }	
 }
 
