@@ -1,23 +1,21 @@
-#include "../promise.h"
 #include "sleep.h"
+#include "../fiber.h"
 
 namespace flame {
 namespace time {
-	sleep_fn::sleep_fn() {
-		uv_timer_init(uv_default_loop(), &timer_);
-		timer_.data = this;
+	static void timer_cb(uv_timer_t* tm) {
+		flame::fiber* f = (fiber*)tm->data;
+		f->next(); // 不需要带回具体的值
 	}
-	php::value sleep_fn::sleep(php::parameters& params) {
-		sleep_fn* sf = new sleep_fn();
+	php::value sleep(php::parameters& params) {
+		uv_timer_t* tm = new uv_timer_t;
+		// 记录当前协程指针，并在回调函数中恢复
+		tm->data = flame::this_fiber();
 		int64_t ms = params[0];
-		uv_timer_start(&sf->timer_, timer_cb, ms, 0);
-		return sf->future_;
+		uv_timer_init(flame::loop, tm);
+		uv_timer_start(tm, timer_cb, ms, 0);
+		// 标记异步任务的特殊返回值
+		return flame::async;
 	}
-	void sleep_fn::timer_cb(uv_timer_t* timer_) {
-		sleep_fn* sf = reinterpret_cast<sleep_fn*>(timer_->data);
-		sf->resolve();
-		delete sf;
-	}
-
 }
 }

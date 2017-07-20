@@ -5,7 +5,7 @@ namespace flame {
 namespace time {
 
 	void init(php::extension_entry& ext) {
-		ext.add<flame::time::sleep_fn::sleep>("flame\\time\\sleep");
+		ext.add<flame::time::sleep>("flame\\time\\sleep");
 	}
 
 }

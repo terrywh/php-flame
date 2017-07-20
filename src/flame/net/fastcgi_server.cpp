@@ -22,7 +22,7 @@
 // 	return nullptr;
 // }
 
-// mill_coroutine static void session_handler(fastcgi_session* sess) {
+// mill_fiber static void session_handler(fastcgi_session* sess) {
 // 	sess->run();
 // }
 
