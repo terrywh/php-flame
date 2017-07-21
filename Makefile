@@ -6,9 +6,9 @@ EXT_VER=0.7.0
 PHP_PREFIX=/usr/local/php-7.0.19-test
 # PHP_PREFIX=/usr/local/php
 
-CXX?=/usr/local/gcc-7.1.0/bin/g++
+CXX=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -g -O0
-LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
+LDFLAGS=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
@@ -17,9 +17,13 @@ CXXFLAGS_DEFAULT= -std=c++14 -fPIC \
  -include ./deps.h
 INCLUDE= `${PHP_CONFIG} --includes` \
  -I${LIBEXTPHP_ROOT} \
- -I/data/vendor/libuv/include
+ -I/data/vendor/libuv/include \
+ -I/data/vendor/hiredis \
+ -I/data/vendor/libcurl/include
 LIBRARY=${LIBEXTPHP_ROOT}/libphpext.a \
- /data/vendor/libuv/lib/libuv.a
+ /data/vendor/libuv/lib/libuv.a \
+ /data/vendor/hiredis/lib/libhiredis.a \
+ /data/vendor/libcurl/lib/libcurl.a -lrt
 
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)

@@ -1,6 +1,7 @@
 #include "flame/flame.h"
 #include "flame/time/time.h"
 #include "flame/net/net.h"
+#include "flame/db/db.h"
 
 void extension_init(php::extension_entry& ext) {
 	ext.init(EXT_NAME, EXT_VER);
@@ -10,4 +11,6 @@ void extension_init(php::extension_entry& ext) {
 	flame::time::init(ext);
 	// net
 	flame::net::init(ext);
+	// db
+	flame::db::init(ext);
 }
