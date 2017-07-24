@@ -50,10 +50,10 @@ install: ${EXTENSION}
 ./deps/libuv/.libs/libuv.a:
 	cd ./deps/libuv; ./autogen.sh; CFLAGS=-fPIC ./configure 
 	make -C ./deps/libuv -j2
-./deps/curl/:
+./deps/curl/lib/.libs/libcurl.a:
 	cd ./deps/curl; ./buildconf; CFLAGS=-fPIC ./configure
 	make -C ./deps/curl -j2
-./deps/hiredis/:
+./deps/hiredis/libhiredis.a:
 	make -C ./deps/hiredis -j2
 # 依赖清理
 # ---------------------------------------------------------------------
