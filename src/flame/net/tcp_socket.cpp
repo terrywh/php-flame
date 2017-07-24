@@ -21,7 +21,7 @@ namespace net {
 			throw php::exception(uv_strerror(error), error);
 		}
 		uv_connect_t* req = new uv_connect_t;
-		req->data = flame::this_fiber()->push(this);
+		req->data = flame::this_fiber(this);
 		error = uv_tcp_connect(req, &socket_, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
 		if(error != 0) {
 			throw php::exception(uv_strerror(error), error);
@@ -30,7 +30,7 @@ namespace net {
 	}
 	void tcp_socket::connect_cb(uv_connect_t* req, int error) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);
-		tcp_socket* self = f->pop<tcp_socket>();
+		tcp_socket* self = f->context<tcp_socket>();
 		delete req;
 		
 		if(error < 0) {

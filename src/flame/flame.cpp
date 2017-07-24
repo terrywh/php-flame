@@ -6,16 +6,17 @@ namespace flame {
 		zval* ff = static_cast<zval*>(async);
 		ZVAL_PTR(ff, &ext);
 		loop = uv_default_loop();
+		// 基础协程函数
 		ext.add<go>("flame\\go");
 		ext.add<run>("flame\\run");
 	}
-	
 	php::value go(php::parameters& params) {
 		php::callable& cb = params[0];
-		if(!fiber::start(cb)) {
-			throw php::exception("failed to launch fiber: not a generator or error occurred");
+		php::value rv = fiber::start(cb);
+		if(!rv.is_null()) {
+			php::info("only a Generator Function can be started as a coroutine");
 		}
-		return nullptr;
+		return rv;
 	}
 
 	php::value run(php::parameters& params) {

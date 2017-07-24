@@ -9,5 +9,5 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 
-#include <uv.h>
-#include <phpext.h>
+#include "libuv/include/uv.h"
+#include "libphpext/phpext.h"

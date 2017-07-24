@@ -15,7 +15,7 @@ namespace net {
 		return nullptr;
 	}
 	php::value stream_socket::read(php::parameters& params) {
-		pstream_->data = flame::this_fiber()->push(this);
+		pstream_->data = flame::this_fiber(this);
 		int error = uv_read_start(pstream_, alloc_cb, read_cb);
 		if(error < 0) { // 同步过程发生错误，直接抛出异常
 			throw php::exception(uv_strerror(error), error);
@@ -24,16 +24,16 @@ namespace net {
 	}
 	void stream_socket::alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(handle->data);
-		stream_socket* self = f->top<stream_socket>();
+		stream_socket* self = f->context<stream_socket>();
 		self->rbuffer_.rev(1792);
 		buf->base = self->rbuffer_.data(); // 使用内置 buffer
 		buf->len  = 1792;
 	}
 	void stream_socket::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(stream->data);
-		stream_socket* self = f->top<stream_socket>();
+		stream_socket* self = f->context<stream_socket>();
 		if(nread < 0) {
-			f->pop<stream_socket>();
+			f->context<stream_socket>();
 			if(nread == UV_EOF) {
 				f->next();
 			}else{ // 异步过程发生错误，需要通过协程返回
@@ -46,7 +46,7 @@ namespace net {
 			uv_read_stop(stream);
 			self->rbuffer_.put(nread);
 
-			f->pop<stream_socket>();
+			f->context<stream_socket>();
 			f->next(std::move(self->rbuffer_));
 		}
 	}
@@ -59,7 +59,7 @@ namespace net {
 			return nullptr;
 		}
 		uv_write_t* req = new uv_write_t;
-		req->data = flame::this_fiber()->push(this);
+		req->data = flame::this_fiber(this);
 		uv_buf_t buf {.base = wbuffer_.data(), .len = wbuffer_.length()};
 		int error = uv_write(req, pstream_, &buf, 1, write_cb);
 		if(error < 0) {
@@ -69,7 +69,7 @@ namespace net {
 	}
 	void stream_socket::write_cb(uv_write_t* req, int status) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);
-		stream_socket* self = f->pop<stream_socket>();
+		stream_socket* self = f->context<stream_socket>();
 		delete req;
 		self->wbuffer_.reset(); // 删除引用的数据
 		if(status < 0) {
