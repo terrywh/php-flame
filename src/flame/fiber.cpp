@@ -2,8 +2,15 @@
 
 namespace flame {
 	uv_loop_t* loop;
+	// 异步函数标记
 	php::value async;
+	// 当前“协程”
 	fiber* fiber::cur_ = nullptr;
+	fiber::fiber()
+	: ctx_(flame::loop) { 
+		// 使用 flame::loop 作为上下文的特殊标记
+	}
+	// 协程的执行过程
 	bool fiber::run_() {
 		while(true) { // TODO 是否需要所有协程的统一的退出标记？
 			if(EG(exception) || !gen_.valid()) {

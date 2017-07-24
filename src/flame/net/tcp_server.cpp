@@ -45,7 +45,7 @@ namespace net {
 		if(status_ < 2) {
 			throw php::exception("failed to run server: not binded or missing handler");
 		}
-		server_.data = flame::this_fiber()->push(this);
+		server_.data = flame::this_fiber(this);
 		int error = uv_listen(reinterpret_cast<uv_stream_t*>(&server_), 1024, connection_cb);
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
@@ -55,11 +55,11 @@ namespace net {
 	}
 	void tcp_server::connection_cb(uv_stream_t* stream, int error) {
 		flame::fiber* f = reinterpret_cast<flame::fiber*>(stream->data);
-		tcp_server*self = f->top<tcp_server>();
+		tcp_server*self = f->context<tcp_server>();
 
 		if(error < 0) {
 			--self->status_;
-			f->pop<tcp_server>();
+			f->context<tcp_server>();
 			f->next(php::make_exception(uv_strerror(error), error));
 			return;
 		}
@@ -68,30 +68,25 @@ namespace net {
 		error = uv_accept(stream, reinterpret_cast<uv_stream_t*>(&scli->socket_));
 		if(error < 0) {
 			--self->status_;
-			f->pop<tcp_server>();
+			f->context<tcp_server>();
 			f->next(php::make_exception(uv_strerror(error), error));
 			return;
 		}
 		// 在新的“协程”中运行客户端连接的 handle 过程
-		if(!fiber::start(self->handle_, sock)) {
-			--self->status_;
-			f->pop<tcp_server>();
-			f->next(php::make_exception("unknown error", 0));
-			return;
-		}
+		fiber::start(self->handle_, sock);
 	}
 	php::value tcp_server::close(php::parameters& params) {
 		if(uv_is_closing(reinterpret_cast<uv_handle_t*>(&server_))) return nullptr;
-		server_.data = flame::this_fiber()->push(this);
+		server_.data = flame::this_fiber(this);
 		uv_close(reinterpret_cast<uv_handle_t*>(&server_), close_cb);
 		return nullptr;
 	}
 	void tcp_server::close_cb(uv_handle_t* handle) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(handle->data);
-		tcp_server* self = f->pop<tcp_server>();
+		tcp_server* self = f->context<tcp_server>();
 		if(self->status_ == 3) {
 			--self->status_;
-			f->pop<tcp_server>();
+			f->context<tcp_server>();
 		}
 		f->next(); // 这里，将当前 server 的运行协程（阻塞在 yield run()）恢复执行
 	}
