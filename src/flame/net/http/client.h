@@ -1,8 +1,4 @@
-#include <phpext.h>
-#include <typeinfo>
-#include <iostream>
-#include <curl.h>
-#include "../fiber.h"
+#include "../../fiber.h"
 
 
 
@@ -10,12 +6,13 @@
 // php::value fn(php::parameters& params);
 namespace flame {
 namespace net {
+namespace http {
 size_t write_callback(char* ptr, size_t size, size_t nmemb, void *userdata);
 
-struct http_request: public php::class_base {
-	http_request() {
+struct request: public php::class_base {
+	request() {
 	}
-	virtual ~http_request() {
+	virtual ~request() {
 	}
 	php::value __construct(php::parameters& params);
 	php::value __destruct(php::parameters& params) {}
@@ -24,7 +21,7 @@ struct http_request: public php::class_base {
 	// 设置post数据
 	php::value content(php::parameters& params) {
 		php::string& content = params[0];
-		_postfield = content;
+		postfield_ = content;
 		return nullptr;
 	}
 
@@ -36,7 +33,7 @@ struct http_request: public php::class_base {
 		php::value p = prop("header");
 		return p;
 	}
-	int get_timeout() {
+	int gettimeout_() {
 		php::value& p = prop("timeout");
 		if (p.is_null()) {
 			return 10;
@@ -44,19 +41,19 @@ struct http_request: public php::class_base {
 			return p;
 		}
 	}
-	php::string _postfield;
+	php::string postfield_;
 };
 
-class http_client: public php::class_base {
+class client: public php::class_base {
 public:
-	http_client():_curlm_handle(NULL),_exe_times(0),_debug(0){
+	client():curlm_handle_(NULL),exe_times_(0),debug_(0){
 	}
-	virtual ~http_client() {
+	virtual ~client() {
 		Release();
 	}
 	// curl要用的回调
 	static int handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp);
-	static int start_timeout(CURLM* multi, long timeout_ms, void* userp);
+	static int starttimeout_(CURLM* multi, long timeout_ms, void* userp);
 	static void curl_perform(uv_poll_t *req, int status, int events);
 	
 	php::value __construct(php::parameters& params);
@@ -68,49 +65,50 @@ public:
 	//不暴露给php的内部函数
 
 	void SetResult(const char* p, int len) {
-		if (_result.is_empty() == false) {
-			php::string buf(_result.length() + len);
-			memcpy(buf.data(),_result.data(), _result.length());
-			memcpy(buf.data()+_result.length(), p, len);
-			_result = buf;
+		if (result_.is_empty() == false) {
+			php::string buf(result_.length() + len);
+			memcpy(buf.data(),result_.data(), result_.length());
+			memcpy(buf.data()+result_.length(), p, len);
+			result_ = buf;
 		}
 		else {
-			_result = php::string(p,len);
+			result_ = php::string(p,len);
 		}
 	}
-	php::value exec(http_request* request);
+	php::value exec(request* request);
 	CURLM* get_curl_handle() {
-		return _curlm_handle;
+		return curlm_handle_;
 	}
 	int ExeOnce() {
-		return _exe_times++;
+		return exe_times_++;
 	}
 	void Release() {
-		if (_curlm_handle) {
-			curl_multi_cleanup(_curlm_handle);
-			_curlm_handle = NULL;
+		if (curlm_handle_) {
+			curl_multi_cleanup(curlm_handle_);
+			curlm_handle_ = NULL;
 		}
 	}
 
-	uv_timer_t _timeout;
-	flame::fiber* _fiber;
-	php::string _result;
+	uv_timer_t timeout_;
+	flame::fiber* fiber_;
+	php::string result_;
 private:
-	CURLM* _curlm_handle;
-	int _exe_times;
-	int _debug;
+	CURLM* curlm_handle_;
+	int exe_times_;
+	int debug_;
 };
 
 typedef struct curl_context_s {
 	uv_poll_t poll_handle;
 	curl_socket_t sockfd;
-	http_client* client;
+	client* cli;
 
 } curl_context_t;
 
-php::value http_get(php::parameters& params);
-php::value http_post(php::parameters& params);
-php::value http_put(php::parameters& params);
+php::value get(php::parameters& params);
+php::value post(php::parameters& params);
+php::value put(php::parameters& params);
 
+}
 }
 }
