@@ -3,8 +3,7 @@ EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
 EXT_VER=0.7.0
 # PHP环境
-PHP_PREFIX=/usr/local/php-7.0.19-test
-# PHP_PREFIX=/usr/local/php
+PHP_PREFIX?=/usr/local/php-7.0.19-test
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
@@ -19,7 +18,8 @@ LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/libphpext/libphpext.a \
  ./deps/libuv/.libs/libuv.a \
  ./deps/curl/lib/.libs/libcurl.a \
- ./deps/hiredis/libhiredis.a
+ ./deps/hiredis/libhiredis.a \
+ -lrt
 # 代码和预编译头文件
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
