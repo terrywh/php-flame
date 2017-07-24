@@ -17,7 +17,9 @@ INCLUDES_CORE= `${PHP_CONFIG} --includes`
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/libphpext/libphpext.a \
- ./deps/libuv/.libs/libuv.a
+ ./deps/libuv/.libs/libuv.a \
+ ./deps/curl/lib/.libs/libcurl.a \
+ ./deps/hiredis/libhiredis.a
 # 代码和预编译头文件
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
@@ -44,10 +46,15 @@ install: ${EXTENSION}
 # 依赖库的编译过程
 # ----------------------------------------------------------------------
 ./deps/libphpext/libphpext.a:
-	make -C ./deps/libphpext
+	make -C ./deps/libphpext -j2
 ./deps/libuv/.libs/libuv.a:
 	cd ./deps/libuv; ./autogen.sh; CFLAGS=-fPIC ./configure 
-	make -C ./deps/libuv
+	make -C ./deps/libuv -j2
+./deps/curl/:
+	cd ./deps/curl; ./buildconf; CFLAGS=-fPIC ./configure
+	make -C ./deps/curl -j2
+./deps/hiredis/:
+	make -C ./deps/hiredis -j2
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:
