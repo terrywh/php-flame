@@ -1,0 +1,12 @@
+[submodule "deps/curl"]
+	path = deps/curl
+	url = https://github.com/curl/curl.git
+[submodule "deps/hiredis"]
+	path = deps/hiredis
+	url = https://github.com/redis/hiredis.git
+[submodule "deps/libuv"]
+	path = deps/libuv
+	url = https://github.com/libuv/libuv.git
+[submodule "deps/libphpext"]
+	path = deps/libphpext
+	url = https://github.com/terrywh/libphpext.git
