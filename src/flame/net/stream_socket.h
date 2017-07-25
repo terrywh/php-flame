@@ -17,6 +17,8 @@ namespace net {
 		static void read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
 		static void write_cb(uv_write_t* req, int status);
 		static void close_cb(uv_handle_t* handle);
+
+		friend class stream_server;
 	};
 }
 }

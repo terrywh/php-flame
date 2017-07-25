@@ -1,6 +1,5 @@
-#include "net.h"
 #include "../fiber.h"
-#include "stream_socket.h"
+#include "net.h"
 #include "tcp_socket.h"
 
 namespace flame {
@@ -15,8 +14,7 @@ namespace net {
 		php::string addr = params[0];
 		int         port = params[1];
 		struct sockaddr_storage address;
-		int        error = 0;
-		error = addrfrom(address, addr.c_str(), port);
+		int error = addrfrom(address, addr.c_str(), port);
 		if(error != 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
