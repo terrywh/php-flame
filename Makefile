@@ -11,7 +11,7 @@ CXX?=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -g -O0
 CXXFLAGS_CORE= -std=c++14 -fPIC \
  -include ./deps/deps.h
-INCLUDES_CORE= `${PHP_CONFIG} --includes`
+INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps/libuv/include
 # 链接参数
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'

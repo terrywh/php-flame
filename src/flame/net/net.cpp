@@ -2,7 +2,7 @@
 #include "stream_socket.h"
 #include "tcp_socket.h"
 #include "tcp_server.h"
-#include "http_client.h"
+#include "http/client.h"
 
 namespace flame {
 namespace net {
@@ -31,29 +31,29 @@ namespace net {
 		class_tcp_server.add<&tcp_server::__destruct>("__destruct");
 		ext.add(std::move(class_tcp_server));
 		
-		// class_http_client
+		// class_client
 		// ------------------------------------
 		if(curl_global_init(CURL_GLOBAL_ALL)) {
 			fprintf(stderr, "Could not init curl\n");
 			return ;
 		}
 
-		ext.add<http_get>("flame\\net\\http_get");
-		ext.add<http_post>("flame\\net\\http_post");
-		ext.add<http_put>("flame\\net\\http_put");
+		ext.add<http::get>("flame\\net\\http\\get");
+		ext.add<http::post>("flame\\net\\http\\post");
+		ext.add<http::put>("flame\\net\\http\\put");
 
-		php::class_entry<http_request> class_http_request("flame\\net\\http_request");
-		class_http_request.add(php::property_entry("url", ""));
-		class_http_request.add(php::property_entry("method", ""));
-		class_http_request.add(php::property_entry("timeout", 10));
-		class_http_request.add(php::property_entry("header", nullptr));
-		class_http_request.add<&http_request::__construct>("__construct");
-		ext.add(std::move(class_http_request));
+		php::class_entry<http::request> class_request("flame\\net\\http\\request");
+		class_request.add(php::property_entry("url", ""));
+		class_request.add(php::property_entry("method", ""));
+		class_request.add(php::property_entry("timeout", 10));
+		class_request.add(php::property_entry("header", nullptr));
+		class_request.add<&http::request::__construct>("__construct");
+		ext.add(std::move(class_request));
 
-		php::class_entry<http_client> class_http_client("flame\\net\\http_client");
-		class_http_client.add<&http_client::exec>("exec");
-		class_http_client.add<&http_client::debug>("debug");
-		ext.add(std::move(class_http_client));
+		php::class_entry<http::client> class_client("flame\\net\\http\\client");
+		class_client.add<&http::client::exec>("exec");
+		class_client.add<&http::client::debug>("debug");
+		ext.add(std::move(class_client));
 	}
 	php::string addr2str(const struct sockaddr_storage& addr) {
 		php::string str(64);

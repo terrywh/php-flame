@@ -1,7 +1,7 @@
 <?php
 flame\go(function() {
-//$obj = new flame\db\redis_client(["host"=>"127.0.0.1", "port"=>16379]);
-$obj = new flame\db\redis_client();
+//$obj = new flame\db\redis(["host"=>"127.0.0.1", "port"=>16379]);
+$obj = new flame\db\redis();
 var_dump($obj);
 echo "connect:", $obj->connect(["host"=>"127.0.0.1","port"=>16379]), "\n";
 echo "hmget hash 321 key1 123:\n";
