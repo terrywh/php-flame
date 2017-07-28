@@ -3,7 +3,7 @@ flame\go(function() {
 //$obj = new flame\db\redis(["host"=>"127.0.0.1", "port"=>16379]);
 $obj = new flame\db\redis();
 var_dump($obj);
-echo "connect:", $obj->connect(["host"=>"127.0.0.1","port"=>16379]), "\n";
+echo "connect:", $obj->connect(["host"=>"127.0.0.1","port"=>16379, "auth"=>"12345","select"=>"1"]), "\n";
 echo "hmget hash 321 key1 123:\n";
 $res = yield $obj->hmget("hash", "321","key1", "123");
 var_dump($res);
@@ -31,7 +31,7 @@ function callback($inst, $channel, $message) {
 
 
 echo "SUBSCRIBE foo bar:\n";
-$res = $obj->subscribe(["foo","bar"], callback);
+$res = yield $obj->subscribe(["foo","bar"], callback);
 var_dump($res);
 });
 flame\run();
