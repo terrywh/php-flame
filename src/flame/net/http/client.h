@@ -35,7 +35,7 @@ struct request: public php::class_base {
 	}
 
 	curl_context_t* parse(client*);
-	php::string& parse_form(php::array& arr);
+	php::string& parse_body(php::array& arr);
 	// 设置post数据
 	php::value content(php::parameters& params) {
 		php::string& content = params[0];
@@ -94,7 +94,7 @@ public:
 	// curl要用的回调
 	static int handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp);
 	static int start_timeout(CURLM* multi, long timeout_ms, void* userp);
-	static void curl_perform(uv_poll_t *req, int status, int events);
+	static void curl_perbody(uv_poll_t *req, int status, int events);
 	
 	php::value __construct(php::parameters& params);
 	// 执行

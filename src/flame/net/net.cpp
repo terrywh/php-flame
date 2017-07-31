@@ -46,7 +46,7 @@ namespace net {
 		class_request.add(php::property_entry("method", ""));
 		class_request.add(php::property_entry("timeout", 10));
 		class_request.add(php::property_entry("header", nullptr));
-		class_request.add(php::property_entry("form", nullptr));
+		class_request.add(php::property_entry("body", nullptr));
 		class_request.add<&http::request::__construct>("__construct");
 		ext.add(std::move(class_request));
 

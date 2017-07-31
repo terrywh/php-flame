@@ -50,7 +50,7 @@ static void check_multi_info(curl_context_t* ctx) {
 	}
 }
 
-void client::curl_perform(uv_poll_t *req, int status, int events) {
+void client::curl_perbody(uv_poll_t *req, int status, int events) {
 	int flags = 0;
 	int running_handles;
 	if(events & UV_READABLE)
@@ -116,9 +116,9 @@ php::value request::__construct(php::parameters& params) {
 				if (vh != nullptr) {
 					prop("header") = arr["header"];
 				}
-				php::value* vform = arr.find("form");
-				if (vform != nullptr) {
-					prop("form") = arr["form"];
+				php::value* vbody = arr.find("body");
+				if (vbody != nullptr) {
+					prop("body") = arr["body"];
 				}
 			}
 		} else if( arg_len == 3) {
@@ -126,8 +126,8 @@ php::value request::__construct(php::parameters& params) {
 			prop("method") = method;
 			php::string& url = params[1];
 			prop("url") = url;
-			php::array& form = params[2];
-			prop("form") = form;
+			php::array& body = params[2];
+			prop("body") = body;
 		}
 	}
 	return this;
@@ -161,10 +161,10 @@ curl_context_t* request::parse(client* cli) {
 	if(str.is_empty() == false) {
 		std::string method(str.c_str());
 		if(method.compare("POST") == 0) {
-			php::value vform = prop("form");
-			if (!vform.is_null()) {
-				php::array& form = vform;
-				php::string postfield = build_str(form);
+			php::value vbody = prop("body");
+			if (!vbody.is_null()) {
+				php::array& body = vbody;
+				php::string postfield = build_str(body);
 				if (!postfield.is_null()) {
 					curl_easy_setopt(curl_, CURLOPT_POST, 1L);
 					curl_easy_setopt(curl_, CURLOPT_COPYPOSTFIELDS, postfield.c_str());
@@ -223,7 +223,7 @@ int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, 
 			ctx->poll_handle.data = ctx;
 			curl_multi_assign(ctx->cli->get_curl_handle(), s, (void*)ctx);
 		}
-		uv_poll_start(&ctx->poll_handle, events, client::curl_perform);
+		uv_poll_start(&ctx->poll_handle, events, client::curl_perbody);
 	}
 	break;
 	case CURL_POLL_REMOVE:
@@ -293,7 +293,7 @@ php::value post(php::parameters& params) {
 	req->prop("method") = php::string("POST");
 	req->prop("header") = php::array();
 	php::array& arr = params[1];
-	req->prop("form") = arr;
+	req->prop("body") = arr;
 	return cli.exec(obj_req);
 }
 
@@ -306,7 +306,7 @@ php::value put(php::parameters& params) {
 	req->prop("method") = php::string("PUT");
 	req->prop("header") = php::array();
 	php::array& arr = params[1];
-	req->prop("form") = arr;
+	req->prop("body") = arr;
 	return cli.exec(obj_req);
 }
 
