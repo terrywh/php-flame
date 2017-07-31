@@ -31,7 +31,7 @@ static void check_multi_info(curl_context_t* ctx) {
 			CURL* easy_handle = message->easy_handle;
 			curl_multi_remove_handle(ctx->cli->get_curl_handle(), easy_handle);
 			curl_easy_cleanup(easy_handle);
-			ctx->req = nullptr;
+			ctx->req = php::object();
 			flame::fiber*  f = ctx->fiber;
 			f->next(ctx->result);
 		}
@@ -41,7 +41,7 @@ static void check_multi_info(curl_context_t* ctx) {
 			CURL* easy_handle = message->easy_handle;
 			curl_multi_remove_handle(ctx->cli->get_curl_handle(), easy_handle);
 			curl_easy_cleanup(easy_handle);
-			ctx->req = nullptr;
+			ctx->req = php::object();
 			flame::fiber*  f = ctx->fiber;
 			f->next(ctx->result);
 		}
@@ -109,15 +109,15 @@ php::value request::__construct(php::parameters& params) {
 				prop("url") = arr["url"];
 				prop("method") = arr["method"];
 				php::value* vt = arr.find("timeout");
-				if (vt == nullptr) {
+				if (vt != nullptr) {
 					prop("timeout") = arr["timeout"];
 				}
 				php::value* vh = arr.find("header");
-				if (vh == nullptr) {
+				if (vh != nullptr) {
 					prop("header") = arr["header"];
 				}
 				php::value* vform = arr.find("form");
-				if (vform == nullptr) {
+				if (vform != nullptr) {
 					prop("form") = arr["form"];
 				}
 			}
@@ -154,7 +154,7 @@ curl_context_t* request::parse(client* cli) {
 		php::exception("curl_context_t new fail", -1);
 	}
 	ctx->cli = cli;
-	ctx->req = *this;
+	ctx->req = this;
 	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, (void*)ctx);
 	curl_easy_setopt(curl_, CURLOPT_PRIVATE, (void*)ctx);
 	php::string str = get_method();

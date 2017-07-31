@@ -1,5 +1,4 @@
 #include "redis.h"
-//#define MY_DEBUG
 
 namespace flame {
 namespace db {
@@ -128,9 +127,6 @@ void connect_callback(const redisAsyncContext *c, int status) {
 		printf("Error: %s\n", c->errstr);
 		return;
 	}
-#ifdef MY_DEBUG
-	printf("Redis connected...\n");
-#endif
 }
 
 void disconnect_callback(const redisAsyncContext *c, int status) {
@@ -140,9 +136,6 @@ void disconnect_callback(const redisAsyncContext *c, int status) {
 		printf("Error: %s\n", c->errstr);
 		return;
 	}
-#ifdef MY_DEBUG
-	printf("Disconnected...\n");
-#endif
 }
 
 redis::redis()
