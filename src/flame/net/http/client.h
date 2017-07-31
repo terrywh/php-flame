@@ -16,15 +16,14 @@ typedef struct curl_context_s {
 	uv_poll_t poll_handle;
 	curl_socket_t sockfd;
 	client* cli;
-	php::object req;
+	std::function<void(CURLMsg*)> cb;
 	php::string result;
-	flame::fiber* fiber;
 } curl_context_t;
 
 struct request: public php::class_base {
 	request():curl_(nullptr),slist_(nullptr) {
 	}
-	virtual ~request() {
+	~request() {
 	}
 	php::value __construct(php::parameters& params);
 	php::value __destruct(php::parameters& params) {
@@ -88,15 +87,14 @@ class client: public php::class_base {
 public:
 	client():curlm_handle_(nullptr),debug_(0){
 	}
-	virtual ~client() {
+	~client() {
 		release();
 	}
 	// curl要用的回调
 	static int handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp);
 	static int start_timeout(CURLM* multi, long timeout_ms, void* userp);
-	static void curl_perbody(uv_poll_t *req, int status, int events);
+	static void curl_perform(uv_poll_t *req, int status, int events);
 	
-	php::value __construct(php::parameters& params);
 	// 执行
 	php::value exec(php::parameters& params);
 

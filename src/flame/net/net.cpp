@@ -48,6 +48,7 @@ namespace net {
 		class_request.add(php::property_entry("header", nullptr));
 		class_request.add(php::property_entry("body", nullptr));
 		class_request.add<&http::request::__construct>("__construct");
+		class_request.add<&http::request::__destruct>("__destruct");
 		ext.add(std::move(class_request));
 
 		php::class_entry<http::client> class_client("flame\\net\\http\\client");

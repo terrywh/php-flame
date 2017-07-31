@@ -20,37 +20,20 @@ size_t write_callback(char* ptr, size_t size, size_t nmemb, void *userdata) {
 }
 
 
-static void check_multi_info(curl_context_t* ctx) {
+static void check_multi_info(client* cli) {
 	int pending;
-	client* cli = ctx->cli;
 	CURLMsg *message;
 	while((message = curl_multi_info_read(cli->get_curl_handle(), &pending))) {
-		switch(message->msg) {
-		case CURLMSG_DONE:
-		{
-			CURL* easy_handle = message->easy_handle;
-			curl_multi_remove_handle(ctx->cli->get_curl_handle(), easy_handle);
-			curl_easy_cleanup(easy_handle);
-			ctx->req = php::object();
-			flame::fiber*  f = ctx->fiber;
-			f->next(ctx->result);
-		}
-		break;
-		default:
-		{
-			CURL* easy_handle = message->easy_handle;
-			curl_multi_remove_handle(ctx->cli->get_curl_handle(), easy_handle);
-			curl_easy_cleanup(easy_handle);
-			ctx->req = php::object();
-			flame::fiber*  f = ctx->fiber;
-			f->next(ctx->result);
-		}
-		break;
-		}
+		curl_context_t* ctx;
+		CURL* easy_handle = message->easy_handle;
+		curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &ctx);
+		ctx->cb(message);
+		curl_multi_remove_handle(cli->get_curl_handle(), easy_handle);
+		curl_easy_cleanup(easy_handle);
 	}
 }
 
-void client::curl_perbody(uv_poll_t *req, int status, int events) {
+void client::curl_perform(uv_poll_t *req, int status, int events) {
 	int flags = 0;
 	int running_handles;
 	if(events & UV_READABLE)
@@ -60,7 +43,7 @@ void client::curl_perbody(uv_poll_t *req, int status, int events) {
 	curl_socket_t fd = ((curl_context_t*)req->data)->sockfd;
 	client* cli = ((curl_context_t*)req->data)->cli;
 	curl_multi_socket_action(cli->get_curl_handle(), fd, flags, &running_handles);
-	check_multi_info((curl_context_t*)req->data);
+	check_multi_info(cli);
 }
 
 
@@ -68,9 +51,7 @@ static void on_timeout(uv_timer_t *req) {
 	int running_handles;
 	client* cli = (client*)(req->data);
 	curl_multi_socket_action(cli->get_curl_handle(), CURL_SOCKET_TIMEOUT, 0, &running_handles);
-	//curl_context_t ctx;
-	//ctx.cli = cli;
-	//check_multi_info(&ctx);
+	check_multi_info(cli);
 }
 
 int client::start_timeout(CURLM* multi, long timeout_ms, void* userp) {
@@ -154,7 +135,6 @@ curl_context_t* request::parse(client* cli) {
 		php::exception("curl_context_t new fail", -1);
 	}
 	ctx->cli = cli;
-	ctx->req = this;
 	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, (void*)ctx);
 	curl_easy_setopt(curl_, CURLOPT_PRIVATE, (void*)ctx);
 	php::string str = get_method();
@@ -181,10 +161,6 @@ curl_context_t* request::parse(client* cli) {
 	curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_callback);
 	return ctx;
-}
-
-php::value client::__construct(php::parameters& params) {
-	return this;
 }
 
 CURLM* client::get_curl_handle() {
@@ -223,7 +199,7 @@ int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, 
 			ctx->poll_handle.data = ctx;
 			curl_multi_assign(ctx->cli->get_curl_handle(), s, (void*)ctx);
 		}
-		uv_poll_start(&ctx->poll_handle, events, client::curl_perbody);
+		uv_poll_start(&ctx->poll_handle, events, client::curl_perform);
 	}
 	break;
 	case CURL_POLL_REMOVE:
@@ -253,7 +229,22 @@ php::value client::exec(php::object& req) {
 	if (debug_) {
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 	}
-	ctx->fiber = flame::this_fiber();
+	auto fiber = flame::this_fiber();
+	ctx->cb = [req, ctx, fiber](CURLMsg *message) {
+		switch(message->msg) {
+			case CURLMSG_DONE: {
+				if (message->data.result != CURLE_OK) {
+					fiber->next(php::string(curl_easy_strerror(message->data.result)));
+				} else {
+					fiber->next(ctx->result);
+				}
+			}
+			break;
+			default: {
+				fiber->next(php::string("curlmsg return not zero"));
+			}
+		}
+	};
 	curl_multi_add_handle(get_curl_handle(), curl);
 	return flame::async;
 }
@@ -275,6 +266,8 @@ php::value client::exec(php::parameters& params) {
 
 php::value get(php::parameters& params) {
 	static client cli;
+	//static php::object obj_cli = php::object::create<client>();
+	//client* cli = obj_cli.native<client>();
 	php::object obj_req = php::object::create<request>();
 	request* req = obj_req.native<request>();
 	php::string& url = params[0];
@@ -286,9 +279,11 @@ php::value get(php::parameters& params) {
 
 php::value post(php::parameters& params) {
 	static client cli;
+	//static php::object obj_cli = php::object::create<client>();
+	//client* cli = obj_cli.native<client>();
 	php::object obj_req = php::object::create<request>();
 	request* req = obj_req.native<request>();
-	php::string url = params[0];
+	php::string& url = params[0];
 	req->prop("url") = url;
 	req->prop("method") = php::string("POST");
 	req->prop("header") = php::array();
