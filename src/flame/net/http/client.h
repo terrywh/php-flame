@@ -11,34 +11,32 @@ size_t write_callback(char* ptr, size_t size, size_t nmemb, void *userdata);
 
 class client;
 
-typedef struct curl_context_s {
-	curl_context_s():sockfd(-1),cli(nullptr) {}
-	uv_poll_t poll_handle;
-	curl_socket_t sockfd;
-	client* cli;
-	std::function<void(CURLMsg*)> cb;
-	php::string result;
-} curl_context_t;
-
 struct request: public php::class_base {
-	request():curl_(nullptr),slist_(nullptr) {
+	request():curl_(nullptr),slist_(nullptr),sockfd_(-1),cli_(nullptr) {
 	}
 	~request() {
 	}
 	php::value __construct(php::parameters& params);
 	php::value __destruct(php::parameters& params) {
+		release();
+	}
+	void release() {
 		if (slist_) {
 			curl_slist_free_all(slist_);
 			slist_ = nullptr;
 		}
+		curl_ = nullptr;
+		memset(&poll_handle_,0,sizeof(poll_handle_));
+		sockfd_ = -1;
+		cli_ = nullptr;
+		result_ = nullptr;
 	}
-
-	curl_context_t* parse(client*);
+	void parse(client*);
 	php::string& parse_body(php::array& arr);
 	// 设置post数据
 	php::value content(php::parameters& params) {
 		php::string& content = params[0];
-		prop("post") = content;
+		prop("body") = content;
 		return nullptr;
 	}
 
@@ -81,6 +79,11 @@ struct request: public php::class_base {
 	}
 	CURL* curl_;
 	curl_slist* slist_;
+	uv_poll_t poll_handle_;
+	curl_socket_t sockfd_;
+	client* cli_;
+	std::function<void(CURLMsg*)> cb_;
+	php::string result_;
 };
 
 class client: public php::class_base {

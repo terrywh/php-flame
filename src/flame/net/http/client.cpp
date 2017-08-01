@@ -7,15 +7,15 @@ namespace net {
 namespace http {
 
 size_t write_callback(char* ptr, size_t size, size_t nmemb, void *userdata) {
-	curl_context_t* ctx = (curl_context_t*)userdata;
-	if (ctx->result.is_empty()) {
+	request* req = (request*)userdata;
+	if (req->result_.is_empty()) {
 		php::string cache(size*nmemb);
-		ctx->result = cache;
-		ctx->result.length() = 0;
+		req->result_ = cache;
+		req->result_.length() = 0;
 	}
 	size_t ret_len = size*nmemb > CURL_MAX_WRITE_SIZE ? CURL_MAX_WRITE_SIZE : size*nmemb;
-	memcpy(ctx->result.data()+ctx->result.length(), ptr, ret_len);
-	ctx->result.length() += ret_len;
+	memcpy(req->result_.data()+req->result_.length(), ptr, ret_len);
+	req->result_.length() += ret_len;
 	return ret_len;
 }
 
@@ -24,10 +24,10 @@ static void check_multi_info(client* cli) {
 	int pending;
 	CURLMsg *message;
 	while((message = curl_multi_info_read(cli->get_curl_handle(), &pending))) {
-		curl_context_t* ctx;
+		request* req;
 		CURL* easy_handle = message->easy_handle;
-		curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &ctx);
-		ctx->cb(message);
+		curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &req);
+		req->cb_(message);
 		curl_multi_remove_handle(cli->get_curl_handle(), easy_handle);
 		curl_easy_cleanup(easy_handle);
 	}
@@ -40,8 +40,8 @@ void client::curl_perform(uv_poll_t *req, int status, int events) {
 		flags |= CURL_CSELECT_IN;
 	if(events & UV_WRITABLE)
 		flags |= CURL_CSELECT_OUT;
-	curl_socket_t fd = ((curl_context_t*)req->data)->sockfd;
-	client* cli = ((curl_context_t*)req->data)->cli;
+	curl_socket_t fd = ((request*)req->data)->sockfd_;
+	client* cli = ((request*)req->data)->cli_;
 	curl_multi_socket_action(cli->get_curl_handle(), fd, flags, &running_handles);
 	check_multi_info(cli);
 }
@@ -72,7 +72,8 @@ int client::start_timeout(CURLM* multi, long timeout_ms, void* userp) {
 
 
 static void curl_close_cb(uv_handle_t *handle) {
-	delete (curl_context_t*)handle->data;
+	//request* req =  (request*)handle->data;
+	//req->release();
 }
 
 php::value request::__construct(php::parameters& params) {
@@ -114,7 +115,10 @@ php::value request::__construct(php::parameters& params) {
 	return this;
 }
 
-curl_context_t* request::parse(client* cli) {
+void request::parse(client* cli) {
+	if (curl_) {
+		throw php::exception("request already used", -1);
+	}
 	curl_ = curl_easy_init();
 	if(!curl_) {
 		throw php::exception("curl_easy_init fail", -1);
@@ -130,13 +134,9 @@ curl_context_t* request::parse(client* cli) {
 	} else {
 		throw php::exception("url empty", -1);
 	}
-	curl_context_t* ctx = new curl_context_t;
-	if (!ctx) {
-		php::exception("curl_context_t new fail", -1);
-	}
-	ctx->cli = cli;
-	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, (void*)ctx);
-	curl_easy_setopt(curl_, CURLOPT_PRIVATE, (void*)ctx);
+	this->cli_ = cli;
+	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, (void*)this);
+	curl_easy_setopt(curl_, CURLOPT_PRIVATE, (void*)this);
 	php::string str = get_method();
 	if(str.is_empty() == false) {
 		std::string method(str.c_str());
@@ -160,7 +160,6 @@ curl_context_t* request::parse(client* cli) {
 	curl_easy_setopt(curl_, CURLOPT_TIMEOUT, (long)get_timeout());
 	curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_callback);
-	return ctx;
 }
 
 CURLM* client::get_curl_handle() {
@@ -176,7 +175,7 @@ CURLM* client::get_curl_handle() {
 }
 
 int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp) {
-	curl_context_t* ctx;
+	request* req;
 	int events = 0;
 	
 	switch(action) {
@@ -184,30 +183,29 @@ int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, 
 	case CURL_POLL_OUT:
 	case CURL_POLL_INOUT:
 	{
-		curl_context_t* ctx;
-		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &ctx);
+		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &req);
 		if(action != CURL_POLL_IN)
 			events |= UV_WRITABLE;
 		if(action != CURL_POLL_OUT)
 			events |= UV_READABLE;
 		if(socketp) {
-			ctx = (curl_context_t*)socketp;
+			req = (request*)socketp;
 		}
 		else {
-			ctx->sockfd = s;
-			uv_poll_init_socket(flame::loop, &ctx->poll_handle, s);
-			ctx->poll_handle.data = ctx;
-			curl_multi_assign(ctx->cli->get_curl_handle(), s, (void*)ctx);
+			req->sockfd_ = s;
+			uv_poll_init_socket(flame::loop, &req->poll_handle_, s);
+			req->poll_handle_.data = req;
+			curl_multi_assign(req->cli_->get_curl_handle(), s, (void*)req);
 		}
-		uv_poll_start(&ctx->poll_handle, events, client::curl_perform);
+		uv_poll_start(&req->poll_handle_, events, client::curl_perform);
 	}
 	break;
 	case CURL_POLL_REMOVE:
-		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &ctx);
-		if(ctx) {
-			uv_poll_t* p_poll_handle = &((curl_context_t*)socketp)->poll_handle;
+		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &req);
+		if(req) {
+			uv_poll_t* p_poll_handle = &((request*)socketp)->poll_handle_;
 			uv_poll_stop(p_poll_handle);
-			curl_multi_assign(ctx->cli->get_curl_handle(), s, nullptr);
+			curl_multi_assign(req->cli_->get_curl_handle(), s, nullptr);
 			uv_close((uv_handle_t*)p_poll_handle, curl_close_cb);
 			
 		}
@@ -221,7 +219,7 @@ int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, 
 
 php::value client::exec(php::object& req) {
 	request* r = req.native<request>();
-	curl_context_t* ctx =r->parse(this);
+	r->parse(this);
 	CURL* curl = r->curl_;
 	if(!curl) {
 		throw php::exception("curl empty", -1);
@@ -230,14 +228,14 @@ php::value client::exec(php::object& req) {
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 	}
 	auto fiber = flame::this_fiber();
-	ctx->cb = [&req, ctx, fiber](CURLMsg *message) {
+	r->cb_ = [req, r, fiber](CURLMsg *message) {
 		switch(message->msg) {
 			case CURLMSG_DONE: {
 				if (message->data.result != CURLE_OK) {
 					php::string str_ret(curl_easy_strerror(message->data.result));
 					fiber->next(str_ret);
 				} else {
-					fiber->next(ctx->result);
+					fiber->next(r->result_);
 				}
 			}
 			break;
