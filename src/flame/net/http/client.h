@@ -57,7 +57,7 @@ struct request: public php::class_base {
 						php::string& key = i->first;
 						php::string& value = i->second;
 						if (value.length() > 0) {
-							php::string str(key.length()+value.length()+2);
+							php::string str(key.length()+value.length()+3);
 							strncpy(str.data(), key.c_str(), key.length());
 							strncpy(str.data()+key.length(), ": ", 2);
 							strncpy(str.data()+key.length()+2, value.c_str(), value.length());

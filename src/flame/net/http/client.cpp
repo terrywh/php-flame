@@ -8,12 +8,17 @@ namespace http {
 
 size_t write_callback(char* ptr, size_t size, size_t nmemb, void *userdata) {
 	request* req = (request*)userdata;
-	if (req->result_.is_empty()) {
-		php::string cache(size*nmemb);
-		req->result_ = cache;
-		req->result_.length() = 0;
-	}
 	size_t ret_len = size*nmemb > CURL_MAX_WRITE_SIZE ? CURL_MAX_WRITE_SIZE : size*nmemb;
+	if (req->result_.is_empty()) {
+		php::string cache(ret_len);
+		req->result_ = std::move(cache);
+		req->result_.length() = 0;
+	} else {
+		php::string cache(req->result_.length()+ret_len);
+		memcpy(cache.data(), req->result_.data(), req->result_.length());
+		cache.length() = req->result_.length();
+		req->result_ = std::move(cache);
+	}
 	memcpy(req->result_.data()+req->result_.length(), ptr, ret_len);
 	req->result_.length() += ret_len;
 	return ret_len;
@@ -202,12 +207,11 @@ int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, 
 	break;
 	case CURL_POLL_REMOVE:
 		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &req);
-		if(req) {
+		if(socketp) {
 			uv_poll_t* p_poll_handle = &((request*)socketp)->poll_handle_;
 			uv_poll_stop(p_poll_handle);
-			curl_multi_assign(req->cli_->get_curl_handle(), s, nullptr);
 			uv_close((uv_handle_t*)p_poll_handle, curl_close_cb);
-			
+			curl_multi_assign(req->cli_->get_curl_handle(), s, nullptr);
 		}
 		break;
 	default:
@@ -233,9 +237,9 @@ php::value client::exec(php::object& req) {
 			case CURLMSG_DONE: {
 				if (message->data.result != CURLE_OK) {
 					php::string str_ret(curl_easy_strerror(message->data.result));
-					fiber->next(str_ret);
+					fiber->next(std::move(str_ret));
 				} else {
-					fiber->next(r->result_);
+					fiber->next(std::move(r->result_));
 				}
 			}
 			break;
@@ -255,8 +259,7 @@ php::value client::debug(php::parameters& params) {
 
 php::value client::exec(php::parameters& params) {
 	php::object& obj = params[0];
-	request* req = obj.native<request>();
-	if(!req) {
+	if(!obj.is_instance_of<request>()) {
 		php::exception("param need request", -1);
 	}
 	return exec(obj);
