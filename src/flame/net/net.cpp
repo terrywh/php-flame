@@ -1,8 +1,10 @@
 #include "net.h"
-#include "stream_socket.h"
 #include "tcp_socket.h"
 #include "tcp_server.h"
-#include "http/client.h"
+#include "unix_socket.h"
+#include "unix_server.h"
+
+#include "http/http.h"
 
 namespace flame {
 namespace net {
@@ -30,6 +32,27 @@ namespace net {
 		class_tcp_server.add<&tcp_server::close>("close");
 		class_tcp_server.add<&tcp_server::__destruct>("__destruct");
 		ext.add(std::move(class_tcp_server));
+		// class_unix_socket
+		// ------------------------------------
+		php::class_entry<unix_socket> class_unix_socket("flame\\net\\unix_socket");
+		class_unix_socket.add(php::property_entry("remote_address", std::string("")));
+		class_unix_socket.add<&unix_socket::connect>("connect");
+		class_unix_socket.add<&unix_socket::read>("read");
+		class_unix_socket.add<&unix_socket::write>("write");
+		class_unix_socket.add<&unix_socket::__destruct>("__destruct");
+		ext.add(std::move(class_unix_socket));
+		// class_unix_server
+		// ------------------------------------
+		php::class_entry<unix_server> class_unix_server("flame\\net\\unix_server");
+		class_unix_server.add(php::property_entry("local_address", std::string("")));
+		class_unix_server.add<&unix_server::bind>("bind");
+		class_unix_server.add<&unix_server::handle>("handle");
+		class_unix_server.add<&unix_server::run>("run");
+		class_unix_server.add<&unix_server::close>("close");
+		class_unix_server.add<&unix_server::__destruct>("__destruct");
+		ext.add(std::move(class_unix_server));
+		// 子命名空间
+		flame::net::http::init(ext);
 	}
 	php::string addr2str(const struct sockaddr_storage& addr) {
 		php::string str(64);
