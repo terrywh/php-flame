@@ -1,12 +1,11 @@
-#include "stream_socket.h"
-#include "net.h"
 #include "../fiber.h"
+#include "stream_socket.h"
 
 namespace flame {
 namespace net {
 	stream_socket::stream_socket(uv_stream_t* s)
-	: pstream_(s)
-	, rbuffer_(1792) {
+	: pstream_(s) {
+		
 	}
 	php::value stream_socket::__destruct(php::parameters& params) {
 		if(!uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) {
