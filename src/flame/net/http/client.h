@@ -108,6 +108,7 @@ public:
 		if (curlm_handle_) {
 			curl_multi_cleanup(curlm_handle_);
 			curlm_handle_ = nullptr;
+			uv_timer_stop(&timeout_);
 		}
 	}
 

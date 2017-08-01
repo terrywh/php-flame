@@ -230,11 +230,12 @@ php::value client::exec(php::object& req) {
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 	}
 	auto fiber = flame::this_fiber();
-	ctx->cb = [req, ctx, fiber](CURLMsg *message) {
+	ctx->cb = [&req, ctx, fiber](CURLMsg *message) {
 		switch(message->msg) {
 			case CURLMSG_DONE: {
 				if (message->data.result != CURLE_OK) {
-					fiber->next(php::string(curl_easy_strerror(message->data.result)));
+					php::string str_ret(curl_easy_strerror(message->data.result));
+					fiber->next(str_ret);
 				} else {
 					fiber->next(ctx->result);
 				}

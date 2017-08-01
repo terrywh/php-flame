@@ -1,19 +1,19 @@
 <?php
 
 flame\go(function() {
-//$obj = new flame\net\http\client();
-//$req = new flame\net\http\request(["body"=>["arg1"=>"123","arg2"=>"456"],"url"=>"www.zhangjihao.com","method"=>"POST"]);
-//$req->header = array("Accept"=>"123", "test"=>"Test");
+$obj = new flame\net\http\client();
+$req = new flame\net\http\request(["body"=>["arg1"=>"123","arg2"=>"456"],"url"=>"www.zhangjihao.com","method"=>"POST"]);
+$req->header = array("Accept"=>"123", "test"=>"Test");
 //var_dump($req->header);
 //echo "Method:", $req->method, "\n";
 //$req->url = "www.baidu.com";
 //$req->timeout = 1;
 //$req->header["Accept"] = "123";
 //$req->body = ["arg1"=>"asd","arg2"=>"111qwe"];
-//$obj->debug(1);
-//$res = yield $obj->exec($req);
+$obj->debug(1);
+$res = yield $obj->exec($req);
 //var_dump($obj);
-//var_dump($res);
+var_dump($res);
 //$res2 = yield $obj->exec($req);
 //var_dump($res2);
 
