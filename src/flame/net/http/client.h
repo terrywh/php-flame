@@ -30,6 +30,7 @@ struct request: public php::class_base {
 		sockfd_ = -1;
 		cli_ = nullptr;
 		result_ = nullptr;
+		body_.clear();
 	}
 	void parse(client*);
 	php::string& parse_body(php::array& arr);
@@ -84,11 +85,17 @@ struct request: public php::class_base {
 	client* cli_;
 	std::function<void(CURLMsg*)> cb_;
 	php::string result_;
+	std::string body_;
 };
 
 class client: public php::class_base {
 public:
-	client():curlm_handle_(nullptr),debug_(0){
+	client():debug_(0){
+		curlm_handle_ = curl_multi_init();
+                uv_timer_init(flame::loop, &timeout_);
+                curl_multi_setopt(curlm_handle_, CURLMOPT_SOCKETFUNCTION, handle_socket);
+                curl_multi_setopt(curlm_handle_, CURLMOPT_TIMERFUNCTION, start_timeout);
+                curl_multi_setopt(curlm_handle_, CURLMOPT_TIMERDATA, (void*)this);
 	}
 	~client() {
 		release();
@@ -109,9 +116,9 @@ public:
 	CURLM* get_curl_handle();
 	void release() {
 		if (curlm_handle_) {
+			uv_timer_stop(&timeout_);
 			curl_multi_cleanup(curlm_handle_);
 			curlm_handle_ = nullptr;
-			uv_timer_stop(&timeout_);
 		}
 	}
 

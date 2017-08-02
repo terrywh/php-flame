@@ -24,6 +24,10 @@ size_t write_callback(char* ptr, size_t size, size_t nmemb, void *userdata) {
 	return ret_len;
 }
 
+static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
+	memcpy(ptr,stream,size*nmemb);
+	return size*nmemb;
+}
 
 static void check_multi_info(client* cli) {
 	int pending;
@@ -144,22 +148,25 @@ void request::parse(client* cli) {
 	curl_easy_setopt(curl_, CURLOPT_PRIVATE, (void*)this);
 	php::string str = get_method();
 	if(str.is_empty() == false) {
-		std::string method(str.c_str());
-		if(method.compare("POST") == 0) {
-			php::value vbody = prop("body");
-			if (!vbody.is_null()) {
-				php::array& body = vbody;
-				php::string postfield = build_str(body);
-				if (!postfield.is_null()) {
+		php::value vbody = prop("body");
+		if (!vbody.is_null()) {
+			php::array& body = vbody;
+			php::string strphp = build_str(body);
+			body_ = std::move(strphp.to_string());
+			std::string method(str.c_str());
+			if(method.compare("POST") == 0) {
+				if (!body_.empty()) {
 					curl_easy_setopt(curl_, CURLOPT_POST, 1L);
-					curl_easy_setopt(curl_, CURLOPT_COPYPOSTFIELDS, postfield.c_str());
+					curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, body_.c_str());
 				}
+			}else if(method.compare("PUT") == 0) {
+				curl_easy_setopt(curl_, CURLOPT_UPLOAD, 1L);
+				curl_easy_setopt(curl_, CURLOPT_PUT, 1L);
+				curl_easy_setopt(curl_, CURLOPT_READDATA, body_.c_str());
+				curl_easy_setopt(curl_, CURLOPT_INFILESIZE,body_.length());
+				curl_easy_setopt(curl_, CURLOPT_READFUNCTION, read_callback);
+			}else if(method.compare("GET") == 0) {
 			}
-		}else if(method.compare("PUT") == 0) {
-			curl_easy_setopt(curl_, CURLOPT_UPLOAD, 1L);
-			curl_easy_setopt(curl_, CURLOPT_PUT, 1L);
-			//curl_easy_setopt(curl, CURLOPT_READDATA, postfield.c_str());
-		}else if(method.compare("GET") == 0) {
 		}
 	}
 	curl_easy_setopt(curl_, CURLOPT_TIMEOUT, (long)get_timeout());
@@ -168,15 +175,7 @@ void request::parse(client* cli) {
 }
 
 CURLM* client::get_curl_handle() {
-	if (!curlm_handle_) {
-		curlm_handle_ = curl_multi_init();
-		uv_timer_init(flame::loop, &timeout_);
-		curl_multi_setopt(curlm_handle_, CURLMOPT_SOCKETFUNCTION, handle_socket);
-		curl_multi_setopt(curlm_handle_, CURLMOPT_TIMERFUNCTION, start_timeout);
-		curl_multi_setopt(curlm_handle_, CURLMOPT_TIMERDATA, (void*)this);
-	}
 	return curlm_handle_;
-
 }
 
 int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp) {
