@@ -48,13 +48,13 @@ php::value redis::format_redis_result(redisReply* reply) {
 	} else {
 		error_ = "redis reply null";
 	}
-	return elem;
+	return std::move(elem);
 }
 
 void return_result(php::value& result, void* privdata) {
 	if (privdata) {
 		flame::fiber* fiber = ((redis_context*)privdata)->fiber;
-		fiber->next(result);
+		fiber->next(std::move(result));
 		delete (redis_context*)privdata;
 	}
 	return;
@@ -105,7 +105,7 @@ void redis::arg_key_callback(redisAsyncContext *c, void *r, void *privdata) {
 			// key在Cache里取
 			for(int i = 0; i < reply->elements; ++i) {
 				// 第一个是cmd，第二个是hash名，所以要加2
-				std::string key = pCache->cmd[i+2].to_string();
+				php::string& key = pCache->cmd[i+2];
 				result[key.c_str()] = pClient->format_redis_result(reply->element[i]);
 			}
 		} else {
@@ -157,7 +157,7 @@ php::value redis::connect(php::array& arr) {
 	context_ = redisAsyncConnect(host.c_str(), port);
 	if (context_->err) {
 		error_ = context_->err;
-		return php::value(nullptr);
+		return nullptr;
 	}
 	context_->data = this;
 	uv_loop_t* loop = uv_default_loop();
@@ -258,7 +258,11 @@ void redis::command(const char* cmd, php::parameters& params, redisCallbackFn* f
 	argv.push_back(cmd);
 	// 再放参数
 	for( int i=0; i < params.length(); ++i) {
-		data->cmd[i+1] = params[i].to_string();
+		if (params[i].is_string()) {
+			data->cmd[i+1] = params[i];
+		} else {
+			data->cmd[i+1] = params[i].to_string();
+		}
 		argv.push_back(((php::string*)&data->cmd[i+1])->data());
 	}
 	command(argv.size(), (const char**)argv.data(), nullptr, fn, data);
@@ -276,7 +280,11 @@ void redis::command(const char* cmd, php::array& arr, redisCallbackFn *fn, php::
 	// 再放参数
 	int argv_index = 1;
 	for( auto iter = arr.begin(); iter != arr.end(); ++iter) {
-		data->cmd[argv_index] = iter->second.to_string();
+		if (iter->second.is_string()) {
+			data->cmd[argv_index] = iter->second;
+		} else {
+			data->cmd[argv_index] = iter->second.to_string();
+		}
 		argv.push_back(((php::string*)&data->cmd[argv_index])->data());
 		++argv_index;
 	}
