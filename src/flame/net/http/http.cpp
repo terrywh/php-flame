@@ -9,8 +9,7 @@ namespace http {
 		// class_client
 		// ------------------------------------
 		if(curl_global_init(CURL_GLOBAL_ALL)) {
-			fprintf(stderr, "Could not init curl\n");
-			return ;
+			php::exception("curl_glbal_init fail", -1);
 		}
 
 		ext.add<http::get>("flame\\net\\http\\get");
@@ -22,7 +21,9 @@ namespace http {
 		class_request.add(php::property_entry("method", ""));
 		class_request.add(php::property_entry("timeout", 10));
 		class_request.add(php::property_entry("header", nullptr));
+		class_request.add(php::property_entry("body", nullptr));
 		class_request.add<&http::request::__construct>("__construct");
+		class_request.add<&http::request::__destruct>("__destruct");
 		ext.add(std::move(class_request));
 
 		php::class_entry<http::client> class_client("flame\\net\\http\\client");

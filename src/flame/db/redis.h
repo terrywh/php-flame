@@ -7,8 +7,10 @@
 namespace flame {
 namespace db {
 
-struct redis_cmd_cache {
-	std::vector<std::string> data;
+struct redis_context {
+	php::array cmd;
+	flame::fiber* fiber;
+	php::callable cb;
 };
 
 class redis: public php::class_base {
@@ -33,8 +35,11 @@ public:
 	
 	void set_context(redisAsyncContext *context) { context_ = context; };
 
-	flame::fiber* _fiber;
+	php::value error_;
 private:
+	php::value format_redis_result(redisReply* reply);
+	
+	static void null_callback(redisAsyncContext *c, void *r, void *privdata);
 	// 默认回调，按照redis返回的type格式化返回
 	static void default_callback(redisAsyncContext *c, void *r, void *privdata);
 	// 当返回的array要按顺序成对格式化成key=>value格式的时候使用此回调
@@ -43,21 +48,12 @@ private:
 	static void arg_key_callback(redisAsyncContext *c, void *r, void *privdata);
 	static void quit_callback(redisAsyncContext *c, void *r, void *privdata);
 	static void subscribe_callback(redisAsyncContext *c, void *r, void *privdata);
-	void command_arg_key(const char* cmd, php::parameters& params);
-	void command(const char* cmd, redisCallbackFn *fn = default_callback, void *privdata = NULL);
-	void command(const char* cmd, const char* arg, redisCallbackFn *fn = default_callback, void *privdata = NULL);
-	void command(int argc, const char **argv, const size_t *argvlen, redisCallbackFn *fn = default_callback, void *privdata = NULL);
-	void connect(php::array& arr);
+	void command(const char* cmd, php::parameters& params, redisCallbackFn* fn, php::value* cb = nullptr);
+	void command(const char* cmd, php::array& arr, redisCallbackFn *fn, php::value* cb = nullptr);
+	void command(int argc, const char **argv, const size_t *argvlen, redisCallbackFn *fn, redis_context *privdata);
+	php::value connect(php::array& arr);
 	void close();
-	void set_result(php::value str) { result_ = str; };
-	php::value& GetResult() { return result_; };
-	void set_error(php::value str) { error_ = str; };
-	void default_set_result(void *r, void *privdata);
-	void continue_get_result();
 	redisAsyncContext *context_;
-	php::value result_;
-	php::value error_;
-	redis_cmd_cache cache_;
 };
 
 }
