@@ -1,15 +1,11 @@
 #pragma once
 #include "stream_server.h"
-#include "tcp_socket.h"
 
 namespace flame {
 namespace net {
 	class tcp_server: public stream_server {
 	public:
 		tcp_server();
-		inline php::value __destruct(php::parameters& params) {
-			return stream_server::__destruct(params);
-		}
 		inline php::value run(php::parameters& params) {
 			return stream_server::run(params);
 		}

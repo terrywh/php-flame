@@ -1,38 +1,51 @@
-// #include "vendor.h"
-// #include "fastcgi_server.h"
-// #include "fastcgi_session.h"
+#include "server.h"
+#include "connection.h"
 
-// void fastcgi_server::init(php::extension_entry& extension) {
-// 	php::class_entry<fastcgi_server> class_("flame\\fastcgi_server");
-// 	class_.add<&fastcgi_server::listen>("listen");
-// 	class_.add<&fastcgi_server::run>("run");
-// 	extension.add(std::move(class_));
-// }
+namespace flame {
+namespace net {
+namespace fastcgi {
+	server::server()
+	: stream_server(reinterpret_cast<uv_stream_t*>(&server_)) {
 
-// php::value fastcgi_server::listen(php::parameters& params) {
-// 	php::string& path = params[0];
-// 	// 重新监听
-// 	unlink(path.c_str());
-// 	sock_ = mill_unixlisten(path.c_str(), 1024);
-// 	if(errno != 0) {
-// 		throw php::exception(strerror(errno), errno);
-// 	}
-// 	// 允许其他用户访问、连接
-// 	chmod(path.c_str(), 0777);
-// 	return nullptr;
-// }
-
-// mill_fiber static void session_handler(fastcgi_session* sess) {
-// 	sess->run();
-// }
-
-// php::value fastcgi_server::run(php::parameters& params) {
-// 	while(true) {
-// 		mill_unixsock sock = mill_unixaccept(sock_, -1);
-// 		// TODO 使用内存池创建 fastcgi_session 对象？
-// 		fastcgi_session* sess = new fastcgi_session(sock);
-// 		// 每个会话启用单独的协程进行处理
-// 		mill_go(session_handler(sess));
-// 	}
-// 	return nullptr;
-// }
+	}
+	php::value server::handle(php::parameters& params) {
+		if(params.length() >= 2) {
+			std::string path  = params[0];
+			if(path.length() > 0) {
+				handle_map_[path] = params[1];
+			}
+		}else if (params.length() >= 1) {
+			handle_def_ = params[0];
+		}else{
+			throw php::exception("only Generator function can be use as handler");
+		}		
+		return nullptr;
+	}
+	php::value server::bind(php::parameters& params) {
+		php::string& path = params[0];
+		uv_pipe_init(flame::loop, &server_, 0);
+		int error = uv_pipe_bind(&server_, path.c_str());
+		if(error < 0) {
+			throw php::exception(uv_strerror(error), error);
+		}
+		// 服务器属性
+		prop("local_address") = path;
+		return nullptr;
+	}
+	void server::accept(uv_stream_t* s) {
+		connection* conn = reinterpret_cast<connection*>(s->data);
+		conn->start();
+		// conn->delref();
+	}
+	uv_stream_t* server::create_stream() {
+		// php::object sobj = php::object::create<connection>();
+		// connection* pobj = sobj.native<connection>();
+		connection* pobj = new connection();
+		pobj->socket_.data = pobj;
+		uv_pipe_init(flame::loop, &pobj->socket_, 0);
+		// pobj->addref();
+		return reinterpret_cast<uv_stream_t*>(&pobj->socket_);
+	}
+}
+}
+}

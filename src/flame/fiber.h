@@ -7,13 +7,13 @@ namespace flame {
 	extern uv_loop_t* loop;
 	// 包裹一个 generator function 以构建“协程”
 	class fiber {
-		typedef std::function<bool (php::value& v)> STACK_CB;
+		typedef bool (*STACK_CALLBACK_T)(php::value& v, void* data);
 	private:
 		php::generator        gen_;
 		bool                  run_();
 		static fiber*         cur_;
-		void*                 ctx_;
-		std::stack<STACK_CB>  cbs_;
+		std::stack<STACK_CALLBACK_T> cbs_;
+		std::stack<void*>     ctx_;
 		void                  pop_(php::value &rv);
 		fiber();
 	public:
@@ -33,30 +33,19 @@ namespace flame {
 			cur_ = old;
 			return nullptr;
 		}
-		inline fiber* push(const STACK_CB& cb) {
+		inline fiber* push(STACK_CALLBACK_T cb, void* data) {
+			ctx_.push(data);
 			cbs_.push(cb);
 			return this;
 		}
-		inline STACK_CB pop() {
-			STACK_CB cb = cbs_.top();
-			cbs_.pop();
-			return std::move(cb);
-		}
-		inline STACK_CB top() {
-			STACK_CB cb = cbs_.top();
-			return std::move(cb);
-		}
 		template <typename T>
 		inline T* context() {
-			// return reinterpret_cast<T*>(ctx_.top());
-			return reinterpret_cast<T*>(ctx_);
+			return reinterpret_cast<T*>(ctx_.top());
 		}
 		inline void next(php::value rv) {
-			ctx_ = flame::loop;
 			pop_(rv);
 		}
 		inline void next() {
-			ctx_ = flame::loop;
 			php::value rv(nullptr);
 			pop_(rv);
 		}
@@ -65,10 +54,11 @@ namespace flame {
 	// 注意此函数只能在被 PHP 直接调用的过程中使用，
 	// 若在 cb 中可能导致未知行为
 	inline fiber* this_fiber(void* data = nullptr) {
-		if(fiber::cur_->ctx_ != flame::loop) {
+		if(!fiber::cur_->ctx_.empty()) {
 			throw php::exception("previous async function not finished");
 		}
-		fiber::cur_->ctx_ = data;
+		fiber::cur_->ctx_.push(data);
+		fiber::cur_->cbs_.push(nullptr);
 		return fiber::cur_;
 	}
 }
