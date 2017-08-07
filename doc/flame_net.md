@@ -58,3 +58,25 @@
 
 **注意**：
 * 阻塞在 `run()` 函数的服务器协程会在调用本函数后恢复运行；
+
+### `class flame\net\udp_socket`
+
+	封装 UDP 协议网络服务器、客户端连接
+
+#### `udp_socket::bind(string addr, long port)`
+将当前对象绑定到指定的地址、端口；绑定后，可以接收来自这个地址、端口的数据；
+
+**注意**：
+* 下述 `recv_from()` 和 `send_to()` 函数会在未绑定地址、端口时，自动进行绑定；
+
+#### `yield udp_socket::recv_from(string& addr, long& port)`
+接收来自某地址、端口的数据，来源方地址信息保存在 `addr`, `port` 中；两项参数均可选；
+
+**注意**：
+* 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
+
+#### `yield udp_socket::send_to(string data, string addr, long port)`
+向指定 `addr` 地址，`port` 端口发送指定 `data` 内容
+
+**注意**:
+* 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；

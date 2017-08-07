@@ -5,7 +5,7 @@ namespace net {
 	class stream_socket: public php::class_base {
 	public:
 		stream_socket(uv_stream_t* s);
-		php::value __destruct(php::parameters& params);
+		virtual ~stream_socket();
 		php::value read(php::parameters& params);
 		php::value write(php::parameters& params);
 		php::value close(php::parameters& params);

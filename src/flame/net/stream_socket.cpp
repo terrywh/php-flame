@@ -7,11 +7,10 @@ namespace net {
 	: pstream_(s) {
 		
 	}
-	php::value stream_socket::__destruct(php::parameters& params) {
+	stream_socket::~stream_socket() {
 		if(!uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) {
 			uv_close(reinterpret_cast<uv_handle_t*>(pstream_), nullptr);
 		}
-		return nullptr;
 	}
 	php::value stream_socket::read(php::parameters& params) {
 		pstream_->data = flame::this_fiber(this);
@@ -82,11 +81,11 @@ namespace net {
 		if(uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) return nullptr;
 		pstream_->data = flame::this_fiber();
 		uv_close(reinterpret_cast<uv_handle_t*>(pstream_), close_cb);
-		return nullptr;
+		return flame::async;
 	}
 	void stream_socket::close_cb(uv_handle_t* handle) {
 		flame::fiber* f = reinterpret_cast<flame::fiber*>(handle->data);
-		f->next(); // 这里，将当前 server 的运行协程（阻塞在 yield run()）恢复执行
+		f->next();
 	}
 }
 }

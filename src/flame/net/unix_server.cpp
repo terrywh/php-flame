@@ -1,5 +1,6 @@
 #include "../fiber.h"
 #include "unix_server.h"
+#include "unix_socket.h"
 
 namespace flame {
 namespace net {
@@ -9,7 +10,6 @@ namespace net {
 	}
 	php::value unix_server::handle(php::parameters& params) {
 		handle_ = params[0];
-		++status_;
 		return nullptr;
 	}
 	php::value unix_server::bind(php::parameters& params) {
@@ -19,7 +19,6 @@ namespace net {
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
-		++status_;
 		// 服务器属性
 		prop("local_address") = path;
 		return nullptr;
@@ -27,12 +26,15 @@ namespace net {
 	void unix_server::accept(uv_stream_t* s) {
 		unix_socket* sock = reinterpret_cast<unix_socket*>(s->data);
 		fiber::start(handle_, sock);
+		sock->delref();
 	}
 	uv_stream_t* unix_server::create_stream() {
 		php::object  sobj  = php::object::create<unix_socket>();
 		unix_socket* pobj  = sobj.native<unix_socket>();
+		pobj->object_ = sobj;
 		pobj->socket_.data = pobj;
 		uv_pipe_init(flame::loop, &pobj->socket_, 0);
+		pobj->addref();
 		return reinterpret_cast<uv_stream_t*>(&pobj->socket_);
 	}
 }

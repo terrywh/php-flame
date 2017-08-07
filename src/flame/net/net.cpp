@@ -3,8 +3,10 @@
 #include "tcp_server.h"
 #include "unix_socket.h"
 #include "unix_server.h"
+#include "udp_socket.h"
 
 #include "http/http.h"
+#include "fastcgi/fastcgi.h"
 
 namespace flame {
 namespace net {
@@ -19,7 +21,6 @@ namespace net {
 		class_tcp_socket.add<&tcp_socket::connect>("connect");
 		class_tcp_socket.add<&tcp_socket::read>("read");
 		class_tcp_socket.add<&tcp_socket::write>("write");
-		class_tcp_socket.add<&tcp_socket::__destruct>("__destruct");
 		ext.add(std::move(class_tcp_socket));
 		// class_tcp_server
 		// ------------------------------------
@@ -30,7 +31,6 @@ namespace net {
 		class_tcp_server.add<&tcp_server::handle>("handle");
 		class_tcp_server.add<&tcp_server::run>("run");
 		class_tcp_server.add<&tcp_server::close>("close");
-		class_tcp_server.add<&tcp_server::__destruct>("__destruct");
 		ext.add(std::move(class_tcp_server));
 		// class_unix_socket
 		// ------------------------------------
@@ -39,7 +39,6 @@ namespace net {
 		class_unix_socket.add<&unix_socket::connect>("connect");
 		class_unix_socket.add<&unix_socket::read>("read");
 		class_unix_socket.add<&unix_socket::write>("write");
-		class_unix_socket.add<&unix_socket::__destruct>("__destruct");
 		ext.add(std::move(class_unix_socket));
 		// class_unix_server
 		// ------------------------------------
@@ -49,36 +48,49 @@ namespace net {
 		class_unix_server.add<&unix_server::handle>("handle");
 		class_unix_server.add<&unix_server::run>("run");
 		class_unix_server.add<&unix_server::close>("close");
-		class_unix_server.add<&unix_server::__destruct>("__destruct");
 		ext.add(std::move(class_unix_server));
+		// class_udp_socket
+		// ------------------------------------
+		php::class_entry<udp_socket> class_udp_socket("flame\\net\\udp_socket");
+		class_udp_socket.add(php::property_entry("local_address", std::string("")));
+		class_udp_socket.add<&udp_socket::bind>("bind");
+		class_udp_socket.add<&udp_socket::recv_from>("recv_from", {
+			php::of_string("addr", true, true), // 引用参数
+			php::of_string("port", true, true),
+		});
+		class_udp_socket.add<&udp_socket::send_to>("send_to");
+		class_udp_socket.add<&udp_socket::close>("close");
+		ext.add(std::move(class_udp_socket));
+		
 		// 子命名空间
 		flame::net::http::init(ext);
+		flame::net::fastcgi::init(ext);
 	}
-	php::string addr2str(const struct sockaddr_storage& addr) {
+	php::string addr2str(const struct sockaddr_storage* addr) {
 		php::string str(64);
 		std::memset(str.data(), 0, 64);
-		switch(addr.ss_family) {
+		switch(addr->ss_family) {
 			case AF_INET:
-				uv_ip4_name((struct sockaddr_in*)&addr, str.data(), str.length());
+				uv_ip4_name((struct sockaddr_in*)addr, str.data(), str.length());
 			break;
 			case AF_INET6:
-				uv_ip6_name((struct sockaddr_in6*)&addr, str.data(), str.length());
+				uv_ip6_name((struct sockaddr_in6*)addr, str.data(), str.length());
 			break;
 		}
 		return std::move(str);
 	}
-	uint16_t addr2int(const struct sockaddr_storage& addr) {
-		switch(addr.ss_family) {
+	uint16_t addrport(const struct sockaddr_storage* addr) {
+		switch(addr->ss_family) {
 		case AF_INET:
-			return ntohs(reinterpret_cast<const struct sockaddr_in&>(addr).sin_port);
+			return ntohs(reinterpret_cast<const struct sockaddr_in*>(addr)->sin_port);
 		case AF_INET6:
-			return ntohs(reinterpret_cast<const struct sockaddr_in6&>(addr).sin6_port);
+			return ntohs(reinterpret_cast<const struct sockaddr_in6*>(addr)->sin6_port);
 		}
 	}
-	int addrfrom(struct sockaddr_storage& addr, const char* str, uint16_t port) {
-		int error = uv_ip6_addr(str, port, reinterpret_cast<struct sockaddr_in6*>(&addr));
+	int addrfrom(struct sockaddr_storage* addr, const char* str, uint16_t port) {
+		int error = uv_ip6_addr(str, port, reinterpret_cast<struct sockaddr_in6*>(addr));
 		if(error != 0) {
-			error = uv_ip4_addr(str, port, reinterpret_cast<struct sockaddr_in*>(&addr));
+			error = uv_ip4_addr(str, port, reinterpret_cast<struct sockaddr_in*>(addr));
 		}
 		return error;
 	}

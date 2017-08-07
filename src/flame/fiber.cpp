@@ -6,8 +6,7 @@ namespace flame {
 	php::value async;
 	// 当前“协程”
 	fiber* fiber::cur_ = nullptr;
-	fiber::fiber()
-	: ctx_(flame::loop) { 
+	fiber::fiber() { 
 		// 使用 flame::loop 作为上下文的特殊标记
 	}
 	// 协程的执行过程
@@ -34,6 +33,8 @@ namespace flame {
 		return true;
 	}
 	void fiber::pop_(php::value& rv) {
+		cbs_.pop();
+		ctx_.pop();
 		if(cbs_.empty()) { // 堆栈中的回调都已经结束
 			fiber* old = cur_;
 			cur_ = this;
@@ -45,9 +46,11 @@ namespace flame {
 			run_();
 			cur_ = old;
 		}else{ // 还存在上层的“堆栈回调”执行，并等待下次 done 返回
-			STACK_CB cb = cbs_.top();
+			void* data = ctx_.top();
+			auto  cb   = cbs_.top();
+			ctx_.pop();
 			cbs_.pop();
-			cb(rv);
+			cb(rv, data);
 		}
 	}
 }

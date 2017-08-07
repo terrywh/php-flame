@@ -1,6 +1,5 @@
 #include "http.h"
 #include "client.h"
-#include "server.h"
 
 namespace flame {
 namespace net {
@@ -30,17 +29,6 @@ namespace http {
 		class_client.add<&http::client::exec>("exec");
 		class_client.add<&http::client::debug>("debug");
 		ext.add(std::move(class_client));
-		// class_server
-		// -----------------------------------
-		php::class_entry<server> class_server("flame\\net\\http\\server");
-		class_server.add(php::property_entry("local_address", std::string("")));
-		class_server.add(php::property_entry("local_port", 0));
-		class_server.add<&server::bind>("bind");
-		class_server.add<&server::handle>("handle");
-		class_server.add<&server::run>("run");
-		class_server.add<&server::close>("close");
-		class_server.add<&server::__destruct>("__destruct");
-		ext.add(std::move(class_server));
 	}
 }
 }

@@ -6,9 +6,6 @@ namespace net {
 	class unix_socket: public stream_socket {
 	public:
 		unix_socket();
-		inline php::value __destruct(php::parameters& params) {
-			return stream_socket::__destruct(params);
-		}
 		php::value connect(php::parameters& params);
 		inline php::value read(php::parameters& params) {
 			return stream_socket::read(params);
@@ -21,7 +18,8 @@ namespace net {
 		}
 		// property remote_address ""
 	private:
-		uv_pipe_t socket_;
+		uv_pipe_t   socket_;
+		php::object object_;
 		static void connect_cb(uv_connect_t* req, int status);
 
 		friend class unix_server;
