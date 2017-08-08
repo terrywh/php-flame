@@ -248,7 +248,7 @@ php::value client::exec(php::object& req) {
 		}
 	};
 	curl_multi_add_handle(get_curl_handle(), curl);
-	return flame::async;
+	return flame::async();
 }
 
 php::value client::debug(php::parameters& params) {

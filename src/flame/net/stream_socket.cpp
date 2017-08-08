@@ -18,7 +18,7 @@ namespace net {
 		if(error < 0) { // 同步过程发生错误，直接抛出异常
 			throw php::exception(uv_strerror(error), error);
 		}
-		return flame::async;
+		return flame::async();
 	}
 	void stream_socket::alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(handle->data);
@@ -63,7 +63,7 @@ namespace net {
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
-		return flame::async;
+		return flame::async();
 	}
 	void stream_socket::write_cb(uv_write_t* req, int status) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);
@@ -81,7 +81,7 @@ namespace net {
 		if(uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) return nullptr;
 		pstream_->data = flame::this_fiber();
 		uv_close(reinterpret_cast<uv_handle_t*>(pstream_), close_cb);
-		return flame::async;
+		return flame::async();
 	}
 	void stream_socket::close_cb(uv_handle_t* handle) {
 		flame::fiber* f = reinterpret_cast<flame::fiber*>(handle->data);

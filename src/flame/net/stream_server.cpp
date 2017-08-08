@@ -20,13 +20,13 @@ namespace net {
 			throw php::exception(uv_strerror(error), error);
 		}
 		running_ = true;
-		return flame::async;
+		return flame::async();
 	}
 	php::value stream_server::close(php::parameters& params) {
 		if(!running_ && uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) return nullptr;
 		pstream_->data = flame::this_fiber(this);
 		uv_close(reinterpret_cast<uv_handle_t*>(pstream_), close_cb);
-		return flame::async;
+		return flame::async();
 	}
 	void stream_server::close_cb(uv_handle_t* handle) {
 		flame::fiber*     f = reinterpret_cast<flame::fiber*>(handle->data);

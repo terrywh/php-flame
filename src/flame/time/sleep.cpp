@@ -15,7 +15,7 @@ namespace time {
 		uv_timer_init(flame::loop, tm);
 		uv_timer_start(tm, timer_cb, ms, 0);
 		// 标记异步任务的特殊返回值
-		return flame::async;
+		return flame::async();
 	}
 }
 }

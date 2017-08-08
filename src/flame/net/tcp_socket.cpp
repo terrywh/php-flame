@@ -26,7 +26,7 @@ namespace net {
 			// TODO 如果 uv_tcp_connect 在这里出错，fiber 中的堆栈信息要 pop 
 			throw php::exception(uv_strerror(error), error);
 		}
-		return flame::async;
+		return flame::async();
 	}
 	void tcp_socket::connect_cb(uv_connect_t* req, int error) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);

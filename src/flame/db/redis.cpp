@@ -189,7 +189,7 @@ php::value redis::__call(php::parameters& params) {
 		}
 	}
 	command(cmd.c_str(), args, fn);
-	return flame::async;
+	return flame::async();
 }
 
 
@@ -212,12 +212,12 @@ void redis::close() {
 
 php::value redis::hgetall(php::parameters& params) {
 	command("HGETALL", params, return_pair_callback);
-	return flame::async;
+	return flame::async();
 }
 
 php::value redis::hmget(php::parameters& params) {
 	command("HMGET", params, arg_key_callback);
-	return flame::async;
+	return flame::async();
 }
 
 
@@ -238,13 +238,13 @@ php::value redis::subscribe(php::parameters& params) {
 	php::array& channel = params[0];
 	php::value cb = params[1];
 	command("SUBSCRIBE", channel, subscribe_callback, &cb);
-	return flame::async;
+	return flame::async();
 }
 
 php::value redis::quit(php::parameters& params) {
 	php::array arr;
 	command("QUIT", arr, quit_callback);
-	return flame::async;
+	return flame::async();
 }
 
 void redis::command(const char* cmd, php::parameters& params, redisCallbackFn* fn, php::value* cb) {
