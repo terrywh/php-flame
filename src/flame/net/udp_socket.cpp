@@ -101,11 +101,10 @@ namespace net {
 		f->next();
 	}
 	php::value udp_socket::close(php::parameters& params) {
-		if(!uv_is_closing(reinterpret_cast<uv_handle_t*>(&socket_))) {
-			uv_close(reinterpret_cast<uv_handle_t*>(&socket_), close_cb);
-			return flame::async;
-		}
-		return nullptr;
+		if(uv_is_closing(reinterpret_cast<uv_handle_t*>(&socket_))) return nullptr;
+		socket_.data = flame::this_fiber(this);
+		uv_close(reinterpret_cast<uv_handle_t*>(&socket_), close_cb);
+		return flame::async;
 	}
 	void udp_socket::close_cb(uv_handle_t* handle) {
 		flame::fiber* f = reinterpret_cast<flame::fiber*>(handle->data);
