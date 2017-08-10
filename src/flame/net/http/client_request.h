@@ -8,10 +8,7 @@ namespace http {
 	class client;
 	class client_request: public php::class_base {
 	public:
-		client_request():curl_(nullptr),slist_(nullptr),sockfd_(-1),cli_(nullptr) {
-		}
-		~client_request() {
-		}
+		client_request();
 		php::value __construct(php::parameters& params);
 		php::value __destruct(php::parameters& params) {
 			release();

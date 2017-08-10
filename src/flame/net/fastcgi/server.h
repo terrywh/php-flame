@@ -4,6 +4,7 @@
 namespace flame {
 namespace net {
 namespace fastcgi {
+	class server_connection;
 	class server: public stream_server {
 	public:
 		server();
@@ -21,8 +22,10 @@ namespace fastcgi {
 		std::map<std::string, php::callable> handle_map_;
 		virtual void accept(uv_stream_t* s);
 		virtual uv_stream_t* create_stream();
+		void on_request(server_connection* conn, php::object&& req);
 	private:
 		uv_pipe_t server_;
+		friend class server_connection;
 	};
 }
 }

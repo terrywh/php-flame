@@ -19,7 +19,7 @@ namespace net {
 			throw php::exception(uv_strerror(error), error);
 		}
 		uv_connect_t* req = new uv_connect_t;
-		req->data = flame::this_fiber(this);
+		req->data = flame::this_fiber()->push(this);
 		error = uv_tcp_connect(req, &socket_, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
 		if(error != 0) {
 			delete req;

@@ -1,7 +1,7 @@
 #pragma once
 
 namespace flame {
-	
+
 	// 当前事件循环
 	extern uv_loop_t* loop;
 	// 包裹一个 generator function 以构建“协程”
@@ -38,6 +38,16 @@ namespace flame {
 			cur_ = old;
 			return nullptr;
 		}
+		inline fiber* push() {
+			ctx_.push(nullptr);
+			cbs_.push(nullptr);
+			return this;
+		}
+		inline fiber* push(void* data) {
+			ctx_.push(data);
+			cbs_.push(nullptr);
+			return this;
+		}
 		inline fiber* push(STACK_CALLBACK_T cb, void* data) {
 			ctx_.push(data);
 			cbs_.push(cb);
@@ -45,7 +55,15 @@ namespace flame {
 		}
 		template <typename T>
 		inline T* context() {
+			if(status_ != 2) {
+				fiber::cur_->error_yield_missing_();
+				return nullptr;
+			}
 			return reinterpret_cast<T*>(ctx_.top());
+		}
+		inline void drop() {
+			while(!ctx_.empty()) ctx_.pop();
+			while(!cbs_.empty()) cbs_.pop();
 		}
 		inline void next(php::value rv) {
 			pop_(rv);
@@ -54,14 +72,12 @@ namespace flame {
 			php::value rv(nullptr);
 			pop_(rv);
 		}
-		friend fiber* this_fiber(void* data);
+		friend fiber* this_fiber();
 		friend php::value async();
 	};
 	// 注意此函数只能在被 PHP 直接调用的过程中使用，
 	// 若在 cb 中可能导致未知行为
-	inline fiber* this_fiber(void* data = nullptr) {
-		fiber::cur_->ctx_.push(data);
-		fiber::cur_->cbs_.push(nullptr);
+	inline fiber* this_fiber() {
 		return fiber::cur_;
 	}
 	// 用于标记异步操作
@@ -75,4 +91,3 @@ namespace flame {
 		return flame::async_;
 	}
 }
-

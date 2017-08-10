@@ -5,39 +5,29 @@
 namespace flame {
 namespace net {
 namespace http {
-
+client_request::client_request()
+: curl_(nullptr)
+, slist_(nullptr)
+, sockfd_(-1)
+, cli_(nullptr) {
+	prop("header") = php::array(0);
+}
 php::value client_request::__construct(php::parameters& params) {
 	php::string str("");
 	prop("method") = str;
 	if (params.length() >= 3) {
-		prop("method") = params[0];
-		prop("url") = params[1];
-		prop("body") = params[2];
-	} else if(params.length() >= 1 && params[0].is_string()) {
-		prop("url") = params[0];
-	} else if (params.length() >= 1 && params[0].is_array()) {
-		php::array& arr = params[0];
-		prop("url")     = arr["url"];
-		php::value* tmp = arr.find("method");
-		if(tmp != nullptr) {
-			prop("method") = (*tmp).to_string();
-		}else{
-			prop("method") = php::string("GET", 3);
-		}
-		tmp = arr.find("timeout");
-		if (tmp != nullptr) {
-			prop("timeout") = *tmp;
-		}else{
-			prop("timeout") = php::value(10L);
-		}
-		php::value* vh = arr.find("header");
-		if (vh != nullptr) {
-			prop("header") = *vh;
-		}
-		php::value* vbody = arr.find("body");
-		if (vbody != nullptr) {
-			prop("body") = *vbody;
-		}
+		prop("timeout") = static_cast<int>(params[2]);
+	}else{
+		prop("timeout") = 5;
+	}
+	if (params.length() >= 2) {
+		prop("body") = static_cast<php::string&>(params[1]);
+		prop("method") = "POST";
+	}else{
+		prop("method") = "GET";
+	}
+	if (params.length() >= 1) {
+		prop("url") = static_cast<php::string&>(params[0]);
 	}
 	return this;
 }
@@ -141,7 +131,7 @@ curl_slist* client_request::build_header() {
 			php::string& key = i->first;
 			php::string& val = i->second;
 			php::string  str(key.length() + val.length() + 3);
-			sprintf(str.data(), "%s: %s", key.data(), val.data());
+			sprintf(str.data(), "%.*s: %.*s", key.length(), key.data(), val.length(), val.data());
 			slist_ = curl_slist_append(slist_, str.c_str());
 		}
 		return slist_;

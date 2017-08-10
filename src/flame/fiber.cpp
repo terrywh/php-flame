@@ -6,7 +6,7 @@ namespace flame {
 	php::value async_;
 	// 当前“协程”
 	fiber* fiber::cur_ = nullptr;
-	fiber::fiber():status_(0) { 
+	fiber::fiber():status_(0) {
 		// 使用 flame::loop 作为上下文的特殊标记
 	}
 	// 协程的执行过程
@@ -36,6 +36,7 @@ namespace flame {
 	void fiber::error_yield_missing_() {
 		php::fail("missing keyword 'yield' for async function");
 		uv_stop(flame::loop);
+		exit(-2);
 	}
 	void fiber::pop_(php::value& rv) {
 		if(status_ != 2) { // 未开始异步过程 或 缺少 yield 关键字

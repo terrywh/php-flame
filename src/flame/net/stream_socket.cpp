@@ -5,7 +5,7 @@ namespace flame {
 namespace net {
 	stream_socket::stream_socket(uv_stream_t* s)
 	: pstream_(s) {
-		
+
 	}
 	stream_socket::~stream_socket() {
 		if(!uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) {
@@ -13,7 +13,7 @@ namespace net {
 		}
 	}
 	php::value stream_socket::read(php::parameters& params) {
-		pstream_->data = flame::this_fiber(this);
+		pstream_->data = flame::this_fiber()->push(this);
 		int error = uv_read_start(pstream_, alloc_cb, read_cb);
 		if(error < 0) { // 同步过程发生错误，直接抛出异常
 			throw php::exception(uv_strerror(error), error);
@@ -57,7 +57,7 @@ namespace net {
 			return nullptr;
 		}
 		uv_write_t* req = new uv_write_t;
-		req->data = flame::this_fiber(this);
+		req->data = flame::this_fiber()->push(this);
 		uv_buf_t buf {.base = wbuffer_.data(), .len = wbuffer_.length()};
 		int error = uv_write(req, pstream_, &buf, 1, write_cb);
 		if(error < 0) {
@@ -79,7 +79,7 @@ namespace net {
 
 	php::value stream_socket::close(php::parameters& params) {
 		if(uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) return nullptr;
-		pstream_->data = flame::this_fiber();
+		pstream_->data = flame::this_fiber()->push();
 		uv_close(reinterpret_cast<uv_handle_t*>(pstream_), close_cb);
 		return flame::async();
 	}

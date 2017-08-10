@@ -1,62 +1,97 @@
 ### `namespace flame\net`
 提供基本的 HTTP 协议网络协程式客户端、服务器封装；
 
-### `class flame\net\http_request`
+### `class flame\net\http\client_request`
 
-	封装 HTTP 协议的请求
+封装 HTTP 协议的客户端请求请求
 
-#### `http_request::http_request(string url)`
-**属性**：
-	使用单独的 `url` 来初始化一个请求；
+#### `client_request::__construct(string $url[, mixed $data[, integer $timeout]])`
+初始化并生成客户端请求对象：
 
-#### `http_request::http_request(string method, string url, array postfield)`
-**属性**：
-	使用 `method` , `url` , `postfield` 来初始化一个请求：
-	`method` ：HTTP 的方法。前支持的有 GET , POST , PUT；
-	`url` ：请求的地址；
-	`postfield`： `POST` 和 `PUT` 上传的数据。
+* `$url` ：请求的地址；
+* `$data`：可选，请求体，若存在，将自动设置当前请求 `$req->method='POST'`，可以为 `null`；
+* `$timeout`：可选，请求超时，单位 `s`（秒），默认为 5s；
 
-#### `http_request::http_request(array args)`
-**功能**：
-	使用 `array` 类型的 `map` 来初始化一个请求，支持的参数包括 `url` , `method` , `timeout` , `header`：
-	[
-		"url"=>"www.example.com",
-		"method"=>"POST",
-		"timeout"=>10,
-		"header"=>[
-				"Accept"=>"*/*",
-				"userdefine"=>"userdefine"
-			]
-	]
+**示例**：
+``` PHP
+<?php
+$req = new flame\net\http\client_request("http://www.baidu.com", null, 5);
+```
 
-#### `http_request::url`
-**属性**：
-	HTTP 的请求地址，必须不为空；
-**注意**：
-* 如果执行 `url` 为空的请求， `http_client::exec` 会抛出异常；
+#### `string client_request::$method`
+HTTP 的方法，目前支持的有 GET , POST , PUT；
 
-#### `http_request::method`
-**属性**：
-	HTTP 的方法，目前支持的有 GET , POST , PUT；
+#### `string client_request::$url`
+HTTP 的请求地址，不能为空；
 
-#### `http_request::timeout`
-**属性**：
-	请求的超时时间，默认为10秒；
+#### `integer client_request::$timeout`
+请求超时，单位 `s` (秒)；
 
-#### `http_request::header`
-**属性**：
-	`array` 类型的 `map` ，key是header的类型，value是参数；
+#### `array client_request::$header`
+请求头部，可以用于定制请求头部；
 
-### `class flame\net\http_client`
-	封装 libcurl 相关的 HTTP 处理功能；
+**示例**：
+``` PHP
+<?php
+// ...
+$req->header["content-type"] = "application/x-www-form-urlencoded";
+```
 
-#### `yield http_client::exec(http_request request)`
-**功能**：
-	绑定服务器地址端口，绑定后调用 `run()` 启动服务器开始监听指定的地址、端口；
-**注意**：
-* 如果执行 `url` 为空的请求， `http_client::exec` 会抛出异常；
+#### `mixed client_request::$body`
+Array / String 当 $method = `PUT` 或 `POST` 时的请求体；
+**示例**：
+``` PHP
+<?php
+// ...
+$req->body = "aaaaaaaaaa";
+// 支持直接使用 Array 类型，自动序列化为 application/x-www-form-urlencoded 格式
+$req->body = ["a"=> "b", "c"=> "d"];
+```
 
-#### `http_client::debug(int is_open)`
-**功能**：
-	参数不为零时，打开 `libcurl` 的 VERBOSE 模式，可以更好的调试。
+### `class flame\net\http\client`
+封装 libcurl 相关的 HTTP 处理功能
 
+* 提供对 单个域名 的出口连接限制等功能；
+* 复用 client 对象以约束资源占用；
+
+#### `yield http_client::exec(client_request $request)`
+执行指定请求并返回响应对象；
+
+**示例**：
+``` PHP
+<?php
+$cli = new flame\net\http\client();
+$req1 = new flame\net\http\client_request("http://www.panda.tv");
+$req2 = new flame\net\http\client_request("http://www.baidu.tv");
+$res1 = yield $cli->exec($req1);
+var_dump($res1);
+$res2 = yield $cli->exec($req2);
+var_dump($res2);
+```
+
+#### `client::debug(integer is_open)`
+参数不为零时，打开 `libcurl` 的 VERBOSE 模式，可以更好的调试。
+
+
+### `class flame\net\http\server_request`
+作为服务端时，收到的来自客户端、浏览器的请求对象；
+
+#### `array server_request::$method`
+请求方法，如 'GET' 'POST' 等；
+
+#### `string server_request::$uri`
+请求路径，**不含** 查询字符串 `query string`；
+
+#### `array server_request::$query`
+请求 `GET` 参数；数据来源于请求 `URL` 的 `PATH` 之后 `?` 与 `#` 或 URL 结束之前的文本，并通过类似 `parse_str()` 进行解析得到；
+
+#### `array server_request::$header`
+请求头信息，注意：
+* 所有请求头的字段名称均被处理为**小写**，字段值保持不变；
+* 仅存在字段名而无字段值的请求头将被忽略（不存在于 `$header` 属性中）
+
+#### `array server_request::$cookie`
+请求附带的 cookie 信息（已解析为数组）；若需要原始 cookie 文本，使用 `$request->header["cookie"]` 访问；
+
+#### `mixed server_request::$body`
+请求体；当请求类型 `content-type` 标记为 `application/x-www-form-urlencoded` 时，会通过类似 `parse_str()` 解析得到数组，其他类型目前仅能的到原始数据文本；

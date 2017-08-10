@@ -1,0 +1,180 @@
+#include "../../fiber.h"
+#include "server_response.h"
+#include "fastcgi.h"
+#include "server_connection.h"
+
+namespace flame {
+namespace net {
+namespace fastcgi {
+
+server_response::server_response() {
+	php::array header(2);
+	header["Content-Type"] = php::string("text/plain", 10);
+	prop("header") = header;
+}
+
+static std::map<int, std::string> status_mapper {
+	{200, "Ok"},
+	{404, "Not Found"},
+	{500, "Internal Error"},
+};
+
+#define CACULATE_PADDING(size) (size) % 8 == 0 ? 0 : 8 - (size) % 8;
+
+php::value server_response::write_header(php::parameters& params) {
+	if(prop("header_sent").is_true()) {
+		throw php::exception("header already sent");
+	}
+	if(params.length() >= 1) {
+		prop("status") = static_cast<int>(params[0]);
+	}
+	buffer_head();
+	prop("header_sent") = true;
+	buffer_write();
+	return flame::async();
+}
+
+void server_response::buffer_head() {
+	// 预留头部
+	char* head = buffer_.put(sizeof(header_));
+	// STATUS_CODE STATUS_TEXT\r\n
+	int          status_code = prop("status");
+	std::string& status_text = status_mapper[status_code];
+	sprintf(
+		buffer_.put(6 + status_text.length()),
+		"%03d %.*s\r\n",
+		status_code, status_text.length(), status_text.c_str());
+	// KEY: VALUE\r\n
+	php::array header = prop("header");
+	for(auto i=header.begin(); i!=header.end(); ++i) {
+		php::string& key = i->first;
+		php::string& val = i->second.to_string();
+		sprintf(
+			buffer_.put(key.length() + val.length() + 4),
+			"%.*s: %.*s\r\n",
+			key.length(), key.data(), val.length(), val.data());
+	}
+	sprintf(buffer_.put(2), "\r\n");
+	// 根据长度填充头部
+	header_.version        = PV_VERSION;
+	header_.type           = PT_STDOUT;
+	// !!! 解析过程没有反转，这里也不需要
+	header_.request_id     = conn_->request_id;
+	unsigned short length  = buffer_.size() - sizeof(header_);
+	// 注意字节序调整
+	header_.content_length = (length & 0x00ff) << 8 | (length & 0xff00) >> 8;
+	header_.padding_length = CACULATE_PADDING(length);
+	header_.reserved       = 0;
+	std::memcpy(head, &header_, sizeof(header_));
+	// padding
+	if(header_.padding_length > 0) {
+		std::memset(buffer_.put(header_.padding_length), 0, header_.padding_length);
+	}
+}
+
+php::value server_response::write(php::parameters& params) {
+	if(prop("ended").is_true()) {
+		throw php::exception("response already ended");
+	}
+	if(!prop("header_sent").is_true()) {
+		buffer_head();
+	}
+	// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
+	php::string& data = params[0].to_string();
+	buffer_body(data.data(), data.length());
+	buffer_write();
+	return flame::async();
+}
+
+void server_response::buffer_body(const char* data, unsigned short size) {
+	// 根据长度填充头部
+	header_.version        = PV_VERSION;
+	header_.type           = PT_STDOUT;
+	// !!! 解析过程没有反转，这里也不需要
+	header_.request_id     = conn_->request_id;
+	// 字节序调整
+	header_.content_length = (size & 0x00ff) << 8 | (size & 0xff00) >> 8;
+	header_.padding_length = CACULATE_PADDING(size);
+	header_.reserved       = 0;
+	// 头部
+	std::memcpy(buffer_.put(sizeof(header_)), &header_, sizeof(header_));
+	// 内容
+	std::memcpy(buffer_.put(size), data, size);
+	// 填充
+	if(header_.padding_length > 0) {
+		std::memset(buffer_.put(header_.padding_length), 0, header_.padding_length);
+	}
+}
+
+php::value server_response::end(php::parameters& params) {
+	if(prop("ended").is_true()) {
+		throw php::exception("response already ended");
+	}
+	prop("ended") = true;
+	if(!prop("header_sent").is_true()) {
+		buffer_head();
+	}
+	if(params.length() >= 1) {
+		// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
+		php::string& data = params[0].to_string();
+		buffer_body(data.data(), data.length());
+	}
+	buffer_ending();
+	buffer_write();
+	return flame::async();
+}
+
+void server_response::buffer_ending() {
+	// 根据长度填充头部
+	header_.version        = PV_VERSION;
+	header_.type           = PT_STDOUT;
+	// !!! 解析过程没有反转，这里也不需要
+	header_.request_id     = conn_->request_id;
+	header_.content_length = 0;
+	header_.padding_length = 0;
+	header_.reserved       = 0;
+	// 头部
+	std::memcpy(buffer_.put(sizeof(header_)), &header_, sizeof(header_));
+	// 无内容 无填充
+	header_.type = PT_END_REQUEST;
+	// length = 8 字节序调整
+	header_.content_length = 0x0800;
+	// 头部
+	std::memcpy(buffer_.put(sizeof(header_)), &header_, sizeof(header_));
+	// 内容
+	std::memset(buffer_.put(8), 0, 8);
+	// 无填充
+}
+
+void server_response::buffer_write() {
+	uv_write_t* req = new uv_write_t;
+	req->data = flame::this_fiber()->push(this);
+	uv_buf_t    buf {buffer_.data(), (size_t)buffer_.size()};
+	int error = uv_write(req, reinterpret_cast<uv_stream_t*>(&conn_->socket_), &buf, 1, write_cb);
+	if(0 > error) {
+		flame::this_fiber()->drop();
+		throw php::exception(uv_strerror(error), error);
+	}
+}
+
+void server_response::write_cb(uv_write_t* req, int status) {
+	flame::fiber*   fiber = reinterpret_cast<flame::fiber*>(req->data);
+	server_response* self = fiber->context<server_response>();
+	delete req;
+
+	int size = self->buffer_.size();
+	self->buffer_.reset();
+	// 若 Web 服务器没有保持连接的标记，在请求结束后关闭连接
+	if(self->conn_->flag & PF_KEEP_CONN == 0 && self->prop("ended").is_true()) {
+		self->conn_->close();
+	}
+	if(status < 0) {
+		fiber->next(php::make_exception(uv_strerror(status), status));
+	}else{
+		fiber->next(size);
+	}
+}
+
+}
+}
+}

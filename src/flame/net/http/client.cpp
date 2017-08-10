@@ -34,7 +34,6 @@ void client::curl_perform(uv_poll_t *req, int status, int events) {
 	check_multi_info(cli);
 }
 
-
 static void on_timeout(uv_timer_t *req) {
 	int running_handles;
 	client* cli = (client*)(req->data);
@@ -57,7 +56,6 @@ int client::start_timeout(CURLM* multi, long timeout_ms, void* userp) {
 	}
 	return 0;
 }
-
 
 client::client()
 : debug_(0) {
@@ -106,10 +104,10 @@ int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, 
 			uv_close((uv_handle_t*)p_poll_handle, nullptr);
 			curl_multi_assign(req->cli_->get_curl_handle(), s, nullptr);
 		}
-		break;
+	break;
 	default:
 		//不可能
-		break;
+		;
 	}
 	return 0;
 };
@@ -124,21 +122,19 @@ php::value client::exec(php::object& req) {
 	if (debug_) {
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 	}
-	auto fiber = flame::this_fiber();
+	auto fiber = flame::this_fiber()->push();
 	r->cb_ = [req, r, fiber](CURLMsg *message) {
 		switch(message->msg) {
-			case CURLMSG_DONE: {
-				if (message->data.result != CURLE_OK) {
-					php::string str_ret(curl_easy_strerror(message->data.result));
-					fiber->next(std::move(str_ret));
-				} else {
-					fiber->next(std::move(r->result_));
-				}
+		case CURLMSG_DONE:
+			if (message->data.result != CURLE_OK) {
+				php::string str_ret(curl_easy_strerror(message->data.result));
+				fiber->next(std::move(str_ret));
+			} else {
+				fiber->next(std::move(r->result_));
 			}
-			break;
-			default: {
-				fiber->next(php::string("curlmsg return not zero"));
-			}
+		break;
+		default:
+			fiber->next(php::string("curlmsg return not zero"));
 		}
 	};
 	curl_multi_add_handle(get_curl_handle(), curl);
@@ -197,7 +193,6 @@ php::value put(php::parameters& params) {
 	req->prop("body")   = params[1];
 	return cli.exec(obj_req);
 }
-
 
 }
 }

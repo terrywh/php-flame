@@ -32,9 +32,13 @@ namespace http {
 		ext.add(std::move(class_client));
 		// class server_request
 		php::class_entry<server_request> class_server_request("flame\\net\\http\\server_request");
-		class_server_request.add(php::property_entry("headers", nullptr));
+		class_server_request.add(php::property_entry("method", ""));
+		class_server_request.add(php::property_entry("uri", ""));
 		class_server_request.add(php::property_entry("query", nullptr));
+		class_server_request.add(php::property_entry("header", nullptr));
+		class_server_request.add(php::property_entry("cookie", nullptr));
 		class_server_request.add(php::property_entry("body", nullptr));
+		ext.add(std::move(class_server_request));
 	}
 }
 }

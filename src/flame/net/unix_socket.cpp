@@ -12,7 +12,7 @@ namespace net {
 	php::value unix_socket::connect(php::parameters& params) {
 		php::string path = params[0];
 		uv_connect_t* req = new uv_connect_t;
-		req->data = flame::this_fiber(this);
+		req->data = flame::this_fiber()->push(this);
 		uv_pipe_connect(req, &socket_, path.c_str(), connect_cb);
 		prop("remote_address") = path;
 		return flame::async();
