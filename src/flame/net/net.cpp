@@ -61,7 +61,7 @@ namespace net {
 		class_udp_socket.add<&udp_socket::send_to>("send_to");
 		class_udp_socket.add<&udp_socket::close>("close");
 		ext.add(std::move(class_udp_socket));
-		
+
 		// 子命名空间
 		flame::net::http::init(ext);
 		flame::net::fastcgi::init(ext);
@@ -70,12 +70,12 @@ namespace net {
 		php::string str(64);
 		std::memset(str.data(), 0, 64);
 		switch(addr->ss_family) {
-			case AF_INET:
-				uv_ip4_name((struct sockaddr_in*)addr, str.data(), str.length());
-			break;
-			case AF_INET6:
-				uv_ip6_name((struct sockaddr_in6*)addr, str.data(), str.length());
-			break;
+		case AF_INET:
+			uv_ip4_name((struct sockaddr_in*)addr, str.data(), str.length());
+		break;
+		case AF_INET6:
+			uv_ip6_name((struct sockaddr_in6*)addr, str.data(), str.length());
+		break;
 		}
 		return std::move(str);
 	}
@@ -104,7 +104,5 @@ namespace net {
 		}
 #endif
 	}
-}	
 }
-
-
+}

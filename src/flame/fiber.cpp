@@ -3,10 +3,10 @@
 namespace flame {
 	uv_loop_t* loop;
 	// 异步函数标记
-	php::value async;
+	php::value async_;
 	// 当前“协程”
 	fiber* fiber::cur_ = nullptr;
-	fiber::fiber() { 
+	fiber::fiber():status_(0) {
 		// 使用 flame::loop 作为上下文的特殊标记
 	}
 	// 协程的执行过程
@@ -24,7 +24,8 @@ namespace flame {
 				return false;
 			}
 			php::value v = gen_.current();
-			if(v == async) { // 异步流程
+			if(v == async_) { // 异步流程
+				++status_;
 				break;
 			}
 			// 其他数据利率直接返回
@@ -32,12 +33,22 @@ namespace flame {
 		}
 		return true;
 	}
+	void fiber::error_yield_missing_() {
+		php::fail("missing keyword 'yield' for async function");
+		uv_stop(flame::loop);
+		exit(-2);
+	}
 	void fiber::pop_(php::value& rv) {
+		if(status_ != 2) { // 未开始异步过程 或 缺少 yield 关键字
+			error_yield_missing_();
+			return;
+		}
 		cbs_.pop();
 		ctx_.pop();
 		if(cbs_.empty()) { // 堆栈中的回调都已经结束
 			fiber* old = cur_;
 			cur_ = this;
+			status_ = 0; // 恢复即将开始异步函数的状态
 			if(rv.is_exception()) {
 				gen_.throw_exception(rv);
 			}else{

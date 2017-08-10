@@ -1,5 +1,7 @@
+#include "../../fiber.h"
 #include "server.h"
-#include "connection.h"
+#include "server_connection.h"
+#include "server_response.h"
 
 namespace flame {
 namespace net {
@@ -18,7 +20,7 @@ namespace fastcgi {
 			handle_def_ = params[0];
 		}else{
 			throw php::exception("only Generator function can be use as handler");
-		}		
+		}
 		return nullptr;
 	}
 	php::value server::bind(php::parameters& params) {
@@ -33,18 +35,37 @@ namespace fastcgi {
 		return nullptr;
 	}
 	void server::accept(uv_stream_t* s) {
-		connection* conn = reinterpret_cast<connection*>(s->data);
+		server_connection* conn = reinterpret_cast<server_connection*>(s->data);
 		conn->start();
 		// conn->delref();
 	}
 	uv_stream_t* server::create_stream() {
-		// php::object sobj = php::object::create<connection>();
-		// connection* pobj = sobj.native<connection>();
-		connection* pobj = new connection();
+		// php::object sobj = php::object::create<server_connection>();
+		// server_connection* pobj = sobj.native<server_connection>();
+		server_connection* pobj = new server_connection();
+		pobj->server_ = this;
 		pobj->socket_.data = pobj;
 		uv_pipe_init(flame::loop, &pobj->socket_, 0);
 		// pobj->addref();
 		return reinterpret_cast<uv_stream_t*>(&pobj->socket_);
+	}
+	void server::on_request(server_connection* conn, php::object&& req) {
+		php::object      res = php::object::create<server_response>();
+		server_response* obj = res.native<server_response>();
+		obj->conn_ = conn;
+		php::string& path = req.prop("uri");
+		if(path.is_empty()) {
+			php::fail("missing 'REQUEST_URI' in webserver config");
+			uv_stop(flame::loop);
+			exit(-2);
+		}else{
+			auto hi = handle_map_.find(path);
+			if(hi != handle_map_.end()) {
+				fiber::start(hi->second, req, res);
+			}else{
+				fiber::start(handle_def_, req, res);
+			}
+		}
 	}
 }
 }

@@ -1,5 +1,8 @@
 ### `namespace flame\net`
 提供基本的TCP UDP 协议网络协程式客户端、服务器封装；
+内部包：
+* http - HTTP 协议服务端、客户端支持；
+* fastcgi - FASTCGI/1.1 精简版本的应用服务支持，可以挂接 nginx 等 Web 服务器使用；
 
 ### `class flame\net\tcp_socket`
 
@@ -23,7 +26,7 @@
 **功能**：
 	进行一次网络写入操作（发送）；
 
-#### `yield tcp_socket::close()` 
+#### `yield tcp_socket::close()`
 **功能**：
 	关闭网络连接；
 

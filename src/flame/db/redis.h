@@ -7,14 +7,14 @@
 namespace flame {
 namespace db {
 
-struct redis_context {
-	php::array cmd;
-	flame::fiber* fiber;
-	php::callable cb;
-};
-
 class redis: public php::class_base {
 public:
+	typedef struct { // 由于特殊使用方式，这里借鉴 hiredis 命名
+		php::array    cmd;
+		flame::fiber* fiber;
+		php::callable cb;
+	} redisRequest;
+
 	redis();
 	virtual ~redis();
 	php::value __construct(php::parameters& params);
@@ -32,13 +32,12 @@ public:
 	php::value hmget(php::parameters& params);
 	php::value quit(php::parameters& params);
 	php::value subscribe(php::parameters& params);
-	
-	void set_context(redisAsyncContext *context) { context_ = context; };
 
 	php::value error_;
 private:
 	php::value format_redis_result(redisReply* reply);
-	
+	static void connect_callback(const redisAsyncContext *c, int status);
+	static void disconnect_callback(const redisAsyncContext *c, int status);
 	static void null_callback(redisAsyncContext *c, void *r, void *privdata);
 	// 默认回调，按照redis返回的type格式化返回
 	static void default_callback(redisAsyncContext *c, void *r, void *privdata);
@@ -50,7 +49,7 @@ private:
 	static void subscribe_callback(redisAsyncContext *c, void *r, void *privdata);
 	void command(const char* cmd, php::parameters& params, redisCallbackFn* fn, php::value* cb = nullptr);
 	void command(const char* cmd, php::array& arr, redisCallbackFn *fn, php::value* cb = nullptr);
-	void command(int argc, const char **argv, const size_t *argvlen, redisCallbackFn *fn, redis_context *privdata);
+	void command(int argc, const char **argv, const size_t *argvlen, redisCallbackFn *fn, redisRequest *privdata);
 	php::value connect(php::array& arr);
 	void close();
 	redisAsyncContext *context_;

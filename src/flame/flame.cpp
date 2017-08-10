@@ -3,7 +3,7 @@
 
 namespace flame {
 	void init(php::extension_entry& ext) {
-		zval* ff = static_cast<zval*>(async);
+		zval* ff = static_cast<zval*>(async_);
 		ZVAL_PTR(ff, &ext);
 		loop = uv_default_loop();
 		// 基础协程函数

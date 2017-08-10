@@ -6,7 +6,7 @@ namespace net {
 	stream_server::stream_server(uv_stream_t* s)
 	: pstream_(s)
 	, running_(false) {
-		
+
 	}
 	stream_server::~stream_server() {
 		if(running_ && !uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) {
@@ -14,19 +14,19 @@ namespace net {
 		}
 	}
 	php::value stream_server::run(php::parameters& params) {
-		pstream_->data = flame::this_fiber(this);
+		pstream_->data = flame::this_fiber()->push(this);
 		int error = uv_listen(reinterpret_cast<uv_stream_t*>(pstream_), 1024, connection_cb);
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
 		running_ = true;
-		return flame::async;
+		return flame::async();
 	}
 	php::value stream_server::close(php::parameters& params) {
 		if(!running_ && uv_is_closing(reinterpret_cast<uv_handle_t*>(pstream_))) return nullptr;
-		pstream_->data = flame::this_fiber(this);
+		pstream_->data = flame::this_fiber()->push(this);
 		uv_close(reinterpret_cast<uv_handle_t*>(pstream_), close_cb);
-		return flame::async;
+		return flame::async();
 	}
 	void stream_server::close_cb(uv_handle_t* handle) {
 		flame::fiber*     f = reinterpret_cast<flame::fiber*>(handle->data);

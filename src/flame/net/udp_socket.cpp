@@ -34,7 +34,7 @@ namespace net {
 		if(0 > error) {
 			throw php::exception(uv_strerror(error), error);
 		}
-		socket_.data = flame::this_fiber(this);
+		socket_.data = flame::this_fiber()->push(this);
 		if(params.length() >= 1) {
 			addr_ = &params[0];
 		}else{
@@ -45,7 +45,7 @@ namespace net {
 		}else{
 			port_ = nullptr;
 		}
-		return flame::async;
+		return flame::async();
 	}
 	void udp_socket::alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(handle->data);
@@ -86,13 +86,13 @@ namespace net {
 		}
 		// TODO 内存池管理下面对象的申请和释放？
 		uv_udp_send_t* req = new uv_udp_send_t;
-		req->data = flame::this_fiber(this);
+		req->data = flame::this_fiber()->push(this);
 		uv_buf_t send {data.data(), data.length()};
 		error = uv_udp_send(req, &socket_, &send, 1, reinterpret_cast<struct sockaddr*>(&address), send_cb);
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
-		return flame::async;
+		return flame::async();
 	}
 	void udp_socket::send_cb(uv_udp_send_t* req, int status) {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);
@@ -102,9 +102,9 @@ namespace net {
 	}
 	php::value udp_socket::close(php::parameters& params) {
 		if(uv_is_closing(reinterpret_cast<uv_handle_t*>(&socket_))) return nullptr;
-		socket_.data = flame::this_fiber(this);
+		socket_.data = flame::this_fiber()->push(this);
 		uv_close(reinterpret_cast<uv_handle_t*>(&socket_), close_cb);
-		return flame::async;
+		return flame::async();
 	}
 	void udp_socket::close_cb(uv_handle_t* handle) {
 		flame::fiber* f = reinterpret_cast<flame::fiber*>(handle->data);
