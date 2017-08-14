@@ -122,19 +122,19 @@ php::value client::exec(php::object& req) {
 	if (debug_) {
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 	}
-	auto fiber = flame::this_fiber()->push();
-	r->cb_ = [req, r, fiber](CURLMsg *message) {
+	auto fb = flame::this_fiber()->push();
+	r->cb_ = [req, r, fb](CURLMsg *message) {
 		switch(message->msg) {
 		case CURLMSG_DONE:
 			if (message->data.result != CURLE_OK) {
 				php::string str_ret(curl_easy_strerror(message->data.result));
-				fiber->next(std::move(str_ret));
+				fb->next(std::move(str_ret));
 			} else {
-				fiber->next(std::move(r->result_));
+				fb->next(std::move(r->result_));
 			}
 		break;
 		default:
-			fiber->next(php::string("curlmsg return not zero"));
+			fb->next(php::string("curlmsg return not zero"));
 		}
 	};
 	curl_multi_add_handle(get_curl_handle(), curl);

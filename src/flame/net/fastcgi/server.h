@@ -10,9 +10,7 @@ namespace fastcgi {
 		server();
 		php::value bind(php::parameters& params);
 		php::value handle(php::parameters& params);
-		inline php::value run(php::parameters& params) {
-			return stream_server::run(params);
-		}
+		php::value run(php::parameters& params);
 		inline php::value close(php::parameters& params) {
 			return stream_server::close(params);
 		}

@@ -9,8 +9,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
 CXX?=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -g -O0
-CXXFLAGS_CORE= -std=c++14 -fPIC \
- -include ./deps/deps.h
+CXXFLAGS_CORE= -std=c++14 -fPIC -include ./deps/deps.h
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps/libuv/include
 # 链接参数
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
@@ -18,8 +17,7 @@ LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/libphpext/libphpext.a \
  ./deps/libuv/.libs/libuv.a \
  ./deps/curl/lib/.libs/libcurl.a \
- ./deps/hiredis/libhiredis.a \
- -lrt
+ ./deps/hiredis/libhiredis.a
 # 代码和预编译头文件
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
@@ -30,10 +28,10 @@ HEADERX=deps/deps.h.gch
 # 扩展编译过程
 # ----------------------------------------------------------------------
 all: ${EXTENSION}
-${EXTENSION}: ${LIBRARY} ${HEADERX} ${OBJECTS}
+${EXTENSION}: ${HEADERX} ${OBJECTS}
 	${CXX} -shared ${OBJECTS} ${LIBRARY} ${LDFLAGS_CORE} ${LDFLAGS} -o $@
-${HEADERX}: deps/deps.h
-	${CXX} -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
+${HEADERX}: deps/deps.h ${LIBRARY}
+	${CXX} -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
 src/extension.o: src/extension.cpp
 	${CXX} ${CXXFLAGS_CORE} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
 %.o: %.cpp
@@ -48,7 +46,7 @@ install: ${EXTENSION}
 ./deps/libphpext/libphpext.a:
 	make -C ./deps/libphpext -j2
 ./deps/libuv/.libs/libuv.a:
-	cd ./deps/libuv; ./autogen.sh; CFLAGS=-fPIC ./configure 
+	cd ./deps/libuv; ./autogen.sh; CFLAGS=-fPIC ./configure
 	make -C ./deps/libuv -j2
 ./deps/curl/lib/.libs/libcurl.a:
 	cd ./deps/curl; ./buildconf; CFLAGS=-fPIC ./configure
@@ -61,3 +59,5 @@ clean-deps:
 	rm -f ${HEADERX}
 	make -C ./deps/libphpext clean
 	make -C ./deps/libuv clean
+	make -C ./deps/hiredis clean
+	make -C ./deps/curl clean

@@ -34,6 +34,28 @@ namespace fastcgi {
 		prop("local_address") = path;
 		return nullptr;
 	}
+	php::value server::run(php::parameters& params) {
+		// 若未指定，提供默认的 handle
+		if(handle_def_.is_empty()) {
+			handle_def_ = php::value([this] (php::parameters& params) -> php::value {
+				php::object& obj = params[1];
+				flame::this_fiber()->push([obj] (php::value& rv) {
+					// 这里没有什么要做的，这里仅用来保存 obj 的引用
+				});
+				server_response* res = obj.native<server_response>();
+				obj.prop("status")      = 404;
+				obj.prop("header_sent") = true;
+				obj.prop("ended")       = true;
+				res->buffer_head();
+				res->buffer_body("router not found", 16);
+				res->buffer_ending();
+				res->buffer_write();
+				return flame::async();
+			});
+		}
+		return stream_server::run(params);
+	}
+
 	void server::accept(uv_stream_t* s) {
 		server_connection* conn = reinterpret_cast<server_connection*>(s->data);
 		conn->start();

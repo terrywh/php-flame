@@ -23,8 +23,7 @@ namespace net {
 		error = uv_tcp_connect(req, &socket_, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
 		if(error != 0) {
 			delete req;
-			// TODO 如果 uv_tcp_connect 在这里出错，fiber 中的堆栈信息要 pop 
-			throw php::exception(uv_strerror(error), error);
+			flame::this_fiber()->throw_exception(uv_strerror(error), error);
 		}
 		return flame::async();
 	}
@@ -32,7 +31,7 @@ namespace net {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);
 		tcp_socket* self = f->context<tcp_socket>();
 		delete req;
-		
+
 		if(error < 0) {
 			f->next(php::make_exception(uv_strerror(error), error));
 		}else{
@@ -43,12 +42,12 @@ namespace net {
 	void tcp_socket::init_prop() {
 		struct sockaddr_storage address;
 		int                     addrlen = sizeof(address);
-		uv_tcp_getsockname(&socket_, 
+		uv_tcp_getsockname(&socket_,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
 		prop("local_address") = addr2str(&address);
 		prop("local_port") = addrport(&address);
-		uv_tcp_getpeername(&socket_, 
+		uv_tcp_getpeername(&socket_,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
 		prop("remote_address") = addr2str(&address);

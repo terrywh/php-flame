@@ -90,7 +90,7 @@ namespace net {
 		uv_buf_t send {data.data(), data.length()};
 		error = uv_udp_send(req, &socket_, &send, 1, reinterpret_cast<struct sockaddr*>(&address), send_cb);
 		if(error < 0) {
-			throw php::exception(uv_strerror(error), error);
+			flame::this_fiber()->throw_exception(uv_strerror(error), error);
 		}
 		return flame::async();
 	}

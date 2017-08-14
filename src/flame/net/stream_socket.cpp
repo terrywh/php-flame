@@ -16,7 +16,9 @@ namespace net {
 		pstream_->data = flame::this_fiber()->push(this);
 		int error = uv_read_start(pstream_, alloc_cb, read_cb);
 		if(error < 0) { // 同步过程发生错误，直接抛出异常
-			throw php::exception(uv_strerror(error), error);
+			// FLAME_THROW(uv_strerror(error), error);
+			flame::this_fiber()->throw_exception(uv_strerror(error), error);
+			// throw php::exception();
 		}
 		return flame::async();
 	}
@@ -61,7 +63,7 @@ namespace net {
 		uv_buf_t buf {.base = wbuffer_.data(), .len = wbuffer_.length()};
 		int error = uv_write(req, pstream_, &buf, 1, write_cb);
 		if(error < 0) {
-			throw php::exception(uv_strerror(error), error);
+			flame::this_fiber()->throw_exception(uv_strerror(error), error);
 		}
 		return flame::async();
 	}

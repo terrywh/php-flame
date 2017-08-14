@@ -17,7 +17,7 @@ namespace net {
 		pstream_->data = flame::this_fiber()->push(this);
 		int error = uv_listen(reinterpret_cast<uv_stream_t*>(pstream_), 1024, connection_cb);
 		if(error < 0) {
-			throw php::exception(uv_strerror(error), error);
+			flame::this_fiber()->throw_exception(uv_strerror(error), error);
 		}
 		running_ = true;
 		return flame::async();
