@@ -14,9 +14,6 @@ namespace flame {
 	php::value go(php::parameters& params) {
 		php::callable& cb = params[0];
 		php::value rv = fiber::start(cb);
-		if(!rv.is_null()) {
-			php::info("only a Generator Function can be started as a coroutine");
-		}
 		return rv;
 	}
 	php::value run(php::parameters& params) {
@@ -35,4 +32,3 @@ namespace flame {
 		}
 	}
 }
-

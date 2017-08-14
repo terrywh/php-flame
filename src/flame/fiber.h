@@ -6,12 +6,13 @@ namespace flame {
 	extern uv_loop_t* loop;
 	// 包裹一个 generator function 以构建“协程”
 	class fiber {
-		typedef bool (*STACK_CALLBACK_T)(php::value& v, void* data);
+		// typedef void (*STACK_CALLBACK_T)(php::value& v, void* data);
+		typedef std::function<void (php::value& rv)> STACK_CALLBACK_T;
 	private:
 		// 用于标记 异步函数在当前“协程”中的执行状态
-		// 0 -> 即将开始 -> 1
-		// 1 -> 已开始，等待 yield -> 2
-		// 2 -> yield 完成 -> 0
+		// 0 -> 即将开始 -> 0x01
+		// 1 -> 已开始，等待 yield -> 0x02
+		// 3 ->
 		int                   status_;
 		php::generator        gen_;
 		bool                  run_();
@@ -23,47 +24,40 @@ namespace flame {
 		fiber();
 	public:
 		template <typename ...Args>
-		static php::value start(php::callable& cb, const Args&... argv) {
+		static bool start(php::callable& cb, const Args&... argv) {
 			fiber* old = cur_;
 			cur_ = new fiber();
 			php::value gen = cb(argv...);
 			if(gen.is_generator()) {
 				cur_->gen_ = std::move(gen);
-			}else{
-				delete cur_;
+				cur_->run_();
 				cur_ = old;
-				return gen;
+				return true;
+			}else{
+				cur_->run_();
+				cur_ = old;
+				return false;
 			}
-			cur_->run_();
-			cur_ = old;
-			return nullptr;
 		}
 		inline fiber* push() {
 			ctx_.push(nullptr);
-			cbs_.push(nullptr);
 			return this;
 		}
 		inline fiber* push(void* data) {
 			ctx_.push(data);
-			cbs_.push(nullptr);
 			return this;
 		}
-		inline fiber* push(STACK_CALLBACK_T cb, void* data) {
-			ctx_.push(data);
+		inline fiber* push(STACK_CALLBACK_T cb) {
 			cbs_.push(cb);
 			return this;
 		}
 		template <typename T>
 		inline T* context() {
-			if(status_ != 2) {
-				fiber::cur_->error_yield_missing_();
+			if((status_ & 0x03) != 0x03) {
+				error_yield_missing_();
 				return nullptr;
 			}
 			return reinterpret_cast<T*>(ctx_.top());
-		}
-		inline void drop() {
-			while(!ctx_.empty()) ctx_.pop();
-			while(!cbs_.empty()) cbs_.pop();
 		}
 		inline void next(php::value rv) {
 			pop_(rv);
@@ -71,6 +65,13 @@ namespace flame {
 		inline void next() {
 			php::value rv(nullptr);
 			pop_(rv);
+		}
+		// 同步流程报错，需要清理当前堆栈上下文 状态
+		inline void throw_exception(const std::string& msg, int code = -1) {
+			while(!ctx_.empty()) ctx_.pop();
+			while(!cbs_.empty()) cbs_.pop();
+			status_ = 0;
+			throw php::exception(msg, code);
 		}
 		friend fiber* this_fiber();
 		friend php::value async();
@@ -83,11 +84,11 @@ namespace flame {
 	// 用于标记异步操作
 	extern php::value async_;
 	extern inline php::value async() {
-		if(fiber::cur_->status_ != 0) {
+		if((fiber::cur_->status_ & 0x01) == 0x01) {
 			fiber::cur_->error_yield_missing_();
 			return nullptr;
 		}
-		++flame::fiber::cur_->status_;
+		flame::fiber::cur_->status_ |= 0x01;
 		return flame::async_;
 	}
 }

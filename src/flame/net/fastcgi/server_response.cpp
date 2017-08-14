@@ -2,6 +2,7 @@
 #include "server_response.h"
 #include "fastcgi.h"
 #include "server_connection.h"
+#include "../http/http.h"
 
 namespace flame {
 namespace net {
@@ -13,11 +14,6 @@ server_response::server_response() {
 	prop("header") = header;
 }
 
-static std::map<int, std::string> status_mapper {
-	{200, "Ok"},
-	{404, "Not Found"},
-	{500, "Internal Error"},
-};
 
 #define CACULATE_PADDING(size) (size) % 8 == 0 ? 0 : 8 - (size) % 8;
 
@@ -39,10 +35,10 @@ void server_response::buffer_head() {
 	char* head = buffer_.put(sizeof(header_));
 	// STATUS_CODE STATUS_TEXT\r\n
 	int          status_code = prop("status");
-	std::string& status_text = status_mapper[status_code];
+	std::string& status_text = flame::net::http::status_mapper[status_code];
 	sprintf(
-		buffer_.put(6 + status_text.length()),
-		"%03d %.*s\r\n",
+		buffer_.put(14 + status_text.length()),
+		"Status: %03d %.*s\r\n", // fastcgi 返回方式与正常 HTTP 情况不同
 		status_code, status_text.length(), status_text.c_str());
 	// KEY: VALUE\r\n
 	php::array header = prop("header");
@@ -152,8 +148,7 @@ void server_response::buffer_write() {
 	uv_buf_t    buf {buffer_.data(), (size_t)buffer_.size()};
 	int error = uv_write(req, reinterpret_cast<uv_stream_t*>(&conn_->socket_), &buf, 1, write_cb);
 	if(0 > error) {
-		flame::this_fiber()->drop();
-		throw php::exception(uv_strerror(error), error);
+		flame::this_fiber()->throw_exception(uv_strerror(error), error);
 	}
 }
 

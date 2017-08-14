@@ -21,7 +21,7 @@ namespace net {
 		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);
 		unix_socket* self = f->context<unix_socket>();
 		delete req;
-		
+
 		if(error < 0) {
 			f->next(php::make_exception(uv_strerror(error), error));
 		}else{
