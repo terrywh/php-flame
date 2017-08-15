@@ -74,6 +74,7 @@ php::value server_response::write(php::parameters& params) {
 	}
 	if(!prop("header_sent").is_true()) {
 		buffer_head();
+		prop("header_sent") = true;
 	}
 	// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
 	php::string& data = params[0].to_string();
@@ -109,6 +110,7 @@ php::value server_response::end(php::parameters& params) {
 	prop("ended") = true;
 	if(!prop("header_sent").is_true()) {
 		buffer_head();
+		prop("header_sent") = true;
 	}
 	if(params.length() >= 1) {
 		// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
