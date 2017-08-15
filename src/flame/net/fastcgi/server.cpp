@@ -21,7 +21,7 @@ namespace fastcgi {
 		}else{
 			throw php::exception("only Generator function can be use as handler");
 		}
-		return nullptr;
+		return this;
 	}
 	php::value server::bind(php::parameters& params) {
 		php::string& path = params[0];
