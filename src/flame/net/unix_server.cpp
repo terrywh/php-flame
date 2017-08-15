@@ -10,7 +10,7 @@ namespace net {
 	}
 	php::value unix_server::handle(php::parameters& params) {
 		handle_ = params[0];
-		return nullptr;
+		return this;
 	}
 	php::value unix_server::bind(php::parameters& params) {
 		php::string& path = params[0];

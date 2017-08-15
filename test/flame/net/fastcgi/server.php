@@ -6,12 +6,12 @@ flame\go(function() {
 		var_dump($req->method); // GET POST PUT ....
 		yield $res->write("hello ");
 		yield $res->end("world\n");
-	});
-	$server->handle("/favicon.ico", function($req, $res) {
+	})
+	->handle("/favicon.ico", function($req, $res) {
 		yield $res->write_header(404);
 		yield $res->end();
-	});
-	$server->handle(function($req, $res) {
+	})
+	->handle(function($req, $res) {
 		$data = json_encode($req);
 		yield $res->end($data);
 	});

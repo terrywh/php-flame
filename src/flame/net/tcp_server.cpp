@@ -11,7 +11,7 @@ namespace net {
 	}
 	php::value tcp_server::handle(php::parameters& params) {
 		handle_ = params[0];
-		return nullptr;
+		return this;
 	}
 	php::value tcp_server::bind(php::parameters& params) {
 		php::string& addr = params[0];
