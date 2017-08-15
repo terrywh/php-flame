@@ -9,7 +9,7 @@ flame\go(function() {
 			break;
 		}
 		echo "=> ", $data, "\n";
-		yield $sock->write($data);			
+		yield $sock->write($data);
 	}
 });
 flame\run();
