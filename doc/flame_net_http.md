@@ -72,6 +72,36 @@ var_dump($res2);
 #### `client::debug(integer is_open)`
 参数不为零时，打开 `libcurl` 的 VERBOSE 模式，可以更好的调试。
 
+#### `yield flame\net\http\get(string $url)`
+简单的 `GET` 方法。
+
+**示例**：
+``` PHP
+<?php
+$ret = yield flame\net\http\get("http://www.panda.tv");
+var_dump($ret);
+
+```
+
+#### `yield flame\net\http\post(string $url, array $post)`
+简单的 `POST` 方法。
+
+**示例**：
+``` PHP
+<?php
+$ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
+var_dump($ret);
+```
+
+#### `yield flame\net\http\get(string $url, array $put)`
+简单的 `PUT` 方法。
+
+**示例**：
+``` PHP
+<?php
+$ret = yield flame\net\http\put("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
+var_dump($ret);
+```
 
 ### `class flame\net\http\server_request`
 作为服务端时，收到的来自客户端、浏览器的请求对象；
