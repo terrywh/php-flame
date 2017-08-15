@@ -7,7 +7,7 @@
 **示例**：
 ``` PHP
 <?php
-$cli = new flame\db\redis_client();
+$cli = new flame\db\redis();
 $cli->connect(["host"=>"127.0.0.1","port"=6379]);
 yield $cli->set("key","val");
 $val = yield $cli->get("key");
