@@ -16,6 +16,7 @@ namespace db {
 		class_redis.add<&redis::getlasterror>("getlasterror");
 		class_redis.add<&redis::hgetall>("hgetall");
 		class_redis.add<&redis::hmget>("hmget");
+		class_redis.add<&redis::mget>("mget");
 		class_redis.add<&redis::subscribe>("subscribe");
 		ext.add(std::move(class_redis));	
 	}

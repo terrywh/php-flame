@@ -77,7 +77,7 @@ void redis::return_pair_callback(redisAsyncContext *c, void *r, void *privdata) 
 	return_result(result, privdata);
 }
 
-void redis::arg_key_callback(redisAsyncContext *c, void *r, void *privdata) {
+void redis::hmget_callback(redisAsyncContext *c, void *r, void *privdata) {
 	redisReply*     reply = reinterpret_cast<redisReply*>(r);
 	redisRequest*  cache = reinterpret_cast<redisRequest*>(privdata);
 	redis*           self = reinterpret_cast<redis*>(c->data);
@@ -89,6 +89,26 @@ void redis::arg_key_callback(redisAsyncContext *c, void *r, void *privdata) {
 		for(int i = 0; i < reply->elements; ++i) {
 			// 第一个是cmd，第二个是hash名，所以要加2
 			php::string& key = cache->cmd[i+2];
+			result[key.c_str()] = self->format_redis_result(reply->element[i]);
+		}
+	} else {
+		self->error_ = "illegal reply";
+	}
+	return_result(result, privdata);
+}
+
+void redis::arg_key_callback(redisAsyncContext *c, void *r, void *privdata) {
+	redisReply*     reply = reinterpret_cast<redisReply*>(r);
+	redisRequest*  cache = reinterpret_cast<redisRequest*>(privdata);
+	redis*           self = reinterpret_cast<redis*>(c->data);
+	php::array result(reply->elements);
+	if (reply == nullptr || (reply->type == REDIS_REPLY_NIL)) {
+		self->error_ = "empty reply";
+	} else if (reply->type == REDIS_REPLY_ARRAY) {
+		// key在Cache里取
+		for(int i = 0; i < reply->elements; ++i) {
+			// 第一个是cmd，所以要加1
+			php::string& key = cache->cmd[i+1];
 			result[key.c_str()] = self->format_redis_result(reply->element[i]);
 		}
 	} else {
@@ -198,10 +218,14 @@ php::value redis::hgetall(php::parameters& params) {
 }
 
 php::value redis::hmget(php::parameters& params) {
-	command("HMGET", params, arg_key_callback);
+	command("HMGET", params, hmget_callback);
 	return flame::async();
 }
 
+php::value redis::mget(php::parameters& params) {
+	command("MGET", params, arg_key_callback);
+	return flame::async();
+}
 
 void redis::subscribe_callback(redisAsyncContext *c, void *r, void *privdata) {
 	redis* self = reinterpret_cast<redis*>(c->data);
@@ -231,7 +255,7 @@ php::value redis::quit(php::parameters& params) {
 
 void redis::command(const char* cmd, php::parameters& params, redisCallbackFn* fn, php::value* cb) {
 	redisRequest* data = new redisRequest;
-	data->cmd[(int)0] = cmd;
+	data->cmd[(int)0] = php::string(cmd);
 	if (cb != nullptr) data->cb = std::move(*cb);
 
 	std::vector<const char*> argv;
@@ -251,7 +275,7 @@ void redis::command(const char* cmd, php::parameters& params, redisCallbackFn* f
 
 void redis::command(const char* cmd, php::array& arr, redisCallbackFn *fn, php::value* cb) {
 	redisRequest* data =new redisRequest;
-	data->cmd[(int)0] = cmd;
+	data->cmd[(int)0] = php::string(cmd);
 	if (cb != nullptr) data->cb = std::move(*cb);
 
 	std::vector<const char*> argv;
