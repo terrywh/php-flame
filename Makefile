@@ -46,10 +46,10 @@ install: ${EXTENSION}
 ./deps/libphpext/libphpext.a:
 	make -C ./deps/libphpext -j2
 ./deps/libuv/.libs/libuv.a:
-	cd ./deps/libuv; ./autogen.sh; CFLAGS=-fPIC ./configure
+	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC ./configure
 	make -C ./deps/libuv -j2
 ./deps/curl/lib/.libs/libcurl.a:
-	cd ./deps/curl; ./buildconf; CFLAGS=-fPIC ./configure
+	cd ./deps/curl; /bin/sh ./buildconf; CFLAGS=-fPIC ./configure
 	make -C ./deps/curl -j2
 ./deps/hiredis/libhiredis.a:
 	make -C ./deps/hiredis -j2
