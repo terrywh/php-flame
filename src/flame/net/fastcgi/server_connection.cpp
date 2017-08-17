@@ -9,6 +9,14 @@ namespace net {
 namespace fastcgi {
 	void server_connection::start() {
 		status_ = PS_RECORD_VERSION;
+		memset(&mps_, 0, sizeof(mps_));
+		// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可
+		// mps_.on_part_data_begin  = mp_beg_cb;
+		mps_.on_header_field     = mp_key_cb;
+		mps_.on_header_value     = mp_val_cb;
+		// mps_.on_headers_complete = mp_hdr_cb;
+		mps_.on_part_data        = mp_dat_cb;
+		// mps_.on_part_data_end    = mp_end_cb;
 		socket_.data = this;
 		if(0 > uv_read_start(reinterpret_cast<uv_stream_t*>(&socket_),
 			alloc_cb, read_cb)) {
@@ -258,8 +266,16 @@ namespace fastcgi {
 						// 针对标准类型进行解析，方便处理
 						obj_.prop("body") = php::parse_str('&', val_.data(), val_.size());
 						val_.reset();
-						// TODO 支持 multipart/form-data ?
-					}else{
+						// multipart/form-data; boundary=---------xxxxxx
+					}else if(ctype->length() > 32 && strncmp(ctype->data(), "multipart/form-data", 19) == 0) {
+						obj_.prop("body") = php::array(0);
+						bdy_ = &static_cast<php::array&>(obj_.prop("body"));
+						std::printf("0. [%s]\n", strstr(ctype->data() + 20, "boundary=") + 9);
+						mpp_ = multipart_parser_init(strstr(ctype->data() + 20, "boundary=") + 9, &mps_);
+						multipart_parser_set_data(mpp_, this);
+						multipart_parser_execute(mpp_, val_.data(), val_.size());
+						bdy_ = nullptr;
+					}else{ // raw body
 						obj_.prop("body") = std::move(val_);
 					}
 					STATUS_RECORD_ENDING();
@@ -286,6 +302,43 @@ PARSE_FAILED:
 		server_connection* self = reinterpret_cast<server_connection*>(handle->data);
 		delete self;
 	}
+	// int server_connection::mp_beg_cb(multipart_parser* parser) {
+	// 	std::printf("1. \n");
+	// 	return 0;
+	// }
+	int server_connection::mp_key_cb(multipart_parser* parser, const char *at, size_t length) {
+		server_connection* self = reinterpret_cast<server_connection*>(multipart_parser_get_data(parser));
+		self->key_.reset();
+		std::memcpy(self->key_.put(length), at, length); // !!! TODO 避免拷贝
+		std::printf("2. [%.*s]\n", length, at);
+		return 0;
+	}
+	int server_connection::mp_val_cb(multipart_parser* parser, const char *at, size_t length) {
+		server_connection* self = reinterpret_cast<server_connection*>(multipart_parser_get_data(parser));
+		if(self->key_.size() != 19 || strncmp(self->key_.data(), "Content-Disposition", 19) != 0) {
+			return 0;
+		}
+		php::array header = php::parse_str(';', at, length);
+		php::string key = header["name"];
+		self->key_.reset();
+		memcpy(self->key_.put(key.length()), key.data(), key.length()); // !!! TODO 避免拷贝
+		std::printf("3. [%.*s]\n", length, at);
+		return 0;
+	}
+	// int server_connection::mp_hdr_cb(multipart_parser* parser) {
+	// 	std::printf("4. \n");
+	// 	return 0;
+	// }
+	int server_connection::mp_dat_cb(multipart_parser* parser, const char *at, size_t length) {
+		server_connection* self = reinterpret_cast<server_connection*>(multipart_parser_get_data(parser));
+		self->bdy_->at(self->key_.data()+1, self->key_.size()-2) = php::string(at, length);
+		std::printf("5. [%.*s]\n", length, at);
+		return 0;
+	}
+	// int server_connection::mp_end_cb(multipart_parser* parser) {
+	// 	std::printf("6. \n");
+	// 	return 0;
+	// }
 }
 }
 }

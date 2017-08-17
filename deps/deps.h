@@ -15,4 +15,5 @@
 #include "hiredis/async.h"
 #include "hiredis/adapters/libuv.h"
 #include "libuv/include/uv.h"
+#include "multipart-parser-c/multipart_parser.h"
 #include "libphpext/phpext.h"

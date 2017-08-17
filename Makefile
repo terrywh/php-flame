@@ -14,21 +14,24 @@ INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps/libuv/include
 # 链接参数
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
-LIBRARY=./deps/libphpext/libphpext.a \
+LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
+ ./deps/libphpext/libphpext.a \
  ./deps/libuv/.libs/libuv.a \
  ./deps/curl/lib/.libs/libcurl.a \
  ./deps/hiredis/libhiredis.a \
  ./deps/nghttp2/bin/lib/libnghttp2.a
+
 # 代码和预编译头文件
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 
-.PHONY: all install clean clean-deps test
-
+.PHONY: all install clean clean-deps clean-lnks update-deps test
 # 扩展编译过程
 # ----------------------------------------------------------------------
 all: ${EXTENSION}
+update-deps:
+	git submodule update --init
 ${EXTENSION}: ${HEADERX} ${OBJECTS}
 	${CXX} -shared ${OBJECTS} ${LIBRARY} ${LDFLAGS_CORE} ${LDFLAGS} -o $@
 ${HEADERX}: deps/deps.h ${LIBRARY}
@@ -40,12 +43,15 @@ src/extension.o: src/extension.cpp
 
 clean:
 	rm -f ${EXTENSION} ${OBJECTS} $(shell find ./src -name "*.o")
+clean-lnks:
+	find -type l | xargs rm
+
 install: ${EXTENSION}
 	cp -f ${EXTENSION} `${PHP_CONFIG} --extension-dir`
 # 依赖库的编译过程
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:
-	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC ./configure --prefix `pwd`/bin 
+	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC ./configure --prefix `pwd`/bin
 	make -C ./deps/nghttp2 -j2
 	make -C ./deps/nghttp2 install
 ./deps/libphpext/libphpext.a:
@@ -58,6 +64,8 @@ install: ${EXTENSION}
 	make -C ./deps/curl -j2
 ./deps/hiredis/libhiredis.a:
 	make -C ./deps/hiredis -j2
+./deps/multipart-parser-c/multipart_parser.o:
+	make -C ./deps/multipart-parser-c default
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:

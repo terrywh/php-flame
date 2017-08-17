@@ -1,15 +1,24 @@
 [submodule "deps/curl"]
 	path = deps/curl
 	url = https://github.com/curl/curl.git
+	ignore = dirty
 [submodule "deps/hiredis"]
 	path = deps/hiredis
 	url = https://github.com/redis/hiredis.git
+	ignore = dirty
 [submodule "deps/libuv"]
 	path = deps/libuv
 	url = https://github.com/libuv/libuv.git
+	ignore = dirty
 [submodule "deps/libphpext"]
 	path = deps/libphpext
 	url = https://github.com/terrywh/libphpext.git
+	ignore = dirty
 [submodule "deps/nghttp2"]
 	path = deps/nghttp2
 	url = https://github.com/nghttp2/nghttp2.git
+	ignore = dirty
+[submodule "deps/multipart-parser-c"]
+	path = deps/multipart-parser-c
+	url = https://github.com/terrywh/multipart-parser-c.git
+	ignore = dirty

@@ -59,16 +59,27 @@ namespace fastcgi {
 		php::buffer    key_;
 		php::buffer	   val_; // 缓冲还未接收完成的数据
 
+		multipart_parser_settings mps_;
+		multipart_parser*         mpp_;
+
 		void start();
 		void close();
 		char buffer_[8192];
 		static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 		static void read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
 		static void close_cb(uv_handle_t* handle);
+		static int mp_beg_cb(multipart_parser*);
+		static int mp_key_cb(multipart_parser*, const char *at, size_t length);
+		static int mp_val_cb(multipart_parser*, const char *at, size_t length);
+		static int mp_hdr_cb(multipart_parser*);
+		static int mp_dat_cb(multipart_parser*, const char *at, size_t length);
+		static int mp_end_cb(multipart_parser*);
+
 		int parse(const char* data, int size);
 
 		php::object           obj_;
 		php::array*           hdr_;
+		php::array*           bdy_;
 	public:
 		unsigned char  type;
 		unsigned short role;
