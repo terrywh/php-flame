@@ -249,12 +249,16 @@ namespace fastcgi {
 			case PS_BODY_3_DATA:
 				*val_.put(1) = c;
 				if(--clen_ == 0) {
-					php::string& ctype = hdr_->at("content-type", 12);
-					// 针对标准类型进行解析，方便处理
-					// TODO 支持 multipart/form-data ?
-					if(ctype.length() == 33 && strncmp(ctype.data(), "application/x-www-form-urlencoded", 33) == 0) {
+					// 头部信息均为小写，下划线
+					php::string* ctype = reinterpret_cast<php::string*>(hdr_->find("content_type", 12));
+					if(ctype == nullptr) {
+						obj_.prop("body") = std::move(val_);
+					}else if(ctype->length() == 33
+						&& strncmp(ctype->data(), "application/x-www-form-urlencoded", 33) == 0) {
+						// 针对标准类型进行解析，方便处理
 						obj_.prop("body") = php::parse_str('&', val_.data(), val_.size());
 						val_.reset();
+						// TODO 支持 multipart/form-data ?
 					}else{
 						obj_.prop("body") = std::move(val_);
 					}

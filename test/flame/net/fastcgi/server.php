@@ -3,7 +3,7 @@ flame\go(function() {
 	$server = new flame\net\fastcgi\server();
 
 	$server->handle("/hello", function($req, $res) {
-		var_dump($req->method); // GET POST PUT ....
+		var_dump($req->method, $req->body); // GET POST PUT ....
 		yield $res->write("hello ");
 		yield $res->end("world\n");
 	})
