@@ -30,6 +30,7 @@ public:
 	};
 	php::value hgetall(php::parameters& params);
 	php::value hmget(php::parameters& params);
+	php::value mget(php::parameters& params);
 	php::value quit(php::parameters& params);
 	php::value subscribe(php::parameters& params);
 
@@ -45,6 +46,8 @@ private:
 	static void return_pair_callback(redisAsyncContext *c, void *r, void *privdata);
 	// 当需要把请求参数保存下来作为array的key，返回的array当成value的时候使用此回调
 	static void arg_key_callback(redisAsyncContext *c, void *r, void *privdata);
+	// hmget专用，因为第二个参数是hash，有点特殊
+	static void hmget_callback(redisAsyncContext *c, void *r, void *privdata);
 	static void quit_callback(redisAsyncContext *c, void *r, void *privdata);
 	static void subscribe_callback(redisAsyncContext *c, void *r, void *privdata);
 	void command(const char* cmd, php::parameters& params, redisCallbackFn* fn, php::value* cb = nullptr);

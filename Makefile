@@ -17,7 +17,8 @@ LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/libphpext/libphpext.a \
  ./deps/libuv/.libs/libuv.a \
  ./deps/curl/lib/.libs/libcurl.a \
- ./deps/hiredis/libhiredis.a
+ ./deps/hiredis/libhiredis.a \
+ ./deps/nghttp2/bin/lib/libnghttp2.a
 # 代码和预编译头文件
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
@@ -43,13 +44,17 @@ install: ${EXTENSION}
 	cp -f ${EXTENSION} `${PHP_CONFIG} --extension-dir`
 # 依赖库的编译过程
 # ----------------------------------------------------------------------
+./deps/nghttp2/bin/lib/libnghttp2.a:
+	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC ./configure --prefix `pwd`/bin 
+	make -C ./deps/nghttp2 -j2
+	make -C ./deps/nghttp2 install
 ./deps/libphpext/libphpext.a:
 	make -C ./deps/libphpext -j2
 ./deps/libuv/.libs/libuv.a:
 	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC ./configure
 	make -C ./deps/libuv -j2
 ./deps/curl/lib/.libs/libcurl.a:
-	cd ./deps/curl; /bin/sh ./buildconf; CFLAGS=-fPIC ./configure
+	cd ./deps/curl; /bin/sh ./buildconf; LD_LIBRARY_PATH=../nghttp2/bin/lib PKG_CONFIG_PATH=../nghttp2/lib CFLAGS=-fPIC ./configure --with-nghttp2=../nghttp2/bin
 	make -C ./deps/curl -j2
 ./deps/hiredis/libhiredis.a:
 	make -C ./deps/hiredis -j2

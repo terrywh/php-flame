@@ -10,3 +10,6 @@
 [submodule "deps/libphpext"]
 	path = deps/libphpext
 	url = https://github.com/terrywh/libphpext.git
+[submodule "deps/nghttp2"]
+	path = deps/nghttp2
+	url = https://github.com/nghttp2/nghttp2.git

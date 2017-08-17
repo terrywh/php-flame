@@ -22,9 +22,9 @@ php::value client_request::__construct(php::parameters& params) {
 	}
 	if (params.length() >= 2) {
 		prop("body") = static_cast<php::string&>(params[1]);
-		prop("method") = "POST";
+		prop("method") = php::string("POST");
 	}else{
-		prop("method") = "GET";
+		prop("method") = php::string("GET");
 	}
 	if (params.length() >= 1) {
 		prop("url") = static_cast<php::string&>(params[0]);
@@ -105,6 +105,7 @@ void client_request::build(client* cli) {
 	curl_easy_setopt(curl_, CURLOPT_TIMEOUT, static_cast<long>(prop("timeout")));
 	curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_callback);
+	curl_easy_setopt(curl_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
 }
 
 void client_request::release() {
