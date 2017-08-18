@@ -32,14 +32,14 @@ HEADERX=deps/deps.h.gch
 all: ${EXTENSION}
 update-deps:
 	git submodule update --init
-${EXTENSION}: ${HEADERX} ${OBJECTS}
+${EXTENSION}: ${LIBRARY} ${OBJECTS}
 	${CXX} -shared ${OBJECTS} ${LIBRARY} ${LDFLAGS_CORE} ${LDFLAGS} -o $@
-${HEADERX}: deps/deps.h ${LIBRARY}
-	${CXX} -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
+${HEADERX}: deps/deps.h
+	${CXX} -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
 src/extension.o: src/extension.cpp
 	${CXX} ${CXXFLAGS_CORE} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
-%.o: %.cpp
-	${CXX} ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
+%.o: %.cpp ${HEADERX}
+	${CXX} ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
 
 clean:
 	rm -f ${EXTENSION} ${OBJECTS} $(shell find ./src -name "*.o")
@@ -47,11 +47,12 @@ clean-lnks:
 	find -type l | xargs rm
 
 install: ${EXTENSION}
-	cp -f ${EXTENSION} `${PHP_CONFIG} --extension-dir`
+	rm -f `${PHP_CONFIG} --extension-dir`/${EXTENSION}
+	cp ${EXTENSION} `${PHP_CONFIG} --extension-dir`
 # 依赖库的编译过程
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:
-	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC ./configure --prefix `pwd`/bin
+	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC ./configure --disable-shared --prefix `pwd`/bin
 	make -C ./deps/nghttp2 -j2
 	make -C ./deps/nghttp2 install
 ./deps/libphpext/libphpext.a:
@@ -59,8 +60,8 @@ install: ${EXTENSION}
 ./deps/libuv/.libs/libuv.a:
 	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC ./configure
 	make -C ./deps/libuv -j2
-./deps/curl/lib/.libs/libcurl.a:
-	cd ./deps/curl; /bin/sh ./buildconf; LD_LIBRARY_PATH=../nghttp2/bin/lib PKG_CONFIG_PATH=../nghttp2/lib CFLAGS=-fPIC ./configure --with-nghttp2=../nghttp2/bin
+./deps/curl/lib/.libs/libcurl.a: ./deps/nghttp2/bin/lib/libnghttp2.a
+	cd ./deps/curl; /bin/sh ./buildconf; PKG_CONFIG_PATH=../nghttp2/bin/lib CFLAGS=-fPIC ./configure --with-nghttp2=../nghttp2/bin
 	make -C ./deps/curl -j2
 ./deps/hiredis/libhiredis.a:
 	make -C ./deps/hiredis -j2
@@ -74,3 +75,5 @@ clean-deps:
 	make -C ./deps/libuv clean
 	make -C ./deps/hiredis clean
 	make -C ./deps/curl clean
+	make -C ./deps/nghttp2 clean
+	rm -rf ./deps/nghttp2/bin

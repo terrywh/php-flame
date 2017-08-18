@@ -7,7 +7,7 @@ flame\go(function() {
 		while($i<1000) {
 			try{
 				yield $sock->write("".(++$i));
-				echo "<= ", yield $sock->read(), "\n";
+				// echo "<= ", yield $sock->read(1), "\n";
 				yield flame\time\sleep(100);
 			}catch(exception $ex) {
 				// 客户端异常关闭连接会产生 EPIPE 错误需要处理
