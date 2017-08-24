@@ -1,9 +1,10 @@
 #include "fiber.h"
+#include "flame.h"
+#include "process_manager.h"
 
 namespace flame {
-	uv_loop_t* loop;
 	// 异步函数标记
-	php::value async_;
+	php::value fiber::async_;
 	// 当前“协程”
 	fiber* fiber::cur_ = nullptr;
 	fiber::fiber():status_(0) {
@@ -73,5 +74,13 @@ ASYNC_NEXT:
 			cbs_.pop();
 			cb(rv);
 		}
+	}
+	php::value async() {
+		if((fiber::cur_->status_ & 0x01) == 0x01) {
+			fiber::cur_->error_yield_missing_();
+			return nullptr;
+		}
+		fiber::cur_->status_ |= 0x01;
+		return fiber::async_;
 	}
 }

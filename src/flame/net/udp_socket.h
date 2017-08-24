@@ -12,7 +12,6 @@ namespace net {
 		php::value send_to(php::parameters& params);
 		php::value close(php::parameters& params);
 		// property local_address ""
-		// property local_port 0
 	private:
 		uv_udp_t    socket_;
 		php::buffer buffer_;

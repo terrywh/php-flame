@@ -81,7 +81,7 @@ void client_request::build(client* cli) {
 	php::value   vbody = prop("body");
 	php::string  xbody;
 	if (vbody.is_array()) {
-		xbody = php::build_str(vbody);
+		xbody = php::build_query(vbody);
 		prop("body") = xbody;
 	}else if (vbody.is_string()) {
 		xbody = vbody;

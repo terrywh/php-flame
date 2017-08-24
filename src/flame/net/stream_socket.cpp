@@ -58,7 +58,7 @@ namespace net {
 		stream_socket* self = f->context<stream_socket>();
 		if(nread < 0) {
 			f->context<stream_socket>();
-			if(nread == UV_EOF) {
+			if(nread == UV_EOF || nread == UV_ECANCELED) {
 				f->next();
 			}else{ // 异步过程发生错误，需要通过协程返回
 				f->next(php::make_exception(uv_strerror(nread), nread));

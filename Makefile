@@ -1,7 +1,7 @@
 # 扩展
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=0.7.0
+EXT_VER=0.8.0
 # PHP环境
 PHP_PREFIX?=/usr/local/php-7.0.19-test
 PHP=${PHP_PREFIX}/bin/php
@@ -47,8 +47,7 @@ clean-lnks:
 	find -type l | xargs rm
 
 install: ${EXTENSION}
-	rm -f `${PHP_CONFIG} --extension-dir`/${EXTENSION}
-	cp ${EXTENSION} `${PHP_CONFIG} --extension-dir`
+	rm -f `${PHP_CONFIG} --extension-dir`/${EXTENSION} && cp ${EXTENSION} `${PHP_CONFIG} --extension-dir`
 # 依赖库的编译过程
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:

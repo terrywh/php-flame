@@ -1,4 +1,6 @@
 #include "../../fiber.h"
+#include "../../process_manager.h"
+#include "../net.h"
 #include "server.h"
 #include "server_connection.h"
 #include "server_response.h"
@@ -7,7 +9,7 @@ namespace flame {
 namespace net {
 namespace fastcgi {
 	server::server()
-	: stream_server(reinterpret_cast<uv_stream_t*>(&server_)) {
+	: stream_server(&server_) {
 
 	}
 	php::value server::handle(php::parameters& params) {
@@ -23,15 +25,45 @@ namespace fastcgi {
 		}
 		return this;
 	}
+
 	php::value server::bind(php::parameters& params) {
-		php::string& path = params[0];
-		uv_pipe_init(flame::loop, &server_, 0);
-		int error = uv_pipe_bind(&server_, path.c_str());
-		if(error < 0) {
-			throw php::exception(uv_strerror(error), error);
+		if(params.length() >= 2) {
+			unix_socket_ = false;
+			php::string& addr = params[0];
+			int          port = params[1];
+			struct sockaddr_storage address;
+			int error = addrfrom(&address, addr.c_str(), port);
+			if(error < 0) {
+				throw php::exception(uv_strerror(error), error);
+			}
+			// uv_tcp_init_ex 会创建 socket
+			uv_tcp_init_ex(flame::loop, &server_tcp_, address.ss_family);
+			// 然后才能进行 SO_REUSEPORT 设置
+			enable_socket_reuseport(reinterpret_cast<uv_handle_t*>(&server_tcp_));
+			error = uv_tcp_bind(&server_tcp_, reinterpret_cast<struct sockaddr*>(&address), 0);
+			if(error < 0) {
+				throw php::exception(uv_strerror(error), error);
+			}
+			// 服务器属性
+			prop("local_addresss") = addr + ":" + std::to_string(port);
+		}else if(params.length() >= 1) {
+			unix_socket_ = true;
+			php::string path = params[0];
+			if(path.c_str()[0] != '/') {
+				throw php::exception("bind failed: only absolute path is allowed");
+			}
+			uv_pipe_init(flame::loop, &server_pipe_, 0);
+			std::printf("process_type: %d\n", flame::process_type);
+			if(flame::process_type == PROCESS_MASTER) {
+				// !!! 绑定前需要文件不存在，但此处删除可能会引起其他误会问题
+				unlink(path.c_str());
+				int error = uv_pipe_bind(&server_pipe_, path.c_str());
+				if(error < 0) {
+					throw php::exception(uv_strerror(error), error);
+				}
+			}// 子进程等待主进程传递连接即可
+			prop("local_address") = path; // 服务器属性
 		}
-		// 服务器属性
-		prop("local_address") = path;
 		return nullptr;
 	}
 	php::value server::run(php::parameters& params) {
@@ -53,23 +85,21 @@ namespace fastcgi {
 				return flame::async();
 			});
 		}
-		return stream_server::run(params);
+		return unix_socket_ ? stream_server::run_unix(params) : stream_server::run_core(params);
 	}
-
-	void server::accept(uv_stream_t* s) {
-		server_connection* conn = reinterpret_cast<server_connection*>(s->data);
-		conn->start();
-		// conn->delref();
-	}
-	uv_stream_t* server::create_stream() {
-		// php::object sobj = php::object::create<server_connection>();
-		// server_connection* pobj = sobj.native<server_connection>();
+	int server::accept(uv_stream_t* server) {
 		server_connection* pobj = new server_connection();
 		pobj->server_ = this;
-		pobj->socket_.data = pobj;
-		uv_pipe_init(flame::loop, &pobj->socket_, 0);
-		// pobj->addref();
-		return reinterpret_cast<uv_stream_t*>(&pobj->socket_);
+		if(unix_socket_) {
+			uv_pipe_init(flame::loop, &pobj->socket_pipe_, 0);
+		}else{
+			uv_tcp_init(flame::loop, &pobj->socket_tcp_);
+		}
+		int error = uv_accept(server, &pobj->socket_);
+		if(error < 0) return error;
+
+		pobj->start();
+		return 0;
 	}
 	void server::on_request(server_connection* conn, php::object&& req) {
 		php::object      res = php::object::create<server_response>();

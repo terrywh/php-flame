@@ -1,14 +1,19 @@
 #pragma once
 
 namespace flame {
-
+	extern enum process_type_t {
+		PROCESS_MASTER,
+		PROCESS_WORKER,
+	} process_type;
 	// 当前事件循环
-	extern uv_loop_t* loop;
+	extern uv_loop_t*   loop;
 	// 包裹一个 generator function 以构建“协程”
 	class fiber {
 		// typedef void (*STACK_CALLBACK_T)(php::value& v, void* data);
 		typedef std::function<void (php::value& rv)> STACK_CALLBACK_T;
 	private:
+		// 用于标记异步操作
+		static php::value   async_;
 		// 用于标记 异步函数在当前“协程”中的执行状态
 		// 0 -> 即将开始 -> 0x01
 		// 1 -> 已开始，等待 yield -> 0x02
@@ -75,20 +80,12 @@ namespace flame {
 		}
 		friend fiber* this_fiber();
 		friend php::value async();
+		friend void init(php::extension_entry& ext);
 	};
 	// 注意此函数只能在被 PHP 直接调用的过程中使用，
 	// 若在 cb 中可能导致未知行为
 	inline fiber* this_fiber() {
 		return fiber::cur_;
 	}
-	// 用于标记异步操作
-	extern php::value async_;
-	extern inline php::value async() {
-		if((fiber::cur_->status_ & 0x01) == 0x01) {
-			fiber::cur_->error_yield_missing_();
-			return nullptr;
-		}
-		flame::fiber::cur_->status_ |= 0x01;
-		return flame::async_;
-	}
+	php::value async();
 }

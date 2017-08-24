@@ -9,10 +9,10 @@ namespace http {
 	class client_request: public php::class_base {
 	public:
 		client_request();
-		php::value __construct(php::parameters& params);
-		php::value __destruct(php::parameters& params) {
+		~client_request() {
 			release();
 		}
+		php::value __construct(php::parameters& params);
 		void release();
 		void build(client* cli);
 		php::string& parse_body(php::array& arr);

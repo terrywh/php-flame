@@ -17,9 +17,7 @@ namespace net {
 			return stream_socket::close(params);
 		}
 		// property local_address ""
-		// property local_port 0
 		// property remote_address ""
-		// property remote_port 0
 	private:
 		uv_tcp_t    socket_;
 		static void connect_cb(uv_connect_t* req, int status);

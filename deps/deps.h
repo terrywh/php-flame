@@ -5,6 +5,7 @@
 #include <memory>
 #include <stack>
 #include <map>
+#include <future>
 
 #include <unistd.h>
 #include <arpa/inet.h>

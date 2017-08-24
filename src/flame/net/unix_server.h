@@ -7,7 +7,7 @@ namespace net {
 	public:
 		unix_server();
 		inline php::value run(php::parameters& params) {
-			return stream_server::run(params);
+			return stream_server::run_unix(params);
 		}
 		inline php::value close(php::parameters& params) {
 			return stream_server::close(params);
@@ -17,10 +17,10 @@ namespace net {
 		// property local_address ""
 	protected:
 		php::callable  handle_;
-		virtual void accept(uv_stream_t* s);
-		virtual uv_stream_t* create_stream();
+		virtual int accept(uv_stream_t* server);
 	private:
-		uv_pipe_t      server_;
+		uv_pipe_t server_;
+		static void from_master_cb(uv_async_t* async);
 	};
 }
 }

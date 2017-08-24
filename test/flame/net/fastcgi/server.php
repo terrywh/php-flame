@@ -1,4 +1,7 @@
 <?php
+flame\init("fastcgi-server", [
+	"worker" => 2, // 启动两个工作进程
+]);
 flame\go(function() {
 	$server = new flame\net\fastcgi\server();
 
@@ -12,13 +15,15 @@ flame\go(function() {
 		yield $res->end();
 	})
 	->handle(function($req, $res) {
+		echo "----- ", getmypid(), " -----\n";
 		$data = json_encode($req);
 		yield $res->end($data);
 	});
-	@unlink("/data/sockets/flame.xingyan.panda.tv.sock");
+	// 方式1. 绑定 unix socket
 	$server->bind("/data/sockets/flame.xingyan.panda.tv.sock");
 	@chmod("/data/sockets/flame.xingyan.panda.tv.sock", 0777);
-	// 可选 fork 多进程
+	// 方式2. 绑定 tcp
+	// $server->bind("127.0.0.1", 19001);
 	yield $server->run();
 });
 flame\run();

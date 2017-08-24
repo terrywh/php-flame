@@ -19,7 +19,6 @@ namespace net {
 		// property remote_address ""
 	private:
 		uv_pipe_t   socket_;
-		php::object object_;
 		static void connect_cb(uv_connect_t* req, int status);
 
 		friend class unix_server;

@@ -2,7 +2,9 @@
 
 flame\go(function() {
 
-$obj = new flame\net\http\client();
+$obj = new flame\net\http\client([
+	"debug"=>true, // 调试开关
+]);
 $obj->debug(1);
 
 $req = new flame\net\http\client_request("https://www.google.com",["arg1"=>"123","arg2"=>"456"]);

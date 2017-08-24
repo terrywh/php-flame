@@ -9,8 +9,8 @@ namespace net {
 		// socket_.data = this;
 	}
 	php::value udp_socket::bind(php::parameters& params) {
-		php::string& addr = params[0];
-		int          port = params[1];
+		std::string addr = params[0];
+		int         port = params[1];
 		struct sockaddr_storage address;
 		int error = addrfrom(&address, addr.c_str(), port);
 		if(error < 0) {
@@ -25,8 +25,7 @@ namespace net {
 			throw php::exception(uv_strerror(error), error);
 		}
 		// 服务器属性
-		prop("local_addresss") = addr;
-		prop("local_port")     = port;
+		prop("local_addresss") = addr + ":" + std::to_string(port);
 		return nullptr;
 	}
 	php::value udp_socket::recv_from(php::parameters& params)  {

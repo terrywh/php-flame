@@ -1,34 +1,68 @@
 #include "flame.h"
 #include "fiber.h"
+#include "process_manager.h"
+
+extern char **environ;
 
 namespace flame {
-	void init(php::extension_entry& ext) {
-		zval* ff = static_cast<zval*>(async_);
-		ZVAL_PTR(ff, &ext);
-		loop = uv_default_loop();
-		// 基础协程函数
-		ext.add<go>("flame\\go");
-		ext.add<run>("flame\\run");
-		ext.add<fork>("flame\\fork");
-	}
-	php::value go(php::parameters& params) {
-		php::callable& cb = params[0];
-		php::value rv = fiber::start(cb);
-		return rv;
-	}
-	php::value run(php::parameters& params) {
-		signal(SIGPIPE, SIG_IGN); // 在 flame 运行中需要对 SIGPIPE 进行忽略
-		uv_run(flame::loop, UV_RUN_DEFAULT);
-		signal(SIGPIPE, SIG_DFL); // 恢复 SIGPIPE 默认值
+	uv_loop_t*     loop;
+	php::value init_fx(php::parameters& params) {
+		if(params.length() != 2 || !params[0].is_string() || !params[1].is_array()) {
+			throw php::exception("illegal options for flame config");
+		}
+		php::string& name   = params[0];
+		// TODO call cli_set_process_title
+		php::array& options = params[1];
+		php::value& worker = options["worker"];
+		if(!worker.is_long()) {
+			worker = 0;
+		}
+		manager->init(worker.to_long());
 		return nullptr;
 	}
-	php::value fork(php::parameters& params) {
-		int pid = ::fork();
-		if(pid == 0) {
-			uv_loop_fork(flame::loop);
-			return pid;
+	php::value on_quit(php::parameters& params) {
+		if(params.length() > 0 && params[0].is_callable()) {
+			manager->push_exit_cb(params[0]);
 		}else{
-			return 0;
+			throw php::exception("illegal parameter: callable is required");
+		}
+		return nullptr;
+	}
+	php::value go(php::parameters& params) {
+		return fiber::start(static_cast<php::callable&>(params[0]));
+	}
+	php::value run(php::parameters& params) {
+		manager->before_run_loop();
+		std::printf("run\n");
+		int r = uv_run(flame::loop, UV_RUN_DEFAULT);
+		manager->after_run_loop();
+		std::printf("after: %d\n", r);
+		// 标记退出状态用于确认是否自动重启工作进程
+		if(process_type == PROCESS_WORKER) {
+			exit(99);
+		}
+		return nullptr;
+	}
+	void init(php::extension_entry& ext) {
+		zval* ff = static_cast<zval*>(fiber::async_);
+		ZVAL_PTR(ff, &ext);
+		loop = uv_default_loop();
+		// 基础函数
+		ext.add<init_fx>("flame\\init");
+		ext.add<on_quit>("flame\\on_quit");
+		ext.add<go>("flame\\go");
+		ext.add<run>("flame\\run");
+		// 确认当前是父进程还是子进程
+		char   buffer[8];
+		size_t buffer_size = 8;
+		if(uv_os_getenv("FLAME_CLUSTER_WORKER", buffer, &buffer_size) < 0) {
+			process_type = PROCESS_MASTER;
+			manager = new process_manager();
+			std::printf("master\n");
+		}else{
+			process_type = PROCESS_WORKER;
+			std::printf("worker\n");
 		}
 	}
+
 }

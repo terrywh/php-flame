@@ -4,22 +4,27 @@
 ### `class flame\net\fastcgi\server`
 监听 `unix socket` 提供后端服务，提供 `fastcgi/1.1` 简化协议的应用服务器封装。
 
-#### `server::bind(string $path)`
-绑定到指定的 `unix socket` 路径（以接收来自 Web 服务器的连接）；
+#### `server::bind(string $path)` | `server::bind(string $addr, integer $port)`
+1. 绑定到指定的路径，以接收来自 Web 服务器的 UnixSocket 连接；
+2. 绑定到指定的 地址、端口，以接受来自 Web 服务器的 TCP 连接；
 
 **示例**：
 ``` PHP
 <?php
-$server = new flame\net\fastcgi\server();
+$server1 = new flame\net\fastcgi\server();
+// 绑定到 UnixSocket
 @unlink("/data/sockets/uinx_socket_1.sock"); // 删除已存在的 UNIXSocket
-$server->bind("/data/sockets/flame.xingyan.panda.tv.sock"); // 绑定
+$server1->bind("/data/sockets/flame.xingyan.panda.tv.sock"); // 绑定
 @chmod("/data/sockets/uinx_socket_1.sock", 0777); // 权限，允许其他用户连接
+
+$server2 = new flame\net\fastcgi\server();
+// 绑定到 TCP 地址端口
+$server2->bind("127.0.0.1", 19001);
 ```
 
 **注意**：
 * 当将 `unix socket` 设置到 `/tmp` 路径时可能导致 `nginx` 无法连接，建议路径设置为自定义（非 `/tmp`）路径；
-* 上面示例中 `unlink` 删除已存在的 UnixSocket 否则会发生绑定失败的错误；
-* 上面示例中 `chmod` 可自行考虑权限设置；
+* 不允许将上述两种绑定形式对同一个对象使用；
 
 #### `server::handle([string $path,] callable $cb)`
 设置默认处理回调（未匹配路径回调），或设置指定路径的请求处理回调（`$path` 参数可选）；回调函数接收两个参数：

@@ -18,8 +18,7 @@ namespace fastcgi {
 		mps_.on_part_data        = mp_dat_cb;
 		// mps_.on_part_data_end    = mp_end_cb;
 		socket_.data = this;
-		if(0 > uv_read_start(reinterpret_cast<uv_stream_t*>(&socket_),
-			alloc_cb, read_cb)) {
+		if(0 > uv_read_start(&socket_, alloc_cb, read_cb)) {
 			uv_close(reinterpret_cast<uv_handle_t*>(&socket_),
 				close_cb);
 		}
@@ -34,10 +33,9 @@ namespace fastcgi {
 		if(nread < 0) {
 			if(nread != UV_EOF) {
 				// TODO 记录发生的错误信息日志？
+			}else if(nread != UV_ECANCELED) {
+				uv_close(reinterpret_cast<uv_handle_t*>(&self->socket_),close_cb);
 			}
-			uv_close(
-				reinterpret_cast<uv_handle_t*>(&self->socket_),
-				close_cb);
 		}else if(nread == 0) {
 			// again
 		}else if(nread != self->parse(buf->base, nread)) {
@@ -295,8 +293,8 @@ PARSE_FAILED:
 	}
 	void server_connection::close() {
 		uv_close(
-				reinterpret_cast<uv_handle_t*>(&socket_),
-				close_cb);
+			reinterpret_cast<uv_handle_t*>(&socket_),
+			close_cb);
 	}
 	void server_connection::close_cb(uv_handle_t* handle) {
 		server_connection* self = reinterpret_cast<server_connection*>(handle->data);

@@ -15,7 +15,7 @@ php::value redis::format_redis_result(redisReply* reply) {
 			elem = php::string(reply->str);
 		break;
 		case REDIS_REPLY_ERROR:
-			elem = php::string(nullptr);
+			elem = php::value(nullptr);
 			error_ = reply->str;
 		break;
 		case REDIS_REPLY_ARRAY: {

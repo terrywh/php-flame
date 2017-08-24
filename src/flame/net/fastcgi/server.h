@@ -18,11 +18,16 @@ namespace fastcgi {
 	protected:
 		php::callable                        handle_def_;
 		std::map<std::string, php::callable> handle_map_;
-		virtual void accept(uv_stream_t* s);
-		virtual uv_stream_t* create_stream();
+		virtual int accept(uv_stream_t* server);
 		void on_request(server_connection* conn, php::object&& req);
 	private:
-		uv_pipe_t server_;
+		union {
+			uv_stream_t server_;
+			uv_pipe_t   server_pipe_;
+			uv_tcp_t    server_tcp_;
+		};
+		bool unix_socket_;
+		static void from_master_cb(uv_async_t* async);
 		friend class server_connection;
 	};
 }

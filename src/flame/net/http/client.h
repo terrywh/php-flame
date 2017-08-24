@@ -12,6 +12,7 @@ public:
 	~client() {
 		release();
 	}
+	php::value __construct(php::parameters& params);
 	// curl要用的回调
 	static int handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp);
 	static int start_timeout(CURLM* multi, long timeout_ms, void* userp);

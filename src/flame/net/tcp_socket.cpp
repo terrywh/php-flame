@@ -45,13 +45,11 @@ namespace net {
 		uv_tcp_getsockname(&socket_,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
-		prop("local_address") = addr2str(&address);
-		prop("local_port") = addrport(&address);
+		prop("local_address") = addr2str(&address) + ":" + std::to_string(addrport(&address));
 		uv_tcp_getpeername(&socket_,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
-		prop("remote_address") = addr2str(&address);
-		prop("remote_port") = addrport(&address);
+		prop("remote_address") = addr2str(&address) + ":" + std::to_string(addrport(&address));
 	}
 }
 }

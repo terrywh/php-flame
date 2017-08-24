@@ -1,4 +1,5 @@
 #include "../fiber.h"
+#include "../process_manager.h"
 #include "unix_server.h"
 #include "unix_socket.h"
 
@@ -13,29 +14,29 @@ namespace net {
 		return this;
 	}
 	php::value unix_server::bind(php::parameters& params) {
-		php::string& path = params[0];
-		uv_pipe_init(flame::loop, &server_, 0);
-		int error = uv_pipe_bind(&server_, path.c_str());
-		if(error < 0) {
-			throw php::exception(uv_strerror(error), error);
+		php::string path = params[0];
+		if(path.c_str()[0] != '/') {
+			throw php::exception("bind failed: only absolute path is allowed");
 		}
-		// 服务器属性
 		prop("local_address") = path;
+		uv_pipe_init(flame::loop, &server_, 0);
+		if(flame::process_type == PROCESS_MASTER) {
+			unlink(path.c_str());
+			int error = uv_pipe_bind(&server_, path.c_str());
+			if(error < 0) {
+				throw php::exception(uv_strerror(error), error);
+			}
+		}
 		return nullptr;
 	}
-	void unix_server::accept(uv_stream_t* s) {
-		unix_socket* sock = reinterpret_cast<unix_socket*>(s->data);
-		fiber::start(handle_, sock);
-		sock->delref();
-	}
-	uv_stream_t* unix_server::create_stream() {
+	int unix_server::accept(uv_stream_t* server) {
 		php::object  sobj  = php::object::create<unix_socket>();
 		unix_socket* pobj  = sobj.native<unix_socket>();
-		pobj->object_ = sobj;
-		pobj->socket_.data = pobj;
 		uv_pipe_init(flame::loop, &pobj->socket_, 0);
-		pobj->addref();
-		return reinterpret_cast<uv_stream_t*>(&pobj->socket_);
+		int error = uv_accept(server, reinterpret_cast<uv_stream_t*>(&pobj->socket_));
+		if(error < 0) return error;
+		fiber::start(handle_, sobj);
+		return 0;
 	}
 }
 }

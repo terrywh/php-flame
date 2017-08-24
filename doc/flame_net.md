@@ -7,6 +7,12 @@
 ### `class flame\net\tcp_socket`
 提供 TCP 协议的网络连接对象的封装
 
+#### `string tcp_socket::$local_address`
+本地网络地址
+
+#### `string tcp_socket::$remote_address`
+远端网络地址
+
 #### `yield tcp_socket::connect(string addr, long port)`
 连接指定的网络地址和端口
 
@@ -30,7 +36,8 @@
 
 ### `class flame\net\tcp_server`
 	封装 TCP 协议的网络服务器相关功能、接口；
-
+#### `string tcp_server::$local_address`
+	服务器本地监听地址
 #### `tcp_server::bind(string addr, long port)`
 绑定服务器地址端口，绑定后调用 `run()` 启动服务器开始监听指定的地址、端口；
 
@@ -54,8 +61,10 @@
 * 阻塞在 `run()` 函数的服务器协程会在调用本函数后恢复运行；
 
 ### `class flame\net\udp_socket`
+封装 UDP 协议网络服务器、客户端连接
 
-	封装 UDP 协议网络服务器、客户端连接
+#### `string udp_socket::$local_address`
+本地网络地址
 
 #### `udp_socket::bind(string addr, long port)`
 将当前对象绑定到指定的地址、端口；绑定后，可以接收来自这个地址、端口的数据；
@@ -77,6 +86,9 @@
 
 ### `class flame\net\unix_server`
 实现基于 UnixSocket 的网络服务器；除下述 `bind()` 函数外接口形式与 `tcp_server` 一致；
+
+#### `string unix_server::$local_address`
+本地监听地址
 
 #### `unix_server::bind(string $path)`
 绑定到指定路径并生成 UnixSocket 文件；

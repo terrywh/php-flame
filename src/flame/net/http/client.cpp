@@ -8,6 +8,18 @@ namespace flame {
 namespace net {
 namespace http {
 
+php::value client::__construct(php::parameters& params) {
+	if(params.length() == 0 || !params[0].is_array()) {
+		return nullptr;
+	}
+	php::array& options = params[0];
+	php::value* debug = options.find("debug");
+	if(debug != nullptr) {
+		debug_ = debug->is_true();
+	}
+	// TODO 接收选项用于控制连接数量
+}
+
 static void check_multi_info(client* cli) {
 	int pending;
 	CURLMsg *message;

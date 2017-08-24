@@ -15,18 +15,16 @@ namespace net {
 		// ------------------------------------
 		php::class_entry<tcp_socket> class_tcp_socket("flame\\net\\tcp_socket");
 		class_tcp_socket.add(php::property_entry("local_address", std::string("")));
-		class_tcp_socket.add(php::property_entry("local_port", 0));
 		class_tcp_socket.add(php::property_entry("remote_address", std::string("")));
-		class_tcp_socket.add(php::property_entry("remote_port", 0));
 		class_tcp_socket.add<&tcp_socket::connect>("connect");
 		class_tcp_socket.add<&tcp_socket::read>("read");
 		class_tcp_socket.add<&tcp_socket::write>("write");
+		class_tcp_socket.add<&tcp_socket::write>("close");
 		ext.add(std::move(class_tcp_socket));
 		// class_tcp_server
 		// ------------------------------------
 		php::class_entry<tcp_server> class_tcp_server("flame\\net\\tcp_server");
 		class_tcp_server.add(php::property_entry("local_address", std::string("")));
-		class_tcp_server.add(php::property_entry("local_port", 0));
 		class_tcp_server.add<&tcp_server::bind>("bind");
 		class_tcp_server.add<&tcp_server::handle>("handle");
 		class_tcp_server.add<&tcp_server::run>("run");
@@ -66,18 +64,18 @@ namespace net {
 		flame::net::http::init(ext);
 		flame::net::fastcgi::init(ext);
 	}
-	php::string addr2str(const struct sockaddr_storage* addr) {
-		php::string str(64);
-		std::memset(str.data(), 0, 64);
+	std::string addr2str(const struct sockaddr_storage* addr) {
+		char str[64];
+		std::memset(str, 0, 64);
 		switch(addr->ss_family) {
 		case AF_INET:
-			uv_ip4_name((struct sockaddr_in*)addr, str.data(), str.length());
+			uv_ip4_name((struct sockaddr_in*)addr, str, sizeof(str));
 		break;
 		case AF_INET6:
-			uv_ip6_name((struct sockaddr_in6*)addr, str.data(), str.length());
+			uv_ip6_name((struct sockaddr_in6*)addr, str, sizeof(str));
 		break;
 		}
-		return std::move(str);
+		return std::string(str);
 	}
 	uint16_t addrport(const struct sockaddr_storage* addr) {
 		switch(addr->ss_family) {
