@@ -49,7 +49,6 @@ namespace flame {
 	}
 	void process_manager::before_run_loop() {
 		if(process_type == PROCESS_MASTER) {
-			std::printf("master signal watcher: %d\n", process_type);
 			// 信号监听（主进程退出）
 			uv_signal_init(flame::loop, &sa1);
 			uv_signal_start(&sa1, master_kill_cb, SIGINT);
@@ -59,7 +58,6 @@ namespace flame {
 			uv_signal_start(&sa2, master_kill_cb, SIGTERM);
 			uv_unref(reinterpret_cast<uv_handle_t*>(&sa2));
 		}else{
-			std::printf("worker start read pipe\n");
 			// 通讯管道
 			uv_pipe_init(flame::loop, &pipe_, 1);
 			uv_pipe_open(&pipe_, 0);
@@ -151,11 +149,9 @@ namespace flame {
 			exit(-1);
 		}
 		proc->data = pipe;
-		std::printf("[%d] proc: %d => %08x\n", process_type, proc->pid, proc);
 		worker_[proc->pid] = proc;
 	}
 	void process_manager::worker_send_cb(uv_write_t* req, int status) {
-		std::printf("worker_send_cb\n");
 		pipe_send_ctx* ctx = reinterpret_cast<pipe_send_ctx*>(req->data);
 		if(ctx->pipe != nullptr) {
 			uv_close(reinterpret_cast<uv_handle_t*>(ctx->pipe), nullptr);
@@ -185,14 +181,12 @@ namespace flame {
 			error = uv_write2(&ctx->req, pipe, &buf, 1,
 				reinterpret_cast<uv_stream_t*>(handle), worker_send_cb);
 		}
-		std::printf("send_to_worker\n");
 		if(error < 0) {
 			php::warn("master send failed: (%d) %s", error, uv_strerror(error));
 			return;
 		}
 	}
 	void process_manager::send_to_worker(const std::string& key, uv_pipe_t* handle, pipe_send_cb cb, void* data) {
-		std::printf("[%d] send_to_worker count: %d\n", process_type, worker_.size());
 		if(worker_i == worker_.end() || ++worker_i == worker_.end()) {
 			worker_i = worker_.begin();
 		}
@@ -220,10 +214,8 @@ namespace flame {
 			case PS_TYPE: // 初始状态（类型标识）
 				manager->pipe_buffer.reset();
 				if(c == 's') {
-					std::printf("worker recv pipe: %.*s\n", n, buf->base);
 					manager->pipe_status = PS_PIPE_BEG;
 				}else if(c == 't') {
-					std::printf("worker recv text: %.s*\n", n, buf->base);
 					manager->pipe_status = PS_TEXT_BEG;
 				}else{
 					php::fail("illegal pipe data");
@@ -272,13 +264,11 @@ PARSE_SKIP:
 		}
 	}
 	void process_manager::set_connection_cb(const std::string& key, pipe_connection_cb cb, void* data) {
-		std::printf("set_connection_cb\n");
 		pipe_connection_ctx& ctx = pipe_cctx[key];
 		ctx.data = data;
 		ctx.cb   = cb;
 	}
 	void process_manager::stream_handler() {
-		std::printf("stream_handler type: %d\n", uv_pipe_pending_type(&pipe_));
 		std::string key(pipe_buffer.data(), pipe_buffer.size());
 		auto ictx = pipe_cctx.find(key);
 		if(ictx == pipe_cctx.end()) {
@@ -294,7 +284,6 @@ PARSE_SKIP:
 		delete req;
 	}
 	void process_manager::master_kill_cb(uv_signal_t* handle, int sig) {
-		std::printf("master_kill_cb: %d\n", manager->exit_);
 		if(manager->exit_) return;
 		manager->exit_ = true;
 		for(auto i=manager->worker_.begin(); i!= manager->worker_.end(); ++i) {

@@ -163,7 +163,6 @@ void server_response::write_cb(uv_write_t* req, int status) {
 	self->buffer_.reset();
 	// 若 Web 服务器没有保持连接的标记，在请求结束后关闭连接
 	if((self->conn_->flag & PF_KEEP_CONN) == 0 && self->prop("ended").is_true()) {
-		std::printf("关闭连接\n");
 		self->conn_->close();
 	}
 	if(status < 0) {

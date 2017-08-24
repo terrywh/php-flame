@@ -64,7 +64,7 @@ namespace fastcgi {
 		php::buffer	   val_; // 缓冲还未接收完成的数据
 
 		multipart_parser_settings mps_;
-		multipart_parser*         mpp_;
+		multipart_parser          mpp_;
 
 		void start();
 		void close();

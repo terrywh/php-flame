@@ -53,7 +53,6 @@ namespace fastcgi {
 				throw php::exception("bind failed: only absolute path is allowed");
 			}
 			uv_pipe_init(flame::loop, &server_pipe_, 0);
-			std::printf("process_type: %d\n", flame::process_type);
 			if(flame::process_type == PROCESS_MASTER) {
 				// !!! 绑定前需要文件不存在，但此处删除可能会引起其他误会问题
 				unlink(path.c_str());

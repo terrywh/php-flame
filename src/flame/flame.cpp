@@ -33,10 +33,8 @@ namespace flame {
 	}
 	php::value run(php::parameters& params) {
 		manager->before_run_loop();
-		std::printf("run\n");
 		int r = uv_run(flame::loop, UV_RUN_DEFAULT);
 		manager->after_run_loop();
-		std::printf("after: %d\n", r);
 		// 标记退出状态用于确认是否自动重启工作进程
 		if(process_type == PROCESS_WORKER) {
 			exit(99);
@@ -58,10 +56,8 @@ namespace flame {
 		if(uv_os_getenv("FLAME_CLUSTER_WORKER", buffer, &buffer_size) < 0) {
 			process_type = PROCESS_MASTER;
 			manager = new process_manager();
-			std::printf("master\n");
 		}else{
 			process_type = PROCESS_WORKER;
-			std::printf("worker\n");
 		}
 	}
 

@@ -27,7 +27,6 @@ namespace net {
 		pstream_->data = flame::this_fiber()->push(this);
 		running_ = true;
 		int error = 0;
-		std::printf("%d %d\n", flame::process_type, flame::manager->is_multiprocess());
 		if(flame::process_type == PROCESS_MASTER && flame::manager->is_multiprocess()) {
 			error = uv_listen(reinterpret_cast<uv_stream_t*>(pstream_), 1024, connection_cb_unix_master);
 		}else if(flame::process_type == PROCESS_WORKER) {
@@ -59,7 +58,6 @@ namespace net {
 			f->next(php::make_exception(uv_strerror(error), error));
 			return;
 		}
-		std::printf("connection_cb_core\n");
 		error = self->accept(server);
 		if(error < 0) {
 			f->next(php::make_exception(uv_strerror(error), error));
@@ -67,7 +65,6 @@ namespace net {
 		}
 	}
 	static void master_send_cb(uv_pipe_t* pipe, void* data) {
-		std::printf("master_send_cb\n");
 		delete pipe; // 已经传送到子进程
 	}
 	void stream_server::connection_cb_unix_master(uv_stream_t* server, int error) {
@@ -78,7 +75,6 @@ namespace net {
 			f->next(php::make_exception(uv_strerror(error), error));
 			return;
 		}
-		std::printf("connection_cb_unix_master\n");
 		uv_pipe_t* pipe = new uv_pipe_t;
 		uv_pipe_init(flame::loop, pipe, 0);
 		error = uv_accept(server, reinterpret_cast<uv_stream_t*>(pipe));
@@ -97,7 +93,6 @@ namespace net {
 			f->next(php::make_exception(uv_strerror(error), error));
 			return;
 		}
-		std::printf("connection_cb_unix_worker\n");
 		error = self->accept(server);
 		if(error < 0) {
 			f->next(php::make_exception(uv_strerror(error), error));
