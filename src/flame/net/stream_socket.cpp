@@ -44,7 +44,7 @@ namespace net {
 				return rbuffer_.get(n);
 			}
 		}
-		return php::string();
+		return php::string(nullptr);
 	}
 
 	void stream_socket::alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {

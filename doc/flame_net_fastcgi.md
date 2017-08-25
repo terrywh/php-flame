@@ -2,7 +2,7 @@
 提供对 `fastcgi/1.1` 协议的简化封装，支持挂接到 nginx 等 Web 服务器提供应用服务。
 
 ### `class flame\net\fastcgi\server`
-监听 `unix socket` 提供后端服务，提供 `fastcgi/1.1` 简化协议的应用服务器封装。
+监听 `unix socket` 提供后端服务，提供 `fastcgi/1.1` 简化协议的应用服务器封装；完整示例参考： `test/flame/net/fastcgi/server.php`
 
 #### `server::bind(string $path)` | `server::bind(string $addr, integer $port)`
 1. 绑定到指定的路径，以接收来自 Web 服务器的 UnixSocket 连接；
@@ -13,7 +13,6 @@
 <?php
 $server1 = new flame\net\fastcgi\server();
 // 绑定到 UnixSocket
-@unlink("/data/sockets/uinx_socket_1.sock"); // 删除已存在的 UNIXSocket
 $server1->bind("/data/sockets/flame.xingyan.panda.tv.sock"); // 绑定
 @chmod("/data/sockets/uinx_socket_1.sock", 0777); // 权限，允许其他用户连接
 

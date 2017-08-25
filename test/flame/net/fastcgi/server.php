@@ -22,10 +22,10 @@ flame\go(function() {
 		$data = json_encode($req);
 		yield $res->end($data);
 	});
-	// 方式1. 绑定 unix socket
+	// 1. 绑定 unix domain socket 理论性能更高（注意 fastcgi_keep_conn on; 配置）
 	$server->bind("/data/sockets/flame.xingyan.panda.tv.sock");
 	@chmod("/data/sockets/flame.xingyan.panda.tv.sock", 0777);
-	// 方式2. 绑定 tcp
+	// 方式2. 绑定 tcp 网络，理论上在并发连接数非常高（>1000）时较好
 	// $server->bind("127.0.0.1", 19001);
 	yield $server->run();
 });
