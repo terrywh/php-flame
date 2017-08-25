@@ -6,9 +6,9 @@ flame\go(function() {
 		$i = 0;
 		while($i<1000) {
 			try{
-				yield $sock->write("".(++$i));
+				yield $sock->write('abcde');
 				// echo "<= ", yield $sock->read(1), "\n";
-				yield flame\time\sleep(100);
+				yield flame\time\sleep(1000);
 			}catch(exception $ex) {
 				// 客户端异常关闭连接会产生 EPIPE 错误需要处理
 				var_dump($ex);

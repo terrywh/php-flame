@@ -1,9 +1,11 @@
 <?php
 // 可选，初始化框架配置
-flame\init("fastcgi-server", [
-	"worker" => 2, // 启动两个工作进程，默认 0
-]);
+// flame\init("fastcgi-server", [
+// 	"worker" => 2, // 启动两个工作进程，默认 0
+// ]);
 flame\go(function() {
+	$udp_server = new flame\net\udp_socket();
+	$udp_server->bind("::", 7678);
 	// 创建 fastcgi 服务器
 	$server = new flame\net\fastcgi\server();
 	// 设置处理程序
@@ -27,6 +29,16 @@ flame\go(function() {
 	@chmod("/data/sockets/flame.xingyan.panda.tv.sock", 0777);
 	// 方式2. 绑定 tcp 网络，理论上在并发连接数非常高（>1000）时较好
 	// $server->bind("127.0.0.1", 19001);
-	yield $server->run();
+	flame\go(function() use($udp_server) {
+		while(true) {
+			$addr = "";
+			$port = 0;
+			$data = yield $udp_server->recv_from($addr, $port);
+			echo "recv_from: ", $addr, ":", $port, " => [",$data, "]\n";
+		}
+	});
+	flame\go(function() use($server) {
+		yield $server->run();
+	});
 });
 flame\run();

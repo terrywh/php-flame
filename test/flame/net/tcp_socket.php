@@ -4,11 +4,11 @@ flame\go(function() {
 	yield $sock->connect("127.0.0.1", 7678);
 	var_dump($sock);
 	while(true) {
-		$data = yield $sock->read(5);
+		$data = yield $sock->read(2);
+		echo "=> ", var_dump($data);
 		if($data === null) { // 连接被对方关闭（EOF）
 			break;
 		}
-		echo "=> ", var_dump($data);
 	}
 });
 flame\run();

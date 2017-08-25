@@ -12,9 +12,9 @@ namespace net {
 	}
 	char* stream_buffer::rev(int n) {
 		// buffer 容器为空 或 最后一个容量不足 时新建 buffer 放入容器
-		// if(buffers_.empty() || buffers_.back().capacity() - buffers_.back().size() < n) {
+		if(buffers_.empty() || buffers_.back().capacity() - buffers_.back().size() < n) {
 			buffers_.emplace_back(n);
-		// }
+		}
 		return buffers_.back().current();
 	}
 	void stream_buffer::adv(int n) {
@@ -34,7 +34,8 @@ namespace net {
 		// 实际逻辑与 2. 中基本一致，仅做数据调整，不做数据复制
 		if(data.size() > n) {
 			php::buffer left;
-			std::memcpy(left.put(data.size() - n), data.data() + n, left.size());
+			// 注意参数表达式从右向左 evaluate 故 data.size() - n 与 left.size() 不能严格替换
+			std::memcpy(left.put(data.size() - n), data.data() + n, data.size() - n);
 			data.reset(n);
 			n = 0;
 			buffers_.pop_front();
@@ -52,7 +53,7 @@ namespace net {
 			php::buffer& append = buffers_.front();
 			if(append.size() > n) {
 				php::buffer left;
-				std::memcpy(left.put(append.size() - n), append.data() + n, left.size());
+				std::memcpy(left.put(append.size() - n), append.data() + n, append.size() - n);
 				// append.reset(n);
 				std::memcpy(data.put(n), append.data(), n); // 追加
 				n = 0;
