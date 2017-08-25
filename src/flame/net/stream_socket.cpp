@@ -31,7 +31,9 @@ namespace net {
 
 	php::string stream_socket::rparam_emit() {
 		if(rparam_.is_null()) {
-			return rbuffer_.get();
+			if(rbuffer_.size() > 0) {
+				return rbuffer_.get();
+			}
 		}else if(rparam_.is_string()) {
 			php::string& delim = rparam_;
 			int n = rbuffer_.find(delim.c_str(), delim.length());

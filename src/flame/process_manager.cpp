@@ -64,10 +64,11 @@ namespace flame {
 			uv_read_start(reinterpret_cast<uv_stream_t*>(&pipe_), worker_alloc_cb, worker_read_cb);
 			// 信号监听（子进程退出）
 			uv_signal_init(flame::loop, &sa1);
-			uv_signal_init(flame::loop, &sa2);
-			uv_signal_start(&sa1, worker_kill_cb, SIGINT);
 			uv_signal_start(&sa2, worker_kill_cb, SIGTERM);
 			uv_unref(reinterpret_cast<uv_handle_t*>(&sa1));
+
+			uv_signal_init(flame::loop, &sa2);
+			uv_signal_start(&sa1, worker_kill_cb, SIGINT);
 			uv_unref(reinterpret_cast<uv_handle_t*>(&sa2));
 		}
 		// 忽略 SIGPIPE 信号
@@ -286,46 +287,52 @@ PARSE_SKIP:
 	void process_manager::master_kill_cb(uv_signal_t* handle, int sig) {
 		if(manager->exit_) return;
 		manager->exit_ = true;
-		for(auto i=manager->worker_.begin(); i!= manager->worker_.end(); ++i) {
-			// manager->send_to_worker("exit", nullptr, nullptr, i);
-			uv_shutdown_t* req = new uv_shutdown_t;
-			req->data = i->second->data;
-			uv_shutdown(req, reinterpret_cast<uv_stream_t*>(i->second->data),
-				shutdown_cb);
+		if(sig == SIGTERM) {
+			for(auto i=manager->worker_.begin(); i!= manager->worker_.end(); ++i) {
+				manager->send_to_worker("SIGTERM", nullptr, nullptr, nullptr, i);
+			}
+			while(!manager->exit_cb.empty()) {
+				php::callable& cb = manager->exit_cb.top();
+				manager->exit_cb.pop();
+				fiber::start(cb);
+			}
+			// 启动 timer 等待 10000ms 后 uv_stop 停止所有异步流程
+			uv_timer_t* tm = new uv_timer_t;
+			uv_timer_init(flame::loop, tm);
+			uv_timer_start(tm, proc_kill_timeout, 11000, 0);
+			uv_unref(reinterpret_cast<uv_handle_t*>(tm)); // loop
+		}else{ // SIGINT 立刻中断
+			for(auto i=manager->worker_.begin(); i!= manager->worker_.end(); ++i) {
+				manager->send_to_worker("SIGINT", nullptr, nullptr, nullptr, i);
+			}
+			uv_stop(flame::loop);
 		}
-		while(!manager->exit_cb.empty()) {
-			php::callable& cb = manager->exit_cb.top();
-			manager->exit_cb.pop();
-			fiber::start(cb);
-		}
-		// 启动 timer 等待 10000ms 后 uv_stop 停止所有异步流程
-		uv_timer_t* tm = new uv_timer_t;
-		uv_timer_init(flame::loop, tm);
-		uv_timer_start(tm, proc_kill_timeout, 11000, 0);
-		uv_unref(reinterpret_cast<uv_handle_t*>(tm)); // loop
 	}
 	void process_manager::worker_kill_cb(uv_signal_t* handle, int sig) {
 		if(manager->exit_) return;
 		manager->exit_ = true;
-		while(!manager->exit_cb.empty()) {
-			php::callable& cb = manager->exit_cb.top();
-			manager->exit_cb.pop();
-			fiber::start(cb);
+		if(sig == SIGTERM) {
+			while(!manager->exit_cb.empty()) {
+				php::callable& cb = manager->exit_cb.top();
+				manager->exit_cb.pop();
+				fiber::start(cb);
+			}
+			// 启动 timer 等待 10000ms 后 uv_stop 停止所有异步流程
+			uv_timer_t* tm = new uv_timer_t;
+			uv_timer_init(flame::loop, tm);
+			uv_timer_start(tm, proc_kill_timeout, 10000, 0);
+			uv_unref(reinterpret_cast<uv_handle_t*>(tm)); // loop
+		}else{ // SIGINT 立刻中断
+			uv_stop(flame::loop);
 		}
-		// 启动 timer 等待 10000ms 后 uv_stop 停止所有异步流程
-		uv_timer_t* tm = new uv_timer_t;
-		uv_timer_init(flame::loop, tm);
-		uv_timer_start(tm, proc_kill_timeout, 10000, 0);
-		uv_unref(reinterpret_cast<uv_handle_t*>(tm)); // loop
 	}
 	void process_manager::message_handler() {
+		if(pipe_buffer.size() >= 6 && std::strncmp(pipe_buffer.data(), "SIGINT", 6) == 0) {
+			worker_kill_cb(nullptr, SIGINT);
+		}else if(pipe_buffer.size() >= 7 && std::strncmp(pipe_buffer.data(), "SIGTERM", 7) == 0) {
+			worker_kill_cb(nullptr, SIGTERM);
+		}
 		// ??? 提供 worker 自主的进程间通讯
-
-		// if(pipe_buffer.size() >= 4 && std::strncmp(pipe_buffer.data(), "exit", 4) == 0) {
-		// 	worker_kill_cb(nullptr, SIGTERM);
-		// }else{
-
-		//}
 	}
 	void process_manager::push_exit_cb(const php::callable& cb) {
 		exit_cb.push(cb);
