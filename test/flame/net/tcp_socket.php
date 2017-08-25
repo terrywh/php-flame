@@ -8,7 +8,7 @@ flame\go(function() {
 		if($data === null) { // 连接被对方关闭（EOF）
 			break;
 		}
-		echo "=> ", $data, "\n";
+		echo "=> ", var_dump($data);
 	}
 });
 flame\run();
