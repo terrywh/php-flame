@@ -19,12 +19,12 @@ namespace http {
 		curl_slist*  build_header();
 
 		CURL*                       curl_;
-		curl_slist*                slist_;
-		uv_poll_t            poll_handle_;
-		curl_socket_t             sockfd_;
+		curl_slist*                 curl_header;
+		curl_socket_t               curl_fd;
+		uv_poll_t                   poll_;
 		client*                      cli_;
 		std::function<void(CURLMsg*)> cb_;
-		php::string               result_;
+		php::buffer               buffer_;
 	};
 }
 }

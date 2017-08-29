@@ -20,15 +20,15 @@ php::value client::__construct(php::parameters& params) {
 	// TODO 接收选项用于控制连接数量
 }
 
-static void check_multi_info(client* cli) {
+void client::curl_check_multi_info(client* self) {
 	int pending;
 	CURLMsg *message;
-	while((message = curl_multi_info_read(cli->get_curl_handle(), &pending))) {
+	while((message = curl_multi_info_read(self->curlm_, &pending))) {
 		client_request* req;
 		CURL* easy_handle = message->easy_handle;
 		curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &req);
 		req->cb_(message);
-		curl_multi_remove_handle(cli->get_curl_handle(), easy_handle);
+		curl_multi_remove_handle(self->curlm_, easy_handle);
 		curl_easy_cleanup(easy_handle);
 	}
 }
@@ -40,49 +40,33 @@ void client::curl_perform(uv_poll_t *req, int status, int events) {
 		flags |= CURL_CSELECT_IN;
 	if(events & UV_WRITABLE)
 		flags |= CURL_CSELECT_OUT;
-	curl_socket_t fd = reinterpret_cast<client_request*>(req->data)->sockfd_;
-	client* cli = reinterpret_cast<client_request*>(req->data)->cli_;
-	curl_multi_socket_action(cli->get_curl_handle(), fd, flags, &running_handles);
-	check_multi_info(cli);
+	curl_socket_t fd = reinterpret_cast<client_request*>(req->data)->curl_fd;
+	client* self = reinterpret_cast<client_request*>(req->data)->cli_;
+	curl_multi_socket_action(self->curlm_, fd, flags, &running_handles);
+	curl_check_multi_info(self);
 }
 
-static void on_timeout(uv_timer_t *req) {
+void client::curl_timeout_cb(uv_timer_t *req) {
 	int running_handles;
-	client* cli = (client*)(req->data);
-	curl_multi_socket_action(cli->get_curl_handle(), CURL_SOCKET_TIMEOUT, 0, &running_handles);
-	check_multi_info(cli);
+	client* self = reinterpret_cast<client*>(req->data);
+	curl_multi_socket_action(self->curlm_, CURL_SOCKET_TIMEOUT, 0, &running_handles);
+	curl_check_multi_info(self);
 }
 
-int client::start_timeout(CURLM* multi, long timeout_ms, void* userp) {
+int client::curl_start_timeout(CURLM* multi, long timeout_ms, void* userp) {
 	if(userp) {
-		client* cli = (client*)userp;
+		client* self = reinterpret_cast<client*>(userp);
 		if(timeout_ms < 0) {
-			uv_timer_stop(&cli->timeout_);
-		}
-		else {
-			if(timeout_ms == 0)
-				timeout_ms = 1;
-			cli->timeout_.data = cli;
-			uv_timer_start(&cli->timeout_, on_timeout, timeout_ms, 0);
+			uv_timer_stop(&self->timer_);
+		} else {
+			if(timeout_ms == 0) timeout_ms = 1;
+			uv_timer_start(&self->timer_, curl_timeout_cb, timeout_ms, 0);
 		}
 	}
 	return 0;
 }
 
-client::client()
-: debug_(0) {
-	curlm_handle_ = curl_multi_init();
-	uv_timer_init(flame::loop, &timeout_);
-	curl_multi_setopt(curlm_handle_, CURLMOPT_SOCKETFUNCTION, handle_socket);
-	curl_multi_setopt(curlm_handle_, CURLMOPT_TIMERFUNCTION, start_timeout);
-	curl_multi_setopt(curlm_handle_, CURLMOPT_TIMERDATA, (void*)this);
-}
-
-CURLM* client::get_curl_handle() {
-	return curlm_handle_;
-}
-
-int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp) {
+int client::curl_handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp) {
 	client_request* req;
 	int events = 0;
 
@@ -92,64 +76,69 @@ int client::handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, 
 	case CURL_POLL_INOUT:
 	{
 		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &req);
-		if(action != CURL_POLL_IN)
-			events |= UV_WRITABLE;
-		if(action != CURL_POLL_OUT)
-			events |= UV_READABLE;
+		if(action != CURL_POLL_IN) events |= UV_WRITABLE;
+		if(action != CURL_POLL_OUT) events |= UV_READABLE;
 		if(socketp) {
 			req = reinterpret_cast<client_request*>(socketp);
 		}
 		else {
-			req->sockfd_ = s;
-			uv_poll_init_socket(flame::loop, &req->poll_handle_, s);
-			req->poll_handle_.data = req;
-			curl_multi_assign(req->cli_->get_curl_handle(), s, (void*)req);
+			req->curl_fd = s;
+			uv_poll_init_socket(flame::loop, &req->poll_, s);
+			req->poll_.data = req;
+			curl_multi_assign(req->cli_->curlm_, s, req);
 		}
-		uv_poll_start(&req->poll_handle_, events, client::curl_perform);
+		uv_poll_start(&req->poll_, events, client::curl_perform);
 	}
 	break;
 	case CURL_POLL_REMOVE:
 		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &req);
 		if(socketp) {
-			uv_poll_t* p_poll_handle = &reinterpret_cast<client_request*>(socketp)->poll_handle_;
-			uv_poll_stop(p_poll_handle);
-			uv_close((uv_handle_t*)p_poll_handle, nullptr);
-			curl_multi_assign(req->cli_->get_curl_handle(), s, nullptr);
+			uv_poll_t* poll = &reinterpret_cast<client_request*>(socketp)->poll_;
+			uv_poll_stop(poll);
+			uv_close(reinterpret_cast<uv_handle_t*>(poll), nullptr);
+			curl_multi_assign(req->cli_->curlm_, s, nullptr);
 		}
 	break;
 	default:
-		//不可能
-		;
+		assert(0);
 	}
 	return 0;
 };
 
-php::value client::exec(php::object& req) {
-	client_request* r = req.native<client_request>();
-	r->build(this);
-	CURL* curl = r->curl_;
-	if(!curl) {
-		throw php::exception("curl empty");
+client::client()
+: debug_(0) {
+	curlm_ = curl_multi_init();
+	uv_timer_init(flame::loop, &timer_);
+	timer_.data = this;
+	curl_multi_setopt(curlm_, CURLMOPT_SOCKETFUNCTION, curl_handle_socket);
+	curl_multi_setopt(curlm_, CURLMOPT_TIMERFUNCTION, curl_start_timeout);
+	curl_multi_setopt(curlm_, CURLMOPT_TIMERDATA, this);
+}
+
+php::value client::exec(php::object& req_obj) {
+	if(!req_obj.is_instance_of<client_request>()) {
+		throw php::exception("only instanceof 'class client_request' can be executed");
 	}
+	client_request* req = req_obj.native<client_request>();
+	req->build(this);
 	if (debug_) {
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		curl_easy_setopt(req->curl_, CURLOPT_VERBOSE, 1L);
 	}
-	auto fb = flame::this_fiber()->push();
-	r->cb_ = [req, r, fb](CURLMsg *message) {
+	auto fib = flame::this_fiber()->push();
+	req->cb_ = [req_obj, req, fib](CURLMsg *message) {
 		switch(message->msg) {
 		case CURLMSG_DONE:
 			if (message->data.result != CURLE_OK) {
-				php::string str_ret(curl_easy_strerror(message->data.result));
-				fb->next(std::move(str_ret));
+				fib->next(php::make_exception(curl_easy_strerror(message->data.result), message->data.result));
 			} else {
-				fb->next(std::move(r->result_));
+				fib->next(std::move(req->buffer_));
 			}
 		break;
 		default:
-			fb->next(php::string("curlmsg return not zero"));
+			assert(0);
 		}
 	};
-	curl_multi_add_handle(get_curl_handle(), curl);
+	curl_multi_add_handle(curlm_, req->curl_);
 	return flame::async();
 }
 
@@ -167,43 +156,41 @@ php::value client::exec(php::parameters& params) {
 }
 
 void client::release() {
-	if (curlm_handle_) {
-		uv_timer_stop(&timeout_);
-		curl_multi_cleanup(curlm_handle_);
-		curlm_handle_ = nullptr;
+	if (curlm_) {
+		uv_timer_stop(&timer_);
+		curl_multi_cleanup(curlm_);
+		curlm_ = nullptr;
 	}
 }
 
+static client default_client;
 php::value get(php::parameters& params) {
-	static client cli;
 	php::object obj_req = php::object::create<client_request>();
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("GET");
 	req->prop("url")    = params[0];
 	req->prop("header") = php::array();
-	return cli.exec(obj_req);
+	return default_client.exec(obj_req);
 }
 
 php::value post(php::parameters& params) {
-	static client cli;
 	php::object obj_req = php::object::create<client_request>();
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("POST");
 	req->prop("url") = params[0];
 	req->prop("header") = php::array();
 	req->prop("body")   = params[1];
-	return cli.exec(obj_req);
+	return default_client.exec(obj_req);
 }
 
 php::value put(php::parameters& params) {
-	static client cli;
 	php::object obj_req = php::object::create<client_request>();
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("PUT");
 	req->prop("url")    = params[0];
 	req->prop("header") = php::array();
 	req->prop("body")   = params[1];
-	return cli.exec(obj_req);
+	return default_client.exec(obj_req);
 }
 
 }

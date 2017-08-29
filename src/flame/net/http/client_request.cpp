@@ -7,14 +7,12 @@ namespace net {
 namespace http {
 client_request::client_request()
 : curl_(nullptr)
-, slist_(nullptr)
-, sockfd_(-1)
+, curl_header(nullptr)
+, curl_fd(-1)
 , cli_(nullptr) {
 	prop("header") = php::array(0);
 }
 php::value client_request::__construct(php::parameters& params) {
-	php::string str("");
-	prop("method") = str;
 	if (params.length() >= 3) {
 		prop("timeout") = static_cast<int>(params[2]);
 	}else{
@@ -33,50 +31,39 @@ php::value client_request::__construct(php::parameters& params) {
 }
 
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
-	memcpy(ptr,stream,size*nmemb);
+	memcpy(ptr, stream, size*nmemb);
 	return size*nmemb;
 }
 
 static size_t write_callback(char* ptr, size_t size, size_t nmemb, void *userdata) {
 	client_request* req = reinterpret_cast<client_request*>(userdata);
-	size_t ret_len = size*nmemb > CURL_MAX_WRITE_SIZE ? CURL_MAX_WRITE_SIZE : size*nmemb;
-	if (req->result_.is_empty()) {
-		php::string cache(ret_len);
-		req->result_ = std::move(cache);
-		req->result_.length() = 0;
-	} else {
-		php::string cache(req->result_.length()+ret_len);
-		memcpy(cache.data(), req->result_.data(), req->result_.length());
-		cache.length() = req->result_.length();
-		req->result_ = std::move(cache);
-	}
-	memcpy(req->result_.data()+req->result_.length(), ptr, ret_len);
-	req->result_.length() += ret_len;
-	return ret_len;
+	size_t          len = size*nmemb > CURL_MAX_WRITE_SIZE ? CURL_MAX_WRITE_SIZE : size*nmemb;
+	std::memcpy(req->buffer_.put(len), ptr, len);
+	return len;
 }
 
 void client_request::build(client* cli) {
 	if (curl_) {
-		throw php::exception("request already used", -1);
+		throw php::exception("client_request build failed: already built", -1);
 	}
 	curl_ = curl_easy_init();
 	if(!curl_) {
-		throw php::exception("curl_easy_init fail", -1);
+		throw php::exception("client_request build failed: cannot curl_easy_init()", -1);
 	}
-	curl_slist* slist = build_header();
-	if(!slist) {
-		curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, slist);
+	curl_slist* header = build_header();
+	if(!header) {
+		curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, header);
 	}
 	// 设置URL
 	php::string& url = prop("url");
 	if (!url.is_empty()) {
 		curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
 	} else {
-		throw php::exception("url empty", -1);
+		throw php::exception("client_request build failed: empty url", -1);
 	}
 	this->cli_ = cli;
-	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, (void*)this);
-	curl_easy_setopt(curl_, CURLOPT_PRIVATE, (void*)this);
+	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
+	curl_easy_setopt(curl_, CURLOPT_PRIVATE, this);
 	std::string method = prop("method");
 	php::value   vbody = prop("body");
 	php::string  xbody;
@@ -109,19 +96,19 @@ void client_request::build(client* cli) {
 }
 
 void client_request::release() {
-	if (slist_) {
-		curl_slist_free_all(slist_);
-		slist_ = nullptr;
+	if (curl_header) {
+		curl_slist_free_all(curl_header);
+		curl_header = nullptr;
 	}
 
-	memset(&poll_handle_,0,sizeof(poll_handle_));
+	memset(&poll_,0,sizeof(poll_));
 	curl_   = nullptr;
-	sockfd_ = -1;
+	curl_fd = -1;
 	cli_    = nullptr;
-	result_ = nullptr;
+	buffer_.reset();
 }
 curl_slist* client_request::build_header() {
-	if (slist_) return slist_;
+	if (curl_header) return curl_header;
 
 	php::array header = prop("header");
 	if (header.length()) {
@@ -133,9 +120,9 @@ curl_slist* client_request::build_header() {
 			php::string& val = i->second;
 			php::string  str(key.length() + val.length() + 3);
 			sprintf(str.data(), "%.*s: %.*s", key.length(), key.data(), val.length(), val.data());
-			slist_ = curl_slist_append(slist_, str.c_str());
+			curl_header = curl_slist_append(curl_header, str.c_str());
 		}
-		return slist_;
+		return curl_header;
 	}
 }
 

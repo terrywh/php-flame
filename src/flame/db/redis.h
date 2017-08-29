@@ -9,11 +9,11 @@ namespace db {
 
 class redis: public php::class_base {
 public:
-	typedef struct { // 由于特殊使用方式，这里借鉴 hiredis 命名
-		php::array    cmd;
-		flame::fiber* fiber;
-		php::callable cb;
-	} redisRequest;
+	typedef struct {
+		std::vector<php::string> cmd;
+		flame::fiber*            fib;
+		php::callable             cb;
+	} redisRequest; // 由于特殊使用方式，这里借鉴 hiredis 命名
 
 	redis();
 	virtual ~redis();
@@ -21,12 +21,8 @@ public:
 	php::value __call(php::parameters& params);
 	php::value connect(php::parameters& params);
 	php::value close(php::parameters& params);
-	php::value getlasterror(php::parameters& params)
-	{
-		if (error_.is_null())
-			return php::string();
-		else
-			return error_;
+	inline php::value getlasterror(php::parameters& params) {
+		return error_;
 	};
 	php::value hgetall(php::parameters& params);
 	php::value hmget(php::parameters& params);
@@ -36,7 +32,13 @@ public:
 
 	php::value error_;
 private:
-	php::value format_redis_result(redisReply* reply);
+	php::value connect(php::array& arr);
+	void command(const char* cmd, php::parameters& params, redisCallbackFn* fn, php::value* cb = nullptr);
+	void command(const char* cmd, php::array& arr, redisCallbackFn *fn, php::value* cb = nullptr);
+	void command(int argc, const char **argv, const size_t *argvlen, redisCallbackFn *fn, redisRequest *privdata);
+	void close();
+	php::value convert_redis_reply(redisReply* reply);
+
 	static void connect_callback(const redisAsyncContext *c, int status);
 	static void disconnect_callback(const redisAsyncContext *c, int status);
 	static void null_callback(redisAsyncContext *c, void *r, void *privdata);
@@ -50,11 +52,7 @@ private:
 	static void hmget_callback(redisAsyncContext *c, void *r, void *privdata);
 	static void quit_callback(redisAsyncContext *c, void *r, void *privdata);
 	static void subscribe_callback(redisAsyncContext *c, void *r, void *privdata);
-	void command(const char* cmd, php::parameters& params, redisCallbackFn* fn, php::value* cb = nullptr);
-	void command(const char* cmd, php::array& arr, redisCallbackFn *fn, php::value* cb = nullptr);
-	void command(int argc, const char **argv, const size_t *argvlen, redisCallbackFn *fn, redisRequest *privdata);
-	php::value connect(php::array& arr);
-	void close();
+
 	redisAsyncContext *context_;
 };
 

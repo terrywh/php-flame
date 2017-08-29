@@ -6,33 +6,36 @@ namespace flame {
 namespace net {
 namespace http {
 
-class client: public php::class_base {
-public:
-	client();
-	~client() {
-		release();
-	}
-	php::value __construct(php::parameters& params);
-	// curl要用的回调
-	static int handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp);
-	static int start_timeout(CURLM* multi, long timeout_ms, void* userp);
-	static void curl_perform(uv_poll_t *req, int status, int events);
-	// 执行
-	php::value exec(php::parameters& params);
-	php::value exec(php::object& request);
-	php::value debug(php::parameters& params);
-	CURLM* get_curl_handle();
-	void release();
-	uv_timer_t timeout_;
-private:
+	class client: public php::class_base {
+	public:
+		client();
+		~client() {
+			release();
+		}
+		php::value __construct(php::parameters& params);
+		void release();
+		// 执行
+		php::value exec(php::parameters& params);
+		php::value exec(php::object& request);
+		php::value debug(php::parameters& params);
 
-	CURLM* curlm_handle_;
-	int debug_;
-};
 
-php::value get(php::parameters& params);
-php::value post(php::parameters& params);
-php::value put(php::parameters& params);
+	private:
+		// curl要用的回调
+		static void curl_check_multi_info(client* cli);
+		static int  curl_handle_socket(CURL* easy, curl_socket_t s, int action, void *userp, void *socketp);
+		static int  curl_start_timeout(CURLM* multi, long timeout_ms, void* userp);
+		static void curl_timeout_cb(uv_timer_t *req);
+		static void curl_perform(uv_poll_t *req, int status, int events);
+
+		CURLM*     curlm_;
+		int        debug_;
+		uv_timer_t timer_;
+	};
+
+	php::value get(php::parameters& params);
+	php::value post(php::parameters& params);
+	php::value put(php::parameters& params);
 
 }
 }
