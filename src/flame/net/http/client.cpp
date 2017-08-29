@@ -163,14 +163,15 @@ void client::release() {
 	}
 }
 
-static client default_client;
+client* default_client = nullptr;
+
 php::value get(php::parameters& params) {
 	php::object obj_req = php::object::create<client_request>();
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("GET");
 	req->prop("url")    = params[0];
 	req->prop("header") = php::array();
-	return default_client.exec(obj_req);
+	return default_client->exec(obj_req);
 }
 
 php::value post(php::parameters& params) {
@@ -180,7 +181,7 @@ php::value post(php::parameters& params) {
 	req->prop("url") = params[0];
 	req->prop("header") = php::array();
 	req->prop("body")   = params[1];
-	return default_client.exec(obj_req);
+	return default_client->exec(obj_req);
 }
 
 php::value put(php::parameters& params) {
@@ -190,7 +191,7 @@ php::value put(php::parameters& params) {
 	req->prop("url")    = params[0];
 	req->prop("header") = php::array();
 	req->prop("body")   = params[1];
-	return default_client.exec(obj_req);
+	return default_client->exec(obj_req);
 }
 
 }

@@ -11,6 +11,14 @@ namespace http {
 		if(curl_global_init(CURL_GLOBAL_ALL)) {
 			php::exception("curl_glbal_init fail", -1);
 		}
+		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
+			default_client = new client();
+			return true;
+		});
+		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
+			delete default_client;
+			return true;
+		});
 		// shortcut for class_client
 		ext.add<::flame::net::http::get>("flame\\net\\http\\get");
 		ext.add<::flame::net::http::post>("flame\\net\\http\\post");

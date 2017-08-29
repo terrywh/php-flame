@@ -32,7 +32,7 @@ namespace http {
 		int        debug_;
 		uv_timer_t timer_;
 	};
-
+	extern client* default_client;
 	php::value get(php::parameters& params);
 	php::value post(php::parameters& params);
 	php::value put(php::parameters& params);
