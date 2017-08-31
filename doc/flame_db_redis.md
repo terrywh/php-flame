@@ -8,7 +8,10 @@
 ``` PHP
 <?php
 $cli = new flame\db\redis();
-$cli->connect(["host"=>"127.0.0.1","port"=6379]);
+$cli->connect("127.0.0.1",6379);
+// 可选
+yield $cli->auth("123456");
+yield $cli->select(31);
 yield $cli->set("key","val");
 $val = yield $cli->get("key");
 ```
@@ -19,26 +22,26 @@ $val = yield $cli->get("key");
 * `hmget` | `hgetall` | `mget` 返回结果格式化为 k=>v 数组；
 * `zrange*` 等命令补充 `WHITSCORES` 参数时，返回 k=>v 数组；
 
-#### `redis::connect(array $opts)` | `redis::connect(string $uri)`
-配置 `redis` 连接相关属性；当提供参数为数组时，需要以下结构：
-```
-	[
-		"host"=>"127.0.0.1",
-		"port"=>6379,
-		"auth"=>"123456", // 可选
-		"select"=>1, // 可选
-	]
-```
-当提供参数为字符串时需要如下形式：
-```
-redis://127.0.0.1:6379/1?auth=123456
-```
+**注意**：
+* 所有命令函数均需前置 `yield` 关键字进行调用；
+
+#### `redis::connect(string $host, integer $port)` | `redis::connect(string $uri)`
+配置 `redis` 连接相关属性；
 
 **注意**：
-* `connect()` 不会立刻完成对 `Redis` 的连接，函数也不会阻塞（在第一次请求时完成连接）；
+* `connect()` 不会立刻完成对 `Redis` 的连接，函数也不会阻塞（实际会在第一次命令请求时进行连接）；
 
 #### `redis::close()`
 立刻主动关闭和 `redis` 的连接。
 
 **注意**：
-* 不调用 `close()` 与 `Redis` 建立的连接也会在对象析构时自动释放；
+* 不调用 `close()` 与 `Redis` 建立的连接**也会**在对象析构时自动释放；
+
+#### `yield redis::subscribe(callable $cb, string $chan[, string $chan, ...])`
+订阅指定通道 `$chan`，当另外的 redis 连接向该通道进行 `publish` 推送时，调用 `$cb` 回调函数；可指定多个 `$chan` 参数，同时订阅；
+回调函数原型如下：
+```
+function callback($chan, $data);
+```
+**注意**：
+* 当发生错误时，`subscribe` 的流程将立刻结束（即恢复运行）并抛出错误；

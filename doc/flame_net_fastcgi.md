@@ -54,6 +54,9 @@ $server->handle(function($req, $res) {
 #### `server::close()`
 关闭应用服务器，并恢复被 `server::run()` 阻塞的协程继续运行；
 
+**注意**：
+* 在服务器对象被销毁时，会自动调用 `close()` 关闭服务器；
+
 ### `class flame\net\fastcgi\server_response`
 由上述 `server` 生成，并回调传递给处理函数使用，用于返回响应数据给 Web 服务器；
 
@@ -78,3 +81,4 @@ $res->header["X-Server"] = "Flame/0.7.0";
 
 **注意**：
 * 若服务端设置保留 fastcgi 连接（NGINX 配置 `fastcgi_keep_conn on;`），在结束响应后与 Web 服务器的连接将被保留；否则将会立即关闭；
+* 当 server_response 对象被销毁时，会自动结束响应（详单与调用 `end()` 函数）；

@@ -83,8 +83,10 @@ var_dump($ret);
 
 ```
 
-#### `yield flame\net\http\post(string $url, array $post)`
-简单的 `POST` 方法。
+#### `yield flame\net\http\post(string $url, mixed $post)`
+简单的 `POST` 方法；
+* 当 `$post` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
+* 当 `$post` 为文本时直接进行发送；
 
 **示例**：
 ``` PHP
@@ -93,8 +95,10 @@ $ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>
 var_dump($ret);
 ```
 
-#### `yield flame\net\http\get(string $url, array $put)`
+#### `yield flame\net\http\put(string $url, mixed $put)`
 简单的 `PUT` 方法。
+* 当 `$put` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
+* 当 `$put` 为文本时直接进行发送；
 
 **示例**：
 ``` PHP
@@ -104,7 +108,7 @@ var_dump($ret);
 ```
 
 ### `class flame\net\http\server_request`
-作为服务端时，收到的来自客户端、浏览器的请求对象；
+作为服务端时，收到的来自客户端、浏览器请求的描述对象；
 
 #### `array server_request::$method`
 请求方法，如 'GET' 'POST' 等；
@@ -113,15 +117,25 @@ var_dump($ret);
 请求路径，**不含** 查询字符串 `query string`；
 
 #### `array server_request::$query`
-请求 `GET` 参数；数据来源于请求 `URL` 的 `PATH` 之后 `?` 与 `#` 或 URL 结束之前的文本，并通过类似 `parse_str()` 进行解析得到；
+请求 `GET` 参数；数据来源于请求 `URL` 的 `PATH` 之后 `?` 与 `#` 之间 或 `URL` 结束之前的文本，并通过 `parse_str()` 进行解析得到；
 
 #### `array server_request::$header`
 请求头信息，注意：
 * 所有请求头的字段名称均被处理为**小写**，字段值保持不变；
-* 仅存在字段名而无字段值的请求头将被忽略（不存在于 `$header` 属性中）
+* 所有请求头的字段名称中包含的 `-` 将被替换为 `_`；
+* 仅存在字段名而无字段值的请求头将被忽略（不存在于 `$header` 属性中）;
 
 #### `array server_request::$cookie`
-请求附带的 cookie 信息（已解析为数组）；若需要原始 cookie 文本，使用 `$request->header["cookie"]` 访问；
+请求附带的 cookie 信息（已解析为数组）；
+
+* 原始的 cookie 字符串可以使用 `$request->header["cookie"]` 获得；
 
 #### `mixed server_request::$body`
-请求体；当请求类型 `content-type` 标记为 `application/x-www-form-urlencoded` 时，会通过类似 `parse_str()` 解析得到数组，其他类型目前仅能的到原始数据文本；
+请求体；
+
+* 当请求类型 `Content-Type` 标记为 `application/x-www-form-urlencoded` 时，会通过 `parse_str()` 解析得到 K/V 数组 `array`；
+* 当请求类型标记为 `multipart/form-data` 时，会通过内置解析器得到 K/V 数组 `array` ；
+* 其他请求类型仅能得到原始数据 `string`；
+
+**注意**：
+* 文件上传请求的请求体会按照 `multipart/form-data` 进行解析，**没有** 生成 `PHP` 中类似 `$_FILES` 的结构；

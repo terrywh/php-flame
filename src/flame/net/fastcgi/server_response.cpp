@@ -13,7 +13,12 @@ server_response::server_response() {
 	header["Content-Type"] = php::string("text/plain", 10);
 	prop("header") = header;
 }
-
+server_response::~server_response() {
+	// 强制的请求结束
+	if((conn_->flag & PF_KEEP_CONN) == 0 && prop("ended").is_true()) {
+		conn_->close();
+	}
+}
 
 #define CACULATE_PADDING(size) (size) % 8 == 0 ? 0 : 8 - (size) % 8;
 
