@@ -117,7 +117,7 @@ void redis::cb_connect(const redisAsyncContext *c, int status) {
 }
 
 void redis::cb_disconnect(const redisAsyncContext *c, int status) {
-	redis*    self = reinterpret_cast<redis*>(c->data);
+	redis* self = reinterpret_cast<redis*>(c->data);
 	if (status != REDIS_OK) { // TODO 错误处理？
 		std::printf("error: redis failed with '%s'\n", c->errstr);
 		return;
@@ -133,6 +133,7 @@ void redis::cb_disconnect(const redisAsyncContext *c, int status) {
 redis::redis()
 : context_(nullptr) {
 	uv_timer_init(flame::loop, &connect_interval);
+	connect_interval.data = this;
 }
 
 redis::~redis() {
@@ -140,7 +141,8 @@ redis::~redis() {
 }
 
 void redis::cb_connect_interval(uv_timer_t* tm) {
-	reinterpret_cast<redis*>(tm->data)->connect();
+	redis* self = reinterpret_cast<redis*>(tm->data);
+	if(self->context_ != nullptr) self->connect();
 }
 
 void redis::connect() {
@@ -184,7 +186,6 @@ php::value redis::__call(php::parameters& params) {
 		args.push_back(static_cast<zval&>(i->second));
 	}
 	php::parameters argx(args.size(), args.data());
-	std::printf("argx: %d\n", args.size());
 	command(params[0], argx, 0, params.length(), cb_default);
 	return flame::async();
 }
@@ -224,7 +225,6 @@ void redis::command(const php::string& cmd, php::parameters& params, int start, 
 	req->fiber = flame::this_fiber()->push();
 	std::vector<const char*> argv;
 	std::vector<size_t>      argl;
-	std::printf("REDIS CMD: %s ", cmd.c_str());
 	argv.push_back(cmd.c_str());
 	argl.push_back(cmd.length());
 	for(int i=start; i<params.length(); ++i) { // 再放参数
@@ -234,9 +234,7 @@ void redis::command(const php::string& cmd, php::parameters& params, int start, 
 		}
 		argv.push_back(str.c_str());
 		argl.push_back(str.length());
-		std::printf("[%d] %s ", str.length(), str.c_str());
 	}
-	std::printf("\n");
 	int error = redisAsyncCommandArgv(context_, fn, req, argv.size(), argv.data(), argl.data());
 	if(error != 0) {
 		delete req;
