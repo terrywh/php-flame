@@ -16,7 +16,6 @@ namespace fastcgi {
 		mps_.on_header_value     = mp_val_cb;
 		mps_.on_part_data        = mp_dat_cb;
 		kps_.on_key = kv_key_cb;
-		kps_.on_val = kv_val_cb;
 		socket_.data = this;
 		if(0 > uv_read_start(&socket_, alloc_cb, read_cb)) {
 			uv_close(reinterpret_cast<uv_handle_t*>(&socket_),
@@ -123,6 +122,7 @@ namespace fastcgi {
 							bdy_ = &static_cast<php::array&>(obj_.prop("body"));
 							kps_.s1 = '=';
 							kps_.s2 = '&';
+							kps_.on_val = kv_val_cb_2;
 							kv_parser_init(&kpp_, &kps_);
 							kpp_.data = this;
 							php::buffer body = std::move(val_);
@@ -151,6 +151,7 @@ namespace fastcgi {
 							bdy_ = &static_cast<php::array&>(obj_.prop("cookie"));
 							kps_.s1 = '=';
 							kps_.s2 = ';';
+							kps_.on_val = kv_val_cb_2;
 							kv_parser_init(&kpp_, &kps_);
 							kpp_.data = this;
 							kv_parser_execute(&kpp_, &kps_, cookie->data(), cookie->length());
@@ -281,6 +282,7 @@ namespace fastcgi {
 						bdy_ = &static_cast<php::array&>(obj_.prop("query"));
 						kps_.s1 = '=';
 						kps_.s2 = '&';
+						kps_.on_val = kv_val_cb_2;
 						kv_parser_init(&kpp_, &kps_);
 						kpp_.data = this;
 						php::buffer data = std::move(val_);
@@ -350,6 +352,7 @@ PARSE_FAILED:
 		self->kps_.s2 = ';';
 		self->kps_.w1 = '"';
 		self->kps_.w2 = '"';
+		self->kps_.on_val = kv_val_cb_1;
 		kv_parser_init(&self->kpp_, &self->kps_);
 		self->kpp_.data = self;
 		kv_parser_execute(&self->kpp_, &self->kps_, at + 10, length);
@@ -367,6 +370,7 @@ PARSE_FAILED:
 	int server_connection::mp_dat_cb(multipart_parser* parser, const char *at, size_t length) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		self->bdy_->at(self->key_.data(), self->key_.size()) = php::string(at, length);
+		self->key_.reset();
 		return 0;
 	}
 	int server_connection::kv_key_cb(kv_parser* parser, const char* at, size_t len) {
@@ -374,11 +378,20 @@ PARSE_FAILED:
 		std::memcpy(self->key_.put(len), at, len);
 		return 0;
 	}
-	int server_connection::kv_val_cb(kv_parser* parser, const char* at, size_t len) {
+	int server_connection::kv_val_cb_1(kv_parser* parser, const char* at, size_t len) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		std::memcpy(self->val_.put(len), at, len);
-		self->bdy_->at(self->key_.data(), self->key_.size()) = std::move(self->val_);
+		self->bdy_->at(self->key_.data(), self->key_.size()) = php::string(self->val_.data(), self->val_.size());
 		self->key_.reset();
+		self->val_.reset();
+		return 0;
+	}
+	int server_connection::kv_val_cb_2(kv_parser* parser, const char* at, size_t len) {
+		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
+		std::memcpy(self->val_.put(len), at, len);
+		self->bdy_->at(self->key_.data(), self->key_.size()) = php::url_decode(self->val_.data(), self->val_.size());
+		self->key_.reset();
+		self->val_.reset();
 		return 0;
 	}
 }

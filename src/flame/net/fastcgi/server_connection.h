@@ -82,7 +82,8 @@ namespace fastcgi {
 		static int mp_end_cb(multipart_parser*);
 
 		static int kv_key_cb(kv_parser*, const char*, size_t);
-		static int kv_val_cb(kv_parser*, const char*, size_t);
+		static int kv_val_cb_1(kv_parser*, const char*, size_t);
+		static int kv_val_cb_2(kv_parser*, const char*, size_t);
 
 		int parse(const char* data, int size);
 
