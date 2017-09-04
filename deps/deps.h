@@ -16,4 +16,5 @@
 #include "hiredis/adapters/libuv.h"
 #include "libuv/include/uv.h"
 #include "multipart-parser-c/multipart_parser.h"
+#include "kv-parser/kv_parser.h"
 #include "libphpext/phpext.h"

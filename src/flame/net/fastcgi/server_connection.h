@@ -65,6 +65,8 @@ namespace fastcgi {
 
 		multipart_parser_settings mps_;
 		multipart_parser          mpp_;
+		kv_parser_settings        kps_;
+		kv_parser                 kpp_;
 
 		void start();
 		void close();
@@ -78,6 +80,9 @@ namespace fastcgi {
 		static int mp_hdr_cb(multipart_parser*);
 		static int mp_dat_cb(multipart_parser*, const char *at, size_t length);
 		static int mp_end_cb(multipart_parser*);
+
+		static int kv_key_cb(kv_parser*, const char*, size_t);
+		static int kv_val_cb(kv_parser*, const char*, size_t);
 
 		int parse(const char* data, int size);
 

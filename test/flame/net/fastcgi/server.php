@@ -20,7 +20,7 @@ flame\go(function() {
 	})
 	// 默认处理程序（即：不匹配上述路径形式时调用）
 	->handle(function($req, $res) {
-		echo "----- ", getmypid(), " -----\n";
+		var_dump($req);
 		$data = json_encode($req);
 		yield $res->end($data);
 	});

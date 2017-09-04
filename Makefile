@@ -10,11 +10,12 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 CXX?=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -g -O0
 CXXFLAGS_CORE= -std=c++14 -fPIC -include ./deps/deps.h
-INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps/libuv/include
+INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include
 # 链接参数
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
+ ./deps/kv-parser/kv_parser.o \
  ./deps/libphpext/libphpext.a \
  ./deps/libuv/.libs/libuv.a \
  ./deps/curl/lib/.libs/libcurl.a \
@@ -66,6 +67,8 @@ install: ${EXTENSION}
 	make -C ./deps/hiredis -j2
 ./deps/multipart-parser-c/multipart_parser.o:
 	make -C ./deps/multipart-parser-c default
+./deps/kv-parser/kv_parser.o:
+	make -C ./deps/kv-parser all
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:

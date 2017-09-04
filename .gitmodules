@@ -22,3 +22,6 @@
 	path = deps/multipart-parser-c
 	url = https://github.com/terrywh/multipart-parser-c.git
 	ignore = dirty
+[submodule "deps/kv-parser"]
+	path = deps/kv-parser
+	url = https://github.com/terrywh/kv-parser.git
