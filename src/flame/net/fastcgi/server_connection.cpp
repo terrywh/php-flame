@@ -113,7 +113,9 @@ namespace fastcgi {
 					case PT_STDIN: {
 						// 头部信息均为小写，下划线
 						php::string* ctype = reinterpret_cast<php::string*>(hdr_->find("content_type", 12));
-						if(ctype == nullptr) {
+						if(val_.is_null()) {
+							obj_.prop("body") = nullptr;
+						}else if(ctype == nullptr) {
 							obj_.prop("body") = std::move(val_);
 						}else if(ctype->length() >= 33
 							&& strncmp(ctype->data(), "application/x-www-form-urlencoded", 33) == 0) {
@@ -142,7 +144,6 @@ namespace fastcgi {
 						}else{ // raw body
 							obj_.prop("body") = std::move(val_);
 						}
-
 						key_.reset();
 						val_.reset();
 						php::string* cookie = reinterpret_cast<php::string*>(hdr_->find("cookie", 6));
