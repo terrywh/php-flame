@@ -23,8 +23,9 @@ server_response::~server_response() {
 #define CACULATE_PADDING(size) (size) % 8 == 0 ? 0 : 8 - (size) % 8;
 
 php::value server_response::write_header(php::parameters& params) {
-	if(prop("header_sent").is_true()) {
-		throw php::exception("header already sent");
+	if(prop("header_sent").is_true() || prop("ended").is_true()) {
+		php::warn("header already sent");
+		return nullptr;
 	}
 	if(params.length() >= 1) {
 		prop("status") = static_cast<int>(params[0]);
@@ -75,7 +76,8 @@ void server_response::buffer_head() {
 
 php::value server_response::write(php::parameters& params) {
 	if(prop("ended").is_true()) {
-		throw php::exception("response already ended");
+		php::warn("response already ended");
+		return nullptr;
 	}
 	if(!prop("header_sent").is_true()) {
 		buffer_head();
@@ -110,7 +112,8 @@ void server_response::buffer_body(const char* data, unsigned short size) {
 
 php::value server_response::end(php::parameters& params) {
 	if(prop("ended").is_true()) {
-		throw php::exception("response already ended");
+		php::warn("response already ended");
+		return nullptr;
 	}
 	prop("ended") = true;
 	if(!prop("header_sent").is_true()) {
@@ -155,7 +158,7 @@ void server_response::buffer_write() {
 	uv_buf_t    buf {buffer_.data(), (size_t)buffer_.size()};
 	int error = uv_write(req, reinterpret_cast<uv_stream_t*>(&conn_->socket_), &buf, 1, write_cb);
 	if(0 > error) {
-		flame::this_fiber()->throw_exception(uv_strerror(error), error);
+		flame::this_fiber()->ignore_warning(uv_strerror(error), error);
 	}
 }
 
@@ -171,7 +174,8 @@ void server_response::write_cb(uv_write_t* req, int status) {
 		self->conn_->close();
 	}
 	if(status < 0) {
-		fiber->next(php::make_exception(uv_strerror(status), status));
+		php::info("write/end failed: %s", uv_strerror(status));
+		fiber->next(nullptr);
 	}else{
 		fiber->next(size);
 	}

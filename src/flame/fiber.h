@@ -78,6 +78,18 @@ namespace flame {
 			status_ = 0;
 			throw php::exception(msg, code);
 		}
+		inline void ignore_warning(const std::string& msg, int code = -1) {
+			while(!ctx_.empty()) ctx_.pop();
+			while(!cbs_.empty()) cbs_.pop();
+			status_ = 0;
+			php::warn("%s (%d)\n", msg.c_str(), code);
+		}
+		inline void ignore_notice(const std::string& msg, int code = -1) {
+			while(!ctx_.empty()) ctx_.pop();
+			while(!cbs_.empty()) cbs_.pop();
+			status_ = 0;
+			php::info("%s (%d)\n", msg.c_str(), code);
+		}
 		friend fiber* this_fiber();
 		friend php::value async();
 		friend void init(php::extension_entry& ext);

@@ -3,6 +3,7 @@
 #include "fastcgi.h"
 #include "server.h"
 #include "../http/server_request.h"
+#include "server_response.h"
 
 namespace flame {
 namespace net {
@@ -159,7 +160,13 @@ namespace fastcgi {
 							bdy_ = nullptr;
 						}
 						hdr_ = nullptr;
-						server_->on_request(this, std::move(obj_));
+
+						php::object res = php::object::create<server_response>();
+						server_response* obj = res.native<server_response>();
+						obj->conn_ = this;
+
+						server_->on_request(std::move(obj_), res);
+						obj_ = res; // 记录 响应对象，在连接回收后，调整 response 状态
 					}
 					break;
 					default:
@@ -330,6 +337,9 @@ PARSE_FAILED:
 	}
 	void server_connection::close_cb(uv_handle_t* handle) {
 		server_connection* self = reinterpret_cast<server_connection*>(handle->data);
+		if(self->obj_.is_instance_of<server_response>()) {
+			self->obj_.prop("ended") = true; // 标记连接断开
+		}
 		delete self;
 	}
 	int server_connection::mp_key_cb(multipart_parser* parser, const char *at, size_t length) {

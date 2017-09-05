@@ -100,10 +100,7 @@ namespace fastcgi {
 		pobj->start();
 		return 0;
 	}
-	void server::on_request(server_connection* conn, php::object&& req) {
-		php::object      res = php::object::create<server_response>();
-		server_response* obj = res.native<server_response>();
-		obj->conn_ = conn;
+	void server::on_request(php::object&& req, const php::object& res) {
 		php::string& path = req.prop("uri");
 		if(path.is_empty()) {
 			php::fail("missing 'REQUEST_URI' in webserver config");
@@ -112,9 +109,9 @@ namespace fastcgi {
 		}else{
 			auto hi = handle_map_.find(path);
 			if(hi != handle_map_.end()) {
-				fiber::start(hi->second, req, res);
+				fiber::start(hi->second, std::move(req), res);
 			}else{
-				fiber::start(handle_def_, req, res);
+				fiber::start(handle_def_, std::move(req), res);
 			}
 		}
 	}

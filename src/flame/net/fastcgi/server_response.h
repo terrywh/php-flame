@@ -32,6 +32,7 @@ namespace fastcgi {
 		php::buffer      buffer_;
 		static void write_cb(uv_write_t* req, int status);
 		friend class server;
+		friend class server_connection;
 	};
 }
 }
