@@ -10,7 +10,12 @@ namespace flame {
 		if(params.length() != 2 || !params[0].is_string() || !params[1].is_array()) {
 			throw php::exception("illegal options for flame config");
 		}
-		php::string& name   = params[0];
+		std::string name = params[0];
+		if(process_type == PROCESS_MASTER) {
+			php::callable("cli_set_process_title").invoke(name + " (master)");
+		}else{
+			php::callable("cli_set_process_title").invoke(name + " (worker)");
+		}
 		// TODO call cli_set_process_title
 		php::array& options = params[1];
 		php::value& worker = options["worker"];

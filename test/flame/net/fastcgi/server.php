@@ -4,12 +4,11 @@
 // 	"worker" => 2, // 启动两个工作进程，默认 0
 // ]);
 flame\go(function() {
-	$udp_server = new flame\net\udp_socket();
-	$udp_server->bind("::", 7678);
 	// 创建 fastcgi 服务器
 	$server = new flame\net\fastcgi\server();
 	// 设置处理程序
 	$server->handle("/hello", function($req, $res) {
+		yield flame\time\sleep(2000);
 		var_dump($req->method, $req->body); // GET POST PUT ....
 		yield $res->write("hello ");
 		yield $res->end("world\n");
@@ -20,6 +19,7 @@ flame\go(function() {
 	})
 	// 默认处理程序（即：不匹配上述路径形式时调用）
 	->handle(function($req, $res) {
+		yield flame\time\sleep(2000);
 		var_dump($req);
 		$data = json_encode($req);
 		yield $res->end($data);
@@ -29,16 +29,6 @@ flame\go(function() {
 	@chmod("/data/sockets/flame.xingyan.panda.tv.sock", 0777);
 	// 方式2. 绑定 tcp 网络，理论上在并发连接数高（>1000）时较好
 	// $server->bind("127.0.0.1", 19001);
-	flame\go(function() use($udp_server) {
-		while(true) {
-			$addr = "";
-			$port = 0;
-			$data = yield $udp_server->recv_from($addr, $port);
-			echo "recv_from: ", $addr, ":", $port, " => [",$data, "]\n";
-		}
-	});
-	flame\go(function() use($server) {
-		yield $server->run();
-	});
+	yield $server->run();
 });
 flame\run();
