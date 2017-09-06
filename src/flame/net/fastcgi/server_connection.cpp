@@ -96,7 +96,7 @@ namespace fastcgi {
 			kv_parser_execute(&kvparser, &settings, vdata, vsize);
 			self->ctr_ = ctr;
 		}else if(strncmp(kdata, "HTTP_", 5) == 0) {
-			php::strtolower_inplace(kdata, ksize - 5);
+			php::strtolower_inplace(kdata, ksize);
 			self->ctr_->at(kdata + 5, ksize - 5) = php::string(vdata, vsize);
 		}
 		return 0;
@@ -108,7 +108,6 @@ namespace fastcgi {
 	}
 	int server_connection::fp_end_data_cb(fastcgi_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
-		std::printf("after data\n");
 		// 头部信息均为小写，下划线
 		php::string* ctype = reinterpret_cast<php::string*>(self->ctr_->find("content_type", 12));
 		if(ctype == nullptr) {

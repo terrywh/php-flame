@@ -1,8 +1,8 @@
 # 扩展
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=0.8.25
-# PHP环境
+EXT_VER=0.9.1
+# PHP环境f
 PHP_PREFIX?=/usr/local/php-7.0.19-test
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
