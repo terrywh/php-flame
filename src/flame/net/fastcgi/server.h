@@ -19,7 +19,7 @@ namespace fastcgi {
 		php::callable                        handle_def_;
 		std::map<std::string, php::callable> handle_map_;
 		virtual int accept(uv_stream_t* server);
-		void on_request(php::object&& req, const php::object& res);
+		void on_request(php::object& req, php::object& res);
 	private:
 		union {
 			uv_stream_t server_;

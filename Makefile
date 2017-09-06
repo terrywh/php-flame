@@ -15,6 +15,7 @@ INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
+ ./deps/fastcgi-parser/fastcgi_parser.o \
  ./deps/kv-parser/kv_parser.o \
  ./deps/libphpext/libphpext.a \
  ./deps/libuv/.libs/libuv.a \
@@ -69,6 +70,8 @@ install: ${EXTENSION}
 	make -C ./deps/multipart-parser-c default
 ./deps/kv-parser/kv_parser.o:
 	make -C ./deps/kv-parser all
+./deps/fastcgi-parser/fastcgi_parser.o:
+	make -C ./deps/fastcgi-parser all
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:

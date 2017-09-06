@@ -15,7 +15,7 @@ server_response::server_response() {
 }
 server_response::~server_response() {
 	// 强制的请求结束
-	if((conn_->flag & PF_KEEP_CONN) == 0 && !prop("ended").is_true()) {
+	if((conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0 && !prop("ended").is_true()) {
 		conn_->close();
 	}
 }
@@ -58,10 +58,10 @@ void server_response::buffer_head() {
 	}
 	sprintf(buffer_.put(2), "\r\n");
 	// 根据长度填充头部
-	header_.version        = PV_VERSION;
-	header_.type           = PT_STDOUT;
+	header_.version        = FASTCGI_VERSION;
+	header_.type           = FASTCGI_TYPE_STDOUT;
 	// !!! 解析过程没有反转，这里也不需要
-	header_.request_id     = conn_->request_id;
+	header_.request_id     = conn_->fpp_.request_id;
 	unsigned short length  = buffer_.size() - sizeof(header_);
 	// 注意字节序调整
 	header_.content_length = (length & 0x00ff) << 8 | (length & 0xff00) >> 8;
@@ -92,10 +92,10 @@ php::value server_response::write(php::parameters& params) {
 
 void server_response::buffer_body(const char* data, unsigned short size) {
 	// 根据长度填充头部
-	header_.version        = PV_VERSION;
-	header_.type           = PT_STDOUT;
+	header_.version        = FASTCGI_VERSION;
+	header_.type           = FASTCGI_TYPE_STDOUT;
 	// !!! 解析过程没有反转，这里也不需要
-	header_.request_id     = conn_->request_id;
+	header_.request_id     = conn_->fpp_.request_id;
 	// 字节序调整
 	header_.content_length = (size & 0x00ff) << 8 | (size & 0xff00) >> 8;
 	header_.padding_length = CACULATE_PADDING(size);
@@ -132,17 +132,17 @@ php::value server_response::end(php::parameters& params) {
 
 void server_response::buffer_ending() {
 	// 根据长度填充头部
-	header_.version        = PV_VERSION;
-	header_.type           = PT_STDOUT;
+	header_.version        = FASTCGI_VERSION;
+	header_.type           = FASTCGI_TYPE_STDOUT;
 	// !!! 解析过程没有反转，这里也不需要
-	header_.request_id     = conn_->request_id;
+	header_.request_id     = conn_->fpp_.request_id;
 	header_.content_length = 0;
 	header_.padding_length = 0;
 	header_.reserved       = 0;
 	// 头部
 	std::memcpy(buffer_.put(sizeof(header_)), &header_, sizeof(header_));
 	// 无内容 无填充
-	header_.type = PT_END_REQUEST;
+	header_.type = FASTCGI_TYPE_END_REQUEST;
 	// length = 8 字节序调整
 	header_.content_length = 0x0800;
 	// 头部
@@ -170,7 +170,7 @@ void server_response::write_cb(uv_write_t* req, int status) {
 	int size = self->buffer_.size();
 	self->buffer_.reset();
 	// 若 Web 服务器没有保持连接的标记，在请求结束后关闭连接
-	if((self->conn_->flag & PF_KEEP_CONN) == 0 && self->prop("ended").is_true()) {
+	if((self->conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0 && self->prop("ended").is_true()) {
 		self->conn_->close();
 	}
 	if(status < 0) {

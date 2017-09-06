@@ -25,3 +25,6 @@
 [submodule "deps/kv-parser"]
 	path = deps/kv-parser
 	url = https://github.com/terrywh/kv-parser.git
+[submodule "deps/fastcgi-parser"]
+	path = deps/fastcgi-parser
+	url = https://github.com/terrywh/fastcgi-parser.git
