@@ -30,6 +30,13 @@ namespace os {
 		options.stdio = ios.data();
 		options.stdio_count = ios.size();
 	}
+	static void options_stdio_close(uv_process_options_t& options) {
+		for(int i=0; i<options.stdio_count; ++i) {
+			if(options.stdio[i].flags & UV_INHERIT_FD) {
+				::close(options.stdio[i].data.fd);
+			}
+		}
+	}
 	static void options_flags(std::vector<uv_stdio_container_t>& ios,
 		uv_process_options_t& options, php::array& flags) {
 		for(auto i=flags.begin();i!=flags.end();++i) {
@@ -93,6 +100,7 @@ namespace os {
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
+		options_stdio_close(options);
 		return std::move(proc);
 	}
 	process::process()
