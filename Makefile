@@ -1,17 +1,21 @@
 # 扩展
+# ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
 EXT_VER=0.9.1
-# PHP环境f
+# PHP环境
+# ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.19-test
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
+# ---------------------------------------------------------------------
 CXX?=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -g -O0
 CXXFLAGS_CORE= -std=c++14 -fPIC -include ./deps/deps.h
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include
 # 链接参数
+# ---------------------------------------------------------------------
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
@@ -22,15 +26,14 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/curl/lib/.libs/libcurl.a \
  ./deps/hiredis/libhiredis.a \
  ./deps/nghttp2/bin/lib/libnghttp2.a
-
 # 代码和预编译头文件
+# ---------------------------------------------------------------------
 SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
-
-.PHONY: all install clean clean-deps clean-lnks update-deps test
 # 扩展编译过程
 # ----------------------------------------------------------------------
+.PHONY: all install clean clean-deps clean-lnks update-deps test
 all: ${EXTENSION}
 update-deps:
 	git submodule update --init
@@ -42,12 +45,12 @@ src/extension.o: src/extension.cpp
 	${CXX} ${CXXFLAGS_CORE} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
 %.o: %.cpp ${HEADERX}
 	${CXX} ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
-
+# 清理安装
+# ----------------------------------------------------------------------
 clean:
 	rm -f ${EXTENSION} ${OBJECTS} $(shell find ./src -name "*.o")
 clean-lnks:
 	find -type l | xargs rm
-
 install: ${EXTENSION}
 	rm -f `${PHP_CONFIG} --extension-dir`/${EXTENSION} && cp ${EXTENSION} `${PHP_CONFIG} --extension-dir`
 # 依赖库的编译过程
