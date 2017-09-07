@@ -14,6 +14,7 @@ namespace os {
 		static void on_exit_cb(uv_process_t* proc, int64_t exit_status, int signal);
 		uv_process_t  handle_;
 		bool          exit_;
+		bool          detach_;
 		flame::fiber* fiber_;
 		friend php::value start_process(php::parameters& params);
 	};

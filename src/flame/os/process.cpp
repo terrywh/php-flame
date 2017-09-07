@@ -50,15 +50,11 @@ namespace os {
 			}else if(std::strncmp(key.c_str(), "detach", 6) == 0) {
 				options.flags |= UV_PROCESS_DETACHED;
 			}else if(std::strncmp(key.c_str(), "stdout", 6) == 0) {
-				// 重定向时不能分离父子进程
-				options.flags &= ~UV_PROCESS_DETACHED;
 				options_stdio_init(ios, options);
 				ios[1].flags = UV_INHERIT_FD;
 				int fd = ::open(i->second.to_string().c_str(), O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 				ios[1].data.fd = fd;
 			}else if(std::strncmp(key.c_str(), "stderr", 6) == 0) {
-				// 重定向时不能分离父子进程
-				options.flags &= ~UV_PROCESS_DETACHED;
 				options_stdio_init(ios, options);
 				ios[2].flags = UV_INHERIT_FD;
 				ios[2].data.fd = ::open(i->second.to_string().c_str(), O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
@@ -96,6 +92,9 @@ namespace os {
 		}
 		php::object proc = php::object::create<process>();
 		process* proc_ = proc.native<process>();
+		if(options.flags & UV_PROCESS_DETACHED) {
+			proc_->detach_ = true;
+		}
 		int error = uv_spawn(flame::loop, &proc_->handle_, &options);
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
@@ -105,12 +104,13 @@ namespace os {
 	}
 	process::process()
 	: exit_(false)
+	, detach_(false)
 	, fiber_(nullptr) {
 		handle_.data = this;
 	}
 	process::~process() {
-		// 结束进程？
-		if(!exit_) uv_process_kill(&handle_, SIGKILL);
+		// 还未退出 而且 未分离父子进程 需要结束进程
+		if(!exit_ && !detach_) uv_process_kill(&handle_, SIGKILL);
 	}
 	php::value process::kill(php::parameters& params) {
 		int s = SIGTERM;

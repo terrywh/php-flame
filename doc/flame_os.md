@@ -13,6 +13,7 @@
 	* `gid` / `uid` - 设置启动进程的组、用户ID（需要 root 权限）；
 	* `detach` - 脱离父子进程关系；
 	* `stdout` / `stderr` - 重定向子进程的输出到指定文件路径；
+函数成功，则返回启动的进程对应的 `process` 对象；否则抛出异常；
 
 **示例**：
 ``` PHP
@@ -25,9 +26,13 @@ $proc = flame\os\start_process("ping", ["www.baidu.com"], ["ENV_KEY_1"=>"ENV_VAL
 
 **注意**：
 * 额外选项中 `detach` 与 `stdout` | `stderr` 不能同时使用；
+* 若进程未与父进程脱离（`detach`），则当该进程对象销毁时，实际进程将被强制结束（SIGKILL）；
 
 #### `class flame\os\process`
-进程对象
+进程对象;
+
+**注意**：
+* 若启动进程时未指定 `detach` 分离父子进程，进程对象销毁将导致实际进程被强制结束；
 
 ##### `function process::kill([$signal = SIGTERM])`
 向当前进程发送信号，默认 SIGTERM 信号
