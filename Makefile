@@ -56,17 +56,20 @@ install: ${EXTENSION}
 # 依赖库的编译过程
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:
-	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC ./configure --disable-shared --prefix `pwd`/bin
+	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix `pwd`/bin
 	make -C ./deps/nghttp2 -j2
 	make -C ./deps/nghttp2 install
+	cd ./deps/nghttp2; find -type l | xargs rm
 ./deps/libphpext/libphpext.a:
 	make -C ./deps/libphpext -j2
 ./deps/libuv/.libs/libuv.a:
-	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC ./configure
+	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC /bin/sh ./configure
 	make -C ./deps/libuv -j2
+	cd ./deps/libuv; find -type l | xargs rm
 ./deps/curl/lib/.libs/libcurl.a: ./deps/nghttp2/bin/lib/libnghttp2.a
 	cd ./deps/curl; /bin/sh ./buildconf; PKG_CONFIG_PATH=../nghttp2/bin/lib CFLAGS=-fPIC ./configure --with-nghttp2=../nghttp2/bin
 	make -C ./deps/curl -j2
+	cd ./deps/curl; find -type l | xargs rm
 ./deps/hiredis/libhiredis.a:
 	make -C ./deps/hiredis -j2
 ./deps/multipart-parser-c/multipart_parser.o:
