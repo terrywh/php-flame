@@ -45,20 +45,6 @@ flame\go(function() {
 
 });
 ```
-
-**注意**：
-* 若传入的 `callable ` 是 `Generator Function` 即包含 yield 表达式的函数，能够支持异步调用；否则仅相当于调用该普通函数；
-* 协程**不会立刻启动**（需要等待 `flame\run()` 函数的调度执行），但本函数会立即返回；
-
-#### `flame\config(array $opts)`
-配置 `flame` 框架，目前支持以下选项：
-``` PHP
-<?php
-flame\config([
-	"worker_count" => 4, // 可选，工作进程数量
-]);
-```
-
 **注意**：
 * 本函数必须在下述 `flame\run()` 函数前执行；否则无法生效；
 

@@ -14,7 +14,7 @@
 $server1 = new flame\net\fastcgi\server();
 // 绑定到 UnixSocket
 $server1->bind("/data/sockets/flame.xingyan.panda.tv.sock"); // 绑定
-@chmod("/data/sockets/uinx_socket_1.sock", 0777); // 权限，允许其他用户连接
+@chmod("/data/sockets/flame.xingyan.panda.tv.sock", 0777); // 权限，允许其他用户连接
 
 $server2 = new flame\net\fastcgi\server();
 // 绑定到 TCP 地址端口
