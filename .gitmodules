@@ -25,6 +25,12 @@
 [submodule "deps/kv-parser"]
 	path = deps/kv-parser
 	url = https://github.com/terrywh/kv-parser.git
+	ignore = dirty
 [submodule "deps/fastcgi-parser"]
 	path = deps/fastcgi-parser
 	url = https://github.com/terrywh/fastcgi-parser.git
+	ignore = dirty
+[submodule "deps/mongo-c-driver"]
+	path = deps/mongo-c-driver
+	url = https://github.com/mongodb/mongo-c-driver.git
+	ignore = dirty

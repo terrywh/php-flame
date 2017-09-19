@@ -13,7 +13,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 CXX?=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -g -O0
 CXXFLAGS_CORE= -std=c++14 -fPIC -include ./deps/deps.h
-INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include
+INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
 # 链接参数
 # ---------------------------------------------------------------------
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
@@ -25,7 +25,10 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/libuv/.libs/libuv.a \
  ./deps/curl/lib/.libs/libcurl.a \
  ./deps/hiredis/libhiredis.a \
- ./deps/nghttp2/bin/lib/libnghttp2.a
+ ./deps/nghttp2/bin/lib/libnghttp2.a \
+ ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a \
+ ./deps/mongo-c-driver/bin/lib/libbson-1.0.a \
+ ./deps/mongo-c-driver/bin/lib/libsnappy.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
 SOURCES=$(shell find ./src -name "*.cpp")
@@ -57,8 +60,7 @@ install: ${EXTENSION}
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:
 	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix `pwd`/bin
-	make -C ./deps/nghttp2 -j2
-	make -C ./deps/nghttp2 install
+	make -C ./deps/nghttp2 -j2 && make -C ./deps/nghttp2 install
 	cd ./deps/nghttp2; find -type l | xargs rm
 ./deps/libphpext/libphpext.a:
 	make -C ./deps/libphpext -j2
@@ -78,6 +80,11 @@ install: ${EXTENSION}
 	make -C ./deps/kv-parser all
 ./deps/fastcgi-parser/fastcgi_parser.o:
 	make -C ./deps/fastcgi-parser all
+./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a:
+	cd ./deps/mongo-c-driver; git submodule update --init; chmod +x ./autogen.sh; ./autogen.sh --with-libbson=bundled; ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --enable-static=yes --enable-shared=no;
+	cd ./deps/mongo-c-driver; ln -s `pwd`/src/libbson/README.rst `pwd`/src/libbson/README;
+	make -C ./deps/mongo-c-driver -j2 && make -C ./deps/mongo-c-driver install
+	cd ./deps/mongo-c-driver; find -type l | xargs rm
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:
@@ -88,3 +95,5 @@ clean-deps:
 	make -C ./deps/curl clean
 	make -C ./deps/nghttp2 clean
 	rm -rf ./deps/nghttp2/bin
+	make -C ./deps/mongo-c-driver clean
+	rm -rf ./deps/mongo-c-driver/bin
