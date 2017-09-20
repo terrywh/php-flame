@@ -24,3 +24,4 @@
 #include "multipart-parser-c/multipart_parser.h"
 #include "kv-parser/kv_parser.h"
 #include "libphpext/phpext.h"
+#include "ext/mysqlnd/mysqlnd.h"
