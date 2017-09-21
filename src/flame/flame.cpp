@@ -56,6 +56,7 @@ namespace flame {
 		return nullptr;
 	}
 	php::value go(php::parameters& params) {
+		if(!initialized) init_fx(params);
 		return fiber::start(static_cast<php::callable&>(params[0]));
 	}
 	php::value run(php::parameters& params) {

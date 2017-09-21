@@ -81,8 +81,8 @@ install: ${EXTENSION}
 ./deps/fastcgi-parser/fastcgi_parser.o:
 	make -C ./deps/fastcgi-parser all
 ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a:
-	cd ./deps/mongo-c-driver; git submodule update --init; chmod +x ./autogen.sh; ./autogen.sh --with-libbson=bundled; ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --enable-static=yes --enable-shared=no;
-	cd ./deps/mongo-c-driver; ln -s `pwd`/src/libbson/README.rst `pwd`/src/libbson/README;
+	cd ./deps/mongo-c-driver; git submodule update --init; chmod +x ./autogen.sh; ./autogen.sh --with-libbson=bundled; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --enable-static=yes --enable-shared=no
+	cd ./deps/mongo-c-driver; ln -s `pwd`/src/libbson/README.rst `pwd`/src/libbson/README
 	make -C ./deps/mongo-c-driver -j2 && make -C ./deps/mongo-c-driver install
 	cd ./deps/mongo-c-driver; find -type l | xargs rm
 # 依赖清理

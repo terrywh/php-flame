@@ -2,7 +2,7 @@
 
 namespace flame {
 namespace db {
-namespace mysql {
+namespace mongodb {
 	void init(php::extension_entry& ext);
 }
 }

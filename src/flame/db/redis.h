@@ -1,4 +1,3 @@
-#include "../fiber.h"
 //#define MY_DEBUG
 
 // 所有导出到 PHP 的函数必须符合下面形式：

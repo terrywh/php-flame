@@ -2,7 +2,7 @@
 
 namespace flame {
 namespace db {
-namespace mysql {
+namespace mongodb {
 	class timestamp: public php::class_base {
 
 	};

@@ -2,7 +2,7 @@
 
 namespace flame {
 namespace db {
-namespace mysql {
+namespace mongodb {
 	class cursor: public php::class_base {
 
 	};

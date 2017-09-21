@@ -2,7 +2,7 @@
 
 namespace flame {
 namespace db {
-namespace mysql {
+namespace mongodb {
 	class object_id: public php::class_base {
 
 	};

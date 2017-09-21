@@ -1,3 +1,4 @@
+#include "../fiber.h"
 #include "redis.h"
 
 namespace flame {
