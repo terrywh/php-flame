@@ -15,6 +15,6 @@ flame\go(function() {
 	var_dump($dt);
 	echo $dt,"\n";
 	echo json_encode($dt), "\n";
-	var_dump($dt->timestamp());
+	var_dump($dt->timestamp_ms());
 });
 flame\run();
