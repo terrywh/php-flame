@@ -22,6 +22,7 @@ namespace mongodb {
 	}
 	php::value client::__destruct(php::parameters& params) {
 		if(client_) mongoc_client_destroy(client_);
+		return nullptr;
 	}
 	php::value client::collection(php::parameters& params) {
 		if(params.length() >= 1 && params[0].is_string()) {

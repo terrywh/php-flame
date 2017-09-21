@@ -62,13 +62,19 @@ $collection = $cli->collection("col_abc");
 获取指定名称的 collection 集合对象；`client` 类实现了魔术函数 `__get()` 可以直接用集合名称，通过属性形式访问对应的 collection 集合；
 
 ### `class flame\db\mongodb\object_id`
+#### `object_id::__toString()`
+#### `object_id::jsonSerialize()`
+#### `object_id::timestamp()`
+秒级时间戳，表示当前 `object_id` 的创建时间
+
+### `class flame\db\mongodb\date_time`
 #### `object_id::__toString() | object_id::toString()`
 #### `object_id::jsonSerialize()`
-
-### `class flame\db\mongodb\timestamp`
-#### `timestamp::__toString() | timestamp::toString()`
-#### `timestamp::toInteger()`
-#### `timestamp::jsonSerialize()`
+#### `date_time::timestamp()`
+秒级时间戳
+#### `date_time::toDateTime()`
+转换为 [`DateTime`](http://php.net/manual/en/class.datetime.php) PHP 内置类型对象；
+####
 
 ### `class flame\db\mongodb\collection`
 封装访问 mongodb 数据集合的基础 API；
@@ -90,9 +96,9 @@ $count = yield $collection->count(['x'=>'y']);
 ```
 
 **注意**：
-* `_id` 字段需要使用单独的类型 `object_id`；
-* 日期时间 字段需要使用 PHP 内置类型 [`DateTime`](http://php.net/manual/en/class.datetime.php)；
-* 时间戳 字段需要使用单独的类型 `timestamp`；
+* 对象标识 `ObjectID` 字段需要使用单独的类型 `object_id`；
+* 日期时间 `DateTime` 字段需要使用单独的类型 `date_time`；
+* 暂不支持 时间戳、正则 等在 Web 开发中不常用的字段类型；
 * 其他字段对应相关 PHP 内置类型；
 * 请尽量使用 `'` 单引号，防止功能符号被转义，例如 `$gt = "aaa"; $filter = ["a" => ["$gt"=>1234]]`；
 

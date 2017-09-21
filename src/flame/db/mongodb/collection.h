@@ -6,6 +6,7 @@ namespace mongodb {
 	class collection: public php::class_base {
 	public:
 		~collection();
+		php::value __debugInfo(php::parameters& params);
 		php::value count(php::parameters& params);
 	private:
 		php::object          client_;
