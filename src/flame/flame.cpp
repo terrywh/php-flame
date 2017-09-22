@@ -7,13 +7,18 @@ extern char **environ;
 namespace flame {
 	uv_loop_t*  loop;
 	static bool initialized = false;
+	static void on_threadpool_work(uv_work_t* w) {}
+	static void on_threadpool_done(uv_work_t* w, int status) {
+		delete w;
+	}
 	static void init_threadpool_size() {
 		// 设置环境变量
 		char   edata[8];
 		size_t esize = sizeof(edata);
 		int r = uv_os_getenv("UV_THREADPOOL_SIZE", edata, &esize);
 		uv_os_setenv("UV_THREADPOOL_SIZE", "1");
-		queue(nullptr, nullptr, nullptr); // libuv 实现首次 queue 时初始化线程
+		uv_work_t* req = new uv_work_t;
+		uv_queue_work(flame::loop, req, on_threadpool_work, on_threadpool_done); // libuv 实现首次 queue 时初始化线程
 		// 还原环境变量
 		if(!r) {
 			uv_os_setenv("UV_THREADPOOL_SIZE", edata);

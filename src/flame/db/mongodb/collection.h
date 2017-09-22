@@ -8,17 +8,19 @@ namespace mongodb {
 		~collection();
 		php::value __debugInfo(php::parameters& params);
 		php::value count(php::parameters& params);
+		php::value insert_one(php::parameters& params);
+		php::value insert_many(php::parameters& params);
 	private:
 		php::object          client_;
 		mongoc_collection_t* collection_ = nullptr;
-		php::value           result_;
 		inline void init(const php::object& client, mongoc_collection_t* collection) {
 			client_ = client;
 			collection_ = collection;
 		}
-		static void count_work(flame::fiber* fib, void* data);
-		static void count_done(flame::fiber* fib, void* data);
-
+		static void default_cb(uv_work_t* w, int status);
+		static void count_wk(uv_work_t* w);
+		static void insert_one_wk(uv_work_t* w);
+		static void insert_many_wk(uv_work_t* w);
 		friend class client;
 	};
 }

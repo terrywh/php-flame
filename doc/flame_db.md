@@ -72,9 +72,20 @@ $collection = $cli->collection("col_abc");
 #### `date_time::jsonSerialize()`
 #### `date_time::timestamp()`
 秒级时间戳
+#### `date_time::timestamp_ms()`
+毫秒级时间戳
 #### `date_time::to_datetime()`
 转换为 [`DateTime`](http://php.net/manual/en/class.datetime.php) PHP 内置类型对象；
-####
+
+### `class flame\db\mongodb\bulk_result`
+#### `boolean bulk_result::success()`
+检查批量操作的总体结果，`true` 全部成功，`false` 失败或部分失败；
+
+#### `integer bulk_result::$nInserted`
+#### `integer bulk_result::$nMatched`
+#### `integer bulk_result::$nModified`
+#### `integer bulk_result::$nRemoved`
+#### `integer bulk_result::$nUpserted`
 
 ### `class flame\db\mongodb\collection`
 封装访问 mongodb 数据集合的基础 API；
@@ -85,8 +96,8 @@ $collection = $cli->collection("col_abc");
 // ... 通过 $client 获得 $collection 对象
 $result = yield $collection->insert_one(['a'=>'b']);
 $result = yield $collection->insert_many([['a'=>'b1'], ['a'=>'b2']]);
-$result = yield $collection->delete_many(['a'=>'b']);
 $result = yield $collection->delete_one(['a'=>['$ne'=>'b']]);
+$result = yield $collection->delete_many(['a'=>'b']);
 $result = yield $collection->update_one(['a'=>'b'],['$set'=>['a'=>'c']]);
 $result = yield $collection->update_many(['a'=>'b'],['a'=>'c']);
 $cursor = yield $collection->find_many(['a'=>'b']);
@@ -110,16 +121,16 @@ $count = yield $collection->count(['x'=>'y']);
 * 可以自行为 `$doc` 创建 `_id` 字段（参考 `object_id` 类型）；
 
 #### `yield collection::insert_many(array $docs)`
-向当前集合插入 `$docs` 若干文档；
+向当前集合插入 `$docs` 若干文档；返回批量结果对象 `bulk_result`；
 
 **注意**：
 * `$docs` 为二维数组，其中第一维度为下标数组，每个元素标识一个文档（关联数组）；
 
-#### `yield collection::delete_many(array $query)`
-从当前集合中删除所有符合 `$query` 查询的文档；
+#### `yield collection::remove_one(array $query)`
+从当前集合中删除第一个符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；
 
 #### `yield collection::delete_many(array $query)`
-从当前集合中删除第一个符合 `$query` 查询的文档；
+从当前集合中删除所有符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；
 
 #### `yield collection::update_one(array $query, array $data)`
 从当前集合中查询第一个符合 `$query` 的文档，并使用 `$data` 更新它；

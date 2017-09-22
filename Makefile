@@ -12,7 +12,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # ---------------------------------------------------------------------
 CXX?=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -g -O0
-CXXFLAGS_CORE= -std=c++14 -fPIC -include ./deps/deps.h
+CXXFLAGS_CORE= -std=c++14 -fPIC
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
 # 链接参数
 # ---------------------------------------------------------------------
@@ -45,9 +45,9 @@ ${EXTENSION}: ${LIBRARY} ${OBJECTS}
 ${HEADERX}: deps/deps.h
 	${CXX} -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
 src/extension.o: src/extension.cpp
-	${CXX} ${CXXFLAGS_CORE} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
+	${CXX} ${CXXFLAGS_CORE} -include ./deps/deps.h -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
 %.o: %.cpp ${HEADERX}
-	${CXX} ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
+	${CXX} ${CXXFLAGS_CORE} -include ./deps/deps.h ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
 # 清理安装
 # ----------------------------------------------------------------------
 clean:

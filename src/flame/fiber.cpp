@@ -83,31 +83,4 @@ ASYNC_NEXT:
 		fiber::cur_->status_ |= 0x01;
 		return fiber::async_;
 	}
-	typedef struct {
-		fiber*       self;
-		task_work_cb work;
-		task_done_cb done;
-		void*        data;
-		uv_work_t    ureq;
-	} queue_context;
-	static void on_queue_work_cb(uv_work_t* ureq) {
-		queue_context* ctx = reinterpret_cast<queue_context*>(ureq->data);
-		if(ctx->work != nullptr) {
-			ctx->work(ctx->self, ctx->data);
-		}
-	}
-	static void on_queue_done_cb(uv_work_t* ureq, int status) {
-		queue_context* ctx = reinterpret_cast<queue_context*>(ureq->data);
-		if(ctx->done != nullptr) {
-			ctx->done(ctx->self, ctx->data);
-		}
-		delete ctx;
-	}
-	void queue(task_work_cb work, task_done_cb done, void* data) {
-		queue_context* ctx = new queue_context { this_fiber(), work, done, data };
-		ctx->ureq.data = ctx;
-		if(0 > uv_queue_work(flame::loop, &ctx->ureq, on_queue_work_cb, on_queue_done_cb)) {
-			throw php::exception("failed to queue on worker thread");
-		}
-	}
 }

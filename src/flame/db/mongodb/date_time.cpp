@@ -30,9 +30,6 @@ namespace mongodb {
 
 		return std::move(date_);
 	}
-	php::value date_time::timestamp_ms(php::parameters& params) {
-		return milliseconds_;
-	}
 	php::value date_time::to_datetime(php::parameters& params) {
 		char sf[24];
 		int  ln = 24;

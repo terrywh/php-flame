@@ -1,7 +1,8 @@
 #pragma once
-
 #include <cstring>
 #include <cstdlib>
+#include <cassert>
+
 #include <memory>
 #include <stack>
 #include <map>

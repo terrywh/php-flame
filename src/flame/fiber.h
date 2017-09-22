@@ -100,8 +100,4 @@ namespace flame {
 		return fiber::cur_;
 	}
 	php::value async();
-	// 为 DB 等提供线程池服务
-	typedef void (*task_work_cb)(fiber* fib, void* data);
-	typedef void (*task_done_cb)(fiber* fib, void* data);
- 	void queue(task_work_cb work, task_done_cb done, void* data);
 }
