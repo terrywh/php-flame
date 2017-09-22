@@ -33,6 +33,14 @@ namespace mongodb {
 	php::value date_time::timestamp_ms(php::parameters& params) {
 		return milliseconds_;
 	}
+	php::value date_time::to_datetime(php::parameters& params) {
+		char sf[24];
+		int  ln = 24;
+		ln = sprintf(sf, "%ld.%d", milliseconds_ / 1000, (milliseconds_ * 1000) % 1000000);
+		php::string format("U.u", 3);
+		php::string format_time(sf, ln);
+		return php::callable("date_create_from_format").invoke(format, format_time);
+	}
 }
 }
 }

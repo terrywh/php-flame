@@ -68,11 +68,11 @@ $collection = $cli->collection("col_abc");
 秒级时间戳，表示当前 `object_id` 的创建时间
 
 ### `class flame\db\mongodb\date_time`
-#### `object_id::__toString() | object_id::toString()`
-#### `object_id::jsonSerialize()`
+#### `date_time::__toString() | object_id::toString()`
+#### `date_time::jsonSerialize()`
 #### `date_time::timestamp()`
 秒级时间戳
-#### `date_time::toDateTime()`
+#### `date_time::to_datetime()`
 转换为 [`DateTime`](http://php.net/manual/en/class.datetime.php) PHP 内置类型对象；
 ####
 

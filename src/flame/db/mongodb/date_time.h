@@ -9,6 +9,7 @@ namespace mongodb {
 		php::value __toString(php::parameters& params);
 		php::value jsonSerialize(php::parameters& params);
 		php::value timestamp_ms(php::parameters& params);
+		php::value to_datetime(php::parameters& params);
 	private:
 		int64_t milliseconds_ = 0;
 	};

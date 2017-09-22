@@ -36,6 +36,7 @@ namespace mongodb {
 		class_date_time.add<&date_time::jsonSerialize>("__debugInfo");
 		class_date_time.add<&date_time::jsonSerialize>("jsonSerialize");
 		class_date_time.add<&date_time::timestamp_ms>("timestamp_ms");
+		class_date_time.add<&date_time::to_datetime>("to_datetime");
 		ext.add(std::move(class_date_time));
 		php::class_entry<client> class_client("flame\\db\\mongodb\\client");
 		class_client.add<&client::__construct>("__construct");
