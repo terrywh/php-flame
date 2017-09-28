@@ -13,8 +13,8 @@ namespace mongodb {
 		bson_t*     doc1;
 		bson_t*     doc2;
 		mongoc_bulk_operation_t* bulk;
-		uint32_t    n1;
-		uint32_t    n2;
+		mongoc_read_prefs_t*     pref;
+		int         flags;
 		uv_work_t   req;
 		php::value  rv;
 	} collection_request;
@@ -47,6 +47,7 @@ namespace mongodb {
 	php::value collection::count(php::parameters& params) {
 		collection_request* cq = new collection_request {this, flame::this_fiber(), bson_new()};
 		cq->req.data = cq;
+		flame::this_fiber()->push();
 		uv_queue_work(flame::loop, &cq->req, count_wk, default_cb);
 		return flame::async();
 	}
@@ -54,8 +55,12 @@ namespace mongodb {
 	void collection::insert_one_wk(uv_work_t* w) {
 		collection_request* cq = reinterpret_cast<collection_request*>(w->data);
 		bson_error_t error;
-		bool r = mongoc_collection_insert(cq->self->collection_, MONGOC_INSERT_NONE,
-			cq->doc1, nullptr, &error);
+		bool r = mongoc_collection_insert(
+			cq->self->collection_,
+			MONGOC_INSERT_NONE,
+			cq->doc1,
+			mongoc_client_get_write_concern(cq->self->client_),
+			&error);
 		bson_destroy(cq->doc1);
 		if(r) {
 			cq->rv = bool(true);
@@ -67,13 +72,15 @@ namespace mongodb {
 		if(params.length() < 1 || !params[0].is_array()) {
 			throw php::exception("illegal document, associate array is required");
 		}
-		php::array& arr = params[0];
-		if(!arr.is_a_map()) {
+		php::array& doc = params[0];
+		if(!doc.is_a_map()) {
 			throw php::exception("illegal document, associate array is required");
 		}
-		collection_request* cq = new collection_request {this, flame::this_fiber(), bson_new()};
+		collection_request* cq = new collection_request
+			{this, flame::this_fiber(), bson_new(), nullptr};
 		cq->req.data = cq;
-		fill_bson_with(cq->doc1, arr);
+		fill_bson_with(cq->doc1, doc);
+		flame::this_fiber()->push();
 		uv_queue_work(flame::loop, &cq->req, insert_one_wk, default_cb);
 		return flame::async();
 	}
@@ -102,9 +109,15 @@ namespace mongodb {
 		if(params.length() >= 2) {
 			ordered = params[2].is_true();
 		}
-		collection_request* cq = new collection_request
-			{ this, flame::this_fiber(), nullptr, nullptr,
-			mongoc_collection_create_bulk_operation(collection_, ordered, nullptr) };
+		collection_request* cq = new collection_request {
+			this,
+			flame::this_fiber(),
+			nullptr, nullptr,
+			mongoc_collection_create_bulk_operation(
+				collection_,
+				ordered,
+				mongoc_client_get_write_concern(cq->self->client_)),
+		};
 		cq->req.data = cq;
 		for(auto i=arr.begin(); i!= arr.end(); ++i) {
 			if(!i->second.is_array()) {
@@ -122,10 +135,221 @@ namespace mongodb {
 			mongoc_bulk_operation_insert(cq->bulk, &item);
 			bson_destroy(&item);
 		}
+		flame::this_fiber()->push();
 		uv_queue_work(flame::loop, &cq->req, insert_many_wk, default_cb);
 		return flame::async();
 	}
+	void collection::remove_one_wk(uv_work_t* w) {
+		collection_request* cq = reinterpret_cast<collection_request*>(w->data);
+		bson_error_t error;
+		bool r = mongoc_collection_remove(
+			cq->self->collection_,
+			MONGOC_REMOVE_SINGLE_REMOVE,
+			cq->doc1,
+			mongoc_client_get_write_concern(cq->self->client_),
+			&error);
+		bson_destroy(cq->doc1);
+		if(r) {
+			cq->rv = true;
+		}else{
+			cq->rv = php::make_exception(error.message, error.code);
+		}
+	}
+	php::value collection::remove_one(php::parameters& params) {
+		if(params.length() < 1 || !params[0].is_array()) {
+			throw php::exception("illegal selector, associate array is required");
+		}
+		collection_request* cq = new collection_request {
+			this,
+			flame::this_fiber(),
+			bson_new(),
+		};
+		cq->req.data = cq;
+		fill_bson_with(cq->doc1, params[0]);
+		flame::this_fiber()->push();
+		uv_queue_work(flame::loop, &cq->req, remove_one_wk, default_cb);
+		return flame::async();
+	}
 
+	void collection::remove_many_wk(uv_work_t* w) {
+		collection_request* cq = reinterpret_cast<collection_request*>(w->data);
+		bson_error_t error;
+		bool r = mongoc_collection_remove(
+			cq->self->collection_,
+			MONGOC_REMOVE_NONE,
+			cq->doc1,
+			mongoc_client_get_write_concern(cq->self->client_),
+			&error);
+		bson_destroy(cq->doc1);
+		if(r) {
+			cq->rv = true;
+		}else{
+			cq->rv = php::make_exception(error.message, error.code);
+		}
+	}
+	php::value collection::remove_many(php::parameters& params) {
+		if(params.length() < 1 || !params[0].is_array()) {
+			throw php::exception("illegal selector, associate array is required");
+		}
+		collection_request* cq = new collection_request
+			{ this, flame::this_fiber(), bson_new() };
+		cq->req.data = cq;
+		fill_bson_with(cq->doc1, params[0]);
+		flame::this_fiber()->push();
+		uv_queue_work(flame::loop, &cq->req, remove_many_wk, default_cb);
+		return flame::async();
+	}
+
+	void collection::update_wk(uv_work_t* w) {
+		collection_request* cq = reinterpret_cast<collection_request*>(w->data);
+		bson_error_t error;
+		bool r = mongoc_collection_update(cq->self->collection_,
+			(mongoc_update_flags_t)cq->flags,
+			cq->doc1, // filter
+			cq->doc2, // update
+			mongoc_client_get_write_concern(cq->self->client_),
+			&error);
+		bson_destroy(cq->doc1);
+		bson_destroy(cq->doc2);
+		if(r) {
+			cq->rv = true;
+		}else{
+			cq->rv = php::make_exception(error.message, error.code);
+		}
+	}
+	php::value collection::update_one(php::parameters& params) {
+		if(params.length() < 1 || !params[0].is_array()) {
+			throw php::exception("illegal selector, associate array is required");
+		}else if(params.length() < 2 || !params[1].is_array()) {
+			throw php::exception("illegal updates, associate array is required");
+		}
+		php::array& filter = params[0];
+		php::array& update = params[1];
+		if(!filter.is_a_map() || !filter.is_a_map()) {
+			throw php::exception("illegal selector/update, associate array is required");
+		}
+		collection_request* cq = new collection_request
+			{ this, flame::this_fiber(), bson_new(), bson_new(), nullptr, nullptr, MONGOC_UPDATE_NONE };
+		cq->req.data = cq;
+		fill_bson_with(cq->doc1, filter);
+		fill_bson_with(cq->doc2, update);
+		if(params.length() >= 3 && params[2].is_true()) {
+			cq->flags |= MONGOC_UPDATE_UPSERT;
+		}
+		flame::this_fiber()->push();
+		uv_queue_work(flame::loop, &cq->req, update_wk, default_cb);
+		return flame::async();
+	}
+	php::value collection::update_many(php::parameters& params) {
+		if(params.length() < 1 || !params[0].is_array()) {
+			throw php::exception("illegal selector, associate array is required");
+		}else if(params.length() < 2 || !params[1].is_array()) {
+			throw php::exception("illegal updates, associate array is required");
+		}
+		php::array& filter = params[0];
+		php::array& update = params[1];
+		if(!filter.is_a_map() || !filter.is_a_map()) {
+			throw php::exception("illegal selector/update, associate array is required");
+		}
+		collection_request* cq = new collection_request{
+			this,
+			flame::this_fiber(),
+			bson_new(),
+			bson_new(),
+			nullptr,
+			nullptr,
+			MONGOC_UPDATE_MULTI_UPDATE,
+		};
+		cq->req.data = cq;
+		fill_bson_with(cq->doc1, filter);
+		fill_bson_with(cq->doc2, update);
+		if(params.length() >= 3 && params[2].is_true()) {
+			cq->flags |= MONGOC_UPDATE_UPSERT;
+		}
+		flame::this_fiber()->push();
+		uv_queue_work(flame::loop, &cq->req, update_wk, default_cb);
+		return flame::async();
+	}
+
+	void collection::find_one_wk(uv_work_t* w) {
+		collection_request* cq = reinterpret_cast<collection_request*>(w->data);
+		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(cq->self->collection_,
+			cq->doc1, // query
+			cq->doc2, // opts
+			cq->pref
+		);
+		bson_destroy(cq->doc1);
+		bson_destroy(cq->doc2);
+		const bson_t* doc;
+		while (mongoc_cursor_next(cs, &doc)) {
+			char* str = bson_as_canonical_extended_json (doc, NULL);
+			printf ("--> %s\n", str);
+			bson_free (str);
+		}
+		mongoc_cursor_destroy(cs);
+	}
+	php::value collection::find_one(php::parameters& params) {
+		if(params.length() < 1 && !params[0].is_array()) {
+			throw php::exception("illegal selector, associate array is required");
+		}
+		php::array opts;
+		opts["limit"] = 1;
+		if(params.length() > 1 && params[1].is_array()) {
+			opts["sort"] = params[1];
+		}
+		collection_request* cq = new collection_request
+			{ this, flame::this_fiber(), bson_new(), bson_new(), nullptr };
+		cq->req.data = cq;
+		fill_bson_with(cq->doc1, params[0]);
+		fill_bson_with(cq->doc2, opts);
+		flame::this_fiber()->push();
+		uv_queue_work(flame::loop, &cq->req, find_one_wk, default_cb);
+		return flame::async();
+	}
+
+	void collection::find_many_wk(uv_work_t* w) {
+		collection_request* cq = reinterpret_cast<collection_request*>(w->data);
+		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(cq->self->collection_,
+			cq->doc1, // query
+			cq->doc2, // fields
+			cq->pref
+		);
+		bson_destroy(cq->doc1);
+		bson_destroy(cq->doc2);
+		const bson_t* doc;
+		while (mongoc_cursor_next(cs, &doc)) {
+			char* str = bson_as_canonical_extended_json (doc, NULL);
+			printf ("--> %s\n", str);
+			bson_free (str);
+		}
+		mongoc_cursor_destroy(cs);
+	}
+	php::value collection::find_many(php::parameters& params) {
+		if(params.length() < 1 && !params[0].is_array()) {
+			throw php::exception("illegal selector, associate array is required");
+		}
+		php::array opts;
+		if(params.length() > 1 && params[1].is_array()) {
+			opts["sort"] = params[1];
+		}
+		if(params.length() > 2) {
+			opts["skip"] = params[2].to_long();
+		}
+		if(params.length() > 3) {
+			opts["limit"]  = params[3].to_long();
+		}
+		if(params.length() > 4 && params[4].is_array()) {
+			opts["projection"] = params[4];
+		}
+		collection_request* cq = new collection_request
+			{ this, flame::this_fiber(), bson_new(), bson_new(), nullptr };
+		cq->req.data = cq;
+		fill_bson_with(cq->doc1, params[0]);
+		fill_bson_with(cq->doc2, opts);
+		flame::this_fiber()->push();
+		uv_queue_work(flame::loop, &cq->req, find_many_wk, default_cb);
+		return flame::async();
+	}
 }
 }
 }

@@ -10,17 +10,31 @@ namespace mongodb {
 		php::value count(php::parameters& params);
 		php::value insert_one(php::parameters& params);
 		php::value insert_many(php::parameters& params);
+		php::value remove_one(php::parameters& params);
+		php::value remove_many(php::parameters& params);
+		php::value update_one(php::parameters& params);
+		php::value update_many(php::parameters& params);
+		php::value find_one(php::parameters& params);
+		php::value find_many(php::parameters& params);
 	private:
-		php::object          client_;
+		php::object          client_object;
+		mongoc_client_t*     client_;
 		mongoc_collection_t* collection_ = nullptr;
-		inline void init(const php::object& client, mongoc_collection_t* collection) {
-			client_ = client;
-			collection_ = collection;
+		inline void init(const php::object& client_object,
+			mongoc_client_t* client, mongoc_collection_t* collection) {
+			this->client_object = client_object;
+			this->client_       = client;
+			this->collection_   = collection;
 		}
 		static void default_cb(uv_work_t* w, int status);
 		static void count_wk(uv_work_t* w);
 		static void insert_one_wk(uv_work_t* w);
 		static void insert_many_wk(uv_work_t* w);
+		static void remove_one_wk(uv_work_t* w);
+		static void remove_many_wk(uv_work_t* w);
+		static void update_wk(uv_work_t* w);
+		static void find_one_wk(uv_work_t* w);
+		static void find_many_wk(uv_work_t* w);
 		friend class client;
 	};
 }

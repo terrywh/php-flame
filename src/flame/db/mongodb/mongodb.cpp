@@ -70,6 +70,12 @@ namespace mongodb {
 		class_collection.add<&collection::count>("count");
 		class_collection.add<&collection::insert_one>("insert_one");
 		class_collection.add<&collection::insert_many>("insert_many");
+		class_collection.add<&collection::remove_one>("remove_one");
+		class_collection.add<&collection::remove_many>("remove_many");
+		class_collection.add<&collection::update_one>("update_one");
+		class_collection.add<&collection::update_many>("update_many");
+		class_collection.add<&collection::find_one>("find_one");
+		class_collection.add<&collection::find_many>("find_many");
 		ext.add(std::move(class_collection));
 	}
 

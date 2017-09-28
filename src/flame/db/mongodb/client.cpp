@@ -40,7 +40,7 @@ namespace mongodb {
 		mongoc_collection_t* mcol = mongoc_client_get_collection(client_, mongoc_uri_get_database(uri_), name.c_str());
 		php::object pcol = php::object::create<mongodb::collection>();
 		mongodb::collection* ncol = pcol.native<mongodb::collection>();
-		ncol->init(obj(), mcol);
+		ncol->init(obj(), client_, mcol);
 		return std::move(pcol);
 	}
 }
