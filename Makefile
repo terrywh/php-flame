@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=0.10.2
+EXT_VER=0.11.0
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.19-test
@@ -23,6 +23,7 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/kv-parser/kv_parser.o \
  ./deps/libphpext/libphpext.a \
  ./deps/libuv/.libs/libuv.a \
+ ./deps/fmt/fmt/libfmt.a \
  ./deps/curl/lib/.libs/libcurl.a \
  ./deps/hiredis/libhiredis.a \
  ./deps/nghttp2/bin/lib/libnghttp2.a \
@@ -31,7 +32,12 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/mongo-c-driver/bin/lib/libsnappy.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
-SOURCES=$(shell find ./src -name "*.cpp")
+# SOURCES=$(shell find ./src -name "*.cpp")
+SOURCES=$(shell find ./src/util -name "*.cpp") ./src/extension.cpp \
+ ./src/flame/flame.cpp ./src/flame/coroutine.cpp \
+ ./src/flame/process.cpp ./src/flame/process_master.cpp ./src/flame/process_worker.cpp \
+ ./src/flame/pipe_worker.cpp \
+ ./src/flame/time/time.cpp ./src/flame/time/ticker.cpp
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程
@@ -80,6 +86,8 @@ install: ${EXTENSION}
 	make -C ./deps/kv-parser all
 ./deps/fastcgi-parser/fastcgi_parser.o:
 	make -C ./deps/fastcgi-parser all
+./deps/buffer-queue/buffer_queue.o:
+	make -C ./deps/buffer-queue all
 ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a: ./deps/mongo-c-driver/src/libbson/autogen.sh
 	cd ./deps/mongo-c-driver; chmod +x ./autogen.sh; chmod +x ./src/libbson/autogen.sh;
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
@@ -90,7 +98,14 @@ install: ${EXTENSION}
 ./deps/mongo-c-driver/src/libbson/autogen.sh:
 	cd ./deps/mongo-c-driver; git submodule update --init;
 	cd ./deps/mongo-c-driver/src/libbson; ln -s README.rst README
-
+./deps/libev/.libs/libev.a:
+	cd ./deps/libev; chmod +x ./autogen.sh; ./autogen.sh
+	CFLAGS=-fPIC ./configure --disable-shared
+	make -C ./deps/libev -j2
+	cd ./deps/libev; find -type l | xargs rm
+./deps/fmt/fmt/libfmt.a:
+	cmake -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPICCMAKE_CXX_FLAGS ./deps/fmt
+	make -C ./deps/fmt -j2
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:

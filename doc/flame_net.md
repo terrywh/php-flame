@@ -66,23 +66,34 @@
 #### `string udp_socket::$local_address`
 本地网络地址
 
+#### `string udp_socket::$remote_address`
+当成功接收数据后 `yield recv()`，保存数据来源地址
+
+#### `string udp_socket::$remote_port`
+当成功接收数据后 `yield recv()`，保存数据来源端口
+
 #### `udp_socket::bind(string addr, long port)`
 将当前对象绑定到指定的地址、端口；绑定后，可以接收来自这个地址、端口的数据；
 
 **注意**：
-* 下述 `recv_from()` 和 `send_to()` 函数会在未绑定地址、端口时，自动进行绑定；
+* 下述 `recv()` 和 `send()` 函数会在未绑定地址、端口时，自动进行绑定；
 
-#### `yield udp_socket::recv_from(string& addr, long& port)`
-接收来自某地址、端口的数据，来源方地址信息保存在 `addr`, `port` 中；两项参数均可选；
+#### `yield udp_socket::recv()`
+接收数据，设置 udp_socket::$remote_address/$remote_port 属性，并返回接收到的数据；若当前套接字被关闭，将返回 `NULL`；
 
 **注意**：
+* 仅允许唯一的协程调用上述 `recv()` 过程；多个协程调用可能引起未定义的错误；
 * 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
 
-#### `yield udp_socket::send_to(string data, string addr, long port)`
-向指定 `addr` 地址，`port` 端口发送指定 `data` 内容
+#### `yield udp_socket::send(string $data, string $addr, integer $port)`
+向指定 `$addr` 地址，`$port` 端口发送指定 `$data` 内容
+
 
 **注意**:
 * 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
+
+#### `yield udp_socket::close()`
+关闭当前 `udp_socket`，所有异步过程将被终止；
 
 ### `class flame\net\unix_server`
 实现基于 UnixSocket 的网络服务器；除下述 `bind()` 函数外接口形式与 `tcp_server` 一致；
@@ -94,5 +105,5 @@
 绑定到指定路径并生成 UnixSocket 文件；
 
 **注意**：
-* 若指定路径文件已存在，会发生错误；
+* 若指定路径文件已存在，会被删除并重新创建并绑定（框架多进程会自动适配，仅进行一次绑定）；
 * 生成的文件遵循默认的文件权限，如果需要请使用 `chmod()` 等函数自行更改；

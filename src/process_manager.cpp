@@ -196,74 +196,7 @@ namespace flame {
 		}
 		send_to_worker(key, handle, cb, data, worker_i);
 	}
-	void process_manager::worker_read_cb(uv_stream_t* stream, ssize_t n, const uv_buf_t* buf) {
-		if(n < 0) {
-			if(n == UV_EOF || n == UV_ECANCELED) { // 主进程关闭通道
-				worker_kill_cb(nullptr, SIGTERM);
-			}else{
-				php::fail("worker recv failed: (%d) %s", n, uv_strerror(n));
-				uv_close(reinterpret_cast<uv_handle_t*>(stream), nullptr);
-				exit(-1);
-			}
-		}else if(n == 0) {
-			return;
-		}
-		ssize_t i=0;
-		while(i<n) {
-			char c = buf->base[i];
-			switch(manager->pipe_status) {
-			case PS_TYPE: // 初始状态（类型标识）
-				manager->pipe_buffer.reset();
-				if(c == 's') {
-					manager->pipe_status = PS_PIPE_BEG;
-				}else if(c == 't') {
-					manager->pipe_status = PS_TEXT_BEG;
-				}else{
-					php::fail("illegal pipe data");
-					uv_stop(flame::loop);
-					goto PARSE_BREAK;
-				}
-				break;
-			case PS_PIPE_BEG:
-				manager->pipe_status = PS_PIPE_KEY;
-				break;
-			case PS_PIPE_KEY:
-				if(c == '\n') {
-					manager->pipe_status = PS_PIPE;
-					goto PARSE_SKIP;
-				}else{
-					*manager->pipe_buffer.put(1) = c;
-				}
-				break;
-			case PS_PIPE:
-				manager->stream_handler();
-				manager->pipe_status = PS_TYPE;
-				break;
-			case PS_TEXT_BEG:
-				manager->pipe_status = PS_TEXT;
-				break;
-			case PS_TEXT_DATA:
-				if(c == '\n') {
-					manager->pipe_status = PS_TEXT;
-					goto PARSE_SKIP;
-				}else{
-					*manager->pipe_buffer.put(1) = c;
-				}
-				break;
-			case PS_TEXT:
-				manager->message_handler();
-				manager->pipe_status = PS_TYPE;
-				break;
-			}
-PARSE_NEXT:
-			++i;
-			continue;
-PARSE_BREAK:
-			break;
-PARSE_SKIP:
-			continue;
-		}
-	}
+
 	void process_manager::set_connection_cb(const std::string& key, pipe_connection_cb cb, void* data) {
 		pipe_connection_ctx& ctx = pipe_cctx[key];
 		ctx.data = data;

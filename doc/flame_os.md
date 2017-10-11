@@ -39,3 +39,6 @@ $proc = flame\os\start_process("ping", ["www.baidu.com"], ["ENV_KEY_1"=>"ENV_VAL
 
 ##### `yield function process::wait()`
 等待当前进程结束
+
+**注意**：
+* 只能够在一个协程中调用 `yield $proc->wait()` 否则会导致协程僵死；
