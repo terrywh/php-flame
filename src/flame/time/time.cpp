@@ -18,7 +18,7 @@ namespace time {
 		// default_timer_cb -> 继续协程 删除 context 对象
 		uv_timer_start(ctx->watcher(), sleep_timer_cb, ms, 0);
 		// 标记异步任务的特殊返回值
-		return flame::async(ctx);
+		return flame::async();
 	}
 	// 示例：包裹 sleep 异步函数
 	// -------------------------------------------------------------------------
@@ -28,7 +28,7 @@ namespace time {
 	static php::value sleep_wrapper(php::parameters& params) {
 		sleep(params);
 		coroutine::current->yield(sleep2_timer_cb);
-		return flame::async(nullptr);
+		return flame::async();
 	}
 	// -------------------------------------------------------------------------
 

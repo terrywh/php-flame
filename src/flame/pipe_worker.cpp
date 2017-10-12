@@ -8,6 +8,8 @@ namespace flame {
 		proc_.data = this;
 		uv_timer_init(flame::loop, &timer_);
 		timer_.data = this;
+		// 用于标识启动状态
+		pipe_.data = nullptr;
 	}
 	void pipe_worker::start() {
 		char* argv[3];
@@ -61,5 +63,29 @@ namespace flame {
 	void pipe_worker::on_worker_restart(uv_timer_t* handle) {
 		pipe_worker* w = static_cast<pipe_worker*>(handle->data);
 		w->start();
+	}
+	void pipe_worker::on_send(uv_write_t* handle, int status) {
+		// send_context_t* ctx = static_cast<send_context_t*>(handle->data);
+		free(handle->data);
+	}
+	void pipe_worker::send(const std::string& msg, uv_stream_t* ss) {
+		if(pipe_.data == nullptr) {
+			throw php::exception("unable to send message, worker not started");
+		}
+		send_context_t* ctx = (send_context_t*)malloc(sizeof(send_context_t) + 4 + msg.length());
+		ctx->self = this;
+		ctx->req.data = ctx;
+		*reinterpret_cast<uint16_t*>(ctx->buf)  = msg.length();
+		// 消息格式暂定如下：
+		// | 2byte | 1byte | 1byte     | size byte |
+		// | size  | type  | reserved  | payload   |
+		// 类型 type 定义如下：
+		// | 0        | 1          |
+		// | 普通消息 | 传递套接字 |
+		*reinterpret_cast<uint8_t*>(ctx->buf+2) = ss == nullptr ? 0 : 1;
+		std::memcpy(ctx->buf + 4, msg.data(), msg.length());
+
+		uv_buf_t buf {.base = ctx->buf, .len = 4 + msg.length()};
+		uv_write2(&ctx->req, reinterpret_cast<uv_stream_t*>(&pipe_), &buf, 1, ss, on_send);
 	}
 }
