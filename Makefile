@@ -37,7 +37,9 @@ SOURCES=$(shell find ./src/util -name "*.cpp") ./src/extension.cpp \
  ./src/flame/flame.cpp ./src/flame/coroutine.cpp \
  ./src/flame/process.cpp ./src/flame/process_master.cpp ./src/flame/process_worker.cpp \
  ./src/flame/pipe_worker.cpp \
- ./src/flame/time/time.cpp ./src/flame/time/ticker.cpp
+ ./src/flame/time/time.cpp ./src/flame/time/ticker.cpp \
+ ./src/flame/os/os.cpp ./src/flame/os/process.cpp \
+ ./src/flame/db/db.cpp ./src/flame/db/redis.cpp
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程

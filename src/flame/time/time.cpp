@@ -4,13 +4,11 @@
 
 namespace flame {
 namespace time {
-
 	static void sleep_timer_cb(uv_timer_t* handle) {
 		auto ctx = static_cast<coroutine_context<uv_timer_t, void>*>(handle->data);
 		ctx->routine()->next();
 		delete ctx;
 	}
-
 	static php::value sleep(php::parameters& params) {
 		auto ctx = new coroutine_context<uv_timer_t, void>(coroutine::current, nullptr);
 		int64_t ms = params[0];
@@ -31,11 +29,9 @@ namespace time {
 		return flame::async();
 	}
 	// -------------------------------------------------------------------------
-
 	static php::value now(php::parameters& params) {
 		return now();
 	}
-
 	static int64_t real_time_diff;
 	void init(php::extension_entry& ext) {
 		uv_update_time(flame::loop);
@@ -55,7 +51,6 @@ namespace time {
 		ext.add<flame::time::tick>("flame\\time\\tick");
 		ext.add<flame::time::after>("flame\\time\\after");
 	}
-
 	int64_t now() {
 		// 代价较每次取系统时间要低一些
 		return uv_now(flame::loop) - real_time_diff;

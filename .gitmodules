@@ -37,9 +37,7 @@
 [submodule "deps/buffer-queue"]
 	path = deps/buffer-queue
 	url = https://github.com/terrywh/buffer-queue.git
-[submodule "deps/libev"]
-	path = deps/libev
-	url = https://git.lighttpd.net/libev.git
+	ignore = dirty
 [submodule "deps/fmt"]
 	path = deps/fmt
 	url = https://github.com/fmtlib/fmt.git

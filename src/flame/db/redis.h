@@ -1,16 +1,16 @@
-//#define MY_DEBUG
-
-// 所有导出到 PHP 的函数必须符合下面形式：
-// php::value fn(php::parameters& params);
+#pragma once
 
 namespace flame {
+class coroutine;
+
 namespace db {
 
 class redis: public php::class_base {
 public:
 	typedef struct {
 		redis*                  self;
-		flame::fiber*          fiber;
+		flame::coroutine*         co;
+		php::value               ref;
 		std::vector<php::string> key;
 		php::callable             cb;
 	} redisRequest; // 由于特殊使用方式，这里借鉴 hiredis 命名
@@ -28,15 +28,15 @@ public:
 	php::value subscribe(php::parameters& params);
 private:
 	redisAsyncContext *context_;
-
+	coroutine         *connect_;
 	php::string host_;
 	int         port_;
 	uv_timer_t  connect_interval;
 	void connect();
 	static void cb_connect_interval(uv_timer_t* tm);
 	void close();
-	void command(const php::string& cmd, php::parameters& params, int start, int offset, redisCallbackFn* fn, const php::value& cb = nullptr);
-
+	void exec(const php::string& cmd, php::parameters& params, int start, int offset, redisCallbackFn* fn, const php::value& cb = nullptr);
+	static void cb_connect_timeout(uv_timer_t* tm);
 	static void cb_connect(const redisAsyncContext *c, int status);
 	static void cb_disconnect(const redisAsyncContext *c, int status);
 	static void cb_dummy(redisAsyncContext *c, void *r, void *privdata);

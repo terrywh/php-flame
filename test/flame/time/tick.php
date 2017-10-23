@@ -1,4 +1,5 @@
 <?php
+flame\init("time_tick_test");
 flame\go(function() {
 	$count = 0;
 	$tick = new flame\time\ticker(1000/*, true */);

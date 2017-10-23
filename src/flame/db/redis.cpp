@@ -1,4 +1,4 @@
-#include "../fiber.h"
+#include "../coroutine.h"
 #include "redis.h"
 
 namespace flame {
@@ -43,9 +43,8 @@ void redis::cb_default(redisAsyncContext *c, void *r, void *privdata) {
 	redis*       self = reinterpret_cast<redis*>(c->data);
 	redisReply* reply = reinterpret_cast<redisReply*>(r);
 	redisRequest* req = reinterpret_cast<redisRequest*>(privdata);
-
 	php::value     rv = convert_redis_reply(reply);
-	req->fiber->next(rv);
+	req->co->next(rv);
 	delete req;
 }
 
@@ -55,14 +54,14 @@ void redis::cb_assoc_2(redisAsyncContext *c, void *r, void *privdata) {
 	redisRequest* req = reinterpret_cast<redisRequest*>(privdata);
 
 	if (reply == nullptr || reply->type != REDIS_REPLY_ARRAY) {
-		req->fiber->next(php::make_exception("ILLEGAL illegal reply", -2));
+		req->co->fail(php::make_exception("ILLEGAL illegal reply", -2));
 	} else {
 		php::array rv(reply->elements/2);
 		for(int i = 0; i < reply->elements; i=i+2) { // i 是 key，i+1 就是value
 			const char* key = reply->element[i]->str;
 			rv[key] = convert_redis_reply(reply->element[i+1]);
 		}
-		req->fiber->next(std::move(rv));
+		req->co->next(std::move(rv));
 	}
 	delete req;
 }
@@ -74,14 +73,14 @@ void redis::cb_assoc_1(redisAsyncContext *c, void *r, void *privdata) {
 
 
 	if (reply == nullptr || reply->type != REDIS_REPLY_ARRAY) {
-		req->fiber->next(php::make_exception("ILLEGAL illegal reply", -2));
+		req->co->fail(php::make_exception("ILLEGAL illegal reply", -2));
 	} else {
 		php::array rv(reply->elements);
 		for(int i = 0; i < reply->elements; ++i) {
 			php::string& key = req->key[i];
 			rv[key.c_str()]  = convert_redis_reply(reply->element[i]);
 		}
-		req->fiber->next(std::move(rv));
+		req->co->next(std::move(rv));
 	}
 	delete req;
 }
@@ -96,7 +95,7 @@ void redis::cb_subscribe(redisAsyncContext *c, void *r, void *privdata) {
 		php::array& arr = rv;
 		req->cb(arr[1], arr[2]);
 	} else {
-		req->fiber->next(php::make_exception("ILLEGAL illegal reply", -2));
+		req->co->fail(php::make_exception("ILLEGAL illegal reply", -2));
 		delete req;
 	}
 }
@@ -107,18 +106,26 @@ void redis::cb_quit(redisAsyncContext *c, void *r, void *privdata) {
 	redisRequest* req = reinterpret_cast<redisRequest*>(privdata);
 	php::value     rv = convert_redis_reply(reply);
 	self->close();
-	req->fiber->next(rv);
+	req->co->next(rv);
 }
 
 void redis::cb_connect(const redisAsyncContext *c, int status) {
+	std::printf("cb_connect\n");
 	if (status != REDIS_OK) { // TODO 错误处理？
 		std::printf("error: redis failed with '%s'\n", c->errstr);
 		return;
+	}
+	redis* self = static_cast<redis*>(c->data);
+	// 连接建立的过程
+	if(self->connect_ != nullptr) {
+		self->connect_->next();
+		self->connect_ = nullptr;
 	}
 }
 
 void redis::cb_disconnect(const redisAsyncContext *c, int status) {
 	redis* self = reinterpret_cast<redis*>(c->data);
+	std::printf("disconnected\n");
 	if (status != REDIS_OK) { // TODO 错误处理？
 		std::printf("error: redis failed with '%s'\n", c->errstr);
 		return;
@@ -160,12 +167,29 @@ void redis::connect() {
 	redisAsyncSetConnectCallback(context_, cb_connect);
 	redisAsyncSetDisconnectCallback(context_, cb_disconnect);
 }
+void redis::cb_connect_timeout(uv_timer_t* tm) {
+	redis* self = static_cast<redis*>(tm->data);
+	if(self->connect_ != nullptr) {
+		redisAsyncDisconnect(self->context_);
+		self->context_ = nullptr;
 
+		self->connect_->fail("redis connect timeout");
+		self->connect_ = nullptr;
+	}
+}
 php::value redis::connect(php::parameters& params) {
 	host_ = params[0];
 	port_ = params[1];
+	int timeout = 2500;
+	if(params.length() > 2) {
+		timeout = params[2];
+	}
 	connect();
-	return nullptr;
+	connect_ = flame::coroutine::current;
+	uv_timer_stop(&connect_interval);
+
+	uv_timer_start(&connect_interval, cb_connect_timeout, timeout, 0);
+	return flame::async();
 }
 
 php::value redis::close(php::parameters& params) {
@@ -187,22 +211,22 @@ php::value redis::__call(php::parameters& params) {
 		args.push_back(static_cast<zval&>(i->second));
 	}
 	php::parameters argx(args.size(), args.data());
-	command(params[0], argx, 0, params.length(), cb_default);
+	exec(params[0], argx, 0, params.length(), cb_default);
 	return flame::async();
 }
 
 php::value redis::hgetall(php::parameters& params) {
-	command(php::string("HGETALL", 7), params, 0, params.length(), cb_assoc_2);
+	exec(php::string("HGETALL", 7), params, 0, params.length(), cb_assoc_2);
 	return flame::async();
 }
 
 php::value redis::hmget(php::parameters& params) {
-	command(php::string("HMGET", 5), params, 0, 1, cb_assoc_1);
+	exec(php::string("HMGET", 5), params, 0, 1, cb_assoc_1);
 	return flame::async();
 }
 
 php::value redis::mget(php::parameters& params) {
-	command(php::string("MGET", 4), params, 0, 0, cb_assoc_1);
+	exec(php::string("MGET", 4), params, 0, 0, cb_assoc_1);
 	return flame::async();
 }
 
@@ -210,20 +234,21 @@ php::value redis::subscribe(php::parameters& params) {
 	if(!params[0].is_callable()) {
 		throw php::exception("callback is required");
 	}
-	command(php::string("SUBSCRIBE",9), params, 1, params.length(), cb_subscribe, params[0]);
+	exec(php::string("SUBSCRIBE",9), params, 1, params.length(), cb_subscribe, params[0]);
 	return flame::async();
 }
 
 php::value redis::quit(php::parameters& params) {
-	command(php::string("QUIT",4), params, params.length(), params.length(), cb_quit);
+	exec(php::string("QUIT",4), params, params.length(), params.length(), cb_quit);
 	return flame::async();
 }
 
-void redis::command(const php::string& cmd, php::parameters& params, int start, int offset, redisCallbackFn* fn, const php::value& cb) {
+void redis::exec(const php::string& cmd, php::parameters& params, int start, int offset, redisCallbackFn* fn, const php::value& cb) {
 	// TODO 命令超时？
 	redisRequest* req = new redisRequest;
-	req->cb = cb;
-	req->fiber = flame::this_fiber()->push();
+	req->cb  = cb;
+	req->co  = flame::coroutine::current;
+	req->ref = this; // 当前对象的引用
 	std::vector<const char*> argv;
 	std::vector<size_t>      argl;
 	argv.push_back(cmd.c_str());
@@ -239,7 +264,7 @@ void redis::command(const php::string& cmd, php::parameters& params, int start, 
 	int error = redisAsyncCommandArgv(context_, fn, req, argv.size(), argv.data(), argl.data());
 	if(error != 0) {
 		delete req;
-		flame::this_fiber()->throw_exception("UNKONWN failed to send command (disconnected ? subscribed ?)");
+		flame::coroutine::current->fail("UNKONWN failed to send command (disconnected ? subscribed ?)");
 	}
 }
 

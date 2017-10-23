@@ -15,6 +15,7 @@
 
 **注意**：
 * 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
+* 嵌套异步 `Generator` 也可使用 `yield` 关键字直接调用，而不需要使用 `yield from`；
 
 ## `namespace flame`
 

@@ -21,11 +21,9 @@ namespace flame {
 		}
 		return process_self;
 	}
-
 	void process::init() {
 
 	}
-
 	void process::run() {
 		uv_run(flame::loop, UV_RUN_DEFAULT);
 	}

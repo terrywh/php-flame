@@ -1,6 +1,7 @@
 <?php
+flame\init("process_test");
 flame\go(function() {
-	$proc = flame\os\start_process("/usr/bin/ping", ["www.baidu.com"], [
+	$proc = flame\os\spawn("/usr/bin/ping", ["www.baidu.com"], [
 		"PATH"=>"/usr/bin",
 		"ENV_KEY_1"=>"ENV_VAL_1"
 	], "/tmp", [

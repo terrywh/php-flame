@@ -1,4 +1,4 @@
-#include "../fiber.h"
+#include "../coroutine.h"
 #include "process.h"
 
 namespace flame {
@@ -61,10 +61,10 @@ namespace os {
 			}
 		}
 	}
-	php::value start_process(php::parameters& params) {
+	php::value spawn(php::parameters& params) {
 		uv_process_options_t options;
 		std::memset(&options, 0, sizeof(uv_process_options_t));
-		options.exit_cb = process::on_exit_cb;
+		options.exit_cb = process::exit_cb;
 		// 1. file
 		php::string& file = params[0];
 		options.file = file.data();
@@ -95,42 +95,43 @@ namespace os {
 		if(options.flags & UV_PROCESS_DETACHED) {
 			proc_->detach_ = true;
 		}
-		int error = uv_spawn(flame::loop, &proc_->handle_, &options);
+		int error = uv_spawn(flame::loop, &proc_->proc_, &options);
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
+		proc.prop("pid") = proc_->proc_.pid;
 		options_stdio_close(options);
 		return std::move(proc);
 	}
 	process::process()
 	: exit_(false)
 	, detach_(false)
-	, fiber_(nullptr) {
-		handle_.data = this;
+	, co_(nullptr) {
+		proc_.data = this;
 	}
 	process::~process() {
 		// 还未退出 而且 未分离父子进程 需要结束进程
-		if(!exit_ && !detach_) uv_process_kill(&handle_, SIGKILL);
+		if(!exit_ && !detach_) uv_process_kill(&proc_, SIGKILL);
 	}
 	php::value process::kill(php::parameters& params) {
 		int s = SIGTERM;
 		if(params.length() > 0) {
 			s = params[0];
 		}
-		uv_process_kill(&handle_, s);
+		uv_process_kill(&proc_, s);
 		return nullptr;
 	}
 	php::value process::wait(php::parameters& params) {
 		if(exit_) return nullptr;
-		fiber_ = flame::this_fiber()->push();
+		co_ = coroutine::current;
 		return flame::async();
 	}
-	void process::on_exit_cb(uv_process_t* handle, int64_t exit_status, int signal) {
+	void process::exit_cb(uv_process_t* handle, int64_t exit_status, int signal) {
 		process* proc = reinterpret_cast<process*>(handle->data);
 		proc->exit_ = true;
-		if(proc->fiber_ != nullptr) {
-			proc->fiber_->next(nullptr);
-			proc->fiber_ = nullptr;
+		if(proc->co_ != nullptr) {
+			proc->co_->next();
+			proc->co_ = nullptr;
 		}
 	}
 }

@@ -5,9 +5,12 @@ namespace flame {
 	// 包裹一个 generator function 以构建“协程”
 	class coroutine {
 	private:
-		coroutine(): status_(0) {}
+		coroutine(coroutine* parent);
+		~coroutine();
+		uv_async_t             handler_; // 保持引用，同步过程需要用这个 handler_ 保持 loop 的活跃
 		int                    status_;
 		php::generator         generator_;
+		coroutine*             parent_;
 		typedef void (*callback_t)(php::value& rv, coroutine* co, void* data);
 		typedef struct stack_t {
 			callback_t cb;
@@ -24,19 +27,20 @@ namespace flame {
 
 		template <typename ...Args>
 		static bool start(php::callable& cb, const Args&... argv) {
-			coroutine* old = current;
-			current = new coroutine();
 			php::value gen = cb(argv...);
 			if(gen.is_generator()) {
-				current->generator_ = std::move(gen);
-				current->run();
-				current = old;
+				start(nullptr, std::move(gen));
 				return true;
 			}else{
-				delete current;
-				current = old;
 				return false;
 			}
+		}
+		static void start(coroutine* parent, php::value&& gen) {
+			coroutine* old = current;
+			current = new coroutine(parent);
+			current->generator_ = std::move(gen);
+			current->run();
+			current = old;
 		}
 		inline void yield(callback_t cb, void* data = nullptr) {
 			yields_.push_back(stack_t {.cb = cb, .data = data});
@@ -45,11 +49,24 @@ namespace flame {
 		void yield(K* k) {
 			yields_.push_back(stack_t {.cb = method_wrapper<K, method>, .data = k});
 		}
-		void next(php::value&& rv);
-		void next();
+		void next(php::value& rv);
+		inline void next(php::value&& rv) {
+			php::value val(rv);
+			next(val);
+		}
+		void next() {
+			php::value val(nullptr);
+			next(val);
+		}
 		void fail(const php::exception& ex);
+		inline void fail(const std::string& ex, int code = 0) {
+			fail(php::exception(ex, code));
+		}
 		static void default_close_cb(uv_handle_t* handle);
 		static void prepare();
+
+		friend php::value async();
+		friend php::value async(void* context);
 	};
 
 	template <typename uv_type_t, typename my_type_t>

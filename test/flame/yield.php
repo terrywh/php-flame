@@ -1,12 +1,27 @@
 <?php
-flame\init("yield detect");
-// flame\go(function() {
-// 	flame\time\sleep(3000); // 缺少 yield 关键字（在 3000ms 后发现）
-// });
+function xx() {
+	$i = 0;
+	for($i=0;$i<5;++$i) {
+		yield flame\time\sleep(1000);
+		echo "xx: ", $i, "\n";
+	}
+}
+function yy() {
+	$i = 0;
+	for($i=0;$i<5;++$i) {
+		yield flame\time\sleep(1000);
+		echo "yy: ", $i, "\n";
+	}
+}
+
+flame\init("yield_test");
+
 flame\go(function() {
-	echo "------------\n";
-	yield flame\time\sleep2(3000);
-	echo "============\n";
+	echo "-------\n";
+	yield xx();
+	yield yy();
+	yield flame\time\sleep(1000);
+	echo "-------\n";
 });
 
 flame\run();

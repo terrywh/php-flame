@@ -19,12 +19,13 @@
 
 #include "libphpext/phpext.h"
 #include "libuv/include/uv.h"
+#include "curl/include/curl/curl.h"
+#include "hiredis/hiredis.h"
+#include "hiredis/async.h"
+#include "hiredis/adapters/libuv.h"
+
 // #include "mongo-c-driver/bin/include/libbson-1.0/bson.h"
 // #include "mongo-c-driver/bin/include/libmongoc-1.0/mongoc.h"
-// #include "curl/include/curl/curl.h"
-// #include "hiredis/hiredis.h"
-// #include "hiredis/async.h"
-// #include "hiredis/adapters/libuv.h"
 // #include "libuv/include/uv.h"
 // #include "fastcgi-parser/fastcgi_parser.h"
 // #include "multipart-parser-c/multipart_parser.h"

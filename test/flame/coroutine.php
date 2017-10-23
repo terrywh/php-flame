@@ -1,7 +1,7 @@
 <?php
 // 进程名称将被设置为：（不含引号）
 // "coroutine test (flame-master)"
-flame\init("coroutine test");
+flame\init("coroutine_test");
 // 第一个协程
 flame\go(function() {
 	for($i=0;$i<10;++$i) {

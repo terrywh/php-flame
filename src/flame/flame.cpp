@@ -2,8 +2,8 @@
 #include "process.h"
 
 namespace flame {
-	static bool initialized = false;
-	
+	static int status = 0;
+
 	static void init_opts(php::array& opts) {
 		php::value* worker_count = opts.find("worker");
 		if(worker_count != nullptr && worker_count->is_long()) {
@@ -20,15 +20,17 @@ namespace flame {
 		if(params.length() > 1) {
 			init_opts(params[1]);
 		}
-		initialized = true;
+		status |= 0x01;
 		return nullptr;
 	}
 	php::value go(php::parameters& params) {
-		if(!initialized) throw php::exception("flame not yet initialized");
+		if((status & 0x01) < 0x01) throw php::exception("flame not yet initialized");
+		status |= 0x02;
 		return coroutine::start(static_cast<php::callable&>(params[0]));
 	}
 	php::value run(php::parameters& params) {
-		if(!initialized) throw php::exception("flame not yet initialized");
+		if((status & 0x02) < 0x02) throw php::exception("flame needs at least one coroutine, forget to 'flame\\go()' ?");
+		status |= 0x04;
 		process_self->run();
 
 		return nullptr;
@@ -38,6 +40,13 @@ namespace flame {
 		coroutine::prepare();
 		// 进程控制
 		process::prepare()->init();
+		ext.on_request_shutdown([] (php::extension_entry& ext) -> bool {
+			if((status & 0x04) < 0x04) {
+				php::fail("flame needs to run, forget 'flame\\run()' ?");
+				return false;
+			}
+			return true;
+		});
 		// 线程辅助
 
 		// 基础函数
