@@ -88,6 +88,35 @@ yield $server->run();
 **注意**：
 * 被阻塞在 `run()` 的协程会恢复执行；
 
+### `class flame\net\unix_socket`
+封装基于 UnixSocket 的客户端 API
+
+#### `unix_socket::$remote_address`
+远端地址，即连接的目标服务端 UnixSocket 路径地址；
+
+#### `yield unix_socket::connect(string $path)`
+连接指定路径对应的远端 UnixSocket；
+
+#### `yield unix_socket::read([mixed $completion])`
+从当前对象中读取数据，可选的指定读取数据的“结束条件”，支持以下三种用法：
+1. 不指定结束条件，读取随机长度的数据（一般不会超过 2048 字节）；
+2. 数值，读取指定长度的数据；
+3. 字符串，读取到指定的结束符号；
+
+**示例**：
+``` PHP
+<?php
+// ...
+$data = yield $sock->read(4); // $data = "abcd";
+$data = yield $sock->read("\n"); // $data = "aaaaaaa\n";
+$data = yield $sock->read(); // $data = "aaaaa";
+```
+
+#### `yield unix_socket::write(string $data)`
+想当前套接字写入（发送）指定数据；
+
+#### `unix_socket::close()`
+关闭当前套接字对象；（已安排的异步动作会继续进行，完成后关闭）
 
 ### `class flame\net\tcp_socket`
 提供 TCP 协议的网络连接对象的封装

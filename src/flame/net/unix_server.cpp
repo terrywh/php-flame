@@ -45,6 +45,7 @@ namespace net {
 			self->co_->fail(uv_strerror(error), error);
 			return;
 		}
+		cli.prop("remote_address") = self->prop("local_address");
 		coroutine::start(self->handle_, std::move(cli));
 	}
 }
