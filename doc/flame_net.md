@@ -38,6 +38,57 @@
 #### `udp_socket::close()`
 关闭当前 `udp_socket`，所有异步过程将被终止；
 
+### `class flame\net\unix_server`
+实现基于 UnixSocket 的网络服务器；
+
+#### `string unix_server::$local_address`
+本地监听地址
+
+#### `unix_server::handle(callable $cb)`
+设置服务处理回调，在服务端接收到新连接时回调该函数；原型如下：
+
+``` PHP
+<?php
+// $socket instanceof flame\net\unix_socket
+function callback($socket) {
+	// $socket->read()
+}
+```
+
+**示例**：
+``` PHP
+<?php
+// ...
+$server = new flame\net\unix_server();
+@unlink("/data/sockets/flame.sock");
+$server->bind("/data/sockets/flame.sock");
+$server->handle(function($sock) {
+	var_dump($sock->read(4));
+});
+yield $server->run();
+// ...
+```
+
+#### `unix_server::bind(string $path)`
+绑定到指定路径并生成 UnixSocket 文件；
+
+**注意**：
+* 若指定路径文件已存在，则无法绑定（即禁止同时监听同一 Socket 文件，）；请先删除现有监听文件；
+* 生成的文件遵循默认的文件权限，如果需要请使用 `chmod()` 等函数自行更改；
+
+#### `yield unix_server::run()`
+启动并运行当前服务器
+
+**注意**：
+* 运行服务器会阻塞当前协程；
+
+#### `unix_server::close()`
+若当前服务器在运行中，关闭服务器
+
+**注意**：
+* 被阻塞在 `run()` 的协程会恢复执行；
+
+
 ### `class flame\net\tcp_socket`
 提供 TCP 协议的网络连接对象的封装
 
@@ -93,16 +144,3 @@
 
 **注意**：
 * 阻塞在 `run()` 函数的服务器协程会在调用本函数后恢复运行；
-
-### `class flame\net\unix_server`
-实现基于 UnixSocket 的网络服务器；除下述 `bind()` 函数外接口形式与 `tcp_server` 一致；
-
-#### `string unix_server::$local_address`
-本地监听地址
-
-#### `unix_server::bind(string $path)`
-绑定到指定路径并生成 UnixSocket 文件；
-
-**注意**：
-* 若指定路径文件已存在，会被删除并重新创建并绑定（框架多进程会自动适配，仅进行一次绑定）；
-* 生成的文件遵循默认的文件权限，如果需要请使用 `chmod()` 等函数自行更改；

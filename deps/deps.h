@@ -19,6 +19,7 @@
 
 #include "libphpext/phpext.h"
 #include "libuv/include/uv.h"
+#include "buffer-queue/buffer_queue.h"
 #include "curl/include/curl/curl.h"
 #include "hiredis/hiredis.h"
 #include "hiredis/async.h"

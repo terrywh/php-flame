@@ -154,6 +154,7 @@ namespace os {
 	typedef struct send_request_t {
 		php::string data;
 		int         head;
+		php::value  rf;
 		uv_write_t  uv;
 	} send_request_t;
 	void process::send_cb(uv_write_t* handle, int status) {
@@ -168,6 +169,7 @@ namespace os {
 			.data = params[0],
 		};
 		req->head = req->data.length();
+		req->rf   = this; // 当前对象引用，防止丢失
 		req->uv.data = req;
 		if(params.length() > 1 && params[1].is_object()) {
 			// 理论上仅允许传递 unix_socket

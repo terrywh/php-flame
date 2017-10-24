@@ -19,6 +19,7 @@ INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./de
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
+ ./deps/buffer-queue/buffer_queue.o \
  ./deps/fastcgi-parser/fastcgi_parser.o \
  ./deps/kv-parser/kv_parser.o \
  ./deps/libphpext/libphpext.a \
@@ -39,7 +40,7 @@ SOURCES=$(shell find ./src/util -name "*.cpp") \
  $(shell find ./src/flame/time -name "*.cpp") \
  $(shell find ./src/flame/os -name "*.cpp") \
  ./src/flame/db/db.cpp ./src/flame/db/redis.cpp \
- ./src/flame/net/net.cpp ./src/flame/net/udp_socket.cpp
+ ./src/flame/net/net.cpp ./src/flame/net/udp_socket.cpp ./src/flame/net/unix_socket.cpp ./src/flame/net/unix_server.cpp
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程

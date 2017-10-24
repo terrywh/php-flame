@@ -1,32 +1,38 @@
-#include "../fiber.h"
+#include "../coroutine.h"
 #include "unix_socket.h"
 
 namespace flame {
 namespace net {
 	unix_socket::unix_socket()
-	: stream_socket(reinterpret_cast<uv_stream_t*>(&socket_)) {
-		uv_pipe_init(flame::loop, &socket_, 0);
-		// socket_.data = this;
+	: handler_(this) {
+		uv_pipe_init(flame::loop, &handler_.socket, 0);
 	}
-
+	typedef struct connect_request_t {
+		coroutine*   co;
+		// unix_server* us;
+		php::value   rf;
+		uv_connect_t uv;
+	} connect_request_t;
 	php::value unix_socket::connect(php::parameters& params) {
 		php::string path = params[0];
-		uv_connect_t* req = new uv_connect_t;
-		req->data = flame::this_fiber()->push(this);
-		uv_pipe_connect(req, &socket_, path.c_str(), connect_cb);
+		connect_request_t* ctx = new connect_request_t {
+			.co = coroutine::current,
+			// .us = this,
+			.rf = this,
+		};
+		ctx->uv.data = ctx;
+		uv_pipe_connect(&ctx->uv, &handler_.socket, path.c_str(), connect_cb);
 		prop("remote_address") = path;
 		return flame::async();
 	}
-	void unix_socket::connect_cb(uv_connect_t* req, int error) {
-		flame::fiber*  f = reinterpret_cast<flame::fiber*>(req->data);
-		unix_socket* self = f->context<unix_socket>();
-		delete req;
-
+	void unix_socket::connect_cb(uv_connect_t* handle, int error) {
+		connect_request_t* ctx = static_cast<connect_request_t*>(handle->data);
 		if(error < 0) {
-			f->next(php::make_exception(uv_strerror(error), error));
+			ctx->co->fail(uv_strerror(error), error);
 		}else{
-			f->next();
+			ctx->co->next();
 		}
+		delete ctx;
 	}
 }
 }

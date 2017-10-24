@@ -1,7 +1,8 @@
 <?php
+flame\init("unix_socket_test");
 flame\go(function() {
 	$sock = new flame\net\unix_socket();
-	yield $sock->connect("/tmp/flame.xingyan.panda.tv.sock");
+	yield $sock->connect("/data/sockets/flame.xingyan.panda.tv.sock");
 	var_dump($sock);
 	while(true) {
 		$data = yield $sock->read();
@@ -9,7 +10,7 @@ flame\go(function() {
 			break;
 		}
 		echo "=> ", $data, "\n";
-		yield $sock->write($data);			
+		yield $sock->write($data);
 	}
 });
 flame\run();
