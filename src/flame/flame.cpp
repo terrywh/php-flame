@@ -40,13 +40,6 @@ namespace flame {
 		coroutine::prepare();
 		// 进程控制
 		process::prepare()->init();
-		ext.on_request_shutdown([] (php::extension_entry& ext) -> bool {
-			if((status & 0x04) < 0x04) {
-				php::fail("flame needs to run, forget 'flame\\run()' ?");
-				return false;
-			}
-			return true;
-		});
 		// 线程辅助
 
 		// 基础函数

@@ -22,6 +22,8 @@ $proc = flame\os\spawn("ping", ["www.baidu.com"], ["ENV_KEY_1"=>"ENV_VAL_1"], "/
 	"gid" => 2017, "uid" => 2017,
 	"stdout" => "/tmp/ping.log",
 ]);
+// 上述过程也可以直接使用 process 类型的构造函数
+$proc = new flame\os\process("ping", ...);
 ```
 
 **注意**：
@@ -34,6 +36,9 @@ $proc = flame\os\spawn("ping", ["www.baidu.com"], ["ENV_KEY_1"=>"ENV_VAL_1"], "/
 
 **注意**：
 * 若启动进程时未指定 `detach` 分离父子进程，进程对象销毁将导致实际进程被强制结束；
+
+##### `process::__construct(string $exec[, array $argv[, array $env[, string $cwd[, array $opts])`
+与上述 `spawn()` 函数功能相同，请参考该函数相关说明；
 
 ##### `integer process::$pid`
 被启动的进程的进程ID；

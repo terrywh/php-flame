@@ -110,7 +110,6 @@ void redis::cb_quit(redisAsyncContext *c, void *r, void *privdata) {
 }
 
 void redis::cb_connect(const redisAsyncContext *c, int status) {
-	std::printf("cb_connect\n");
 	if (status != REDIS_OK) { // TODO 错误处理？
 		std::printf("error: redis failed with '%s'\n", c->errstr);
 		return;
@@ -125,7 +124,6 @@ void redis::cb_connect(const redisAsyncContext *c, int status) {
 
 void redis::cb_disconnect(const redisAsyncContext *c, int status) {
 	redis* self = reinterpret_cast<redis*>(c->data);
-	std::printf("disconnected\n");
 	if (status != REDIS_OK) { // TODO 错误处理？
 		std::printf("error: redis failed with '%s'\n", c->errstr);
 		return;

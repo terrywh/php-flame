@@ -1,6 +1,8 @@
 #pragma once
 
 namespace flame {
+	class worker;
+
 	extern enum process_type_t {
 		PROCESS_MASTER,
 		PROCESS_WORKER,
@@ -12,8 +14,14 @@ namespace flame {
 	public:
 		static process* prepare();
 
-		virtual void init();
-		virtual void run();
+		void init();
+		void run();
+
+		void worker_start();
+		void worker_stop();
+		void on_worker_stop(worker* w);
+	private:
+		std::set<worker*> workers_;
 	};
 	// 当前进程
 	extern process* process_self;

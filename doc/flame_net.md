@@ -1,8 +1,42 @@
 ### `namespace flame\net`
 1. 提供基本的TCP UDP 协议网络协程式客户端、服务器封装；
 2. 提供以下协议的支持内部包：
-	* **HTTP** - HTTP 协议客户端支持；
+	* **HTTP** - HTTP 协议支持（目前仅提供了客户端支持）；
 	* **FastCGI** - 精简版本的应用服务支持，可以挂接 Nginx 等 Web 服务器使用；
+
+### `class flame\net\udp_socket`
+封装 UDP 协议网络服务器、客户端连接
+
+#### `string udp_socket::$local_address`
+本地网络地址
+
+#### `string udp_socket::$remote_address`
+当成功接收数据后 `yield recv()`，保存数据来源地址
+
+#### `string udp_socket::$remote_port`
+当成功接收数据后 `yield recv()`，保存数据来源端口
+
+#### `udp_socket::bind(string addr, long port)`
+将当前对象绑定到指定的地址、端口；绑定后，可以接收来自这个地址、端口的数据；
+
+**注意**：
+* 下述 `recv()` 和 `send()` 函数会在未绑定地址、端口时，自动进行绑定；
+
+#### `yield udp_socket::recv()`
+接收数据，设置 udp_socket::$remote_address/$remote_port 属性，并返回接收到的数据；若当前套接字被关闭，将返回 `NULL`；
+
+**注意**：
+* 仅允许唯一的协程调用上述 `recv()` 过程；多个协程调用可能引起未定义的错误；
+* 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
+
+#### `yield udp_socket::send(string $data, string $addr, integer $port)`
+向指定 `$addr` 地址，`$port` 端口发送指定 `$data` 内容
+
+**注意**:
+* 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
+
+#### `udp_socket::close()`
+关闭当前 `udp_socket`，所有异步过程将被终止；
 
 ### `class flame\net\tcp_socket`
 提供 TCP 协议的网络连接对象的封装
@@ -59,41 +93,6 @@
 
 **注意**：
 * 阻塞在 `run()` 函数的服务器协程会在调用本函数后恢复运行；
-
-### `class flame\net\udp_socket`
-封装 UDP 协议网络服务器、客户端连接
-
-#### `string udp_socket::$local_address`
-本地网络地址
-
-#### `string udp_socket::$remote_address`
-当成功接收数据后 `yield recv()`，保存数据来源地址
-
-#### `string udp_socket::$remote_port`
-当成功接收数据后 `yield recv()`，保存数据来源端口
-
-#### `udp_socket::bind(string addr, long port)`
-将当前对象绑定到指定的地址、端口；绑定后，可以接收来自这个地址、端口的数据；
-
-**注意**：
-* 下述 `recv()` 和 `send()` 函数会在未绑定地址、端口时，自动进行绑定；
-
-#### `yield udp_socket::recv()`
-接收数据，设置 udp_socket::$remote_address/$remote_port 属性，并返回接收到的数据；若当前套接字被关闭，将返回 `NULL`；
-
-**注意**：
-* 仅允许唯一的协程调用上述 `recv()` 过程；多个协程调用可能引起未定义的错误；
-* 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
-
-#### `yield udp_socket::send(string $data, string $addr, integer $port)`
-向指定 `$addr` 地址，`$port` 端口发送指定 `$data` 内容
-
-
-**注意**:
-* 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
-
-#### `yield udp_socket::close()`
-关闭当前 `udp_socket`，所有异步过程将被终止；
 
 ### `class flame\net\unix_server`
 实现基于 UnixSocket 的网络服务器；除下述 `bind()` 函数外接口形式与 `tcp_server` 一致；

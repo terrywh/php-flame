@@ -26,6 +26,7 @@ namespace time {
 	static php::value sleep_wrapper(php::parameters& params) {
 		sleep(params);
 		coroutine::current->yield(sleep2_timer_cb);
+		// !!! 使用了 yield 函数，当发生同步异常时，需要调用 clear 删除
 		return flame::async();
 	}
 	// -------------------------------------------------------------------------

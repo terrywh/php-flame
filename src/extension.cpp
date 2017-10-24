@@ -2,7 +2,7 @@
 #include "flame/time/time.h"
 #include "flame/os/os.h"
 #include "flame/db/db.h"
-// #include "flame/net/net.h"
+#include "flame/net/net.h"
 
 void extension_init(php::extension_entry& ext) {
 	ext.init(EXT_NAME, EXT_VER);
@@ -15,5 +15,5 @@ void extension_init(php::extension_entry& ext) {
 	// db
 	flame::db::init(ext);
 	// net
-	// flame::net::init(ext);
+	flame::net::init(ext);
 }

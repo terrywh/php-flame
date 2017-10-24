@@ -49,6 +49,9 @@ namespace flame {
 		void yield(K* k) {
 			yields_.push_back(stack_t {.cb = method_wrapper<K, method>, .data = k});
 		}
+		inline void empty() {
+			yields_.clear();
+		}
 		void next(php::value& rv);
 		inline void next(php::value&& rv) {
 			php::value val(rv);

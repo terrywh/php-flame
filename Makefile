@@ -33,13 +33,13 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
 # SOURCES=$(shell find ./src -name "*.cpp")
-SOURCES=$(shell find ./src/util -name "*.cpp") ./src/extension.cpp \
- ./src/flame/flame.cpp ./src/flame/coroutine.cpp \
- ./src/flame/process.cpp ./src/flame/process_master.cpp ./src/flame/process_worker.cpp \
- ./src/flame/pipe_worker.cpp \
- ./src/flame/time/time.cpp ./src/flame/time/ticker.cpp \
- ./src/flame/os/os.cpp ./src/flame/os/process.cpp \
- ./src/flame/db/db.cpp ./src/flame/db/redis.cpp
+SOURCES=$(shell find ./src/util -name "*.cpp") \
+ ./src/extension.cpp \
+ $(shell find ./src/flame -maxdepth 1 -name "*.cpp") \
+ $(shell find ./src/flame/time -name "*.cpp") \
+ $(shell find ./src/flame/os -name "*.cpp") \
+ ./src/flame/db/db.cpp ./src/flame/db/redis.cpp \
+ ./src/flame/net/net.cpp ./src/flame/net/udp_socket.cpp
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程
