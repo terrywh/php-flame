@@ -6,19 +6,22 @@ namespace net {
 	class udp_socket: public php::class_base {
 	public:
 		udp_socket();
+		~udp_socket();
 		php::value bind(php::parameters& params);
 		// 需要有额外的一个引用参数
 		php::value recv(php::parameters& params);
 		// 发送数据 + 目标地址
 		php::value send(php::parameters& params);
 		php::value close(php::parameters& params);
+		void close(bool stop_recv);
 		// property local_address ""
 	private:
-		uv_udp_t       socket_;
-		// 读取协程
-		coroutine*     routine_;
+		uv_udp_t*      socket_; // 由于异步关闭需要等待 close_cb 才能进行回收
+
+		coroutine*     cor_; // 读取协程
+		php::value     ref_; // 对象引用
+
 		php::string    rbuffer_;
-		php::value     refer_;
 		php::value*    addr_;
 		php::value*    port_;
 

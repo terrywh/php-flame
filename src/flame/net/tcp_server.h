@@ -1,25 +1,28 @@
 #pragma once
-#include "stream_server.h"
+#include "server_handler.h"
 
 namespace flame {
+class coroutine;
 namespace net {
-	class tcp_server: public stream_server {
+	class tcp_server: public php::class_base {
 	public:
+		typedef server_handler<uv_tcp_t, tcp_server, tcp_socket> handler_t;
 		tcp_server();
+		~tcp_server();
+		php::value bind(php::parameters& params);
+		inline php::value handle(php::parameters& params) {
+			return handler->handle(params);
+		}
 		inline php::value run(php::parameters& params) {
-			return stream_server::run_core(params);
+			return handler->run(params);
 		}
 		inline php::value close(php::parameters& params) {
-			return stream_server::close(params);
+			return handler->close(params);
 		}
-		php::value handle(php::parameters& params);
-		php::value bind(php::parameters& params);
 		// property local_address ""
-	protected:
-		php::callable handle_;
-		virtual int accept(uv_stream_t* server);
+		handler_t* handler; // 由于异步关闭需要等待 close_cb 才能进行回收
 	private:
-		uv_tcp_t      server_;
+		static void connection_cb(uv_stream_t* server, int error);
 	};
 }
 }

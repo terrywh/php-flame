@@ -51,3 +51,13 @@ $proc = new flame\os\process("ping", ...);
 
 **注意**：
 * 只能够在一个协程中调用 `yield $proc->wait()` 否则会导致协程僵死；
+
+#### `string flame\os\executable()`
+返回当前运行的 PHP 进程路径。
+
+**示例**：
+``` PHP
+<?php
+$php_path = flame\os\executable();
+// $php_path = "/usr/local/php/bin/php"
+```

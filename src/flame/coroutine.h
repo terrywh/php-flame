@@ -6,8 +6,8 @@ namespace flame {
 	class coroutine {
 	private:
 		coroutine(coroutine* parent);
-		~coroutine();
-		uv_async_t             handler_; // 保持引用，同步过程需要用这个 handler_ 保持 loop 的活跃
+
+		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
 		int                    status_;
 		php::generator         generator_;
 		coroutine*             parent_;
@@ -65,7 +65,9 @@ namespace flame {
 		inline void fail(const std::string& ex, int code = 0) {
 			fail(php::exception(ex, code));
 		}
-		static void default_close_cb(uv_handle_t* handle);
+		static void free_close_cb(uv_handle_t* handle) {
+			free(handle);
+		}
 		static void prepare();
 
 		friend php::value async();

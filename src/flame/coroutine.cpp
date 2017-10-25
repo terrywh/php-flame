@@ -21,10 +21,11 @@ namespace flame {
 	: status_(0)
 	, parent_(parent) {
 		// 用于防止“协程”未结束时提前结束
-		uv_async_init(flame::loop, &handler_, nullptr);
+		uv_async_init(flame::loop, &async_, nullptr);
+		async_.data = this;
 	}
-	coroutine::~coroutine() {
-		uv_close((uv_handle_t*)&handler_, nullptr);
+	static void finish_cb(uv_handle_t* handle) {
+		delete reinterpret_cast<coroutine*>(handle->data);
 	}
 	void coroutine::run() {
 		while(true) {
@@ -37,7 +38,7 @@ namespace flame {
 					php::value rv = generator_.get_return();
 					parent->next(rv);
 				}
-				delete this;
+				uv_close((uv_handle_t*)&async_, finish_cb);
 				break;
 			}
 			php::value v = generator_.current();
@@ -54,11 +55,6 @@ namespace flame {
 				generator_.send(std::move(v));
 			}
 		}
-	}
-	void coroutine::default_close_cb(uv_handle_t* handle) {
-		coroutine_context<uv_handle_t, void>* cc = static_cast<coroutine_context<uv_handle_t, void>*>(handle->data);
-		cc->routine()->next();
-		delete cc;
 	}
 	void coroutine::next(php::value& rv) {
 		coroutine* old = current;

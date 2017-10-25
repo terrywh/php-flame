@@ -5,12 +5,11 @@ flame\go(function() {
 	yield $sock->connect("/data/sockets/flame.xingyan.panda.tv.sock");
 	var_dump($sock);
 	while(true) {
-		$data = yield $sock->read();
+		$data = yield $sock->read(2);
 		if($data === null) { // 连接被对方关闭（EOF）
 			break;
 		}
-		echo "=> ", $data, "\n";
-		yield $sock->write($data);
+		echo strlen($data),"=> ", $data, "\n";
 	}
 });
 flame\run();

@@ -1,4 +1,5 @@
 <?php
+flame\init("tcp_client_test");
 flame\go(function() {
 	$sock = new flame\net\tcp_socket();
 	yield $sock->connect("127.0.0.1", 7678);

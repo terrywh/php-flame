@@ -3,7 +3,7 @@
 
 封装与时间有关的 API，例如获取当前时间（毫秒）、SLEEP 等；
 
-#### `flame\time\now()`
+#### `integer flame\time\now()`
 获取当前时间戳（毫秒级）；
 
 #### `yield flame\time\sleep(integer $ms)`

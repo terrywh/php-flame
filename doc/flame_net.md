@@ -115,8 +115,8 @@ $data = yield $sock->read(); // $data = "aaaaa";
 #### `yield unix_socket::write(string $data)`
 想当前套接字写入（发送）指定数据；
 
-#### `unix_socket::close()`
-关闭当前套接字对象；（已安排的异步动作会继续进行，完成后关闭）
+#### `yield unix_socket::close()`
+关闭当前套接字对象；（已启用的异步动作会继续进行，完成后关闭）
 
 ### `class flame\net\tcp_socket`
 提供 TCP 协议的网络连接对象的封装
