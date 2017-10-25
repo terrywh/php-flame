@@ -11,7 +11,6 @@ namespace net {
 		, co_(nullptr)
 		, closing_(false) {
 			server.data = this;
-			std::printf("server create: %08x\n", &server);
 		}
 		php::value handle(php::parameters& params) {
 			handle_ = params[0];

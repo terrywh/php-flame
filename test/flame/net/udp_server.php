@@ -7,7 +7,7 @@ flame\go(function() {
 		$addr = "";
 		$port = 0;
 		$data = yield $server->recv($addr, $port);
-		echo "recv: ", $addr, ":", $port, " => [",$data, "]\n";
+		echo "from: ", $addr, ":", $port, " => ",$data, "\n";
 	}
 });
 flame\run();

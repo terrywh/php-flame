@@ -6,19 +6,16 @@ flame\go(function() {
 	$server->handle(function($sock) {
 		var_dump($sock);
 		$i = 0;
-		// while($i<10) {
-		// 	try{
+		while($i<1000) {
+			try{
 				yield $sock->write("".(++$i));
-		// 		yield flame\time\sleep(100);
-		// 	}catch(exception $ex) {
-		// 		// 客户端异常关闭连接会产生 EPIPE 错误需要处理
-		// 		var_dump($ex);
-		// 		break;
-		// 	}
-		// }
-		echo "-- 1 --\n";
-		yield $sock->write("aaaa");
-		echo "-- 2 --\n";
+				yield flame\time\sleep(100);
+			}catch(exception $ex) {
+				// 客户端异常关闭连接会产生 BROKEN_PIPE 等错误需要处理
+				var_dump($ex);
+				break;
+			}
+		}
 	});
 	@unlink("/data/sockets/flame.xingyan.panda.tv.sock");
 	$server->bind("/data/sockets/flame.xingyan.panda.tv.sock");

@@ -6,11 +6,10 @@ flame\go(function() {
 	var_dump($sock);
 	while(true) {
 		$data = yield $sock->read(2);
-		$data = yield $sock->read("\n");
-		echo "=> ", var_dump($data);
 		if($data === null) { // 连接被对方关闭（EOF）
 			break;
 		}
+		echo "=> ", $data, "\n";
 	}
 });
 flame\run();

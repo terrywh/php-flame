@@ -42,7 +42,6 @@ namespace net {
 
 			ref_ = self_; // 保留对象引用，防止异步调用丢失对象 // 当前对象的引用
 			cor_ = coroutine::current;
-			std::printf("read: %08x %08x\n", cor_, this);
 			uv_read_start((uv_stream_t*)&socket, alloc_cb, read_cb);
 			return flame::async();
 		}
@@ -65,7 +64,6 @@ namespace net {
 			return flame::async();
 		}
 		void close(bool stop_read) {
-			std::printf("close client_handler: %d\n", closing_);
 			if(closing_) return;
 			closing_ = true;
 			if(stop_read && cor_ != nullptr) { // 读取协程恢复
@@ -145,7 +143,6 @@ namespace net {
 		}
 		static void read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
 			auto self = static_cast<client_handler<UV_TYPE_T, MY_SOCKET_T>*>(handle->data);
-			std::printf("read_cb: %08x %08x\n", self->cor_, self);
 			if(nread == UV_EOF) {
 				self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用
 				self->close(true);
