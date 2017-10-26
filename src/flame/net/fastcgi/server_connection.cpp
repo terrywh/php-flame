@@ -10,7 +10,7 @@ namespace net {
 namespace fastcgi {
 	server_connection::server_connection(handler* svr)
 	: svr_(svr) {}
-	
+
 	void server_connection::start() {
 		memset(&fps_, 0, sizeof(fps_));
 		// !!! fastcgi 解析过程中，数据并不一定完整，需要缓存 !!!
@@ -50,11 +50,16 @@ namespace fastcgi {
 	int server_connection::fp_begin_request_cb(fastcgi_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		self->req_ = php::object::create<http::server_request>();
+		// 不能再构造函数中访问属性
 		self->req_.prop("header") = php::array(0);
 		self->ctr_ = &static_cast<php::array&>(self->req_.prop("header"));
 		self->res_ = php::object::create<fastcgi::server_response>();
-		fastcgi::server_response* req = self->res_.native<fastcgi::server_response>();
-		req->conn_ = self;
+		fastcgi::server_response* res = self->res_.native<fastcgi::server_response>();
+		res->conn_ = self;
+		php::array header(2);
+		header["Content-Type"] = php::string("text/plain", 10);
+		// 不能再构造函数中访问属性
+		res->prop("header") = header;
 		return 0;
 	}
 	int server_connection::fp_param_key_cb(fastcgi_parser* parser, const char* data, size_t size) {

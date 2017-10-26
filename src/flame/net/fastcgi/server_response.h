@@ -7,7 +7,6 @@ namespace fastcgi {
 	class server_connection;
 	class server_response: public php::class_base {
 	public:
-		server_response();
 		~server_response();
 		typedef struct {
 			unsigned char  version;

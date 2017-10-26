@@ -8,11 +8,6 @@ namespace flame {
 namespace net {
 namespace fastcgi {
 
-server_response::server_response() {
-	php::array header(2);
-	header["Content-Type"] = php::string("text/plain", 10);
-	prop("header") = header;
-}
 server_response::~server_response() {
 	// 强制的请求结束
 	if((conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0 && !prop("ended").is_true()) {
