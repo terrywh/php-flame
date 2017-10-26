@@ -3,6 +3,7 @@
 namespace flame{
 namespace net {
 namespace fastcgi {
+	class handler;
 	class server_connection;
 	class server_response: public php::class_base {
 	public:
@@ -31,7 +32,7 @@ namespace fastcgi {
 		record_header_t  header_;
 		php::buffer      buffer_;
 		static void write_cb(uv_write_t* req, int status);
-		friend class server;
+		friend class handler;
 		friend class server_connection;
 	};
 }

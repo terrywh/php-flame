@@ -6,6 +6,7 @@ namespace flame {
 namespace net {
 	unix_server::unix_server() {
 		handler = new handler_t(this);
+		uv_pipe_init(flame::loop, &handler->server, 0);
 	}
 	unix_server::~unix_server() {
 		handler->close(false); // 析构时 run 过程一定已经停止
@@ -16,7 +17,6 @@ namespace net {
 			throw php::exception("bind failed: only absolute path is allowed");
 		}
 		prop("local_address") = path;
-		uv_pipe_init(flame::loop, &handler->server, 0);
 		int error = uv_pipe_bind(&handler->server, path.c_str());
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);

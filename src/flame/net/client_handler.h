@@ -12,9 +12,9 @@ namespace net {
 	template <typename UV_TYPE_T, class MY_SOCKET_T>
 	class client_handler {
 	public:
+		typedef client_handler<UV_TYPE_T, MY_SOCKET_T> handler_t;
 		client_handler(MY_SOCKET_T* sock)
 		: self_(sock)
-		, bq_(bq_create())
 		, cor_(nullptr)
 		, closing_(false) {
 			socket.data = this;
@@ -69,7 +69,6 @@ namespace net {
 			if(stop_read && cor_ != nullptr) { // 读取协程恢复
 				cor_->next();
 			}
-			bq_destroy(bq_);
 			uv_close((uv_handle_t*)&socket, close_cb);
 		}
 	private:
@@ -89,10 +88,9 @@ namespace net {
 
 		MY_SOCKET_T*  self_;
 
-		bq_queue_t      bq_;
+		php::buffer    buf_;
 		coroutine*     cor_; // 读取协程
-		coroutine*     coc_; // 关闭协程
-		php::string     rv_;
+		php::value     rv_;
 		php::value     ref_; // 当前对象的引用
 
 		size_t      d_size_;
@@ -104,28 +102,36 @@ namespace net {
 		bool read() {
 			switch(d_type_) {
 			case 0:
-				if(bq_length(bq_) > 0) {
-					bq_buffer_t buf = bq_shift(bq_);
-					rv_ = php::string(buf->data, buf->len);
-					bq_free(buf);
+				if(buf_.size() > 0) {
+					rv_ = std::move(buf_);
 					return true;
 				}
 			break;
 			case 1:
-				if(bq_length(bq_) >= d_size_) {
-					bq_buffer_t buf = bq_slice(bq_, d_size_);
-					rv_ = php::string(buf->data, buf->len);
-					bq_free(buf);
+				if(buf_.size() >= d_size_) {
+					rv_ = std::move(buf_);
+					php::string& data = rv_;
+					if(data.length() > d_size_) {
+						std::memcpy(buf_.put(data.length() - d_size_), data.data() + d_size_, data.length() - d_size_);
+						data.length() = d_size_;
+					}
 					return true;
 				}
 			break;
 			case 2:
 			{
-				ssize_t ff = bq_find(bq_, d_endl_.data(), d_endl_.length());
-				if(ff != -1) {
-					bq_buffer_t buf = bq_slice(bq_, d_size_);
-					rv_ = php::string(buf->data, buf->len);
-					bq_free(buf);
+				auto ff = std::search(buf_.data(), buf_.data() + buf_.size(),
+					d_endl_.data(), d_endl_.data() + d_endl_.length());
+				if(ff != buf_.data() + buf_.size()) { // 找到
+					ff += d_endl_.length();
+					d_size_ = ff - buf_.data();
+
+					rv_ = std::move(buf_);
+					php::string& data = rv_;
+					if(data.length() > d_size_) {
+						std::memcpy(buf_.put(data.length() - d_size_), data.data() + d_size_, data.length() - d_size_);
+						data.length() = d_size_;
+					}
 					return true;
 				}
 			}
@@ -137,9 +143,9 @@ namespace net {
 			// static char buffer[2048];
 			// buf->base = buffer;
 			// buf->len  = sizeof(buffer);
-			bq_buffer_t buffer = bq_alloc(2048);
-			buf->base = buffer->data;
-			buf->len  = buffer->len;
+			auto self = reinterpret_cast<handler_t*>(handle->data);
+			buf->base = self->buf_.rev(2048);
+			buf->len  = 2048;
 		}
 		static void read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
 			auto self = static_cast<client_handler<UV_TYPE_T, MY_SOCKET_T>*>(handle->data);
@@ -152,9 +158,7 @@ namespace net {
 				self->cor_->fail(uv_strerror(nread), nread);
 			}else if(nread == 0) {
 			}else{
-				bq_buffer_t buffer = bq_from(buf->base);
-				buffer->len = nread;
-				bq_append(self->bq_, buffer);
+				self->buf_.adv(nread);
 				if(self->read()) {
 					uv_read_stop((uv_stream_t*)&self->socket);
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用

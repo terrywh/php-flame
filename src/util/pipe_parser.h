@@ -7,8 +7,8 @@ namespace util {
 		: status_(PPS_SIZE_1) {}
 		size_t execute(const char* data, size_t size);
 	private:
-		uint16_t size_;
 		uint8_t  type_;
+		uint16_t size_;
 		std::string payload_;
 
 		int      status_;

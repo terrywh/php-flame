@@ -6,7 +6,7 @@ namespace http {
 	class server_request;
 }
 namespace fastcgi {
-	class server;
+	class handler;
 	class server_connection {
 	private:
 		union {
@@ -14,10 +14,10 @@ namespace fastcgi {
 			uv_pipe_t socket_pipe_;
 			uv_tcp_t  socket_tcp_;
 		};
-		server*                   svr_;
+		handler*                  svr_;
 		fastcgi_parser            fpp_;
 		fastcgi_parser_settings   fps_;
-		
+
 		void start();
 		void close();
 		char buffer_[8192];
@@ -49,8 +49,8 @@ namespace fastcgi {
 		php::object res_;
 		php::array* ctr_;
 	public:
-
-		friend class server;
+		server_connection(handler* svr);
+		friend class handler;
 		friend class server_response;
 	};
 }

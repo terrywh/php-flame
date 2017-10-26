@@ -1,4 +1,4 @@
-#include "../../fiber.h"
+#include "../../coroutine.h"
 #include "server_response.h"
 #include "fastcgi.h"
 #include "server_connection.h"
@@ -152,33 +152,39 @@ void server_response::buffer_ending() {
 	// 无填充
 }
 
+typedef struct write_request_t {
+	coroutine*         co;
+	server_response* self;
+	php::object       ref;
+	php::string      data;
+	uv_write_t        req;
+} write_request_t;
 void server_response::buffer_write() {
-	uv_write_t* req = new uv_write_t;
-	req->data = flame::this_fiber()->push(this);
-	uv_buf_t    buf {buffer_.data(), (size_t)buffer_.size()};
-	int error = uv_write(req, reinterpret_cast<uv_stream_t*>(&conn_->socket_), &buf, 1, write_cb);
-	if(0 > error) {
-		flame::this_fiber()->ignore_warning(uv_strerror(error), error);
-	}
+	write_request_t* ctx = new write_request_t {
+		.co = coroutine::current,
+		.self = this,
+		.ref  = this,
+		.data = std::move(buffer_),
+	};
+	ctx->req.data = ctx;
+	uv_buf_t    data { ctx->data.data(), ctx->data.length() };
+	uv_write(&ctx->req, reinterpret_cast<uv_stream_t*>(&conn_->socket_),
+		&data, 1, write_cb);
 }
 
 void server_response::write_cb(uv_write_t* req, int status) {
-	flame::fiber*   fiber = reinterpret_cast<flame::fiber*>(req->data);
-	server_response* self = fiber->context<server_response>();
-	delete req;
+	auto ctx = reinterpret_cast<write_request_t*>(req->data);
 
-	int size = self->buffer_.size();
-	self->buffer_.reset();
 	// 若 Web 服务器没有保持连接的标记，在请求结束后关闭连接
-	if((self->conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0 && self->prop("ended").is_true()) {
-		self->conn_->close();
+	if((ctx->self->conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0
+		&& ctx->self->prop("ended").is_true()) {
+		ctx->self->conn_->close();
 	}
 	if(status < 0) {
-		php::info("write/end failed: %s", uv_strerror(status));
-		fiber->next(nullptr);
-	}else{
-		fiber->next(size);
+		php::info("response write/end failed with '%s'", uv_strerror(status));
 	}
+	ctx->co->next();
+	delete ctx;
 }
 
 }

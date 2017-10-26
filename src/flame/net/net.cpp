@@ -5,6 +5,7 @@
 #include "unix_server.h"
 #include "tcp_socket.h"
 #include "tcp_server.h"
+#include "fastcgi/fastcgi.h"
 
 namespace flame {
 namespace net {
@@ -60,7 +61,7 @@ namespace net {
 
 		// 子命名空间
 		// flame::net::http::init(ext);
-		// flame::net::fastcgi::init(ext);
+		flame::net::fastcgi::init(ext);
 	}
 
 }

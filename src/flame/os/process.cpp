@@ -1,5 +1,8 @@
 #include "../coroutine.h"
 #include "process.h"
+#include "../net/unix_socket.h"
+#include "../net/udp_socket.h"
+#include "../net/tcp_socket.h"
 
 namespace flame {
 namespace os {
@@ -152,41 +155,68 @@ namespace os {
 	}
 
 	typedef struct send_request_t {
-		php::string data;
 		int         head;
-		php::value  rf;
-		uv_write_t  uv;
+		php::string data;
+		php::value  ref;
+		php::object sock;
+		uv_write_t  req;
 	} send_request_t;
-	void process::send_cb(uv_write_t* handle, int status) {
-		send_request_t* req = static_cast<send_request_t*>(handle->data);
-		delete req;
+
+	void process::message_cb(uv_write_t* handle, int status) {
+		send_request_t* ctx = static_cast<send_request_t*>(handle->data);
+		delete ctx;
 	}
-	php::value process::send(php::parameters& params) {
+	php::value process::send_message(php::parameters& params) {
 		// 分离的进程 或 未建立 ipc 通道无法进行消息传递
 		if(detach_ || pipe_.data == nullptr) return nullptr;
 		// 考虑使用简单的协议封装传输，目前需要标识出携带 HANDLE 传递的情况
-		send_request_t* req = new send_request_t {
+		send_request_t* ctx = new send_request_t {
+			.head = (int)params[0].length(),
 			.data = params[0],
+			.ref  = this,
 		};
-		req->head = req->data.length();
-		req->rf   = this; // 当前对象引用，防止丢失
-		req->uv.data = req;
-		if(params.length() > 1 && params[1].is_object()) {
-			// 理论上仅允许传递 unix_socket
-			php::object& obj = params[1];
-			req->head |= 0x80000000;
-			uv_buf_t data[] = {
-				{.base = (char*)&req->head, .len = 4},
-				{.base = req->data.data(),  .len = req->data.length()}
-			};
-			uv_write(&req->uv, (uv_stream_t*)&pipe_, data, 2, send_cb);
+		ctx->ref = this; // 当前对象引用，防止丢失
+		ctx->req.data = ctx;
+
+		uv_buf_t data[] = {
+			{.base = (char*)&ctx->head, .len = 4},
+			{.base = ctx->data.data(),  .len = ctx->data.length()}
+		};
+		uv_write(&ctx->req, (uv_stream_t*)&pipe_, data, 2, message_cb);
+		return flame::async();
+	}
+
+	void process::socket_cb(uv_write_t* handle, int status) {
+		send_request_t* ctx = static_cast<send_request_t*>(handle->data);
+		ctx->sock.call("close"); // 当前进程中的连接需要关闭
+		delete ctx;
+	}
+
+	php::value process::send_socket(php::parameters& params) {
+		// 理论上仅允许传递 unix_socket
+		php::object& obj = params[1];
+		uv_stream_t* sock;
+		if(obj.is_instance_of<net::unix_socket>()) {
+			sock = (uv_stream_t*)&obj.native<net::unix_socket>()->handler->socket;
+		}else if(obj.is_instance_of<net::udp_socket>()) {
+			sock = (uv_stream_t*)&obj.native<net::udp_socket>()->socket;
+		}else if(obj.is_instance_of<net::tcp_socket>()) {
+			sock = (uv_stream_t*)&obj.native<net::tcp_socket>()->handler->socket;
 		}else{
-			uv_buf_t data[] = {
-				{.base = (char*)&req->head, .len = 4},
-				{.base = req->data.data(),  .len = req->data.length()}
-			};
-			uv_write(&req->uv, (uv_stream_t*)&pipe_, data, 2, send_cb);
+			throw php::exception("only socket object can be sent");
 		}
+		send_request_t* ctx = new send_request_t {
+			.head = 0x01000000,
+			.data = nullptr,
+			.ref  = this,
+			.sock = obj,
+		};
+		ctx->ref = this;
+		ctx->req.data = ctx;
+		uv_buf_t data[] = {
+			{.base = (char*)&ctx->head, .len = 4},
+		};
+		uv_write2(&ctx->req, (uv_stream_t*)&pipe_, data, 2, sock, socket_cb);
 		return flame::async();
 	}
 

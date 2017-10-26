@@ -40,7 +40,9 @@ SOURCES=$(shell find ./src/util -name "*.cpp") \
  $(shell find ./src/flame/time -name "*.cpp") \
  $(shell find ./src/flame/os -name "*.cpp") \
  ./src/flame/db/db.cpp ./src/flame/db/redis.cpp \
- $(shell find ./src/flame/net -maxdepth 1 -name "*.cpp")
+ $(shell find ./src/flame/net -maxdepth 1 -name "*.cpp") \
+ $(shell find ./src/flame/net/fastcgi -name "*.cpp") \
+ ./src/flame/net/http/http.cpp ./src/flame/net/http/server_request.cpp
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程

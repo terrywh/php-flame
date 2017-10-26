@@ -15,8 +15,9 @@ namespace net {
 		php::value close(php::parameters& params);
 		void close(bool stop_recv);
 		// property local_address ""
+
+		uv_udp_t*      socket; // 由于异步关闭需要等待 close_cb 才能进行回收
 	private:
-		uv_udp_t*      socket_; // 由于异步关闭需要等待 close_cb 才能进行回收
 
 		coroutine*     cor_; // 读取协程
 		php::value     ref_; // 对象引用

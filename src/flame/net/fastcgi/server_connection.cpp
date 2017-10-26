@@ -1,13 +1,16 @@
-#include "../../fiber.h"
+#include "../../coroutine.h"
 #include "server_connection.h"
 #include "fastcgi.h"
-#include "server.h"
+#include "handler.h"
 #include "../http/server_request.h"
 #include "server_response.h"
 
 namespace flame {
 namespace net {
 namespace fastcgi {
+	server_connection::server_connection(handler* svr)
+	: svr_(svr) {}
+	
 	void server_connection::start() {
 		memset(&fps_, 0, sizeof(fps_));
 		// !!! fastcgi 解析过程中，数据并不一定完整，需要缓存 !!!
@@ -74,6 +77,7 @@ namespace fastcgi {
 		self->val_.reset();
 
 		if(strncmp(kdata, "REQUEST_METHOD", 14) == 0) {
+			php::strtoupper_inplace(vdata, vsize);
 			self->req_.prop("method") = php::string(vdata, vsize);
 		}else if(strncmp(kdata, "REQUEST_URI", 11) == 0) {
 			self->req_.prop("uri") = php::string(vdata, vsize);
