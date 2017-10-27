@@ -197,11 +197,11 @@ namespace os {
 		php::object& obj = params[1];
 		uv_stream_t* sock;
 		if(obj.is_instance_of<net::unix_socket>()) {
-			sock = (uv_stream_t*)&obj.native<net::unix_socket>()->handler->socket;
+			sock = (uv_stream_t*)&obj.native<net::unix_socket>()->impl->socket;
 		}else if(obj.is_instance_of<net::udp_socket>()) {
 			sock = (uv_stream_t*)&obj.native<net::udp_socket>()->socket;
 		}else if(obj.is_instance_of<net::tcp_socket>()) {
-			sock = (uv_stream_t*)&obj.native<net::tcp_socket>()->handler->socket;
+			sock = (uv_stream_t*)&obj.native<net::tcp_socket>()->impl->socket;
 		}else{
 			throw php::exception("only socket object can be sent");
 		}

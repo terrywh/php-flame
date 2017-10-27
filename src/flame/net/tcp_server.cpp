@@ -6,11 +6,11 @@
 namespace flame {
 namespace net {
 	tcp_server::tcp_server() {
-		handler = new handler_t(this);
-		uv_tcp_init(flame::loop, &handler->server);
+		impl = new impl_t(this);
+		uv_tcp_init(flame::loop, &impl->server);
 	}
 	tcp_server::~tcp_server() {
-		handler->close(false); // 析构时运行过程一定已经停止
+		impl->close(false); // 析构时运行过程一定已经停止
 	}
 	php::value tcp_server::bind(php::parameters& params) {
 		std::string addr = params[0];
@@ -21,10 +21,10 @@ namespace net {
 			throw php::exception(uv_strerror(error), error);
 		}
 		// uv_tcp_init_ex 会创建 socket
-		uv_tcp_init_ex(flame::loop, &handler->server, address.ss_family);
+		uv_tcp_init_ex(flame::loop, &impl->server, address.ss_family);
 		// 然后才能进行 SO_REUSEPORT 设置
-		util::sock_reuseport(reinterpret_cast<uv_handle_t*>(&handler->server));
-		error = uv_tcp_bind(&handler->server,
+		util::sock_reuseport(reinterpret_cast<uv_handle_t*>(&impl->server));
+		error = uv_tcp_bind(&impl->server,
 			reinterpret_cast<struct sockaddr*>(&address), 0);
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);

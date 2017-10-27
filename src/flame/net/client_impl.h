@@ -10,10 +10,10 @@ namespace net {
 	} connect_request_t;
 
 	template <typename UV_TYPE_T, class MY_SOCKET_T>
-	class client_handler {
+	class client_impl {
 	public:
-		typedef client_handler<UV_TYPE_T, MY_SOCKET_T> handler_t;
-		client_handler(MY_SOCKET_T* sock)
+		typedef client_impl<UV_TYPE_T, MY_SOCKET_T> impl_t;
+		client_impl(MY_SOCKET_T* sock)
 		: self_(sock)
 		, cor_(nullptr)
 		, closing_(false) {
@@ -74,14 +74,14 @@ namespace net {
 	private:
 		typedef struct write_request_t {
 			coroutine*      co;
-			client_handler* ch;
+			client_impl* ch;
 			php::value     obj;
 			php::string    buf;
 			uv_write_t     req;
 		} write_request_t;
 		typedef struct shutdown_request_t {
 			coroutine*      co;
-			client_handler* ch;
+			client_impl* ch;
 			php::value     obj;
 			uv_shutdown_t  req;
 		} shutdown_request_t;
@@ -143,12 +143,12 @@ namespace net {
 			// static char buffer[2048];
 			// buf->base = buffer;
 			// buf->len  = sizeof(buffer);
-			auto self = reinterpret_cast<handler_t*>(handle->data);
+			auto self = reinterpret_cast<impl_t*>(handle->data);
 			buf->base = self->buf_.rev(2048);
 			buf->len  = 2048;
 		}
 		static void read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
-			auto self = static_cast<client_handler<UV_TYPE_T, MY_SOCKET_T>*>(handle->data);
+			auto self = static_cast<impl_t*>(handle->data);
 			if(nread == UV_EOF) {
 				self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用
 				self->close(true);
@@ -179,9 +179,7 @@ namespace net {
 			delete ctx;
 		}
 		static void close_cb(uv_handle_t* handle) {
-			delete reinterpret_cast<
-				client_handler<UV_TYPE_T, MY_SOCKET_T>*
-			>(handle->data);
+			delete reinterpret_cast<impl_t*>(handle->data);
 		}
 	};
 }

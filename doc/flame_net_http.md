@@ -25,7 +25,7 @@ HTTP 的方法，目前支持的有 GET , POST , PUT；
 HTTP 的请求地址，不能为空；
 
 #### `integer client_request::$timeout`
-请求超时，单位 `s` (秒)；
+请求超时，单位 `ms` (毫秒)；
 
 #### `array client_request::$header`
 请求头部，可以用于定制请求头部；
@@ -69,22 +69,11 @@ $res2 = yield $cli->exec($req2);
 var_dump($res2);
 ```
 
-#### `client::debug(integer is_open)`
-参数不为零时，打开 `libcurl` 的 VERBOSE 模式，可以更好的调试。
+#### `yield flame\net\http\get(string $url, integer $timeout = 2500)`
+简单的 `GET` 请求方法。
 
-#### `yield flame\net\http\get(string $url)`
-简单的 `GET` 方法。
-
-**示例**：
-``` PHP
-<?php
-$ret = yield flame\net\http\get("http://www.panda.tv");
-var_dump($ret);
-
-```
-
-#### `yield flame\net\http\post(string $url, mixed $post)`
-简单的 `POST` 方法；
+#### `yield flame\net\http\post(string $url, mixed $post, integer $timeout = 2500)`
+简单的 `POST` 请求方法；
 * 当 `$post` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
 * 当 `$post` 为文本时直接进行发送；
 
@@ -95,17 +84,13 @@ $ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>
 var_dump($ret);
 ```
 
-#### `yield flame\net\http\put(string $url, mixed $put)`
-简单的 `PUT` 方法。
+#### `yield flame\net\http\put(string $url, mixed $put, integer $timeout = 2500)`
+简单的 `PUT` 请求方法。
 * 当 `$put` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
 * 当 `$put` 为文本时直接进行发送；
 
-**示例**：
-``` PHP
-<?php
-$ret = yield flame\net\http\put("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
-var_dump($ret);
-```
+#### `yield flame\net\http\remove(string $url, integer $timeout = 2500)`
+简单的 `DELETE` 请求方法。
 
 ### `class flame\net\http\server_request`
 作为服务端时，收到的来自客户端、浏览器请求的描述对象；

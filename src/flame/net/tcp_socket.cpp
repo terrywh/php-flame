@@ -5,11 +5,11 @@
 namespace flame {
 namespace net {
 	tcp_socket::tcp_socket() {
-		handler = new handler_t(this);
-		uv_tcp_init(flame::loop, &handler->socket);
+		impl = new impl_t(this);
+		uv_tcp_init(flame::loop, &impl->socket);
 	}
 	tcp_socket::~tcp_socket() {
-		handler->close(false); // 析构时 read 过程一定已经停止
+		impl->close(false); // 析构时 read 过程一定已经停止
 	}
 	php::value tcp_socket::connect(php::parameters& params) {
 		php::string addr = params[0];
@@ -24,7 +24,7 @@ namespace net {
 			.obj = this,
 		};
 		ctx->req.data = ctx;
-		error = uv_tcp_connect(&ctx->req, &handler->socket, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
+		error = uv_tcp_connect(&ctx->req, &impl->socket, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
 		if(error != 0) {
 			delete ctx;
 			throw php::exception(uv_strerror(error), error);
@@ -44,12 +44,12 @@ namespace net {
 	void tcp_socket::after_init() {
 		struct sockaddr_storage address;
 		int                     addrlen = sizeof(address);
-		uv_tcp_getsockname(&handler->socket,
+		uv_tcp_getsockname(&impl->socket,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
 		prop("local_address") = util::sock_addr2str(&address) +
 			":" + std::to_string(util::sock_addrport(&address));
-		uv_tcp_getpeername(&handler->socket,
+		uv_tcp_getpeername(&impl->socket,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
 		prop("remote_address") = util::sock_addr2str(&address) +

@@ -4,11 +4,11 @@
 namespace flame {
 namespace net {
 	unix_socket::unix_socket() {
-		handler = new handler_t(this);
-		uv_pipe_init(flame::loop, &handler->socket, 0);
+		impl = new impl_t(this);
+		uv_pipe_init(flame::loop, &impl->socket, 0);
 	}
 	unix_socket::~unix_socket() {
-		handler->close(false); // 析构时 read 过程一定已经停止
+		impl->close(false); // 析构时 read 过程一定已经停止
 	}
 	php::value unix_socket::connect(php::parameters& params) {
 		php::string path = params[0];
@@ -17,7 +17,7 @@ namespace net {
 			.obj = this,
 		};
 		ctx->req.data = ctx;
-		uv_pipe_connect(&ctx->req, &handler->socket, path.c_str(), connect_cb);
+		uv_pipe_connect(&ctx->req, &impl->socket, path.c_str(), connect_cb);
 		return flame::async();
 	}
 	void unix_socket::connect_cb(uv_connect_t* handle, int error) {

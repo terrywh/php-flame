@@ -1,14 +1,14 @@
 #include "../../coroutine.h"
 #include "server_connection.h"
 #include "fastcgi.h"
-#include "handler.h"
+#include "../http/server_handler.h"
 #include "../http/server_request.h"
 #include "server_response.h"
 
 namespace flame {
 namespace net {
 namespace fastcgi {
-	server_connection::server_connection(handler* svr)
+	server_connection::server_connection(http::server_handler_base* svr)
 	: svr_(svr) {}
 
 	void server_connection::start() {
@@ -21,9 +21,9 @@ namespace fastcgi {
 		fps_.on_data             = fp_data_cb;
 		fps_.on_end_request      = fp_end_request_cb;
 		fastcgi_parser_init(&fpp_, &fps_);
-		fpp_.data    = this;
-		socket_.data = this;
-		if(0 > uv_read_start(&socket_, alloc_cb, read_cb)) {
+		fpp_.data   = this;
+		socket.data = this;
+		if(0 > uv_read_start(&socket, alloc_cb, read_cb)) {
 			close();
 		}
 	}
@@ -206,7 +206,7 @@ namespace fastcgi {
 		svr_ = nullptr;
 		res_.prop("ended") = true;
 		uv_close(
-			reinterpret_cast<uv_handle_t*>(&socket_),
+			reinterpret_cast<uv_handle_t*>(&socket),
 			close_cb);
 	}
 	void server_connection::close_cb(uv_handle_t* handle) {

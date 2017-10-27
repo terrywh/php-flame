@@ -3,23 +3,17 @@
 namespace flame {
 namespace net {
 namespace http {
-	class server_request;
+	class server_handler_base;
 }
 namespace fastcgi {
 	class handler;
 	class server_connection {
 	private:
-		union {
-			uv_stream_t socket_;
-			uv_pipe_t socket_pipe_;
-			uv_tcp_t  socket_tcp_;
-		};
-		handler*                  svr_;
+
+		http::server_handler_base*      svr_;
 		fastcgi_parser            fpp_;
 		fastcgi_parser_settings   fps_;
 
-		void start();
-		void close();
 		char buffer_[8192];
 		static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 		static void read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
@@ -49,8 +43,14 @@ namespace fastcgi {
 		php::object res_;
 		php::array* ctr_;
 	public:
-		server_connection(handler* svr);
-		friend class handler;
+		union {
+			uv_stream_t socket;
+			uv_pipe_t   socket_pipe;
+			uv_tcp_t    socket_tcp;
+		};
+		server_connection(http::server_handler_base* svr);
+		void start();
+		void close();
 		friend class server_response;
 	};
 }

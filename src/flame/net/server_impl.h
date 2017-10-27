@@ -3,11 +3,11 @@
 namespace flame {
 namespace net {
 	template <typename UV_TYPE_T, class MY_SERVER_T, class MY_SOCKET_T>
-	class server_handler {
+	class server_impl {
 	public:
-		typedef server_handler<UV_TYPE_T, MY_SERVER_T, MY_SOCKET_T> handler_t;
+		typedef server_impl<UV_TYPE_T, MY_SERVER_T, MY_SOCKET_T> impl_t;
 		UV_TYPE_T server;
-		server_handler(MY_SERVER_T* svr)
+		server_impl(MY_SERVER_T* svr)
 		: self_(svr)
 		, co_(nullptr)
 		, cb_type(0)
@@ -60,7 +60,7 @@ namespace net {
 		php::value        cb_;
 		bool         closing_;
 		static void connection_cb(uv_stream_t* handle, int error) {
-			handler_t* self = reinterpret_cast<handler_t*>(handle->data);
+			impl_t* self = reinterpret_cast<impl_t*>(handle->data);
 			if(error < 0) {
 				self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用
 				self->close(false);
@@ -82,7 +82,7 @@ namespace net {
 			}else/* if(self->cb_type == 1) */{
 				php::object  cli = php::object::create<MY_SOCKET_T>();
 				MY_SOCKET_T* cpp = cli.native<MY_SOCKET_T>();
-				error = uv_accept(handle, (uv_stream_t*)&cpp->handler->socket);
+				error = uv_accept(handle, (uv_stream_t*)&cpp->impl->socket);
 				if(error < 0) {
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用3
 					self->co_->fail(uv_strerror(error), error);
@@ -95,9 +95,7 @@ namespace net {
 			}
 		}
 		static void close_cb(uv_handle_t* handle) {
-			delete reinterpret_cast<
-				server_handler<UV_TYPE_T, MY_SERVER_T, MY_SOCKET_T>*
-			>(handle->data);
+			delete reinterpret_cast<impl_t*>(handle->data);
 		}
 	};
 }
