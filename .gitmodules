@@ -34,10 +34,6 @@
 	path = deps/mongo-c-driver
 	url = https://github.com/mongodb/mongo-c-driver.git
 	ignore = dirty
-[submodule "deps/buffer-queue"]
-	path = deps/buffer-queue
-	url = https://github.com/terrywh/buffer-queue.git
-	ignore = dirty
 [submodule "deps/fmt"]
 	path = deps/fmt
 	url = https://github.com/fmtlib/fmt.git
