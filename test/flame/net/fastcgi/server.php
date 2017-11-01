@@ -30,7 +30,7 @@ flame\go(function() {
 	// 创建网络服务器
 	$server = new flame\net\tcp_server();
 	$server->handle($handler); // 指定服务程序
-	$server->bind("0.0.0.0", 19001);
+	$server->bind("127.0.0.1", 19001);
 	yield $server->run();
 });
 flame\run();

@@ -9,13 +9,12 @@
 	3. TCP 客户端、服务端；
 	4. UDP 客户端、服务端；
 3. 协程式驱动 API：
-	1. MySQL 客户端；
-	2. Redis 客户端；
-	3. Mongodb 客户端；
+	1. Redis 客户端；
+	2. Mongodb 客户端；
 
 **注意**：
 * 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
-* 嵌套异步 `Generator` 也可使用 `yield` 关键字直接调用，而不需要使用 `yield from`；
+* 嵌套异步 `Generator` 可使用 `yield` 关键字直接调用，也可以使用 `PHP` 的嵌套语法 `yield from`；具体可参考 PHP 文档： [Gernerator Syntax](http://php.net/manual/en/language.generators.syntax.php) 的相关说明；
 
 ## `namespace flame`
 

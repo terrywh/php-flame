@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=0.11.0
+EXT_VER=0.12.0
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.19-test
@@ -19,7 +19,6 @@ INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./de
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
- ./deps/buffer-queue/buffer_queue.o \
  ./deps/fastcgi-parser/fastcgi_parser.o \
  ./deps/kv-parser/kv_parser.o \
  ./deps/libphpext/libphpext.a \
@@ -92,25 +91,18 @@ install: ${EXTENSION}
 	make -C ./deps/kv-parser all
 ./deps/fastcgi-parser/fastcgi_parser.o:
 	make -C ./deps/fastcgi-parser all
-./deps/buffer-queue/buffer_queue.o:
-	make -C ./deps/buffer-queue all
-./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a: ./deps/mongo-c-driver/src/libbson/autogen.sh
+./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a: ./deps/mongo-c-driver/src/libbson/README
 	cd ./deps/mongo-c-driver; chmod +x ./autogen.sh; chmod +x ./src/libbson/autogen.sh;
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --enable-static=yes --enable-shared=no
-	make -C ./deps/mongo-c-driver -j2 && make -C ./deps/mongo-c-driver install
+	make -C ./deps/mongo-c-driver && make -C ./deps/mongo-c-driver install
 	cd ./deps/mongo-c-driver; find -type l | xargs rm
-./deps/mongo-c-driver/src/libbson/autogen.sh:
+./deps/mongo-c-driver/src/libbson/README:
 	cd ./deps/mongo-c-driver; git submodule update --init;
-	cd ./deps/mongo-c-driver/src/libbson; ln -s README.rst README
-./deps/libev/.libs/libev.a:
-	cd ./deps/libev; chmod +x ./autogen.sh; ./autogen.sh
-	CFLAGS=-fPIC ./configure --disable-shared
-	make -C ./deps/libev -j2
-	cd ./deps/libev; find -type l | xargs rm
+	cd ./deps/mongo-c-driver/src/libbson; rm -f README; ln -s README.rst README;
 ./deps/fmt/fmt/libfmt.a:
-	cmake -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPICCMAKE_CXX_FLAGS ./deps/fmt
+	cd ./deps/fmt; cmake -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC .
 	make -C ./deps/fmt -j2
 # 依赖清理
 # ---------------------------------------------------------------------

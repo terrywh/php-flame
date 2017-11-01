@@ -9,9 +9,8 @@
 	3. TCP 客户端、服务端；
 	4. UDP 客户端、服务端；
 3. 协程式驱动 API：
-	1. MySQL 客户端；
-	2. Redis 客户端；
-	3. Mongodb 客户端；
+	1. Redis 客户端；
+	2. Mongodb 客户端；
 
 ## 版权声明
 本软件使用 MIT 许可协议。
