@@ -27,7 +27,6 @@
 #include "fastcgi-parser/fastcgi_parser.h"
 #include "multipart-parser-c/multipart_parser.h"
 #include "kv-parser/kv_parser.h"
-
-// #include "mongo-c-driver/bin/include/libbson-1.0/bson.h"
-// #include "mongo-c-driver/bin/include/libmongoc-1.0/mongoc.h"
+#include "mongo-c-driver/bin/include/libbson-1.0/bson.h"
+#include "mongo-c-driver/bin/include/libmongoc-1.0/mongoc.h"
 // #include "ext/mysqlnd/mysqlnd.h"

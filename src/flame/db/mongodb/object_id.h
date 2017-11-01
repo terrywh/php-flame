@@ -11,7 +11,8 @@ namespace mongodb {
 		php::value timestamp(php::parameters& params);
 	private:
 		bson_oid_t oid_;
-		friend void fill_bson_with(bson_t* doc, php::array& arr);
+		friend void fill_with(bson_t* doc, const php::array& arr);
+		friend php::value from(bson_iter_t* iter);
 	};
 
 }

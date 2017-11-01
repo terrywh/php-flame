@@ -17,7 +17,8 @@ namespace mongodb {
 		php::value to_datetime(php::parameters& params);
 	private:
 		int64_t milliseconds_ = 0;
-		friend void fill_bson_with(bson_t* doc, php::array& arr);
+		friend void fill_with(bson_t* doc, const php::array& arr);
+		friend php::value from(bson_iter_t* iter);
 	};
 
 }

@@ -32,7 +32,7 @@ $val = yield $cli->get("key");
 * `connect()` 不会立刻完成对 `Redis` 的连接，函数也不会阻塞（实际会在第一次命令请求时进行连接）；
 
 #### `redis::close()`
-立刻主动关闭和 `redis` 的连接。
+立刻主动关闭和 `redis` 的连接；
 
 **注意**：
 * 不调用 `close()` 与 `Redis` 建立的连接**也会**在对象析构时自动释放；
@@ -60,6 +60,12 @@ $collection = $cli->collection("col_abc");
 
 #### `client::collection(string $name) | clieng::$collection_name`
 获取指定名称的 collection 集合对象；`client` 类实现了魔术函数 `__get()` 可以直接用集合名称，通过属性形式访问对应的 collection 集合；
+
+#### `client::close()`
+立刻关闭当前数据库连接；
+
+**注意**：
+* 当连接关闭后，由 `client` 对象生成出的相关对象均不能继续使用，例如由 `collection` 对象；
 
 ### `class flame\db\mongodb\object_id`
 #### `object_id::__toString()`
@@ -113,6 +119,9 @@ $count = yield $collection->count(['x'=>'y']);
 * 其他字段对应相关 PHP 内置类型；
 * 请尽量使用 `'` 单引号，防止功能符号被转义，例如 `$gt = "aaa"; $filter = ["a" => ["$gt"=>1234]]`；
 
+#### `yield collection::count([array $query])`
+获取当前集合中（符合条件的）文档数量；
+
 #### `yield collection::insert_one(array $doc)`
 向当前集合插入一条新的 `$doc` 文档；
 
@@ -165,8 +174,21 @@ while($doc = yield $cursor->next()) {
 }
 ```
 
-#### `yield cursor::toArray()`
-遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组；
+#### `yield cursor::toArray([callable $cb])`
+遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组；可选使用 `$cb` 回调函数对结果集的每个文档进行过滤；
+
+**示例**：
+``` PHP
+<?php
+// $cursor = .....
+$cursor->toArray(function(&$doc) { // COW 故也可以不使用引用
+	if($doc["a"] == "bbb") return true;
+	return false;
+});
+```
+
+**注意**：
+* 不要混合使用 `next()` 和 `toArray()` 两种读取方式，可能导致未知问题；
 
 ### `class flame\db\mysql\client`
 封装简单的“伪异步” mysql 客户端；由于 MySQL 官方不提供 C/C++ 异步版本的驱动（非异步协议），此封装实质是在额外的工作县城中进行 MySQL 相关操作“模拟异步”来实现的；

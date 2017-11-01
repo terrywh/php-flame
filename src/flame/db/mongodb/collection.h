@@ -5,6 +5,7 @@ namespace db {
 namespace mongodb {
 	class collection: public php::class_base {
 	public:
+		collection();
 		~collection();
 		php::value __debugInfo(php::parameters& params);
 		php::value count(php::parameters& params);
@@ -19,7 +20,7 @@ namespace mongodb {
 	private:
 		php::object          client_object;
 		mongoc_client_t*     client_;
-		mongoc_collection_t* collection_ = nullptr;
+		mongoc_collection_t* collection_;
 		inline void init(const php::object& client_object,
 			mongoc_client_t* client, mongoc_collection_t* collection) {
 			this->client_object = client_object;

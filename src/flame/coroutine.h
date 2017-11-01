@@ -42,6 +42,7 @@ namespace flame {
 			current->run();
 			current = old;
 		}
+		void close();
 		inline void yield(callback_t cb, void* data = nullptr) {
 			yields_.push_back(stack_t {.cb = cb, .data = data});
 		}

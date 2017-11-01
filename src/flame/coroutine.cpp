@@ -3,15 +3,27 @@
 
 namespace flame {
 	coroutine* coroutine::current;
-	static php::value async_flag;
+	static php::value     flag_async;
 	void coroutine::prepare() {
-		ZVAL_PTR((zval*)&async_flag, nullptr);
+		ZVAL_PTR((zval*)&flag_async, nullptr);
 	}
 	php::value async() {
+		if(coroutine::current->status_ != 0) {
+			php::fail("keyword 'yield' missing before async function");
+			coroutine::current->close();
+			uv_stop(flame::loop);
+			return nullptr;
+		}
 		++ coroutine::current->status_;
-		return async_flag;
+		return flag_async;
 	}
 	php::value async(void* context) {
+		if(coroutine::current->status_ != 0) {
+			php::fail("keyword 'yield' missing before async function");
+			coroutine::current->close();
+			uv_stop(flame::loop);
+			return nullptr;
+		}
 		++ coroutine::current->status_;
 		php::value v;
 		ZVAL_PTR((zval*)&v, context);
@@ -27,18 +39,25 @@ namespace flame {
 	static void finish_cb(uv_handle_t* handle) {
 		delete reinterpret_cast<coroutine*>(handle->data);
 	}
+	void coroutine::close() {
+		status_ = -1;
+		uv_close((uv_handle_t*)&async_, finish_cb);
+	}
 	void coroutine::run() {
-		while(true) {
+		while(status_ >= 0) {
 			if(EG(exception) || !generator_.valid()) {
 				// 可能由于 valid() 调用，引发新的异常（故需要二次捕获）
 				if(EG(exception)) {
+					close();
 					uv_stop(flame::loop);
 				}else if(this->parent_ != nullptr) {
 					coroutine* parent = this->parent_;
 					php::value rv = generator_.get_return();
 					parent->next(rv);
+					close();
+				}else{
+					close();
 				}
-				uv_close((uv_handle_t*)&async_, finish_cb);
 				break;
 			}
 			php::value v = generator_.current();
@@ -48,6 +67,7 @@ namespace flame {
 			}else if(v.is_pointer()) { // 使用内置 IS_PTR 类型标识异步操作
 				if(--status_ != 0) {
 					php::fail("keyword 'yield' missing before async function");
+					close();
 					uv_stop(flame::loop);
 				}
 				break;
@@ -57,9 +77,16 @@ namespace flame {
 		}
 	}
 	void coroutine::next(php::value& rv) {
+		if(status_ < 0) return;
 		coroutine* old = current;
 		current = this;
-		if(yields_.empty()) {
+		if(rv.is_exception()) {
+			while(!yields_.empty()) {
+				yields_.pop_front();
+			}
+			generator_.throw_exception(rv);
+			run();
+		}else if(yields_.empty()) {
 			generator_.send(rv);
 			run();
 		}else{
@@ -70,6 +97,7 @@ namespace flame {
 		current = old;
 	}
 	void coroutine::fail(const php::exception& ex) {
+		if(status_ < 0) return;
 		coroutine* old = current;
 		current = this;
 		while(!yields_.empty()) {

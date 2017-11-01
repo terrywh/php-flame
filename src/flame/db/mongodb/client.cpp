@@ -1,4 +1,4 @@
-#include "../../fiber.h"
+#include "../../coroutine.h"
 #include "client.h"
 #include "collection.h"
 
@@ -26,7 +26,7 @@ namespace mongodb {
 	}
 	php::value client::collection(php::parameters& params) {
 		if(params.length() >= 1 && params[0].is_string()) {
-			return collection(params[0]);
+			return collection_by_name(params[0]);
 		}else{
 			throw php::exception("collection name must be of type 'string'");
 		}
@@ -36,12 +36,12 @@ namespace mongodb {
 		client_ = nullptr;
 		return nullptr;
 	}
-	php::object client::collection(const php::string& name) {
-		mongoc_collection_t* mcol = mongoc_client_get_collection(client_, mongoc_uri_get_database(uri_), name.c_str());
-		php::object pcol = php::object::create<mongodb::collection>();
-		mongodb::collection* ncol = pcol.native<mongodb::collection>();
-		ncol->init(obj(), client_, mcol);
-		return std::move(pcol);
+	php::object client::collection_by_name(const php::string& name) {
+		mongoc_collection_t* col = mongoc_client_get_collection(client_, mongoc_uri_get_database(uri_), name.c_str());
+		php::object          obj = php::object::create<mongodb::collection>();
+		mongodb::collection* cpp = obj.native<mongodb::collection>();
+		cpp->init(this, client_, col);
+		return std::move(obj);
 	}
 }
 }
