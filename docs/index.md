@@ -1,17 +1,18 @@
 ## Flame
 **Flame** 是一个 PHP 框架，借用 PHP Generator 实现 协程式 的编程服务。目前，flame 中提供了如下功能：
-1. 协程 API；
+1. 协程核心；
 	1. 核心协程函数；
 	2. 时间协程函数（如 定时器等）；
-2. 协程式网络 API；
-	1. HTTP 客户端、服务端；
+2. [协程式网络](/php-flame/flame_net)；
+	1. [HTTP 客户端](/php-flame/flame_net_http)；
 	2. Unix Socket 客户端、服务端；
 	3. TCP 客户端、服务端；
 	4. UDP 客户端、服务端；
-3. 协程式驱动 API：
+	5. [FastCGI 处理器](/php-flame/flame_net_fastcgi) - 挂接 Nginx 等实现 HTTP 服务；
+3. [协程式数据库驱动](/php/flame/flame_db)：
 	1. 简单 Redis 客户端；
 	2. 简单 Mongodb 客户端；
-	3. 简单 MySQL 客户端（暂不支持事务）；
+	3. 简单 MySQL 客户端；
 
 **注意**：
 * 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
