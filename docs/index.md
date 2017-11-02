@@ -35,8 +35,7 @@ flame\go(function() {
 	$handler->handle(function($req, $res) {
 		yield flame\time\sleep(2000);
 		var_dump($req);
-		$data = json_encode($req);
-		yield $res->end($data);
+		yield $res->end("hello world!");
 	});
 	// 创建网络服务器
 	$server = new flame\net\tcp_server();
