@@ -47,7 +47,7 @@ function callback($chan, $data);
 * 当发生错误时，`subscribe` 的流程将立刻结束（即恢复运行）并抛出错误；
 
 ### `class flame\db\mongodb\client`
-封装简单的“伪异步” mongodb 客户端；由于 MongoDB 官方不提供 C/C++ 异步版本的驱动，此封装实质是在额外的线程中进行 MongoDB 相关操作“模拟异步”来实现的；
+封装简单的“伪异步” mongodb 客户端；由于 MongoDB 官方不提供 C/C++ 异步版本的驱动，此封装实质是在额外的线程中进行 MongoDB 相关操作“模拟异步”来实现的；功能比较简单，没有实现几种不常用的数据类型，不支持 GridFS 等高级特性；
 
 **示例**：
 ``` PHP
@@ -189,7 +189,7 @@ while($doc = yield $cursor->next()) {
 * 混合使用 `next()` 和 `toArray()` 两种读取方式可能导致未知错误；
 
 ### `class flame\db\mysql\client`
-封装简单的“伪异步” mysql 客户端；由于 MySQL 官方不提供 C/C++ 异步版本的驱动（非异步协议），此封装实质是在额外的工作县城中进行 MySQL 相关操作“模拟异步”来实现的；
+封装简单的“伪异步” mysql 客户端；由于 MySQL 协议不存在“异步”，，此封装实质是在额外的工作县城中进行 MySQL 相关操作“模拟异步”来实现的；功能比较简单，不支持事务；
 
 **示例**：
 ``` PHP
