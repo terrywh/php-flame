@@ -61,6 +61,7 @@ flame\run();
 flame\init("test_app", [ // 可选
 	"worker" => 4, // 工作进程数，默认为 0
 ]);
+```
 
 #### `flame\go(callable $g)`
 生成一个“协程”；
@@ -80,6 +81,7 @@ flame\go(function() {
 
 });
 ```
+
 **注意**：
 * 本函数必须在下述 `flame\run()` 函数前执行；否则无法生效；
 
