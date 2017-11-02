@@ -14,6 +14,12 @@
 	2. 简单 Mongodb 客户端；
 	3. 简单 MySQL 客户端；
 
+**源码**
+https://github.com/terrywh/php-flame/
+
+**示例**：
+https://github.com/terrywh/php-flame/tree/master/test/flame
+
 **注意**：
 * 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
 * 嵌套异步 `Generator` 可使用 `yield` 关键字直接调用，也可以使用 `PHP` 的嵌套语法 `yield from`；具体可参考 PHP 文档： [Gernerator Syntax](http://php.net/manual/en/language.generators.syntax.php) 的相关说明；
@@ -40,7 +46,7 @@ flame\go(function() {
 });
 flame\run();
 ```
-完整示例可参考 `/test/flame/net/fastcgi/server.php` 及 `*.conf` 相关代码；
+完整示例可参考 [/test/flame/net/fastcgi](https://github.com/terrywh/php-flame/tree/master/test/flame/net/fastcgi)` 相关代码；
 
 ## `namespace flame`
 
