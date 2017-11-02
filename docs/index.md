@@ -18,6 +18,30 @@
 * 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
 * 嵌套异步 `Generator` 可使用 `yield` 关键字直接调用，也可以使用 `PHP` 的嵌套语法 `yield from`；具体可参考 PHP 文档： [Gernerator Syntax](http://php.net/manual/en/language.generators.syntax.php) 的相关说明；
 
+**示例**：
+``` PHP
+<?php
+flame\init("fastcgi-server");
+flame\go(function() {
+	// 创建 fastcgi 处理器
+	$handler = new flame\net\fastcgi\handler();
+	// 设置默认处理程序
+	$handler->handle(function($req, $res) {
+		yield flame\time\sleep(2000);
+		var_dump($req);
+		$data = json_encode($req);
+		yield $res->end($data);
+	});
+	// 创建网络服务器
+	$server = new flame\net\tcp_server();
+	$server->handle($handler); // 指定处理程序
+	$server->bind("127.0.0.1", 19001);
+	yield $server->run();
+});
+flame\run();
+```
+完整示例可参考 `/test/flame/net/fastcgi/server.php` 及 `*.conf` 相关代码；
+
 ## `namespace flame`
 
 最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
