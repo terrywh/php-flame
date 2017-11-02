@@ -15,7 +15,7 @@
 	2. 简单 Mongodb 客户端；
 	3. 简单 MySQL 客户端；
 
-**源码**
+**源码**：
 https://github.com/terrywh/php-flame/
 
 **示例**：
