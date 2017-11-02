@@ -2,7 +2,8 @@
 **Flame** 是一个 PHP 框架，借用 PHP Generator 实现 协程式 的编程服务。目前，flame 中提供了如下功能：
 1. 协程核心；
 	1. 核心协程函数；
-	2. [时间协程函数](/php-flame/flame_time)（如 定时器等）；
+	2. [时间协程函数](/php-flame/flame_time) - 调度休眠、定时器；
+	3. [操作系统函数](/php-flame/flame_os) - 异步进程、PHP 路径；
 2. [协程式网络](/php-flame/flame_net)；
 	1. [HTTP 客户端](/php-flame/flame_net_http)；
 	2. Unix Socket 客户端、服务端；
@@ -57,8 +58,8 @@ flame\run();
 **实例**：
 ``` php
 <?php
-flame\init("test_app", [
-	"worker" => 4, // 可选，工作进程数，默认为 0
+flame\init("test_app", [ // 可选
+	"worker" => 4, // 工作进程数，默认为 0
 ]);
 
 #### `flame\go(callable $g)`
@@ -82,20 +83,13 @@ flame\go(function() {
 **注意**：
 * 本函数必须在下述 `flame\run()` 函数前执行；否则无法生效；
 
-#### `flame\on_quit(callable $cb)`
-添加退出前的回调函数；一般用于在需要终止进程时，进行补充操作、记录日志等，例如 `$server->close()` 等；
-
-**注意**：
-* 本函数可重复调用，添加多个回调函数；
-* 函数按添加顺序相反的顺序执行（实际为 `stack` 容器）；
-* 当进程要结束时还有异步流程没有执行完毕，将会在 10s 后强制终止；
-
 #### `flame\run()`
 框架入口，所有协程调度在此处开始执行，直到所有“协程”结束；
 
 **示例**：
 ``` PHP
 <?php
+flame\init("name");
 flame\go(function() {
 	// yield ...
 });

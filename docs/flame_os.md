@@ -59,5 +59,5 @@ $proc = new flame\os\process("ping", ...);
 ``` PHP
 <?php
 $php_path = flame\os\executable();
-// $php_path = "/usr/local/php/bin/php"
+// "/usr/local/php/bin/php"
 ```
