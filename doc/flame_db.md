@@ -25,7 +25,7 @@ $val = yield $cli->get("key");
 **注意**：
 * 所有命令函数均需前置 `yield` 关键字进行调用；
 
-#### `redis::connect(string $host, integer $port)` | `redis::connect(string $uri)`
+#### `redis::connect(string $host, integer $port)`
 配置 `redis` 连接相关属性；
 
 **注意**：
@@ -52,17 +52,25 @@ function callback($chan, $data);
 **示例**：
 ``` PHP
 <?php
-$cli = new flame\db\mongo("mongodb://127.0.0.1:27017/database");
-// 以下两行代码功能相同
-$collection = $cli->col_abc;
-$collection = $cli->collection("col_abc");
+flame::go(function() {
+	$cli = new flame\db\mongo();
+	yield $cli->connect("mongodb://127.0.0.1:27017/database");
+	// 以下两行代码功能相同
+	$collection = $cli->col_abc;
+	$collection = $cli->collection("col_abc");
+});
 ```
 
-#### `client::collection(string $name) | clieng::$collection_name`
-获取指定名称的 collection 集合对象；`client` 类实现了魔术函数 `__get()` 可以直接用集合名称，通过属性形式访问对应的 collection 集合；
+#### `yield client::connect([string $uri])`
+连接 mongodb 数据库，不传递参数标识“重连”；
 
-#### `client::close()`
-立刻关闭当前数据库连接；
+连接字符串请参考：[Connection String URI Format](https://docs.mongodb.com/manual/reference/connection-string/)
+
+#### `yield client::collection(string $name)`
+获取指定名称的 collection 集合对象；
+
+#### `yield client::close()`
+关闭当前数据库连接；
 
 **注意**：
 * 当连接关闭后，由 `client` 对象生成出的相关对象均不能继续使用，例如由 `collection` 对象；
@@ -174,21 +182,11 @@ while($doc = yield $cursor->next()) {
 }
 ```
 
-#### `yield cursor::toArray([callable $cb])`
-遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组；可选使用 `$cb` 回调函数对结果集的每个文档进行过滤；
-
-**示例**：
-``` PHP
-<?php
-// $cursor = .....
-$cursor->toArray(function(&$doc) { // COW 故也可以不使用引用
-	if($doc["a"] == "bbb") return true;
-	return false;
-});
-```
+#### `yield cursor::to_array()`
+遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组
 
 **注意**：
-* 不要混合使用 `next()` 和 `toArray()` 两种读取方式，可能导致未知问题；
+* 混合使用 `next()` 和 `toArray()` 两种读取方式可能导致未知错误；
 
 ### `class flame\db\mysql\client`
 封装简单的“伪异步” mysql 客户端；由于 MySQL 官方不提供 C/C++ 异步版本的驱动（非异步协议），此封装实质是在额外的工作县城中进行 MySQL 相关操作“模拟异步”来实现的；
@@ -196,8 +194,18 @@ $cursor->toArray(function(&$doc) { // COW 故也可以不使用引用
 **示例**：
 ``` PHP
 <?php
-$cli = new flame\db\mysql\client();
-$cli->connect("127.0.0.1", 3306, "username", "password", "database_name");
+flame\go(function() {
+	$cli = new flame\db\mysql\client();
+	yield $cli->connect("mysql://username:password@127.0.0.1:3306/database");
+});
+```
+
+#### `yied client::connect([string $uri])`
+连接 mysql 数据库；不传递参数时表示“重连”；
+
+连接字符串形式如下：
+```
+mysql://{username}:{password}@{host}:{port}/{database}
 ```
 
 #### `yield client::query(string $sql) | yield client::query(string $format[, mixed $arg1, mixed $arg2, ...])`
@@ -240,43 +248,57 @@ $rb = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa);
 ``` SQL
 `a` LIKE 'aaaa%'
 ```
-* `['a'=>['$between'=>[1234, 5678]]]`
+* `['a'=>['$range'=>[1234, 5678]]]`
 ``` SQL
 `a` BETWEEN 1234 AND 5678
 ```
 
 **注意**：
-* 请尽量使用 `'` 单引号，防止功能符号被转义；
+* 请尽量使用 `'` 单引号，防止功能符号应含有 `$` 被转义；
 
-#### `yield client::delete_many(string $table, array $conditions)`
-删除匹配条件的所有行；
-#### `yield client::delete_one(string $table, array $conditions[, array $order])`
-删除匹配条件的第一行；`$order` 参数设置请参考 `select_many()` 函数说明；
-#### `yield client::update_many(string $table, array $conditions, array $modify)`
+#### `yield client::delete(string $table, array $conditions[, mixed $order[, mixed $limit]])`
+删除匹配条件的行；
+
+**示例**：
+``` PHP
+<?php
+// $mysql = ....
+$mysql->delete("test", ["id"=>123], ["id"=>-1, "key" => 1], [0, 100]);
+// DELETE FROM `test` WHERE `id`=123 ORDER BY `id` DESC, `key` ASC LIMIT 0, 100
+$mysql->delete("test", ["id"=>123], '`id` DESC, `key` ASC', 100);
+$mysql->delete("test", ["id"=>123], ["id"=>false, "key"=> true], "0,100");
+```
+
+#### `yield client::update(string $table, array $conditions, array $modify[, array $order[, mixed $limit]])`
 更新匹配条件的所有行，并应用由 `$modify` 描述的更改；
-#### `yield client::update_one(string $table, array $conditions, array $modify[, array $order])`
-更新匹配条件的第一行，并应用由 `$modify` 描述的更改；`$order` 参数设置请参考 `select_many()` 函数说明；
-#### `yield client::select_many(string $table, array $conditions[, array $order[, integer $offset[, integer $limit[, string|array $fields]]]])`
+
+**示例**：
+``` PHP
+<?php
+// $mysql = ....
+$mysql->update("test", ["$or"=>["id"=>['$gt'=>123], "key"=>"xxxxx"]], ["key"=>"kkkkk", "val"=>"vvvvv"]);
+// UPDATE `test` SET `key`='kkkkk', `val`='vvvvv' WHERE (`id`>123 OR `key`='xxxxx')
+$mysql->update("test", ["key"=>['$like'=>"xxx%"]], ["val"=>"aaaaa"]);
+// UPDATE `test` SET `val`='aaaaa' WHERE `key` LIKE 'xxx%'
+```
+
+#### `yield client::select(string $table[, mixed $columns[, array $conditions[, mixed $order[, mixed $limit]]]])`
 执行查询并返回结果集 result_set 对象；
-* `$order` 参数用于描述排序信息，可以使用如下形式：
+
+**示例**：
 ``` PHP
 <?php
-	// ORDER BY `a` ASC, `b` DESC
-	$order = ["a"=>1,"b"=>-1];
+// $mysql = ....
+$mysql->select("test", "*", ["id"=>['$gt'=>123]]);
+// SELECT * FROM `test` WHERE `id`>123
+$mysql->select("test", ["id", "key","val"], ["key"=>['$ne'=>"aaaaa"]], ["key"=>-1], [0, 10]);
+// SELECT `id`,`key`,`val` FROM `test` WHERE `key`!='aaaaa' ORDER BY `key` DESC LIMIT 0, 10
 ```
-* `$fields` 参数可以使用下述两种形式：
-``` PHP
-<?php
-	// 文本形式直接指定
-	$fields = '*';
-	$fields = 'SQL_CALC_FOUND_ROWS `a`, ABS(`b`), RAND()';
-	// 使用数组
-	$fields = ['a','b']; // 不能填入 SQL 函数
-```
+
 **注意**：
 * 如需要在字段名称上使用 SQL 函数，请使用文本形式自行指定 $fields 参数；数组形式不支持此种语法；
 
-#### `yield client::select_one(string $table, array $conditions)`
+#### `yield client::one(string $table, array $conditions)`
 执行查询并限定结果集大小为1，若找到匹配数据，直接返回数据（关联数组）；若未找到，返回 null；
 #### `yield client::found_rows()`
 简化调用 `FOUND_ROWS()` SQL 函数的过程，直接返回行数量；
@@ -295,23 +317,17 @@ $rb = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa);
 <?php
 // ... 通过 client 获得 result_set 对象 $rs
 $rows = yield $rs->fetch_all(); // 获得所有数据对应的关联数组
-while($row = yield $rs->fetch_row()) { // 依次获取每行数据关联数组
+while($row = yield $rs->fetch_assoc()) { // 依次获取每行数据关联数组
 	var_dump($row);
 }
-$rs->
+while($row = yield $rs->fetch_array()) { // 依次获取每行数据关联数组
+	var_dump($row);
+}
 ```
 
-#### `result_set::__toBool()`
-可用于判定结果集是否有存在数据；
-#### `yield result_set::fetch_all()`
+#### `yield result_set::fetch_assoc()`
 获取结果集中的所有数据，返回二位数组，其元素为每行数据的关联数组；
-#### `yield result_set::fetch_row()`
+#### `yield result_set::fetch_array()`
 获取结果集中的下一数据，返回该行数据的关联数组；
-
-### `class flame\db\mysql\result_info`
-#### `result_info::__toBool()`
-可用于判定结果是否为“成功”；
-#### `yield result_info::affect_rows()`
-用于获取执行影响行数量；
-#### `yield result_info::last_insert_id()`
-获取由 INSERT 或 UPDATE 语句写入数据生成的 AUTO_INCREMENT 字段对应数据；
+#### `yield result_set::fetch_all([integer $type = flame\db\mysql\FETCH_ASSOC])`
+获取所有结果集数据，默认获取关联数组(`FETCH_ASSOC`)；也可自行指定获取数值下标数组(`FETCH_ARRAY`)；

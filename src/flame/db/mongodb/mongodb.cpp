@@ -45,14 +45,8 @@ void init(php::extension_entry& ext) {
 	ext.add(std::move(class_date_time));
 	// ---------------------------------------------------------------------
 	php::class_entry<client> class_client("flame\\db\\mongodb\\client");
-	class_client.add<&client::__construct>("__construct");
+	class_client.add<&client::connect>("connect");
 	class_client.add<&client::__destruct>("__destruct");
-	class_client.add<&client::__isset>("__isset", {
-		php::of_string("name"),
-	});
-	class_client.add<&client::__get>("__get", {
-		php::of_string("name"),
-	});
 	class_client.add<&client::collection>("collection");
 	class_client.add<&client::close>("close");
 	ext.add(std::move(class_client));

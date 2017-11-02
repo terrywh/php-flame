@@ -1,3 +1,4 @@
+#include "../flame.h"
 #include "../coroutine.h"
 #include "../../util/sock.h"
 #include "net.h"
@@ -137,7 +138,7 @@ namespace net {
 		if(stop_recv && cor_ != nullptr) { // 读取协程继续
 			cor_->next();
 		}
-		uv_close((uv_handle_t*)socket, coroutine::free_close_cb);
+		uv_close((uv_handle_t*)socket, free_handle_cb);
 		socket = nullptr;
 	}
 	php::value udp_socket::close(php::parameters& params) {

@@ -66,9 +66,6 @@ namespace flame {
 		inline void fail(const std::string& ex, int code = 0) {
 			fail(php::exception(ex, code));
 		}
-		static void free_close_cb(uv_handle_t* handle) {
-			free(handle);
-		}
 		static void prepare();
 
 		friend php::value async();

@@ -13,6 +13,13 @@ namespace flame {
 		}
 	}
 
+	void free_handle_cb(uv_handle_t* handle) {
+		free(handle);
+	}
+	void free_data_cb(uv_handle_t* handle) {
+		free(handle->data);
+	}
+
 	php::value init(php::parameters& params) {
 		// 应用名用于设置进程名称
 		process_name = static_cast<std::string>(params[0]);

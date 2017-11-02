@@ -21,12 +21,8 @@ namespace mongodb {
 		php::object          client_object;
 		mongoc_client_t*     client_;
 		mongoc_collection_t* collection_;
-		inline void init(const php::object& client_object,
-			mongoc_client_t* client, mongoc_collection_t* collection) {
-			this->client_object = client_object;
-			this->client_       = client;
-			this->collection_   = collection;
-		}
+		void init(const php::object& client_object,
+			mongoc_client_t* client, mongoc_collection_t* collection);
 		static void default_cb(uv_work_t* w, int status);
 		static void count_wk(uv_work_t* w);
 		static void insert_one_wk(uv_work_t* w);

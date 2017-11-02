@@ -5,20 +5,19 @@ namespace db {
 namespace mongodb {
 	class client: public php::class_base {
 	public:
-		php::value __construct(php::parameters& params);
+		client();
 		php::value __destruct(php::parameters& params);
+		php::value connect(php::parameters& params);
 		php::value collection(php::parameters& params);
-		inline php::value __get(php::parameters& params) {
-			return collection_by_name(params[0]);
-		}
-		inline php::value __isset(php::parameters& params) {
-			return true;
-		}
 		php::value close(php::parameters& params);
 	private:
-		php::object collection_by_name(const php::string& name);
-		mongoc_client_t* client_ = nullptr;
-		mongoc_uri_t*    uri_ = nullptr;
+		mongoc_client_t* client_;
+		mongoc_uri_t*    uri_;
+		void connect_();
+		static void default_cb(uv_work_t* req, int status);
+		static void connect_wk(uv_work_t* req);
+		static void collection_wk(uv_work_t* req);
+		static void close_wk(uv_work_t* req);
 	};
 }
 }

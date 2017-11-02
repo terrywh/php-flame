@@ -1,3 +1,4 @@
+#include "../../flame.h"
 #include "../../coroutine.h"
 #include "client_request.h"
 #include "client.h"
@@ -115,7 +116,7 @@ void client_request::close() {
 		curl_header = nullptr;
 		curl_easy_cleanup(curl_);
 		curl_   = nullptr;
-		uv_close((uv_handle_t*)poll_, coroutine::free_close_cb);
+		uv_close((uv_handle_t*)poll_, free_handle_cb);
 		poll_ = nullptr;
 		curl_fd = -1;
 		cli_    = nullptr;

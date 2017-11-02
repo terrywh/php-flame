@@ -1,6 +1,7 @@
 #include "db.h"
 #include "redis.h"
 #include "mongodb/mongodb.h"
+#include "mysql/mysql.h"
 
 namespace flame {
 namespace db {
@@ -20,6 +21,8 @@ namespace db {
 		ext.add(std::move(class_redis));
 		// mongodb
 		mongodb::init(ext);
+		// mysql
+		mysql::init(ext);
 	}
 }
 }

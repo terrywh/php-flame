@@ -8,6 +8,8 @@ namespace flame {
 		ZVAL_PTR((zval*)&flag_async, nullptr);
 	}
 	php::value async() {
+		// 某些销毁逻辑流程可能不存在协程上下文
+		if(coroutine::current == nullptr) return nullptr;
 		if(coroutine::current->status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
 			coroutine::current->close();
@@ -18,6 +20,8 @@ namespace flame {
 		return flag_async;
 	}
 	php::value async(void* context) {
+		// 某些销毁逻辑流程可能不存在协程上下文
+		if(coroutine::current == nullptr) return nullptr;
 		if(coroutine::current->status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
 			coroutine::current->close();

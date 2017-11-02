@@ -7,6 +7,12 @@
 namespace flame {
 namespace db {
 namespace mongodb {
+	void collection::init(const php::object& client_object,
+		mongoc_client_t* client, mongoc_collection_t* collection) {
+		this->client_object = client_object;
+		this->client_       = client;
+		this->collection_   = collection;
+	}
 	// TODO 拆分和精简下面 context 类型
 	typedef struct collection_request_t {
 		collection* self;

@@ -1,10 +1,9 @@
 <?php
 flame\init("mongodb_test");
 flame\go(function() {
-	$cli = new flame\db\mongodb\client("mongodb://notify:wzysy2dcaateSjcb2rlY@10.20.6.71:27017,10.20.6.72:27017/notify_test?replicaSet=devel_repl");
-	// var_dump( yield $cli->collection("test1")->count() );
-	var_dump( yield $cli->test1->count() );
-	$test1 = $cli->test1;
+	$cli = new flame\db\mongodb\client();
+	yield $cli->connect("mongodb://notify:wzysy2dcaateSjcb2rlY@10.20.6.71:27017,10.20.6.72:27017/notify_test?replicaSet=devel_repl");
+	$test1 = yield $cli->collection("test1");
 	yield $test1->insert_one(["a"=>"aaaaa"]);
 	yield $test1->insert_one(["a"=>"aaaaa"]);
 	yield $test1->insert_one(["a"=>"aaaaa"]);
