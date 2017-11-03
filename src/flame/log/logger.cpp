@@ -35,26 +35,23 @@ namespace log {
 		return nullptr;
 	}
 	void logger::rotate() {
-		std::printf("rotate: %08x\n", pipe_);
 		close();
 		pipe_ = (uv_pipe_t*)malloc(sizeof(uv_pipe_t));
 		uv_pipe_init(flame::loop, pipe_, 0);
 		pipe_->data = this;
-		if(path_.length() == 0 || path_.length() == 6 && std::strncmp(path_.c_str(), "stdout", 6) == 0) {
-			uv_pipe_open(pipe_, 1);
-			file_ = 0;
-		}else if(path_.length() == 6 && std::strncmp(path_.c_str(), "stderr", 6) == 0 ||
-			std::strncmp(path_.c_str(), "stdlog", 6) == 0) {
+		if(path_.length() == 0 || path_.length() == 6 && std::strncmp(path_.c_str(), "stderr", 6) == 0) {
 			uv_pipe_open(pipe_, 2);
 			file_ = 0;
+		}else if(path_.length() == 6 && std::strncmp(path_.c_str(), "stdout", 6) == 0 ||
+			std::strncmp(path_.c_str(), "stdlog", 6) == 0) {
+			uv_pipe_open(pipe_, 1);
+			file_ = 0;
 		}else{
-
 			uv_fs_t req;
 			file_ = uv_fs_open(flame::loop, &req, path_.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0777, nullptr);
 			if(!file_) throw php::exception("failed to open output file");
 			uv_pipe_open(pipe_, file_);
 		}
-		std::printf("done\n");
 	}
 	void logger::rotate(const php::string& path) {
 		path_ = path;
