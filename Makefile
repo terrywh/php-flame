@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.0.0
+EXT_VER=1.1.0
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.19-test
@@ -38,6 +38,7 @@ SOURCES=$(shell find ./src/util -name "*.cpp") \
  $(shell find ./src/flame -maxdepth 1 -name "*.cpp") \
  $(shell find ./src/flame/time -name "*.cpp") \
  $(shell find ./src/flame/os -name "*.cpp") \
+ $(shell find ./src/flame/log -name "*.cpp") \
  $(shell find ./src/flame/db -name "*.cpp") \
  $(shell find ./src/flame/net -maxdepth 1 -name "*.cpp") \
  $(shell find ./src/flame/net/fastcgi -name "*.cpp") \
