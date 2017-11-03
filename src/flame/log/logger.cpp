@@ -83,8 +83,14 @@ namespace log {
 			tt->tm_sec);
 		std::memcpy(out.put(level.length()), level.c_str(), level.length());
 		for(int i=0;i<params.length();++i) {
-			php::string str = params[i].to_string();
-			std::memcpy(out.put(str.length()), str.c_str(), str.length());
+			out.add(' ');
+			if(params[i].is_array()) {
+				php::string str = php::json_encode(params[i]);
+				std::memcpy(out.put(str.length()), str.c_str(), str.length());
+			}else{
+				php::string str = params[i].to_string();
+				std::memcpy(out.put(str.length()), str.c_str(), str.length());
+			}
 		}
 		out.add('\n');
 		write_request_t* ctx = new write_request_t {
@@ -96,13 +102,13 @@ namespace log {
 		return flame::async();
 	}
 	php::value logger::fail(php::parameters& params) {
-		return write(" (FAIL) ", params);
+		return write(" (FAIL)", params);
 	}
 	php::value logger::warn(php::parameters& params) {
-		return write(" (WARN) ", params);
+		return write(" (WARN)", params);
 	}
 	php::value logger::info(php::parameters& params) {
-		return write(" (INFO) ", params);
+		return write(" (INFO)", params);
 	}
 	php::value logger::write(php::parameters& params) {
 		return write(" ", params);
