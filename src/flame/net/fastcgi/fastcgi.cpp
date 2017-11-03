@@ -14,7 +14,7 @@ namespace fastcgi {
 		php::class_entry<handler_t> class_handler("flame\\net\\fastcgi\\handler");
 		class_handler.add(php::property_entry("__CONNECTION_HANDLER__", (bool)true));
 		class_handler.add<&handler_t::put>("put");
-		class_handler.add<&handler_t::delete_>("delete");
+		class_handler.add<&handler_t::remove>("delete");
 		class_handler.add<&handler_t::post>("post");
 		class_handler.add<&handler_t::get>("get");
 		class_handler.add<&handler_t::handle>("handle");

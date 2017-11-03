@@ -36,19 +36,19 @@ namespace http {
 			handle_put[path] = params[1];
 			return this;
 		}
-		php::value delete_(php::parameters& params) {
+		php::value remove(php::parameters& params) {
 			std::string path = params[0];
-			handle_put[path] = params[1];
+			handle_delete[path] = params[1];
 			return this;
 		}
 		php::value post(php::parameters& params) {
 			std::string path = params[0];
-			handle_put[path] = params[1];
+			handle_post[path] = params[1];
 			return this;
 		}
 		php::value get(php::parameters& params) {
 			std::string path = params[0];
-			handle_put[path] = params[1];
+			handle_get[path] = params[1];
 			return this;
 		}
 		php::value handle(php::parameters& params) {
