@@ -148,6 +148,8 @@ php::value get(php::parameters& params) {
 	req->prop("header")  = php::array();
 	if(params.length() > 1) {
 		req->prop("timeout") = params[1].to_long();
+	}else{
+		req->prop("timeout") = 2500;
 	}
 	return default_client->exec(obj_req);
 }
@@ -161,6 +163,8 @@ php::value post(php::parameters& params) {
 	req->prop("body")   = params[1];
 	if(params.length() > 2) {
 		req->prop("timeout") = params[2].to_long();
+	}else{
+		req->prop("timeout") = 2500;
 	}
 	return default_client->exec(obj_req);
 }
@@ -174,11 +178,13 @@ php::value put(php::parameters& params) {
 	req->prop("body")   = params[1];
 	if(params.length() > 2) {
 		req->prop("timeout") = params[2].to_long();
+	}else{
+		req->prop("timeout") = 2500;
 	}
 	return default_client->exec(obj_req);
 }
 
-php::value delete_(php::parameters& params) {
+php::value remove(php::parameters& params) {
 	php::object obj_req = php::object::create<client_request>();
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("DELETE");
@@ -186,6 +192,8 @@ php::value delete_(php::parameters& params) {
 	req->prop("header") = php::array();
 	if(params.length() > 1) {
 		req->prop("timeout") = params[1].to_long();
+	}else{
+		req->prop("timeout") = 2500;
 	}
 	return default_client->exec(obj_req);
 }

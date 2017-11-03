@@ -37,7 +37,7 @@ namespace http {
 	php::value get(php::parameters& params);
 	php::value post(php::parameters& params);
 	php::value put(php::parameters& params);
-	php::value delete_(php::parameters& params);
+	php::value remove(php::parameters& params);
 }
 }
 }

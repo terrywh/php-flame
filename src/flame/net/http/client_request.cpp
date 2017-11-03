@@ -24,7 +24,7 @@ php::value client_request::__construct(php::parameters& params) {
 		prop("timeout") = 2500;
 	}
 	if (params.length() >= 2) {
-		prop("body") = static_cast<php::string&>(params[1]);
+		prop("body")   = params[1];
 		prop("method") = php::string("POST");
 	}else{
 		prop("method") = php::string("GET");
