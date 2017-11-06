@@ -4,8 +4,9 @@
 	1. 核心协程函数；
 	2. [时间协程函数](/php-flame/flame_time) - 调度休眠、定时器；
 	3. [操作系统函数](/php-flame/flame_os) - 异步进程、PHP 路径；
+	4. [日志输出](/php-flame/flame_log)；
 2. [协程式网络](/php-flame/flame_net)；
-	1. [HTTP 客户端](/php-flame/flame_net_http)；
+	1. [HTTP 客户端](/php-flame/flame_net_http) - 支持 HTTP/2 协议；
 	2. Unix Socket 客户端、服务端；
 	3. TCP 客户端、服务端；
 	4. UDP 客户端、服务端；

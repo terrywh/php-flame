@@ -1,5 +1,5 @@
 ### `namespace flame\net`
-提供基本的 HTTP 协议网络协程式客户端、服务器封装；
+提供基本的 HTTP 协议网络协程式客户端封装；底层使用 curl 并内置使用 nghttp2 提供了 HTTP/2 支持；
 
 ### `class flame\net\http\client_request`
 

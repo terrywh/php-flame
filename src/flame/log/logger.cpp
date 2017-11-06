@@ -84,7 +84,7 @@ namespace log {
 		std::memcpy(out.put(level.length()), level.c_str(), level.length());
 		for(int i=0;i<params.length();++i) {
 			out.add(' ');
-			if(params[i].is_array()) {
+			if(params[i].is_array()) { // 自动输出 JSON 数据
 				php::string str = php::json_encode(params[i]);
 				std::memcpy(out.put(str.length()), str.c_str(), str.length());
 			}else{
