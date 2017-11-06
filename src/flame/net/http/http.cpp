@@ -2,6 +2,7 @@
 #include "client.h"
 #include "client_request.h"
 #include "server_request.h"
+#include "client_response.h"
 
 namespace flame {
 namespace net {
@@ -33,6 +34,14 @@ namespace http {
 		class_client_request.add(php::property_entry("body", nullptr));
 		class_client_request.add<&client_request::__construct>("__construct");
 		ext.add(std::move(class_client_request));
+		// class client_response
+		php::class_entry<client_response> class_client_response("flame\\net\\http\\client_response");
+		class_client_response.add(php::property_entry("status", 0));
+		class_client_response.add(php::property_entry("header", nullptr));
+		class_client_response.add(php::property_entry("cookie", nullptr));
+		class_client_response.add(php::property_entry("body", nullptr));
+		class_client_response.add<&client_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
+		ext.add(std::move(class_client_response));
 		// class client
 		php::class_entry<client> class_client("flame\\net\\http\\client");
 		class_client.add<&client::__construct>("__construct");
@@ -46,6 +55,7 @@ namespace http {
 		class_server_request.add(php::property_entry("header", nullptr));
 		class_server_request.add(php::property_entry("cookie", nullptr));
 		class_server_request.add(php::property_entry("body", nullptr));
+		class_server_request.add<&server_request::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		ext.add(std::move(class_server_request));
 	}
 	// 下面 HTTP 状态定义来自 nodejs/http_parser

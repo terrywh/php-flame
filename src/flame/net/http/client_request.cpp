@@ -2,6 +2,7 @@
 #include "../../coroutine.h"
 #include "client_request.h"
 #include "client.h"
+#include "client_response.h"
 
 namespace flame {
 namespace net {
@@ -14,8 +15,10 @@ client_request::client_request()
 	poll_ = (uv_poll_t*)malloc(sizeof(uv_poll_t));
 	poll_->data = this;
 	curl_ = curl_easy_init();
-	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
 	curl_easy_setopt(curl_, CURLOPT_PRIVATE, this);
+	res_obj = php::object::create<client_response>();
+	res_    = res_obj.native<client_response>();
+	res_->init();
 }
 php::value client_request::__construct(php::parameters& params) {
 	if (params.length() >= 3) {
@@ -33,6 +36,7 @@ php::value client_request::__construct(php::parameters& params) {
 		prop("url") = static_cast<php::string&>(params[0]);
 	}
 	prop("header") = php::array(0);
+	prop("cookie") = php::array(0);
 	return this;
 }
 php::value client_request::ssl(php::parameters& params) {
@@ -95,21 +99,28 @@ size_t client_request::read_cb(void *ptr, size_t size, size_t nmemb, void *strea
 	memcpy(ptr, stream, size*nmemb);
 	return size*nmemb;
 }
-
-size_t client_request::write_cb(char* ptr, size_t size, size_t nmemb, void *userdata) {
-	client_request* req = reinterpret_cast<client_request*>(userdata);
-	size_t          len = size*nmemb > CURL_MAX_WRITE_SIZE ? CURL_MAX_WRITE_SIZE : size*nmemb;
-	std::memcpy(req->buffer_.put(len), ptr, len);
+size_t client_request::head_cb(char* ptr, size_t size, size_t nitems, void* userdata) {
+	client_response* req = reinterpret_cast<client_response*>(userdata);
+	size_t           len = size*nitems;
+	req->head_cb(ptr, len);
 	return len;
 }
-
+size_t client_request::body_cb(char* ptr, size_t size, size_t nmemb, void *userdata) {
+	client_response* req = reinterpret_cast<client_response*>(userdata);
+	size_t           len = size*nmemb;
+	req->body_cb(ptr, len);
+	return len;
+}
 bool client_request::done_cb(CURLMsg* message) {
 	switch(message->msg) {
 	case CURLMSG_DONE:
 		if (message->data.result != CURLE_OK) {
 			co_->fail(curl_easy_strerror(message->data.result), message->data.result);
 		} else {
-			co_->next(std::move(buffer_));
+			php::object      obj = php::object::create<client_response>();
+			client_response* cpp = obj.native<client_response>();
+			cpp->done_cb(curl_);
+			co_->next(std::move(obj));
 		}
 		return true;
 	default:
@@ -131,6 +142,19 @@ void client_request::build(client* cli) {
 	} else {
 		throw php::exception("client_request build failed: empty url", -1);
 	}
+	php::buffer cookie;
+	php::array& cookie_all = prop("cookie");
+	for(auto i=cookie_all.begin(); i!= cookie_all.end(); ++i) {
+		php::string key = i->first.to_string();
+		php::string val = i->second.to_string();
+		std::memcpy(cookie.put(key.length()), key.c_str(), key.length());
+		cookie.add('=');
+		std::memcpy(cookie.put(val.length()), val.c_str(), val.length());
+		cookie.add(';');
+		cookie.add(' ');
+	}
+	php::string cookie_str = std::move(cookie); // 这里会添加 '\0' 结束符
+	curl_easy_setopt(curl_, CURLOPT_READDATA, cookie_str.c_str());
 	std::string method = prop("method");
 	php::value   vbody = prop("body");
 	php::string  xbody;
@@ -157,9 +181,13 @@ void client_request::build(client* cli) {
 		}
 	}
 	curl_easy_setopt(curl_, CURLOPT_TIMEOUT_MS, static_cast<long>(prop("timeout")));
+	// curl_easy_setopt(curl_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
 	curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
-	curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_cb);
-	curl_easy_setopt(curl_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+	curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, body_cb);
+	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, res_);
+	// 数据接收头部，但非 curl_easy_setopt(curl_, CURLOPT_HEADER, 1L);
+	curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, head_cb);
+	curl_easy_setopt(curl_, CURLOPT_HEADERDATA, res_);
 	if (cli->debug_) {
 		curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
 	}
@@ -172,10 +200,9 @@ void client_request::close() {
 		curl_easy_cleanup(curl_);
 		curl_   = nullptr;
 		uv_close((uv_handle_t*)poll_, free_handle_cb);
-		poll_ = nullptr;
+		poll_   = nullptr;
 		curl_fd = -1;
 		cli_    = nullptr;
-		buffer_.reset();
 	}
 }
 curl_slist* client_request::build_header() {

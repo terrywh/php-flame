@@ -51,6 +51,15 @@ HTTP 的请求地址，不能为空；
 $req->header["content-type"] = "application/x-www-form-urlencoded";
 ```
 
+**注意**：
+* 设置 Cookie 时请示用专用的 $cookie 属性数组，否则可能导致相互覆盖；
+
+#### `array client_request::$cookie`
+请求头部定制 Cookie 项；
+
+**注意**：
+* 设置 Cookie 不要使用 $header ，否则可能导致相互覆盖；
+
 #### `mixed client_request::$body`
 Array / String 当 $method = `PUT` 或 `POST` 时的请求体；
 **示例**：
@@ -69,7 +78,7 @@ $req->body = ["a"=> "b", "c"=> "d"];
 * 复用 client 对象以约束资源占用；
 
 #### `yield http_client::exec(client_request $request)`
-执行指定请求并返回响应对象；
+执行指定请求并返回响应对象 `flame\net\http\client_response`；
 
 **示例**：
 ``` PHP
@@ -105,6 +114,24 @@ var_dump($ret);
 
 #### `yield flame\net\http\remove(string $url, integer $timeout = 2500)`
 简单的 `DELETE` 请求方法。
+
+### `class flame\net\http\client_response`
+客户端请求的响应，可自动转换为文本 (`toString()`)，也可以按属性访问对应数据；
+
+#### `integer client_response::$status`
+响应码，例如 `200`；
+
+#### `array client_response::$header`
+HTTP 响应头；
+
+#### `array client_response::$cookie`
+COOKIE，对应 HTTP 响应头中 Set-Cookie 的部分；
+
+#### `string client_response::$body`
+HTTP 响应体；
+
+#### `string client_response::toString()`
+HTTP 响应体，方便直接将对象作为文本使用；
 
 ### `class flame\net\http\server_request`
 作为服务端时，收到的来自客户端、浏览器请求的描述对象；

@@ -26,6 +26,7 @@ namespace fastcgi {
 		class_server_response.add(php::property_entry("header", nullptr));
 		class_server_response.add(php::property_entry("header_sent", false));
 		class_server_response.add(php::property_entry("ended", false));
+		class_server_response.add<&server_response::__construct>("__construct", ZEND_ACC_PRIVATE);
 		class_server_response.add<&server_response::write_header>("write_header");
 		class_server_response.add<&server_response::write>("write");
 		class_server_response.add<&server_response::end>("end");

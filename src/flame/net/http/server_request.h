@@ -8,6 +8,10 @@ namespace http {
 		// property headers array
 		// property query   array
 		// property body    mixed
+		// 声明为 ZEND_ACC_PRIVATE 禁止创建
+		php::value __construct(php::parameters& params) {
+			return nullptr;
+		}
 	};
 }
 }

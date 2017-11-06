@@ -27,10 +27,10 @@ void client::curl_multi_info_check(client* self) {
 		client_request* req;
 		CURL* easy_handle = message->easy_handle;
 		curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &req);
-		if(req->done_cb(message)) {
-			curl_multi_remove_handle(self->curlm_, easy_handle);
-			req->close();
-		}
+		req->done_cb(message);
+		curl_multi_remove_handle(self->curlm_, easy_handle);
+		req->close();
+		req->ref_ = nullptr;
 	}
 }
 
@@ -106,14 +106,18 @@ client::client()
 	curl_multi_setopt(curlm_, CURLMOPT_TIMERDATA, this);
 }
 
-php::value client::exec(php::object& req_obj) {
-	if(!req_obj.is_instance_of<client_request>()) {
+php::value client::exec(php::object& obj) {
+	if(!obj.is_instance_of<client_request>()) {
 		throw php::exception("only instanceof 'class client_request' can be executed");
 	}
-	client_request* req = req_obj.native<client_request>();
-	req->build(this);
-	req->co_ = coroutine::current;
-	curl_multi_add_handle(curlm_, req->curl_);
+	client_request* cpp = obj.native<client_request>();
+	if(cpp->curl_ == nullptr) {
+		throw php::exception("request object can NOT be reused");
+	}
+	cpp->build(this);
+	cpp->co_  = coroutine::current;
+	cpp->ref_ = obj; // 异步运行过程，保留引用
+	curl_multi_add_handle(curlm_, cpp->curl_);
 	return flame::async();
 }
 

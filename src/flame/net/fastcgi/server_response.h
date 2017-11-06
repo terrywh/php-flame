@@ -7,6 +7,10 @@ namespace fastcgi {
 	class server_connection;
 	class server_response: public php::class_base {
 	public:
+		// 声明 ZEND_ACC_PRIVATE 禁止手动创建
+		php::value __construct(php::parameters& params) {
+			return nullptr;
+		}
 		~server_response();
 		typedef struct {
 			unsigned char  version;

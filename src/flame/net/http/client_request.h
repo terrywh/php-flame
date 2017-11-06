@@ -7,6 +7,7 @@ class coroutine;
 namespace net {
 namespace http {
 	class client;
+	class client_response;
 	class client_request: public php::class_base {
 	public:
 		client_request();
@@ -20,17 +21,20 @@ namespace http {
 		void        build(client* cli);
 		curl_slist* build_header();
 
-		static size_t  read_cb(void *ptr, size_t size, size_t nmemb, void *stream);
-		static size_t write_cb(char* ptr, size_t size, size_t nmemb, void *userdata);
-		bool           done_cb(CURLMsg* msg);
+		static size_t read_cb(void *ptr, size_t size, size_t nmemb, void *stream);
+		static size_t body_cb(char* ptr, size_t size, size_t nmemb, void *userdata);
+		static size_t head_cb(char* ptr, size_t size, size_t nitems, void* userdata);
+		bool          done_cb(CURLMsg* msg);
 
-		CURL*                       curl_;
-		curl_slist*                 curl_header;
-		curl_socket_t               curl_fd;
-		uv_poll_t*                  poll_;
-		client*                      cli_;
-		coroutine*                    co_;
-		php::buffer               buffer_;
+		CURL*         curl_;
+		curl_slist*   curl_header;
+		curl_socket_t curl_fd;
+		uv_poll_t*    poll_;
+		client*        cli_;
+		coroutine*        co_;
+		php::value       ref_;
+		client_response* res_;
+		php::object      res_obj;
 
 		friend class client;
 	};

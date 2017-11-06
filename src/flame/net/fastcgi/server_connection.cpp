@@ -20,7 +20,7 @@ namespace fastcgi {
 		fps_.on_end_param        = fp_end_param_cb;
 		fps_.on_data             = fp_data_cb;
 		fps_.on_end_request      = fp_end_request_cb;
-		fastcgi_parser_init(&fpp_, &fps_);
+		fastcgi_parser_init(&fpp_);
 		fpp_.data   = this;
 		socket.data = this;
 		if(0 > uv_read_start(&socket, alloc_cb, read_cb)) {
@@ -97,7 +97,7 @@ namespace fastcgi {
 			settings.s1 = '=';
 			settings.s2 = '&';
 			settings.on_val = kv_val_cb_2;
-			kv_parser_init(&kvparser, &settings);
+			kv_parser_init(&kvparser);
 			kvparser.data = self;
 			// 解析
 			php::array* ctr = self->ctr_;
@@ -136,7 +136,7 @@ namespace fastcgi {
 			settings.s2 = '&';
 			settings.on_key = kv_key_cb;
 			settings.on_val = kv_val_cb_2;
-			kv_parser_init(&kvparser, &settings);
+			kv_parser_init(&kvparser);
 			kvparser.data = self;
 			// 解析
 			php::array* ctr = self->ctr_;
@@ -189,7 +189,7 @@ namespace fastcgi {
 			settings.s2 = ';';
 			settings.on_key = kv_key_cb;
 			settings.on_val = kv_val_cb_2;
-			kv_parser_init(&parser, &settings);
+			kv_parser_init(&parser);
 			parser.data = self;
 
 			php::array* ctr = self->ctr_;
@@ -238,7 +238,7 @@ namespace fastcgi {
 		settings.w2 = '"';
 		settings.on_key = kv_key_cb;
 		settings.on_val = kv_val_cb_1;
-		kv_parser_init(&kvparser, &settings);
+		kv_parser_init(&kvparser);
 		kvparser.data = self;
 
 		php::array* ctr = self->ctr_;
