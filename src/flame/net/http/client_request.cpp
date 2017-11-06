@@ -35,6 +35,61 @@ php::value client_request::__construct(php::parameters& params) {
 	prop("header") = php::array(0);
 	return this;
 }
+php::value client_request::ssl(php::parameters& params) {
+	php::array& opt = params[0];
+	php::value* vvf = opt.find("verify");
+	if(vvf != nullptr) {
+		php::string& val = *vvf;
+		if(std::strncmp(val.c_str(), "host", 4) == 4) {
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 1);
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0);
+		}else if(std::strncmp(val.c_str(), "peer", 4) == 0) {
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 1);
+		}else if(std::strncmp(val.c_str(), "both", 4) == 0) {
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 1);
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 1);
+		}else{ // "none"
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0);
+		}
+	}
+	php::value* crt = opt.find("cert");
+	CURLcode r = CURLE_UNKNOWN_OPTION;
+	if(crt != nullptr) {
+		php::string& val = *crt;
+		if(std::strncmp(val.c_str() + val.length() - 4, ".pem", 4) == 0) {
+			curl_easy_setopt(curl_, CURLOPT_SSLCERTTYPE, "PEM");
+		}else if(std::strncmp(val.c_str() + val.length() - 4, ".der", 4) == 0) {
+			curl_easy_setopt(curl_, CURLOPT_SSLCERTTYPE, "DER");
+		}
+		r = curl_easy_setopt(curl_, CURLOPT_SSLCERT, val.c_str());
+	}
+	if(r != CURLE_OK) {
+		throw php::exception("unsupported certificate");
+	}
+	php::value* key = opt.find("key");
+	if(key != nullptr) {
+		php::string& val = *crt;
+		if(std::strncmp(val.c_str() + val.length() - 4, ".pem", 4) == 0) {
+			curl_easy_setopt(curl_, CURLOPT_SSLCERTTYPE, "PEM");
+		}else if(std::strncmp(val.c_str() + val.length() - 4, ".der", 4) == 0) {
+			curl_easy_setopt(curl_, CURLOPT_SSLCERTTYPE, "DER");
+		}else if(std::strncmp(val.c_str() + val.length() - 4, ".eng", 4) == 0) {
+			curl_easy_setopt(curl_, CURLOPT_SSLCERTTYPE, "ENG");
+		}
+		r = curl_easy_setopt(curl_, CURLOPT_SSLKEY, val.c_str());
+	}
+	if(r != CURLE_OK) {
+		throw php::exception("unsupported private key");
+	}
+	php::value* pass = opt.find("pass");
+	if(pass != nullptr) {
+		php::string& val = *pass;
+		curl_easy_setopt(curl_, CURLOPT_KEYPASSWD, val.c_str());
+	}
+	return nullptr;
+}
 
 size_t client_request::read_cb(void *ptr, size_t size, size_t nmemb, void *stream) {
 	memcpy(ptr, stream, size*nmemb);

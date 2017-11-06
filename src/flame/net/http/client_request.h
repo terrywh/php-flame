@@ -14,6 +14,7 @@ namespace http {
 			close();
 		}
 		php::value __construct(php::parameters& params);
+		php::value ssl(php::parameters& params);
 	private:
 		void        close();
 		void        build(client* cli);

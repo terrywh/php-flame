@@ -18,6 +18,20 @@
 $req = new flame\net\http\client_request("http://www.baidu.com", null, 5);
 ```
 
+#### `client_request::ssl(array $options)`
+设置 ssl 相关选项，可选的支持如下选项：
+**示例**：
+``` PHP
+<?php
+// $req  = ....
+$request->ssl([
+	"verify" => "none", // 可选，peer - 验证对端证书真实性 / host - 验证服务器 / both - 前两者均验证 / none - 前两者均不验证
+	"cert"   => "/data/htdocs/flame.terrywh.net/etc/cert.pem", // 可选，证书，类型自动按照后缀名设定 ( pem / der )
+	"key"    => "/data/htdocs/flame.terrywh.net/etc/key.pem",  // 可选，私钥，类型自动按照后缀名设定 ( pem / der / eng )
+	"pass"   => "123456", // 可选，私钥密钥
+]);
+```
+
 #### `string client_request::$method`
 HTTP 的方法，目前支持的有 GET , POST , PUT；
 
