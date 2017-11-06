@@ -4,7 +4,7 @@ flame\init("http_client_test");
 flame\go(function() {
 
 	$cli = new flame\net\http\client([
-		"debug"=>true, // 调试开关
+		// "debug"=>true, // 调试开关
 	]);
 
 	$req = new flame\net\http\client_request("https://www.baidu.com",["arg1"=>"123","arg2"=>"456"]);
@@ -17,7 +17,7 @@ flame\go(function() {
 	$req->method  = "GET";
 	$req->header  = array("Accept"=>"123", "test"=>"Test");
 	$req->url     = "www.facebook.com";
-	$req->timeout = 10;
+	$req->timeout = 5000;
 	$req->header["Accept"] = "123";
 	$req->body = ["arg1"=>"asd","arg2"=>"111qwe"];
 	$res = yield $cli->exec($req);
