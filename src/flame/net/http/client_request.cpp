@@ -185,13 +185,19 @@ curl_slist* client_request::build_header() {
 	if (header.length()) {
 		return nullptr;
 	} else {
-		php::string str;
+		bool expect = false;
 		for(auto i=header.begin();i!=header.end();++i) {
 			php::string& key = i->first;
 			php::string& val = i->second;
+			if(std::strncmp(key.c_str(), "Expect", 6) == 0 || std::strncmp(key.c_str(), "expect", 6) == 0) {
+				expect = true;
+			}
 			php::string  str(key.length() + val.length() + 3);
 			sprintf(str.data(), "%.*s: %.*s", key.length(), key.data(), val.length(), val.data());
 			curl_header = curl_slist_append(curl_header, str.c_str());
+		}
+		if(!expect) {
+			curl_header = curl_slist_append(curl_header, "Expect: ");
 		}
 		return curl_header;
 	}
