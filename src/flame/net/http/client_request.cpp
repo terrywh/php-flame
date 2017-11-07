@@ -93,7 +93,7 @@ static size_t body_read_cb(void *ptr, size_t size, size_t nmemb, void *stream) {
 }
 
 void client_request::build_header() {
-	php::array opt = prop("header");
+	php::array& opt = prop("header");
 	if (opt.length()) return;
 
 	bool expect = false;
@@ -160,7 +160,7 @@ void client_request::build_option() {
 		}
 	}
 	curl_easy_setopt(easy_, CURLOPT_TIMEOUT_MS, static_cast<long>(prop("timeout")));
-	// curl_easy_setopt(easy_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
+	curl_easy_setopt(easy_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
 	curl_easy_setopt(easy_, CURLOPT_NOPROGRESS, 1L);
 }
 

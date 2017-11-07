@@ -12,6 +12,7 @@ namespace time {
 		}
 		uv_timer_init(flame::loop, &tm_);
 		tm_.data = this;
+		return nullptr;
 	}
 	void ticker::tick_cb(uv_timer_t* handle) {
 		ticker* self = static_cast<ticker*>(handle->data);
@@ -45,14 +46,14 @@ namespace time {
 		tick.call("__construct", params[0], bool(false));
 		php::callable cb = params[1];
 		tick.call("start", cb);
-		return tick;
+		return std::move(tick);
 	}
 	php::value tick(php::parameters& params) {
 		php::object tick = php::object::create<ticker>();
 		tick.call("__construct", params[0], bool(true));
 		php::callable cb = params[1];
 		tick.call("start", cb);
-		return tick;
+		return std::move(tick);
 	}
 }
 }

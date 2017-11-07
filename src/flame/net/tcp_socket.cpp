@@ -6,7 +6,7 @@ namespace flame {
 namespace net {
 	tcp_socket::tcp_socket() {
 		impl = new impl_t(this);
-		uv_tcp_init(flame::loop, &impl->socket);
+		uv_tcp_init(flame::loop, &impl->stream);
 	}
 	tcp_socket::~tcp_socket() {
 		impl->close(false); // 析构时 read 过程一定已经停止
@@ -24,7 +24,7 @@ namespace net {
 			.obj = this,
 		};
 		ctx->req.data = ctx;
-		error = uv_tcp_connect(&ctx->req, &impl->socket, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
+		error = uv_tcp_connect(&ctx->req, &impl->stream, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
 		if(error != 0) {
 			delete ctx;
 			throw php::exception(uv_strerror(error), error);
@@ -44,12 +44,12 @@ namespace net {
 	void tcp_socket::after_init() {
 		struct sockaddr_storage address;
 		int                     addrlen = sizeof(address);
-		uv_tcp_getsockname(&impl->socket,
+		uv_tcp_getsockname(&impl->stream,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
 		prop("local_address") = util::sock_addr2str(&address) +
 			":" + std::to_string(util::sock_addrport(&address));
-		uv_tcp_getpeername(&impl->socket,
+		uv_tcp_getpeername(&impl->stream,
 			reinterpret_cast<struct sockaddr*>(&address),
 			&addrlen);
 		prop("remote_address") = util::sock_addr2str(&address) +

@@ -11,10 +11,9 @@ namespace net {
 namespace http {
 
 php::value client::__construct(php::parameters& params) {
-	if(params.length() == 0 || !params[0].is_array()) {
-		return nullptr;
+	if(params.length() > 0 && params[0].is_array()) {
+		php::array& options = params[0];
 	}
-	php::array& options = params[0];
 	// TODO 接收选项用于控制连接数量
 	return nullptr;
 }
@@ -167,7 +166,7 @@ php::value client::exec2(php::object& req_obj) {
 php::value client::exec1(php::parameters& params) {
 	php::object& obj = params[0];
 	if(!obj.is_instance_of<client_request>()) {
-		php::exception("object of type 'client_request' is required");
+		throw php::exception("object of type 'client_request' is required");
 	}
 	return exec2(obj);
 }

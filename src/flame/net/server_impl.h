@@ -75,18 +75,18 @@ namespace net {
 					reinterpret_cast<php::value&>(s));
 				if(error < 0) {
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用3
-					self->co_->fail(uv_strerror(error), error);
 					self->close(false);
+					self->co_->fail(uv_strerror(error), error);
 					return;
 				}
 			}else/* if(self->cb_type == 1) */{
 				php::object  cli = php::object::create<MY_SOCKET_T>();
 				MY_SOCKET_T* cpp = cli.native<MY_SOCKET_T>();
-				error = uv_accept(handle, (uv_stream_t*)&cpp->impl->socket);
+				error = uv_accept(handle, (uv_stream_t*)&cpp->impl->stream);
 				if(error < 0) {
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用3
-					self->co_->fail(uv_strerror(error), error);
 					self->close(false);
+					self->co_->fail(uv_strerror(error), error);
 					return;
 				}
 				cpp->after_init();

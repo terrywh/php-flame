@@ -17,9 +17,9 @@ namespace net {
 		: self_(sock)
 		, cor_(nullptr)
 		, closing_(false) {
-			socket.data = this;
+			stream.data = this;
 		}
-		UV_TYPE_T socket;
+		UV_TYPE_T stream;
 		php::value read(php::parameters& params) {
 			if(params.length() > 0) {
 				if(params[0].is_long()) {
@@ -42,11 +42,11 @@ namespace net {
 
 			ref_ = self_; // 保留对象引用，防止异步调用丢失对象 // 当前对象的引用
 			cor_ = coroutine::current;
-			uv_read_start((uv_stream_t*)&socket, alloc_cb, read_cb);
+			uv_read_start((uv_stream_t*)&stream, alloc_cb, read_cb);
 			return flame::async();
 		}
 		php::value write(php::parameters& params) {
-			if(closing_) throw php::exception("socket is already closed");
+			if(closing_) throw php::exception("stream is already closed");
 			write_request_t* ctx = new write_request_t {
 				.co  = coroutine::current,
 				.ch  = this,
@@ -56,7 +56,7 @@ namespace net {
 			ctx->buf = params[0];
 			ctx->req.data = ctx;
 			uv_buf_t data {.base = ctx->buf.data(), .len = ctx->buf.length()};
-			uv_write(&ctx->req, (uv_stream_t*)&socket, &data, 1, write_cb);
+			uv_write(&ctx->req, (uv_stream_t*)&stream, &data, 1, write_cb);
 			return flame::async();
 		}
 		php::value close(php::parameters& params) {
@@ -69,7 +69,7 @@ namespace net {
 			if(stop_read && cor_ != nullptr) { // 读取协程恢复
 				cor_->next();
 			}
-			uv_close((uv_handle_t*)&socket, close_cb);
+			uv_close((uv_handle_t*)&stream, close_cb);
 		}
 	private:
 		typedef struct write_request_t {
@@ -160,7 +160,7 @@ namespace net {
 			}else{
 				self->buf_.adv(nread);
 				if(self->read()) {
-					uv_read_stop((uv_stream_t*)&self->socket);
+					uv_read_stop((uv_stream_t*)&self->stream);
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用
 					self->cor_->next(self->rv_);
 				}
@@ -171,8 +171,8 @@ namespace net {
 			if(status == UV_ECANCELED) {
 				ctx->co->next();
 			}else if(status < 0) {
+				ctx->ch->close(false);
 				ctx->co->fail(uv_strerror(status));
-				ctx->ch->close(true);
 			}else{
 				ctx->co->next();
 			}

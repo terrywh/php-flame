@@ -3,9 +3,9 @@
 
 namespace flame {
 	coroutine* coroutine::current;
-	static php::value     flag_async;
+
 	void coroutine::prepare() {
-		ZVAL_PTR((zval*)&flag_async, nullptr);
+
 	}
 	php::value async() {
 		// 某些销毁逻辑流程可能不存在协程上下文
@@ -17,7 +17,9 @@ namespace flame {
 			return nullptr;
 		}
 		++ coroutine::current->status_;
-		return flag_async;
+		php::value v;
+		ZVAL_PTR((zval*)&v, coroutine::current);
+		return std::move(v);
 	}
 	php::value async(void* context) {
 		// 某些销毁逻辑流程可能不存在协程上下文

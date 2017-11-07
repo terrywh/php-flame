@@ -27,6 +27,8 @@ namespace http {
 
 		header_parser.data = this;
 		cookie_parser.data = this;
+
+		std::printf("self: %08x\n", this);
 	}
 	void client_response::head_cb(char* ptr, size_t size) {
 		// 由于 curl 回调的 header 行完整，不需要考虑数据段问题

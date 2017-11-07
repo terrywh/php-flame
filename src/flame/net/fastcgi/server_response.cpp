@@ -163,7 +163,7 @@ void server_response::buffer_write() {
 	};
 	ctx->req.data = ctx;
 	uv_buf_t    data { ctx->data.data(), ctx->data.length() };
-	uv_write(&ctx->req, reinterpret_cast<uv_stream_t*>(&conn_->socket),
+	uv_write(&ctx->req, reinterpret_cast<uv_stream_t*>(&conn_->socket_),
 		&data, 1, write_cb);
 }
 

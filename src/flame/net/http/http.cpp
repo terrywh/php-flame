@@ -8,14 +8,14 @@ namespace flame {
 namespace net {
 namespace http {
 	void init(php::extension_entry& ext) {
-		curl_global_init(CURL_GLOBAL_ALL);
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
+			curl_global_init(CURL_GLOBAL_ALL);
 			default_client = new client();
 			return true;
 		});
 		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
 			delete default_client;
-			// curl_global_cleanup();
+			curl_global_cleanup();
 			return true;
 		});
 		// shortcut for class_client
@@ -55,6 +55,7 @@ namespace http {
 		class_server_request.add(php::property_entry("header", nullptr));
 		class_server_request.add(php::property_entry("cookie", nullptr));
 		class_server_request.add(php::property_entry("body", nullptr));
+		class_server_request.add(php::property_entry("rawBody", ""));
 		class_server_request.add<&server_request::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		ext.add(std::move(class_server_request));
 	}

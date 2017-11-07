@@ -3,12 +3,12 @@
 namespace flame {
 namespace net {
 namespace http {
-	class server_handler_base: public php::class_base {
+	class server_handler_base {
 	public:
 		virtual void on_request(php::object& req, php::object& res) = 0;
 	};
 	template <class connection_t>
-	class server_handler: public server_handler_base {
+	class server_handler: public server_handler_base, public php::class_base {
 	public:
 		php::value __invoke(php::parameters& params) {
 			if(!params[0].is_pointer()) {
@@ -22,8 +22,10 @@ namespace http {
 				uv_pipe_init(flame::loop, &pobj->socket_pipe, 0);
 			}else if(svr->type == UV_TCP) {
 				uv_tcp_init(flame::loop, &pobj->socket_tcp);
+			}else{
+				throw php::exception("unknown server type");
 			}
-			int error = uv_accept(svr, &pobj->socket);
+			int error = uv_accept(svr, &pobj->socket_);
 			if(error < 0) {
 				delete pobj;
 				return error;
