@@ -18,7 +18,6 @@ client_request::client_request()
 	curl_easy_setopt(curl_, CURLOPT_PRIVATE, this);
 	res_obj = php::object::create<client_response>();
 	res_    = res_obj.native<client_response>();
-	res_->init();
 }
 php::value client_request::__construct(php::parameters& params) {
 	if (params.length() >= 3) {
@@ -117,10 +116,8 @@ bool client_request::done_cb(CURLMsg* message) {
 		if (message->data.result != CURLE_OK) {
 			co_->fail(curl_easy_strerror(message->data.result), message->data.result);
 		} else {
-			php::object      obj = php::object::create<client_response>();
-			client_response* cpp = obj.native<client_response>();
-			cpp->done_cb(curl_);
-			co_->next(std::move(obj));
+			res_->done_cb(curl_);
+			co_->next(std::move(res_));
 		}
 		return true;
 	default:

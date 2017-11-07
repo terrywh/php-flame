@@ -17,7 +17,6 @@ namespace http {
 		}
 
 	private:
-		void init();
 		void head_cb(char* header, size_t size);
 		void body_cb(char* body, size_t size);
 		void done_cb(CURL* easy);
@@ -26,6 +25,7 @@ namespace http {
 		size_t             key_size;
 		php::array         header_;
 		php::array         cookie_;
+		php::array         cookie_item;
 		kv_parser          header_parser;
 		kv_parser_settings header_parser_conf;
 		static int header_key_cb(kv_parser*, const char*, size_t);

@@ -74,7 +74,7 @@ $collection = $cli->collection("col_abc");
 秒级时间戳，表示当前 `object_id` 的创建时间
 
 ### `class flame\db\mongodb\date_time`
-#### `date_time::__toString() | object_id::toString()`
+#### `date_time::__toString()`
 #### `date_time::jsonSerialize()`
 #### `date_time::timestamp()`
 秒级时间戳

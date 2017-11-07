@@ -149,7 +149,7 @@ php::value get(php::parameters& params) {
 	client_request* req  = obj_req.native<client_request>();
 	req->prop("method")  = php::string("GET");
 	req->prop("url")     = params[0];
-	req->prop("header")  = php::array();
+	req->prop("header")  = php::array(0);
 	if(params.length() > 1) {
 		req->prop("timeout") = params[1].to_long();
 	}else{
@@ -163,7 +163,7 @@ php::value post(php::parameters& params) {
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("POST");
 	req->prop("url")    = params[0];
-	req->prop("header") = php::array();
+	req->prop("header") = php::array(0);
 	req->prop("body")   = params[1];
 	if(params.length() > 2) {
 		req->prop("timeout") = params[2].to_long();
@@ -178,7 +178,7 @@ php::value put(php::parameters& params) {
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("PUT");
 	req->prop("url")    = params[0];
-	req->prop("header") = php::array();
+	req->prop("header") = php::array(0);
 	req->prop("body")   = params[1];
 	if(params.length() > 2) {
 		req->prop("timeout") = params[2].to_long();
@@ -193,7 +193,7 @@ php::value remove(php::parameters& params) {
 	client_request* req = obj_req.native<client_request>();
 	req->prop("method") = php::string("DELETE");
 	req->prop("url")    = params[0];
-	req->prop("header") = php::array();
+	req->prop("header") = php::array(0);
 	if(params.length() > 1) {
 		req->prop("timeout") = params[1].to_long();
 	}else{

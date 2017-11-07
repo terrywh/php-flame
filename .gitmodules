@@ -38,3 +38,7 @@
 	path = deps/fmt
 	url = https://github.com/fmtlib/fmt.git
 	ignore = dirty
+[submodule "deps/c-ares"]
+	path = deps/c-ares
+	url = https://github.com/c-ares/c-ares.git
+	ignore = dirty

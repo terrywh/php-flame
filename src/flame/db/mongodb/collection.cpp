@@ -286,7 +286,7 @@ namespace mongodb {
 		bson_destroy(ctx->doc1);
 		bson_destroy(ctx->doc2);
 		const bson_t* doc;
-		ctx->rv = php::array();
+		ctx->rv = php::array(0);
 		while (mongoc_cursor_next(cs, &doc)) {
 			ctx->rv = php::array(0);
 			fill_with(ctx->rv, doc);

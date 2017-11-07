@@ -25,8 +25,7 @@ void init(php::extension_entry& ext) {
 	php::class_entry<object_id> class_object_id("flame\\db\\mongodb\\object_id");
 	class_object_id.implements_json_serializable();
 	class_object_id.add<&object_id::__construct>("__construct");
-	class_object_id.add<&object_id::__toString>("__toString");
-	class_object_id.add<&object_id::__toString>("toString");
+	class_object_id.add<&object_id::to_string>("__toString");
 	class_object_id.add<&object_id::jsonSerialize>("__debugInfo");
 	class_object_id.add<&object_id::jsonSerialize>("jsonSerialize");
 	class_object_id.add<&object_id::timestamp>("timestamp");
@@ -35,8 +34,7 @@ void init(php::extension_entry& ext) {
 	php::class_entry<date_time> class_date_time("flame\\db\\mongodb\\date_time");
 	class_date_time.implements_json_serializable();
 	class_date_time.add<&date_time::__construct>("__construct");
-	class_date_time.add<&date_time::__toString>("__toString");
-	class_date_time.add<&date_time::__toString>("toString");
+	class_date_time.add<&date_time::to_string>("__toString");
 	class_date_time.add<&date_time::jsonSerialize>("__debugInfo");
 	class_date_time.add<&date_time::jsonSerialize>("jsonSerialize");
 	class_date_time.add<&date_time::timestamp>("timestamp");

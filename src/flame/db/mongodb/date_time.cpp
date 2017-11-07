@@ -14,7 +14,7 @@ namespace mongodb {
 		}
 		return nullptr;
 	}
-	php::value date_time::__toString(php::parameters& params) {
+	php::value date_time::to_string(php::parameters& params) {
 		char str[24];
 		int  len = 24;
 		len = snprintf(str, len, "%ld", milliseconds_);

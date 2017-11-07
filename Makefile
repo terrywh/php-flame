@@ -25,8 +25,9 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/libuv/.libs/libuv.a \
  ./deps/fmt/fmt/libfmt.a \
  ./deps/curl/lib/.libs/libcurl.a \
- ./deps/hiredis/libhiredis.a \
  ./deps/nghttp2/bin/lib/libnghttp2.a \
+ ./deps/c-ares/bin/lib/libcares.a \
+ ./deps/hiredis/libhiredis.a \
  ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a \
  ./deps/mongo-c-driver/bin/lib/libbson-1.0.a \
  ./deps/mongo-c-driver/bin/lib/libsnappy.a
@@ -71,7 +72,8 @@ install: ${EXTENSION}
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:
 	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix `pwd`/bin
-	make -C ./deps/nghttp2 -j2 && make -C ./deps/nghttp2 install
+	make -C ./deps/nghttp2 -j2
+	make -C ./deps/nghttp2 install
 	cd ./deps/nghttp2; find -type l | xargs rm
 ./deps/libphpext/libphpext.a:
 	make -C ./deps/libphpext -j2
@@ -79,8 +81,8 @@ install: ${EXTENSION}
 	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC /bin/sh ./configure
 	make -C ./deps/libuv -j2
 	cd ./deps/libuv; find -type l | xargs rm
-./deps/curl/lib/.libs/libcurl.a: ./deps/nghttp2/bin/lib/libnghttp2.a
-	cd ./deps/curl; /bin/sh ./buildconf; PKG_CONFIG_PATH=../nghttp2/bin/lib CFLAGS=-fPIC ./configure --with-nghttp2=../nghttp2/bin
+./deps/curl/lib/.libs/libcurl.a: ./deps/nghttp2/bin/lib/libnghttp2.a ./deps/c-ares/bin/lib/libcares.a
+	cd ./deps/curl; /bin/sh ./buildconf; CFLAGS="-fPIC -I`pwd`/../nghttp2/bin/include -I`pwd`/../c-ares/bin/include" ./configure --with-nghttp2=`pwd`/../nghttp2/bin --enable-ares=`pwd`/../c-ares/bin --disable-shared
 	make -C ./deps/curl -j2
 	cd ./deps/curl; find -type l | xargs rm
 ./deps/hiredis/libhiredis.a:
@@ -96,7 +98,8 @@ install: ${EXTENSION}
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --enable-static=yes --enable-shared=no
-	make -C ./deps/mongo-c-driver && make -C ./deps/mongo-c-driver install
+	make -C ./deps/mongo-c-driver -j2
+	make -C ./deps/mongo-c-driver install
 	cd ./deps/mongo-c-driver; find -type l | xargs rm
 ./deps/mongo-c-driver/src/libbson/README:
 	cd ./deps/mongo-c-driver; git submodule update --init;
@@ -104,6 +107,12 @@ install: ${EXTENSION}
 ./deps/fmt/fmt/libfmt.a:
 	cd ./deps/fmt; cmake -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC .
 	make -C ./deps/fmt -j2
+./deps/c-ares/bin/lib/libcares.a:
+	cd ./deps/c-ares; chmod +x ./buildconf; ./buildconf;
+	cd ./deps/c-ares; CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=`pwd`/bin
+	make -C ./deps/c-ares -j2
+	make -C ./deps/c-ares install
+	cd ./deps/c-ares; find -type l | xargs rm; rm -f bin/lib/libcares.la; rm -f bin/lib/libcares.so*; rm -f bin/lib/pkgconfig
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:

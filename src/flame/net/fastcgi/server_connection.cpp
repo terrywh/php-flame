@@ -187,6 +187,8 @@ namespace fastcgi {
 			std::memset(&settings, 0, sizeof(kv_parser_settings));
 			settings.s1 = '=';
 			settings.s2 = ';';
+			settings.w1 = '\n';
+			settings.w2 = '\r';
 			settings.on_key = kv_key_cb;
 			settings.on_val = kv_val_cb_2;
 			kv_parser_init(&parser);

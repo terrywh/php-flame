@@ -19,7 +19,7 @@ namespace mongodb {
 			return nullptr;
 		}
 	}
-	php::value object_id::__toString(php::parameters& params) {
+	php::value object_id::to_string(php::parameters& params) {
 		php::string oid(24);
 		bson_oid_to_string(&oid_, oid.data());
 		return std::move(oid);

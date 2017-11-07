@@ -41,6 +41,7 @@ namespace http {
 		class_client_response.add(php::property_entry("cookie", nullptr));
 		class_client_response.add(php::property_entry("body", nullptr));
 		class_client_response.add<&client_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
+		class_client_response.add<&client_response::to_string>("__toString");
 		ext.add(std::move(class_client_response));
 		// class client
 		php::class_entry<client> class_client("flame\\net\\http\\client");
