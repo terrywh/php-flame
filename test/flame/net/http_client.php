@@ -10,7 +10,7 @@ flame\go(function() {
 	$req = new flame\net\http\client_request("http://www.baidu.com");
 	$res = yield $cli->exec($req);
 	var_dump($res);
-	echo $res;
+	echo $res; // 自动转换文本
 
 
 	$req = new flame\net\http\client_request();
