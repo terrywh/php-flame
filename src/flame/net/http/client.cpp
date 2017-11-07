@@ -72,7 +72,6 @@ int client::curl_multi_socket_handle(CURL* easy, curl_socket_t s, int action, vo
 	client_request* req;
 	int events = 0;
 	curl_easy_getinfo(easy, CURLINFO_PRIVATE, &req);
-
 	switch(action) {
 	case CURL_POLL_IN:
 	case CURL_POLL_OUT:
@@ -80,10 +79,7 @@ int client::curl_multi_socket_handle(CURL* easy, curl_socket_t s, int action, vo
 	{
 		if(action != CURL_POLL_IN) events |= UV_WRITABLE;
 		if(action != CURL_POLL_OUT) events |= UV_READABLE;
-		if(req->curl_fd == -1) {
-			req->curl_fd = s;
-			uv_poll_init_socket(flame::loop, req->poll_, s);
-		}
+		req->setfd(s);
 		uv_poll_start(req->poll_, events, client::curl_multi_socket_poll);
 	}
 	break;
@@ -116,9 +112,9 @@ php::value client::exec2(php::object& obj) {
 	if(cpp->curl_ == nullptr) {
 		throw php::exception("request object can NOT be reused");
 	}
-	cpp->build(this);
 	cpp->co_  = coroutine::current;
 	cpp->ref_ = obj; // 异步运行过程，保留引用
+	cpp->build(this);
 	curl_multi_add_handle(curlm_, cpp->curl_);
 	return flame::async();
 }
@@ -147,61 +143,68 @@ void client::destroy() {
 client* default_client = nullptr;
 
 php::value get(php::parameters& params) {
-	php::object obj_req  = php::object::create<client_request>();
-	client_request* req  = obj_req.native<client_request>();
+	php::object     obj  = php::object::create<client_request>();
+	client_request* req  = obj.native<client_request>();
 	req->prop("method")  = php::string("GET");
 	req->prop("url")     = params[0];
 	req->prop("header")  = php::array(0);
+	req->prop("cookie")  = php::array(0);
+	req->prop("body")   = nullptr;
 	if(params.length() > 1) {
 		req->prop("timeout") = params[1].to_long();
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec2(obj_req);
+	return default_client->exec2(obj);
 }
 
 php::value post(php::parameters& params) {
-	php::object obj_req = php::object::create<client_request>();
-	client_request* req = obj_req.native<client_request>();
+	php::object     obj = php::object::create<client_request>();
+	client_request* req = obj.native<client_request>();
 	req->prop("method") = php::string("POST");
 	req->prop("url")    = params[0];
 	req->prop("header") = php::array(0);
+	req->prop("cookie") = php::array(0);
 	req->prop("body")   = params[1];
 	if(params.length() > 2) {
 		req->prop("timeout") = params[2].to_long();
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec2(obj_req);
+	return default_client->exec2(obj);
+	return flame::async();
 }
 
 php::value put(php::parameters& params) {
-	php::object obj_req = php::object::create<client_request>();
-	client_request* req = obj_req.native<client_request>();
+	php::object     obj = php::object::create<client_request>();
+	client_request* req = obj.native<client_request>();
 	req->prop("method") = php::string("PUT");
 	req->prop("url")    = params[0];
 	req->prop("header") = php::array(0);
+	req->prop("cookie") = php::array(0);
 	req->prop("body")   = params[1];
 	if(params.length() > 2) {
 		req->prop("timeout") = params[2].to_long();
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec2(obj_req);
+	return default_client->exec2(obj);
 }
 
 php::value remove(php::parameters& params) {
-	php::object obj_req = php::object::create<client_request>();
-	client_request* req = obj_req.native<client_request>();
+	php::object     obj = php::object::create<client_request>();
+	client_request* req = obj.native<client_request>();
 	req->prop("method") = php::string("DELETE");
 	req->prop("url")    = params[0];
 	req->prop("header") = php::array(0);
+	req->prop("cookie") = php::array(0);
+	req->prop("body")   = nullptr;
 	if(params.length() > 1) {
 		req->prop("timeout") = params[1].to_long();
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec2(obj_req);
+	return default_client->exec2(obj);
 }
 
 }

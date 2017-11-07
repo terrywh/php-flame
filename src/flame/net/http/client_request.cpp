@@ -11,9 +11,8 @@ client_request::client_request()
 : curl_(nullptr)
 , curl_header(nullptr)
 , curl_fd(-1)
+, poll_(nullptr)
 , cli_(nullptr) {
-	poll_ = (uv_poll_t*)malloc(sizeof(uv_poll_t));
-	poll_->data = this;
 	curl_ = curl_easy_init();
 	curl_easy_setopt(curl_, CURLOPT_PRIVATE, this);
 	res_obj = php::object::create<client_response>();
@@ -162,6 +161,7 @@ void client_request::build(client* cli) {
 		xbody = vbody;
 	}else if (!vbody.is_null()) {
 		xbody = vbody.to_string();
+		prop("body") = xbody;
 	}
 	if(method.compare("POST") == 0) {
 		curl_easy_setopt(curl_, CURLOPT_POST, 1L);
@@ -190,16 +190,31 @@ void client_request::build(client* cli) {
 	}
 }
 
+void client_request::setfd(int fd) {
+	if(curl_fd == -1) {
+		poll_ = (uv_poll_t*)malloc(sizeof(uv_poll_t));
+		poll_->data = this;
+		uv_poll_init_socket(flame::loop, poll_, fd);
+
+		curl_fd = fd;
+	}
+}
+
 void client_request::close() {
+	std::printf("client_request::close()\n");
+	if(curl_) {
+		curl_easy_cleanup(curl_);
+		curl_   = nullptr;
+	}
 	if (curl_header) {
 		curl_slist_free_all(curl_header);
 		curl_header = nullptr;
-		curl_easy_cleanup(curl_);
-		curl_   = nullptr;
+		cli_    = nullptr;
+	}
+	if(poll_) {
 		uv_close((uv_handle_t*)poll_, free_handle_cb);
 		poll_   = nullptr;
 		curl_fd = -1;
-		cli_    = nullptr;
 	}
 }
 curl_slist* client_request::build_header() {

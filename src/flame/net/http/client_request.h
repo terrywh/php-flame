@@ -17,10 +17,11 @@ namespace http {
 		php::value __construct(php::parameters& params);
 		php::value ssl(php::parameters& params);
 	private:
-		void        close();
+
 		void        build(client* cli);
 		curl_slist* build_header();
-
+		void        setfd(int fd);
+		void        close();
 		static size_t read_cb(void *ptr, size_t size, size_t nmemb, void *stream);
 		static size_t body_cb(char* ptr, size_t size, size_t nmemb, void *userdata);
 		static size_t head_cb(char* ptr, size_t size, size_t nitems, void* userdata);

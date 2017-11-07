@@ -25,11 +25,12 @@ namespace http {
 		ext.add<::flame::net::http::remove>("flame\\net\\http\\delete");
 		// class client_request
 		php::class_entry<client_request> class_client_request("flame\\net\\http\\client_request");
-		class_client_request.add(php::property_entry("url", ""));
 		class_client_request.add(php::property_entry("method", ""));
-		class_client_request.add(php::property_entry("timeout", 10));
+		class_client_request.add(php::property_entry("url", ""));
 		class_client_request.add(php::property_entry("header", nullptr));
+		class_client_request.add(php::property_entry("cookie", nullptr));
 		class_client_request.add(php::property_entry("body", nullptr));
+		class_client_request.add(php::property_entry("timeout", 2500));
 		class_client_request.add<&client_request::__construct>("__construct");
 		ext.add(std::move(class_client_request));
 		// class client_response
