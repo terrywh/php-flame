@@ -1,5 +1,6 @@
 #include "coroutine.h"
 #include "process.h"
+#include "log/log.h"
 
 namespace flame {
 	static int status = 0;
@@ -27,6 +28,8 @@ namespace flame {
 		if(params.length() > 1) {
 			init_opts(params[1]);
 		}
+		// 直接在 module_startup 中进行 rotate 会改变无参时 PHP 命令的行为（直接退出）
+		log::default_logger->rotate();
 		status |= 0x01;
 		return nullptr;
 	}

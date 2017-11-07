@@ -52,6 +52,7 @@ namespace log {
 			if(!file_) throw php::exception("failed to open output file");
 			uv_pipe_open(pipe_, file_);
 		}
+		uv_unref((uv_handle_t*)pipe_);
 	}
 	void logger::rotate(const php::string& path) {
 		path_ = path;

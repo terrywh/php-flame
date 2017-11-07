@@ -24,7 +24,6 @@ namespace log {
 	void init(php::extension_entry& ext) {
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
 			default_logger = new logger();
-			default_logger->rotate();
 			return true;
 		});
 		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
