@@ -11,7 +11,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
 # ---------------------------------------------------------------------
 CXX?=/usr/local/gcc-7.1.0/bin/g++
-CXXFLAGS?= -g -O0
+CXXFLAGS?= -O2
 CXXFLAGS_CORE= -std=c++14 -fPIC
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
 # 链接参数
