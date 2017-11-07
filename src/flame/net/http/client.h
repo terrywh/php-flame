@@ -15,11 +15,9 @@ namespace http {
 		php::value __construct(php::parameters& params);
 		void destroy();
 		// 执行
-		php::value exec(php::parameters& params);
-		php::value exec(php::object& request);
+		php::value exec1(php::parameters& params);
+		php::value exec2(php::object& request);
 		php::value debug(php::parameters& params);
-
-
 	private:
 		// curl要用的回调
 		static void curl_multi_info_check(client* cli);

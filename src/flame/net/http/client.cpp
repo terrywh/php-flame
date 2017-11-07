@@ -18,6 +18,8 @@ php::value client::__construct(php::parameters& params) {
 		debug_ = debug->is_true();
 	}
 	// TODO 接收选项用于控制连接数量
+
+	return nullptr;
 }
 
 void client::curl_multi_info_check(client* self) {
@@ -106,7 +108,7 @@ client::client()
 	curl_multi_setopt(curlm_, CURLMOPT_TIMERDATA, this);
 }
 
-php::value client::exec(php::object& obj) {
+php::value client::exec2(php::object& obj) {
 	if(!obj.is_instance_of<client_request>()) {
 		throw php::exception("only instanceof 'class client_request' can be executed");
 	}
@@ -126,12 +128,12 @@ php::value client::debug(php::parameters& params) {
 	return params[0];
 }
 
-php::value client::exec(php::parameters& params) {
+php::value client::exec1(php::parameters& params) {
 	php::object& obj = params[0];
 	if(!obj.is_instance_of<client_request>()) {
 		php::exception("object of type 'client_request' is required");
 	}
-	return exec(obj);
+	return exec2(obj);
 }
 
 void client::destroy() {
@@ -155,7 +157,7 @@ php::value get(php::parameters& params) {
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec(obj_req);
+	return default_client->exec2(obj_req);
 }
 
 php::value post(php::parameters& params) {
@@ -170,7 +172,7 @@ php::value post(php::parameters& params) {
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec(obj_req);
+	return default_client->exec2(obj_req);
 }
 
 php::value put(php::parameters& params) {
@@ -185,7 +187,7 @@ php::value put(php::parameters& params) {
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec(obj_req);
+	return default_client->exec2(obj_req);
 }
 
 php::value remove(php::parameters& params) {
@@ -199,7 +201,7 @@ php::value remove(php::parameters& params) {
 	}else{
 		req->prop("timeout") = 2500;
 	}
-	return default_client->exec(obj_req);
+	return default_client->exec2(obj_req);
 }
 
 }

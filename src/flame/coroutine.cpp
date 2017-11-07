@@ -65,15 +65,15 @@ namespace flame {
 				break;
 			}
 			php::value v = generator_.current();
-			if(v.is_generator()) { // 简化 yield from 调用方式可直接 yield
-				coroutine::start(this, std::move(v));
-				break;
-			}else if(v.is_pointer()) { // 使用内置 IS_PTR 类型标识异步操作
+			if(v.is_pointer()) { // 使用内置 IS_PTR 类型标识异步操作
 				if(--status_ != 0) {
 					php::fail("keyword 'yield' missing before async function");
 					close();
 					uv_stop(flame::loop);
 				}
+				break;
+			}else if(v.is_generator()) { // 简化 yield from 调用方式可直接 yield
+				coroutine::start(this, std::move(v));
 				break;
 			}else{
 				generator_.send(std::move(v));

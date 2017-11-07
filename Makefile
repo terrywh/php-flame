@@ -5,7 +5,7 @@ EXT_NAME=flame
 EXT_VER=1.1.0
 # PHP环境
 # ---------------------------------------------------------------------
-PHP_PREFIX?=/usr/local/php-7.0.19-test
+PHP_PREFIX?=/usr/local/php-7.0.25
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数

@@ -2,11 +2,10 @@
 flame\init("http_client_test");
 
 flame\go(function() {
-
 	$cli = new flame\net\http\client([
 	//	"debug"=>true, // 调试开关
 	]);
-	//
+	
 	$req = new flame\net\http\client_request("http://www.baidu.com");
 	$res = yield $cli->exec($req);
 	var_dump($res);
