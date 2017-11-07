@@ -114,8 +114,8 @@ namespace log {
 	php::value logger::write(php::parameters& params) {
 		return write(" ", params);
 	}
-	void logger::write(const php::string& str) {
-
+	void logger::write(const std::string& str) {
+		
 	}
 }
 }

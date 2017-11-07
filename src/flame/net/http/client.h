@@ -6,6 +6,7 @@ namespace flame {
 namespace net {
 namespace http {
 	class client_request;
+	class client_response;
 	class client: public php::class_base {
 	public:
 		client();
@@ -26,9 +27,12 @@ namespace http {
 		static void curl_multi_timer_cb(uv_timer_t *req);
 		static void curl_multi_socket_poll(uv_poll_t *req, int status, int events);
 
-		CURLM*     curlm_;
+		static size_t curl_easy_head_cb(char* ptr, size_t size, size_t nitems, void* userdata);
+		static size_t curl_easy_body_cb(char* ptr, size_t size, size_t nmemb, void *userdata);
+		CURLM*     multi_;
 		int        debug_;
 		uv_timer_t timer_;
+
 		friend class client_request;
 	};
 	extern client* default_client;

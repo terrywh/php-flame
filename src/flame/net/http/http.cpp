@@ -8,14 +8,14 @@ namespace flame {
 namespace net {
 namespace http {
 	void init(php::extension_entry& ext) {
+		curl_global_init(CURL_GLOBAL_ALL);
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
-			curl_global_init(CURL_GLOBAL_ALL);
 			default_client = new client();
 			return true;
 		});
 		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
 			delete default_client;
-			curl_global_cleanup();
+			// curl_global_cleanup();
 			return true;
 		});
 		// shortcut for class_client
