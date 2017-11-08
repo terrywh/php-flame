@@ -89,7 +89,7 @@ namespace log {
 				php::string str = php::json_encode(params[i]);
 				std::memcpy(out.put(str.length()), str.c_str(), str.length());
 			}else{
-				php::string str = params[i].to_string();
+				php::string& str = params[i].to_string();
 				std::memcpy(out.put(str.length()), str.c_str(), str.length());
 			}
 		}
@@ -115,7 +115,7 @@ namespace log {
 		return write(" ", params);
 	}
 	void logger::write(const std::string& str) {
-		
+
 	}
 }
 }

@@ -7,6 +7,7 @@ namespace flame {
 		worker(process* master);
 		void start();
 		void kill();
+		void stop();
 	private:
 		process*         master_;
 		uv_process_t     proc_;

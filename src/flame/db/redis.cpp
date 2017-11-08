@@ -206,7 +206,7 @@ php::value redis::__call(php::parameters& params) {
 	php::array& argv = params[1];
 	std::vector<zval>  args;
 	for(auto i=argv.begin(); i!=argv.end();++i) {
-		args.push_back(static_cast<zval&>(i->second));
+		args.push_back(*static_cast<zval*>(i->second));
 	}
 	php::parameters argx(args.size(), args.data());
 	exec(params[0], argx, 0, params.length(), cb_default);

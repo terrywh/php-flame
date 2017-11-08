@@ -34,7 +34,7 @@ namespace http {
 		kv_parser_settings cookie_parser_conf;
 		static int cookie_key_cb(kv_parser*, const char*, size_t);
 		static int cookie_val_cb(kv_parser*, const char*, size_t);
-		
+
 		friend class client;
 	};
 }

@@ -15,14 +15,14 @@ namespace flame {
 		std::memset(&opts, 0, sizeof(uv_process_options_t));
 		opts.flags = UV_PROCESS_WINDOWS_HIDE;
 		uv_stdio_container_t sios[3];
-		size_t cache_size = 128;
-		char working_dir[128], executable[128];
+		size_t cache_size = 256;
+		char working_dir[256], executable[256];
 		opts.exit_cb = on_worker_exit;
 		uv_os_setenv("FLAME_CLUSTER_WORKER", "1");
-		cache_size = 128;
+		cache_size = 256;
 		uv_cwd(working_dir, &cache_size);
 		opts.cwd = working_dir;
-		cache_size = 128;
+		cache_size = 256;
 		uv_exepath(executable, &cache_size);
 		opts.file = executable;
 		opts.args = argv;
@@ -48,6 +48,9 @@ namespace flame {
 	}
 	void worker::kill() {
 		uv_process_kill(&proc_, SIGINT);
+	}
+	void worker::stop() {
+		uv_process_kill(&proc_, SIGTERM);
 	}
 	void worker::on_worker_exit(uv_process_t* handle, int64_t exit_status, int term_signal) {
 		worker* w = static_cast<worker*>(handle->data);

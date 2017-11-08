@@ -1,14 +1,13 @@
 #include "../../coroutine.h"
-#include "server_connection.h"
 #include "fastcgi.h"
-#include "../http/server_handler.h"
+#include "server_connection.h"
 #include "../http/server_request.h"
 #include "server_response.h"
 
 namespace flame {
 namespace net {
 namespace fastcgi {
-	server_connection::server_connection(http::server_handler_base* svr)
+	server_connection::server_connection(handler_t* svr)
 	: svr_(svr)
 	, query_(0)
 	, header_(2)
@@ -54,6 +53,8 @@ namespace fastcgi {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		self->req_ = php::object::create<http::server_request>();
 		self->res_ = php::object::create<fastcgi::server_response>();
+		self->res_.prop("header") = php::array(0);
+
 		fastcgi::server_response* res = self->res_.native<fastcgi::server_response>();
 		res->conn_ = self;
 		return 0;
@@ -99,6 +100,9 @@ namespace fastcgi {
 			kv_parser_execute(&kvparser, &settings, vdata, vsize);
 		}else if(strncmp(kdata, "HTTP_", 5) == 0) {
 			php::strtolower_inplace(kdata, ksize);
+			for(char *c = kdata; c < kdata + ksize; ++c) {
+				if(*c == '_') *c = '-';
+			}
 			self->header_.at(kdata + 5, ksize - 5) = php::string(vdata, vsize);
 		}
 		return 0;
@@ -113,10 +117,10 @@ namespace fastcgi {
 		php::string raw = std::move(self->val_);
 		self->req_.prop("rawBody") = raw;
 		// 头部信息均为小写，下划线
-		php::string* ctype = reinterpret_cast<php::string*>(self->header_.find("content_type", 12));
+		php::string ctype = self->header_.at("content-type", 12);
 		// urlencoded
-		if(ctype != nullptr && ctype->length() >= 33
-			&& strncmp(ctype->data(), "application/x-www-form-urlencoded", 33) == 0) {
+		if(ctype.is_string() && ctype.length() >= 33
+			&& strncmp(ctype.c_str(), "application/x-www-form-urlencoded", 33) == 0) {
 
 			self->body_ = php::array(1);
 			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
@@ -135,8 +139,8 @@ namespace fastcgi {
 			return 0;
 		}
 		// multipart/form-data; boundary=---------xxxxxx
-		if(ctype != nullptr && ctype->length() > 32
-			&& strncmp(ctype->data(), "multipart/form-data", 19) == 0) {
+		if(ctype.is_string() && ctype.length() > 32
+			&& strncmp(ctype.c_str(), "multipart/form-data", 19) == 0) {
 
 			self->body_ = php::array(1);
 			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
@@ -144,7 +148,7 @@ namespace fastcgi {
 			multipart_parser          mpparser;
 			multipart_parser_settings settings;
 			std::memset(&settings, 0, sizeof(multipart_parser_settings));
-			std::strcpy(settings.boundary, strstr(ctype->data() + 20, "boundary=") + 9);
+			std::strcpy(settings.boundary, strstr(ctype.c_str() + 20, "boundary=") + 9);
 			settings.boundary_length = std::strlen(settings.boundary);
 			settings.on_header_field = mp_key_cb;
 			settings.on_header_value = mp_val_cb;
@@ -162,8 +166,8 @@ namespace fastcgi {
 	int server_connection::fp_end_request_cb(fastcgi_parser* parser) {
 		fp_end_data_cb(parser);
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
-		php::string* cookie = reinterpret_cast<php::string*>(self->header_.find("cookie", 6));
-		if(cookie != nullptr) {
+		php::string cookie = self->header_.at("cookie", 6);
+		if(cookie.is_string()) {
 			kv_parser parser;
 			kv_parser_settings settings;
 			std::memset(&settings, 0, sizeof(kv_parser_settings));
@@ -175,7 +179,7 @@ namespace fastcgi {
 			settings.on_val = cookie_val_cb;
 			kv_parser_init(&parser);
 			parser.data = self;
-			kv_parser_execute(&parser, &settings, cookie->c_str(), cookie->length());
+			kv_parser_execute(&parser, &settings, cookie.c_str(), cookie.length());
 		}
 		self->req_.prop("query")  = std::move(self->query_);
 		self->req_.prop("header") = std::move(self->header_);
@@ -188,7 +192,7 @@ namespace fastcgi {
 	void server_connection::close() {
 		if(svr_ == nullptr) return;
 		svr_ = nullptr;
-		res_.prop("ended") = true;
+		res_.prop("ended") = bool(true);
 		uv_close(
 			reinterpret_cast<uv_handle_t*>(&socket_),
 			close_cb);
@@ -225,9 +229,9 @@ namespace fastcgi {
 		kvparser.data = self;
 		// 解析
 		kv_parser_execute(&kvparser, &settings, at + 10, length);
-		php::string* name = reinterpret_cast<php::string*>(self->body_item.find("name"));
-		if(name != nullptr) {
-			std::memcpy(self->key_.put(name->length()), name->data(), name->length()); // !!! TODO 避免拷贝
+		php::string name = self->body_item.at("name", 4);
+		if(name.is_string()) {
+			std::memcpy(self->key_.put(name.length()), name.c_str(), name.length());
 		}
 		return 0;
 	}

@@ -1,18 +1,19 @@
 #pragma once
 
+#include "../http/server_handler.h"
+
 namespace flame {
 namespace net {
-namespace http {
-	class server_handler_base;
-}
 namespace fastcgi {
-	class handler;
+	class server_connection;
+	typedef http::server_handler<server_connection> handler_t;
+
 	class server_connection {
 	private:
 
-		http::server_handler_base* svr_;
-		fastcgi_parser             fpp_;
-		fastcgi_parser_settings    fps_;
+		handler_t*              svr_;
+		fastcgi_parser          fpp_;
+		fastcgi_parser_settings fps_;
 
 		static void alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 		static void read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
@@ -42,7 +43,7 @@ namespace fastcgi {
 
 		const char* key_data;
 		size_t      key_size;
-		
+
 		php::buffer key_;
 		php::buffer val_;
 
@@ -60,7 +61,7 @@ namespace fastcgi {
 			uv_pipe_t   socket_pipe;
 			uv_tcp_t    socket_tcp;
 		};
-		server_connection(http::server_handler_base* svr);
+		server_connection(handler_t* svr);
 		void start();
 		void close();
 		friend class server_response;

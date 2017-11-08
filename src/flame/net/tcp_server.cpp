@@ -7,7 +7,7 @@ namespace flame {
 namespace net {
 	tcp_server::tcp_server() {
 		impl = new impl_t(this);
-		uv_tcp_init(flame::loop, &impl->server);
+		// uv_tcp_init(flame::loop, &impl->server);
 	}
 	tcp_server::~tcp_server() {
 		impl->close(false); // 析构时运行过程一定已经停止

@@ -10,7 +10,7 @@ namespace mysql {
 		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ARRAY", MYSQLND_FETCH_NUM));
 		// ---------------------------------------------------------------------
 		php::class_entry<client> class_client("flame\\db\\mysql\\client");
-		class_client.add(php::property_entry("affected_rows", (int)0));
+		class_client.add(php::property_entry("affected_rows", 0));
 		class_client.add<&client::__destruct>("__destruct");
 		class_client.add<&client::connect>("connect");
 		class_client.add<&client::format>("format");

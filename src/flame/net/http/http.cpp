@@ -8,8 +8,8 @@ namespace flame {
 namespace net {
 namespace http {
 	void init(php::extension_entry& ext) {
+		curl_global_init(CURL_GLOBAL_DEFAULT);
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
-			curl_global_init(CURL_GLOBAL_ALL);
 			default_client = new client();
 			return true;
 		});
@@ -25,8 +25,8 @@ namespace http {
 		ext.add<::flame::net::http::remove>("flame\\net\\http\\delete");
 		// class client_request
 		php::class_entry<client_request> class_client_request("flame\\net\\http\\client_request");
-		class_client_request.add(php::property_entry("method", ""));
-		class_client_request.add(php::property_entry("url", ""));
+		class_client_request.add(php::property_entry("method", std::string("")));
+		class_client_request.add(php::property_entry("url", std::string("")));
 		class_client_request.add(php::property_entry("header", nullptr));
 		class_client_request.add(php::property_entry("cookie", nullptr));
 		class_client_request.add(php::property_entry("body", nullptr));
@@ -49,13 +49,13 @@ namespace http {
 		ext.add(std::move(class_client));
 		// class server_request
 		php::class_entry<server_request> class_server_request("flame\\net\\http\\server_request");
-		class_server_request.add(php::property_entry("method", ""));
-		class_server_request.add(php::property_entry("uri", ""));
+		class_server_request.add(php::property_entry("method", std::string("")));
+		class_server_request.add(php::property_entry("uri", std::string("")));
 		class_server_request.add(php::property_entry("query", nullptr));
 		class_server_request.add(php::property_entry("header", nullptr));
 		class_server_request.add(php::property_entry("cookie", nullptr));
 		class_server_request.add(php::property_entry("body", nullptr));
-		class_server_request.add(php::property_entry("rawBody", ""));
+		class_server_request.add(php::property_entry("rawBody", std::string("")));
 		class_server_request.add<&server_request::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		ext.add(std::move(class_server_request));
 	}

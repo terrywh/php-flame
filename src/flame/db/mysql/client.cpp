@@ -37,7 +37,7 @@ namespace mysql {
 			buf.add(')');
 		}else{
 			buf.add('\'');
-			php::string  str = val.to_string();
+			php::string& str = val.to_string();
 			char*        esp = buf.rev(str.length() * 2);
 			size_t       len = mysqlnd_real_escape_string(mysql_, esp,
 				str.data(), str.length());
@@ -103,7 +103,7 @@ namespace mysql {
 		uv_queue_work(flame::loop, &ctx->req, connect_wk, default_cb);
 	}
 	php::value client::connect(php::parameters& params) {
-		if(params.length() > 0) {
+		if(params.length() > 0 && params[0].is_string()) {
 			php::string& uri = params[0];
 			url_ = php::parse_url(uri.c_str(), uri.length());
 			if(std::strncmp(url_->scheme, "mysql", 5) != 0 || std::strlen(url_->path) < 1) {
@@ -141,6 +141,9 @@ namespace mysql {
 		return nullptr;
 	}
 	php::value client::format(php::parameters& params) {
+		if(params.length() < 1 || !params[0].is_string()) {
+			throw php::exception("format string is required");
+		}
 		php::string sql = params[0];
 		int         idx = 0;
 		php::buffer buf;
@@ -189,6 +192,9 @@ namespace mysql {
 		ctx->rv = php::make_exception(mysqlnd_error(ctx->mysql), mysqlnd_errno(ctx->mysql));
 	}
 	php::value client::query(php::parameters& params) {
+		if(params.length() < 1 || !params[0].is_string()) {
+			throw php::exception("sql string is required");
+		}
 		php::string sql = params[0];
 		if(params.length() > 1) {
 			sql = format(params);
@@ -206,7 +212,7 @@ namespace mysql {
 	void client::insert_key(php::array& map, php::buffer& buf) {
 		int j = -1;
 		for(auto i= map.begin(); i!= map.end(); ++i) {
-			php::string key = i->first.to_string();
+			php::string& key = i->first.to_string();
 			if(++j == 0) buf.add('(');
 			else buf.add(',');
 			buf.add('`');
@@ -216,6 +222,9 @@ namespace mysql {
 		buf.add(')');
 	}
 	php::value client::insert(php::parameters& params) {
+		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
+			throw php::exception("table name and insert data array is required");
+		}
 		php::string& table = params[0];
 		php::array&  data  = params[1];
 
@@ -241,6 +250,9 @@ namespace mysql {
 		return flame::async();
 	}
 	php::value client::remove(php::parameters& params) {
+		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
+			throw php::exception("table name and filter array is required");
+		}
 		php::string& table = params[0];
 		php::buffer sql;
 		std::memcpy(sql.put(13), "DELETE FROM `", 13);
@@ -257,6 +269,9 @@ namespace mysql {
 		return flame::async();
 	}
 	php::value client::update(php::parameters& params) {
+		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array() || !params[2].is_array()) {
+			throw php::exception("table name, filter array and update array is required");
+		}
 		php::string& table = params[0];
 		php::array&  data  = params[2];
 		php::buffer  sql;
@@ -304,14 +319,15 @@ namespace mysql {
 		}
 	}
 	php::value client::one(php::parameters& params) {
+		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
+			throw php::exception("table name and query array is required");
+		}
 		php::string& table = params[0];
 		php::buffer  sql;
 		std::memcpy(sql.put(15), "SELECT * FROM `", 15);
 		std::memcpy(sql.put(table.length()), table.c_str(), table.length());
 		sql.add('`');
-		if(params.length() > 1) {
-			sql_where(this, params[1], sql);
-		}
+		sql_where(this, params[1], sql);
 		if(params.length() > 2) {
 			sql_orderby(this, params[2], sql);
 		}
@@ -324,6 +340,9 @@ namespace mysql {
 		return flame::async();
 	}
 	php::value client::select(php::parameters& params) {
+		if(params.length() < 1 || !params[0].is_string()) {
+			throw php::exception("table name is required");
+		}
 		php::string& table = params[0];
 		php::buffer  sql;
 		std::memcpy(sql.put(7), "SELECT ", 7);
@@ -339,7 +358,7 @@ namespace mysql {
 					sql.add('`');
 				}
 			}else{
-				php::string str = params[1].to_string();
+				php::string& str = params[1].to_string();
 				std::memcpy(sql.put(str.length()), str.c_str(), str.length());
 			}
 		}else{

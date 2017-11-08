@@ -41,15 +41,13 @@ void client::curl_multi_info_check(client* self) {
 			ctx->res->done_cb(message);
 			ctx->co->next(std::move(ctx->res));
 		}
-		std::printf("delete context\n");
 		delete ctx;
 		curl_multi_remove_handle(ctx->self->multi_, ctx->req->easy_);
 	}
 }
 
 void client::curl_multi_socket_poll(uv_poll_t *poll, int status, int events) {
-	int flags = 0;
-	int running_handles;
+	int flags = 0, running_handles;
 	if(events & UV_READABLE)
 		flags |= CURL_CSELECT_IN;
 	if(events & UV_WRITABLE)

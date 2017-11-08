@@ -27,8 +27,6 @@ namespace http {
 
 		header_parser.data = this;
 		cookie_parser.data = this;
-
-		std::printf("self: %08x\n", this);
 	}
 	void client_response::head_cb(char* ptr, size_t size) {
 		// 由于 curl 回调的 header 行完整，不需要考虑数据段问题
@@ -38,7 +36,6 @@ namespace http {
 		std::memcpy(body_.put(size), ptr, size);
 	}
 	void client_response::done_cb(CURLMsg* msg) {
-		std::printf("done_cb\n");
 		long status;
 		curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &status);
 		prop("status", 6) = status;
@@ -55,7 +52,6 @@ namespace http {
 	}
 	int client_response::header_val_cb(kv_parser* parser, const char* data, size_t size) {
 		client_response* self = reinterpret_cast<client_response*>(parser->data);
-		std::printf("self: %08x\n", self);
 		if(self->key_size == 10 && (std::strncmp(self->key_data, "Set-Cookie", 10) == 0
 			|| std::strncmp(self->key_data, "set-cookie", 10) == 0)) {
 
@@ -63,7 +59,6 @@ namespace http {
 			kv_parser_reset(&self->cookie_parser);
 			kv_parser_execute(&self->cookie_parser, &self->cookie_parser_conf, data, size);
 		}else if(self->key_size > 0) {
-			std::printf("%.*s => %.*s\n", self->key_size, self->key_data, size ,data);
 			self->header_.at(self->key_data, self->key_size) = php::string(data, size);
 		}
 		self->key_size = 0;
@@ -80,9 +75,9 @@ namespace http {
 		if(self->key_size > 0) {
 			if(self->cookie_item.is_null()) {
 				self->cookie_item = php::array(0);
-				// self->cookie_.at(self->key_data, self->key_size) = self->cookie_item;
+				self->cookie_.at(self->key_data, self->key_size) = self->cookie_item;
 			}else{
-				// self->cookie_item.at(self->key_data, self->key_size) = php::string(data, size);
+				self->cookie_item.at(self->key_data, self->key_size) = php::string(data, size);
 			}
 		}
 		self->key_size = 0;

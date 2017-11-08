@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.1.0
+EXT_VER=1.0.0
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -40,10 +40,10 @@ SOURCES=$(shell find ./src/util -name "*.cpp") \
  $(shell find ./src/flame/time -name "*.cpp") \
  $(shell find ./src/flame/os -name "*.cpp") \
  $(shell find ./src/flame/log -name "*.cpp") \
- $(shell find ./src/flame/db -name "*.cpp") \
  $(shell find ./src/flame/net -maxdepth 1 -name "*.cpp") \
  $(shell find ./src/flame/net/fastcgi -name "*.cpp") \
- $(shell find ./src/flame/net/http -name "*.cpp")
+ $(shell find ./src/flame/net/http -name "*.cpp") \
+ $(shell find ./src/flame/db -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程
@@ -93,7 +93,9 @@ install: ${EXTENSION}
 	make -C ./deps/kv-parser all
 ./deps/fastcgi-parser/fastcgi_parser.o:
 	make -C ./deps/fastcgi-parser all
-./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a: ./deps/mongo-c-driver/src/libbson/README
+./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a:
+	cd ./deps/mongo-c-driver; git submodule update --init;
+	cd ./deps/mongo-c-driver/src/libbson; rm -f README; ln -s README.rst README;
 	cd ./deps/mongo-c-driver; chmod +x ./autogen.sh; chmod +x ./src/libbson/autogen.sh;
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh;
@@ -101,9 +103,6 @@ install: ${EXTENSION}
 	make -C ./deps/mongo-c-driver -j2
 	make -C ./deps/mongo-c-driver install
 	cd ./deps/mongo-c-driver; find -type l | xargs rm
-./deps/mongo-c-driver/src/libbson/README:
-	cd ./deps/mongo-c-driver; git submodule update --init;
-	cd ./deps/mongo-c-driver/src/libbson; rm -f README; ln -s README.rst README;
 ./deps/fmt/fmt/libfmt.a:
 	cd ./deps/fmt; cmake -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC .
 	make -C ./deps/fmt -j2

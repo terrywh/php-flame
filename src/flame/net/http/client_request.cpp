@@ -9,8 +9,10 @@ namespace net {
 namespace http {
 client_request::client_request()
 : easy_(nullptr)
+, dns_(nullptr)
 , header_(nullptr) {
 	easy_ = curl_easy_init();
+	dns_  = curl_slist_append(dns_, "senderb.xingyan.pdtv.io:8360:10.20.6.75");
 }
 php::value client_request::__construct(php::parameters& params) {
 	if (params.length() >= 3) {
@@ -33,16 +35,15 @@ php::value client_request::__construct(php::parameters& params) {
 }
 php::value client_request::ssl(php::parameters& params) {
 	php::array& opt = params[0];
-	php::value* vvf = opt.find("verify");
-	if(vvf != nullptr) {
-		php::string& val = *vvf;
-		if(std::strncmp(val.c_str(), "host", 4) == 4) {
+	php::string vvf = opt.at("verify", 6);
+	if(vvf.is_string()) {
+		if(std::strncmp(vvf.c_str(), "host", 4) == 4) {
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYHOST, 1);
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYPEER, 0);
-		}else if(std::strncmp(val.c_str(), "peer", 4) == 0) {
+		}else if(std::strncmp(vvf.c_str(), "peer", 4) == 0) {
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYHOST, 0);
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYPEER, 1);
-		}else if(std::strncmp(val.c_str(), "both", 4) == 0) {
+		}else if(std::strncmp(vvf.c_str(), "both", 4) == 0) {
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYHOST, 1);
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYPEER, 1);
 		}else{ // "none"
@@ -50,46 +51,53 @@ php::value client_request::ssl(php::parameters& params) {
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYPEER, 0);
 		}
 	}
-	php::value* crt = opt.find("cert");
 	CURLcode r = CURLE_UNKNOWN_OPTION;
-	if(crt != nullptr) {
-		php::string& val = *crt;
-		if(std::strncmp(val.c_str() + val.length() - 4, ".pem", 4) == 0) {
+	php::string crt = opt.at("cert",4);
+	if(crt.is_string()) {
+		if(std::strncmp(crt.c_str() + crt.length() - 4, ".pem", 4) == 0) {
 			curl_easy_setopt(easy_, CURLOPT_SSLCERTTYPE, "PEM");
-		}else if(std::strncmp(val.c_str() + val.length() - 4, ".der", 4) == 0) {
+		}else if(std::strncmp(crt.c_str() + crt.length() - 4, ".der", 4) == 0) {
 			curl_easy_setopt(easy_, CURLOPT_SSLCERTTYPE, "DER");
 		}
-		r = curl_easy_setopt(easy_, CURLOPT_SSLCERT, val.c_str());
+		r = curl_easy_setopt(easy_, CURLOPT_SSLCERT, crt.c_str());
 	}
 	if(r != CURLE_OK) {
 		throw php::exception("unsupported certificate");
 	}
-	php::value* key = opt.find("key");
-	if(key != nullptr) {
-		php::string& val = *crt;
-		if(std::strncmp(val.c_str() + val.length() - 4, ".pem", 4) == 0) {
+	php::string key = opt.at("key", 3);
+	if(key.is_string()) {
+		if(std::strncmp(key.c_str() + key.length() - 4, ".pem", 4) == 0) {
 			curl_easy_setopt(easy_, CURLOPT_SSLCERTTYPE, "PEM");
-		}else if(std::strncmp(val.c_str() + val.length() - 4, ".der", 4) == 0) {
+		}else if(std::strncmp(key.c_str() + key.length() - 4, ".der", 4) == 0) {
 			curl_easy_setopt(easy_, CURLOPT_SSLCERTTYPE, "DER");
-		}else if(std::strncmp(val.c_str() + val.length() - 4, ".eng", 4) == 0) {
+		}else if(std::strncmp(key.c_str() + key.length() - 4, ".eng", 4) == 0) {
 			curl_easy_setopt(easy_, CURLOPT_SSLCERTTYPE, "ENG");
 		}
-		r = curl_easy_setopt(easy_, CURLOPT_SSLKEY, val.c_str());
+		r = curl_easy_setopt(easy_, CURLOPT_SSLKEY, key.c_str());
 	}
 	if(r != CURLE_OK) {
 		throw php::exception("unsupported private key");
 	}
-	php::value* pass = opt.find("pass");
-	if(pass != nullptr) {
-		php::string& val = *pass;
-		curl_easy_setopt(easy_, CURLOPT_KEYPASSWD, val.c_str());
+	php::string pass = opt.at("pass",4);
+	if(pass.is_string()) {
+		curl_easy_setopt(easy_, CURLOPT_KEYPASSWD, pass.c_str());
 	}
 	return nullptr;
 }
 
-static size_t body_read_cb(void *ptr, size_t size, size_t nmemb, void *stream) {
-	memcpy(ptr, stream, size*nmemb);
-	return size*nmemb;
+size_t client_request::body_read_cb(void *ptr, size_t size, size_t nmemb, void *userdata) {
+	client_request* self = reinterpret_cast<client_request*>(userdata);
+	size_t          chunk = size * nmemb;
+	if(self->size_ == 0) return 0;
+	if(self->size_ <= chunk) {
+		std::memcpy(ptr, self->body_, self->size_);
+		chunk = self->size_;
+		self->size_ = 0;
+		return chunk;
+	}
+	std::memcpy(ptr, self->body_, chunk);
+	self->size_ -= chunk;
+	return chunk;
 }
 
 void client_request::build_header() {
@@ -116,8 +124,8 @@ void client_request::build_cookie() {
 	php::buffer cookie;
 	php::array& cookie_all = prop("cookie");
 	for(auto i=cookie_all.begin(); i!= cookie_all.end(); ++i) {
-		php::string key = i->first.to_string();
-		php::string val = i->second.to_string();
+		php::string& key = i->first.to_string();
+		php::string& val = i->second.to_string();
 		std::memcpy(cookie.put(key.length()), key.c_str(), key.length());
 		cookie.add('=');
 		std::memcpy(cookie.put(val.length()), val.c_str(), val.length());
@@ -128,34 +136,36 @@ void client_request::build_cookie() {
 	curl_easy_setopt(easy_, CURLOPT_READDATA, cookie_str.c_str());
 }
 void client_request::build_option() {
+	curl_easy_setopt(easy_, CURLOPT_RESOLVE, dns_);
 	php::string& url = prop("url");
 	if (url.is_empty()) {
 		throw php::exception("client_request build failed: empty url", -1);
 	}
 	curl_easy_setopt(easy_, CURLOPT_URL, url.c_str());
-	std::string method = prop("method");
-	php::value   vbody = prop("body");
-	php::string  xbody;
-	if (vbody.is_array()) {
-		xbody = php::build_query(vbody);
-		prop("body") = xbody;
-	}else if (vbody.is_string()) {
-		xbody = vbody;
-	}else if (!vbody.is_null()) {
-		xbody = vbody.to_string();
-		prop("body") = xbody;
+	php::string method = prop("method", 6),
+		xbody = prop("body", 4);
+	if (xbody.is_array()) {
+		xbody = php::build_query(xbody);
+		prop("body", 4) = xbody;
+	}else if (xbody.is_string()) {
+		// xbody = vbody;
+	}else if (!xbody.is_null()) {
+		xbody.to_string();
+		prop("body", 4) = xbody;
 	}
-	if(method.compare("POST") == 0) {
+	if(std::strncmp(method.c_str(), "POST", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_POST, 1L);
 		if(xbody.length() > 0) {
 			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, xbody.c_str());
 		}
-	}else if(method.compare("PUT") == 0) {
+	}else if(std::strncmp(method.c_str(), "PUT", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_UPLOAD, 1L);
 		curl_easy_setopt(easy_, CURLOPT_PUT, 1L);
 		if(xbody.length() > 0) {
-			curl_easy_setopt(easy_, CURLOPT_READDATA, xbody.c_str());
+			body_ = xbody.data();
+			size_ = xbody.length();
 			curl_easy_setopt(easy_, CURLOPT_INFILESIZE, xbody.length());
+			curl_easy_setopt(easy_, CURLOPT_READDATA, this);
 			curl_easy_setopt(easy_, CURLOPT_READFUNCTION, body_read_cb);
 		}
 	}

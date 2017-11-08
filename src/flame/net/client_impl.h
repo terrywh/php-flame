@@ -15,7 +15,7 @@ namespace net {
 		typedef client_impl<UV_TYPE_T, MY_SOCKET_T> impl_t;
 		client_impl(MY_SOCKET_T* sock)
 		: self_(sock)
-		, cor_(nullptr)
+		, co_(nullptr)
 		, closing_(false) {
 			stream.data = this;
 		}
@@ -41,7 +41,7 @@ namespace net {
 			if(closing_) return nullptr; // 已关闭
 
 			ref_ = self_; // 保留对象引用，防止异步调用丢失对象 // 当前对象的引用
-			cor_ = coroutine::current;
+			co_ = coroutine::current;
 			uv_read_start((uv_stream_t*)&stream, alloc_cb, read_cb);
 			return flame::async();
 		}
@@ -60,16 +60,22 @@ namespace net {
 			return flame::async();
 		}
 		php::value close(php::parameters& params) {
-			close(true);
-			return flame::async();
-		}
-		void close(bool stop_read) {
-			if(closing_) return;
-			closing_ = true;
-			if(stop_read && cor_ != nullptr) { // 读取协程恢复
-				cor_->next();
+			if(close(true)) {
+				co_ = coroutine::current;
+				return flame::async();
+			}else{
+				return nullptr;
 			}
+		}
+		bool close(bool stop_read) {
+			if(closing_) return false;
+			closing_ = true;
 			uv_close((uv_handle_t*)&stream, close_cb);
+			if(stop_read && co_ != nullptr) { // 读取协程恢复
+				co_->next();
+			}
+			co_ = nullptr;
+			return true;
 		}
 	private:
 		typedef struct write_request_t {
@@ -79,17 +85,11 @@ namespace net {
 			php::string    buf;
 			uv_write_t     req;
 		} write_request_t;
-		typedef struct shutdown_request_t {
-			coroutine*      co;
-			client_impl* ch;
-			php::value     obj;
-			uv_shutdown_t  req;
-		} shutdown_request_t;
 
 		MY_SOCKET_T*  self_;
 
 		php::buffer    buf_;
-		coroutine*     cor_; // 读取协程
+		coroutine*     co_; // 当前协程
 		php::value     rv_;
 		php::value     ref_; // 当前对象的引用
 
@@ -155,14 +155,14 @@ namespace net {
 			}else if(nread < 0) {
 				self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用
 				self->close(false);
-				self->cor_->fail(uv_strerror(nread), nread);
+				self->co_->fail(uv_strerror(nread), nread);
 			}else if(nread == 0) {
 			}else{
 				self->buf_.adv(nread);
 				if(self->read()) {
 					uv_read_stop((uv_stream_t*)&self->stream);
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用
-					self->cor_->next(self->rv_);
+					self->co_->next(self->rv_);
 				}
 			}
 		}
@@ -179,7 +179,11 @@ namespace net {
 			delete ctx;
 		}
 		static void close_cb(uv_handle_t* handle) {
-			delete reinterpret_cast<impl_t*>(handle->data);
+			impl_t* self = reinterpret_cast<impl_t*>(handle->data);
+			if(self->co_) {
+				self->co_->next();
+			}
+			delete self;
 		}
 	};
 }

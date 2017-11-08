@@ -3,12 +3,8 @@
 namespace flame {
 namespace net {
 namespace http {
-	class server_handler_base {
-	public:
-		virtual void on_request(php::object& req, php::object& res) = 0;
-	};
 	template <class connection_t>
-	class server_handler: public server_handler_base, public php::class_base {
+	class server_handler: public php::class_base {
 	public:
 		php::value __invoke(php::parameters& params) {
 			if(!params[0].is_pointer()) {
@@ -58,8 +54,8 @@ namespace http {
 			return this;
 		}
 		void on_request(php::object& req, php::object& res) {
-			php::string& path   = req.prop("uri");
-			php::string& method = req.prop("method");
+			php::string path   = req.prop("uri");
+			php::string method = req.prop("method");
 
 			if(path.is_empty()) {
 				php::fail("missing 'REQUEST_URI' in webserver config");

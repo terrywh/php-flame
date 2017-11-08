@@ -40,17 +40,22 @@ namespace net {
 			return flame::async();
 		}
 		php::value close(php::parameters& params) {
-			close(true);
-			return flame::async();
+			if(close(true)) {
+				co_ = coroutine::current;
+				return flame::async();
+			}else{
+				return nullptr;
+			}
 		}
-		void close(bool stop_run) {
-			if(closing_) return;
+		bool close(bool stop_run) {
+			if(closing_) return false;
 			closing_ = true;
 			uv_close((uv_handle_t*)&server, close_cb);
 			if(stop_run && co_ != nullptr) { // 运行协程恢复
 				co_->next();
-				co_ = nullptr;
 			}
+			co_ = nullptr;
+			return true;
 		}
 	private:
 		MY_SERVER_T*    self_;
@@ -77,7 +82,6 @@ namespace net {
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用3
 					self->close(false);
 					self->co_->fail(uv_strerror(error), error);
-					return;
 				}
 			}else/* if(self->cb_type == 1) */{
 				php::object  cli = php::object::create<MY_SOCKET_T>();
@@ -95,7 +99,11 @@ namespace net {
 			}
 		}
 		static void close_cb(uv_handle_t* handle) {
-			delete reinterpret_cast<impl_t*>(handle->data);
+			impl_t* self = reinterpret_cast<impl_t*>(handle->data);
+			if(self->co_) {
+				self->co_->next();
+			}
+			delete self;
 		}
 	};
 }
