@@ -111,7 +111,7 @@ install: ${EXTENSION}
 	cd ./deps/c-ares; CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=`pwd`/bin
 	make -C ./deps/c-ares -j2
 	make -C ./deps/c-ares install
-	cd ./deps/c-ares; find -type l | xargs rm; rm -f bin/lib/libcares.la; rm -f bin/lib/libcares.so*; rm -f bin/lib/pkgconfig
+	cd ./deps/c-ares; find -type l | xargs rm; rm -f bin/lib/libcares.la; rm -f bin/lib/libcares.so*; rm -rf bin/lib/pkgconfig
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:
