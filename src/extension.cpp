@@ -1,7 +1,7 @@
 #include "flame/flame.h"
 #include "flame/time/time.h"
 #include "flame/os/os.h"
-// #include "flame/db/db.h"
+#include "flame/db/db.h"
 #include "flame/net/net.h"
 #include "flame/log/log.h"
 
