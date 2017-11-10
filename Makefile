@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.0.0
+EXT_VER=1.1.0dev
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -33,17 +33,17 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/mongo-c-driver/bin/lib/libsnappy.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
-# SOURCES=$(shell find ./src -name "*.cpp")
-SOURCES=$(shell find ./src/util -name "*.cpp") \
- ./src/extension.cpp \
- $(shell find ./src/flame -maxdepth 1 -name "*.cpp") \
- $(shell find ./src/flame/time -name "*.cpp") \
- $(shell find ./src/flame/os -name "*.cpp") \
- $(shell find ./src/flame/log -name "*.cpp") \
- $(shell find ./src/flame/net -maxdepth 1 -name "*.cpp") \
- $(shell find ./src/flame/net/fastcgi -name "*.cpp") \
- $(shell find ./src/flame/net/http -name "*.cpp") \
- $(shell find ./src/flame/db -name "*.cpp")
+SOURCES=$(shell find ./src -name "*.cpp")
+# SOURCES=$(shell find ./src/util -name "*.cpp") \
+#  ./src/extension.cpp \
+#  $(shell find ./src/flame -maxdepth 1 -name "*.cpp") \
+#  $(shell find ./src/flame/time -name "*.cpp") \
+#  $(shell find ./src/flame/os -name "*.cpp") \
+#  $(shell find ./src/flame/log -name "*.cpp") \
+#  $(shell find ./src/flame/net -maxdepth 1 -name "*.cpp") \
+#  $(shell find ./src/flame/net/fastcgi -name "*.cpp") \
+#  $(shell find ./src/flame/net/http -name "*.cpp") \
+#  $(shell find ./src/flame/db -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程
@@ -88,7 +88,7 @@ install: ${EXTENSION}
 ./deps/hiredis/libhiredis.a:
 	make -C ./deps/hiredis -j2
 ./deps/multipart-parser-c/multipart_parser.o:
-	make -C ./deps/multipart-parser-c default
+	make -C ./deps/multipart-parser-c
 ./deps/kv-parser/kv_parser.o:
 	make -C ./deps/kv-parser all
 ./deps/fastcgi-parser/fastcgi_parser.o:

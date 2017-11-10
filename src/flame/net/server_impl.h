@@ -17,9 +17,9 @@ namespace net {
 		php::value handle(php::parameters& params) {
 			if(params[0].is_callable()) {
 				cb_ = params[0];
-				php::object& obj = cb_;
 				// 限定特殊类型标志
-				if(!obj.is_instance_of("Closure") && obj.prop("__CONNECTION_HANDLER__").is_true()) {
+				if(cb_.is_object() && !cb_.is_closure()
+					&& static_cast<php::object&>(&cb_).prop("__CONNECTION_HANDLER__").is_true()) {
 					cb_type = 2;
 				}else{
 					cb_type = 1;
@@ -77,7 +77,7 @@ namespace net {
 				zval s;
 				ZVAL_PTR(&s, handle); // 将服务器对象指针放入，用于 accept 连接
 				error = reinterpret_cast<php::callable&>(self->cb_)(
-					reinterpret_cast<php::value&>(s));
+					reinterpret_cast<php::value&>(s), handle->type);
 				if(error < 0) {
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用3
 					self->close(false);

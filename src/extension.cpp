@@ -16,7 +16,7 @@ void extension_init(php::extension_entry& ext) {
 	// log
 	flame::log::init(ext);
 	// db
-	// flame::db::init(ext);
+	flame::db::init(ext);
 	// net
 	flame::net::init(ext);
 }

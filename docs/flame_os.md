@@ -27,7 +27,7 @@ $proc = new flame\os\process("ping", ...);
 ```
 
 **注意**：
-* 额外选项中 `detach` 与 `stdout` | `stderr` 不能同时使用；
+* 请不要同时使用额外选项中 `detach` 与 `stdout` / `stderr` ；
 * 若进程未与父进程脱离（`detach`），则当该进程对象销毁时，实际进程将被强制结束（SIGKILL）；
 * 被启动的进程将会“异步”运行，不会阻塞当前 PHP 程序进程；
 

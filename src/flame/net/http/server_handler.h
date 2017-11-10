@@ -11,12 +11,13 @@ namespace http {
 				throw php::exception("misused server handler");
 			}
 			php::value&  ptr = params[0];
+			int         type = params[1];
 			uv_stream_t* svr = (uv_stream_t*)Z_PTR((zval&)ptr);
 
 			connection_t* pobj = new connection_t(this);
-			if(svr->type == UV_NAMED_PIPE) {
+			if(type == UV_NAMED_PIPE) {
 				uv_pipe_init(flame::loop, &pobj->socket_pipe, 0);
-			}else if(svr->type == UV_TCP) {
+			}else if(type == UV_TCP) {
 				uv_tcp_init(flame::loop, &pobj->socket_tcp);
 			}else{
 				throw php::exception("unknown server type");
