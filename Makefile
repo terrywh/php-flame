@@ -11,7 +11,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
 # ---------------------------------------------------------------------
 CXX?=/usr/local/gcc-7.1.0/bin/g++
-CXXFLAGS?= -O2
+CXXFLAGS?= -O0 -g
 CXXFLAGS_CORE= -std=c++14 -fPIC
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
 # 链接参数
@@ -30,7 +30,8 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/hiredis/libhiredis.a \
  ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a \
  ./deps/mongo-c-driver/bin/lib/libbson-1.0.a \
- ./deps/mongo-c-driver/bin/lib/libsnappy.a
+ ./deps/mongo-c-driver/bin/lib/libsnappy.a \
+ ./deps/librdkafka/src/librdkafka.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
 SOURCES=$(shell find ./src -name "*.cpp")
@@ -112,6 +113,11 @@ install: ${EXTENSION}
 	make -C ./deps/c-ares -j2
 	make -C ./deps/c-ares install
 	cd ./deps/c-ares; find -type l | xargs rm; rm -f bin/lib/libcares.la; rm -f bin/lib/libcares.so*; rm -rf bin/lib/pkgconfig
+./deps/librdkafka/src/librdkafka.a:
+	cd ./deps/librdkafka; chmod +x ./configure; chmod +x ./lds-gen.py; ./configure --enable-static
+	make -C ./deps/librdkafka -j2
+	cd ./deps/librdkafka; find -type l | xargs rm;
+
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:

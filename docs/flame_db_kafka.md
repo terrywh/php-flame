@@ -14,7 +14,7 @@ flame\go(function() {
 		"partitioner_cb" => function($key, $count) {
 			return crc32($key) % $count;
 		}
-	], "test_topic");
+	], "test_topic"); // 生产者指定单个 topic 进行生产
 	yield $producer->produce("this is a message", "this is the key");
 	yield $producer->produce("this is a message", "this is the key");
 });
@@ -22,18 +22,16 @@ flame\go(function() {
 flame\go(function() {
 	$consumer = new flame\db\kafka\consumer([
 		"bootstrap.servers"  => "127.0.0.1:19092, 127.0.0.1:29092",
-		"compression.codec"  => "snappy",
-		"batch.num.messages" => "1000",
 	], [
 		"partitioner_cb" => function($key, $count) {
 			return crc32($key) % $count;
 		}
-	], "test_topic");
+	], ["test_topic"]); // 消费者可指定多个 topic 进行消费
 	// 以下两种消费方式不可混合使用，这里仅作示范代码
 	// 方式 1.
 	$msg = yield $producer->consume();
 	// 方式 2.
-	$consumer->consume(function($msg) {
+	yield $consumer->consume(function($msg) {
 		// $msg
 	});
 });
@@ -83,7 +81,7 @@ flame\go(function() {
 
 **注意**：
 * **不能**将同一个 consumer 用于多个协程进行消费；
-* 消费的两种形式，不能对同一消费者对象同时使用；
+* 消费的两种形式，不能对同一消费者同时使用；
 
 
 **示例**：
@@ -99,7 +97,7 @@ $msg = yield $consumer->consume();
 **注意**：
 * **不能**将同一个 consumer 用于多个协程进行消费；
 * 消费形式 2，每个回调都在单独的“协程”中运行；
-* 消费的两种形式，不能对同一消费者对象同时使用；
+* 消费的两种形式，不能对同一消费者同时使用；
 
 
 **示例**：
@@ -112,7 +110,7 @@ yield $consumer->consume(function($msg) {
 ```
 
 ##### `yield consumer::commit(object $msg)`
-手动提交消息；
+手动提交消息偏移；
 
 **注意**：
 * 需要手动提交，请设置 `enable.auto.commit` 为 `"false"`
@@ -120,9 +118,6 @@ yield $consumer->consume(function($msg) {
 
 #### `class flame\db\kafka\message`
 消费者消费过程返回的消息对象，用于包裹实际的消息内容和其相关数据
-
-##### `yield message::commit()`
-手动提交
 
 ##### `string  message::$key`
 消息生产时指定的 KEY；

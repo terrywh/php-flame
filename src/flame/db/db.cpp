@@ -2,6 +2,7 @@
 #include "redis.h"
 #include "mongodb/mongodb.h"
 #include "mysql/mysql.h"
+#include "kafka/kafka.h"
 
 namespace flame {
 namespace db {
@@ -23,6 +24,8 @@ namespace db {
 		mongodb::init(ext);
 		// mysql
 		mysql::init(ext);
+		// kafka
+		kafka::init(ext);
 	}
 }
 }

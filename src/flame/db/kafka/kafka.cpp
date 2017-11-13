@@ -1,10 +1,34 @@
 #include "kafka.h"
+#include "producer.h"
+#include "consumer.h"
+#include "message.h"
 
 namespace flame {
 namespace db {
 namespace kafka {
 	void init(php::extension_entry& ext) {
+		php::class_entry<producer> class_producer("flame\\db\\kafka\\producer");
+		class_producer.add<&producer::__construct>("__construct");
+		class_producer.add<&producer::partitioner>("partitioner");
+		class_producer.add<&producer::produce>("produce");
+		class_producer.add<&producer::close>("close");
+		class_producer.add<&producer::__destruct>("__destruct");
+		ext.add(std::move(class_producer));
 
+		php::class_entry<consumer> class_consumer("flame\\db\\kafka\\consumer");
+		class_consumer.add<&consumer::__construct>("__construct");
+		class_consumer.add<&consumer::consume>("consume");
+		class_consumer.add<&consumer::commit>("commit");
+		class_consumer.add<&consumer::close>("close");
+		class_consumer.add<&consumer::__destruct>("__destruct");
+		ext.add(std::move(class_consumer));
+
+		php::class_entry<message> class_message("flame\\db\\kafka\\message");
+		class_message.add(php::property_entry("key", std::string("")));
+		class_message.add(php::property_entry("val", std::string("")));
+		class_message.add(php::property_entry("time", std::int64_t(0)));
+		class_message.add<&message::to_string>("__toString");
+		ext.add(std::move(class_message));
 	}
 
 	rd_kafka_conf_t* gconf(php::array& gconf) {
