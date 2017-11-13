@@ -1,8 +1,7 @@
 #include "../coroutine.h"
 #include "process.h"
-#include "../net/unix_socket.h"
-#include "../net/udp_socket.h"
-#include "../net/tcp_socket.h"
+#include "cluster/cluster.h"
+#include "cluster/messenger.h"
 
 namespace flame {
 namespace os {
@@ -153,72 +152,15 @@ namespace os {
 			proc->co_ = nullptr;
 		}
 	}
-
-	typedef struct send_request_t {
-		int         head;
-		php::string data;
-		php::value  ref;
-		php::object sock;
-		uv_write_t  req;
-	} send_request_t;
-
-	void process::message_cb(uv_write_t* handle, int status) {
-		send_request_t* ctx = static_cast<send_request_t*>(handle->data);
-		delete ctx;
-	}
-	php::value process::send_message(php::parameters& params) {
+	php::value process::send(php::parameters& params) {
 		// 分离的进程 或 未建立 ipc 通道无法进行消息传递
 		if(detach_ || pipe_.data == nullptr) return nullptr;
-		// 考虑使用简单的协议封装传输，目前需要标识出携带 HANDLE 传递的情况
-		send_request_t* ctx = new send_request_t {
-			.head = (int)params[0].length(),
-			.data = params[0],
-			.ref  = this,
-		};
-		ctx->ref = this; // 当前对象引用，防止丢失
-		ctx->req.data = ctx;
-
-		uv_buf_t data[] = {
-			{.base = (char*)&ctx->head, .len = 4},
-			{.base = ctx->data.data(),  .len = ctx->data.length()}
-		};
-		uv_write(&ctx->req, (uv_stream_t*)&pipe_, data, 2, message_cb);
-		return flame::async();
-	}
-
-	void process::socket_cb(uv_write_t* handle, int status) {
-		send_request_t* ctx = static_cast<send_request_t*>(handle->data);
-		ctx->sock.call("close"); // 当前进程中的连接需要关闭
-		delete ctx;
-	}
-
-	php::value process::send_socket(php::parameters& params) {
-		// 理论上仅允许传递 unix_socket
-		php::object& obj = params[1];
-		uv_stream_t* sock;
-		if(obj.is_instance_of<net::unix_socket>()) {
-			sock = (uv_stream_t*)&obj.native<net::unix_socket>()->impl->stream;
-		}else if(obj.is_instance_of<net::udp_socket>()) {
-			sock = (uv_stream_t*)&obj.native<net::udp_socket>()->stream;
-		}else if(obj.is_instance_of<net::tcp_socket>()) {
-			sock = (uv_stream_t*)&obj.native<net::tcp_socket>()->impl->stream;
+		if(cluster::default_msg != nullptr) {
+			cluster::default_msg->send(params, (uv_stream_t*)&pipe_);
 		}else{
-			throw php::exception("only socket object can be sent");
+			throw php::exception("failed to send: ipc handler not set");
 		}
-		send_request_t* ctx = new send_request_t {
-			.head = 0x01000000,
-			.data = nullptr,
-			.ref  = this,
-			.sock = obj,
-		};
-		ctx->ref = this;
-		ctx->req.data = ctx;
-		uv_buf_t data[] = {
-			{.base = (char*)&ctx->head, .len = 4},
-		};
-		uv_write2(&ctx->req, (uv_stream_t*)&pipe_, data, 2, sock, socket_cb);
 		return flame::async();
 	}
-
 }
 }

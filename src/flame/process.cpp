@@ -91,7 +91,7 @@ namespace flame {
 	}
 	void process::worker_stop() {
 		for(auto i=workers_.begin();i!=workers_.end();++i) {
-			(*i)->stop();
+			(*i)->kill();
 		}
 	}
 	void process::on_worker_stop(worker* w) {

@@ -1,19 +1,9 @@
 <?php
-flame\init("process_test");
-// flame\go(function() {
-// 	$proc = flame\os\spawn("/usr/bin/ping", ["www.baidu.com"], [
-// 		"PATH"=>"/usr/bin",
-// 		"ENV_KEY_1"=>"ENV_VAL_1"
-// 	], "/tmp", [
-// 		"gid" => 2017, "uid" => 2017,
-// 		"stdout" => "/tmp/ping.log",
-// 	]);
-// 	echo "--------\n";
-// 	yield flame\time\sleep(50000);
-// 	echo "--------\n";
-// 	$proc->kill();
-// });
+flame\init("ipc_master_test");
 flame\go(function() {
+	flame\os\cluster\ondata(function($data) {
+		echo "ondata: ", var_dump($data);
+	});
 	$proc = new flame\os\process(flame\os\executable(),
 		[__DIR__."/worker.php"],
 		null,
@@ -21,11 +11,13 @@ flame\go(function() {
 		[
 			"ipc" => true,
 		]);
-	echo "=========\n";
-	yield flame\time\sleep(5000);
-	echo "=========\n";
-	yield $proc->send("aaaaaaaaaaaaa");
-	yield flame\time\sleep(50000);
+	yield flame\time\sleep(2000);
+	yield $proc->send("this is a string message");
+	yield flame\time\sleep(2000);
+	$sock = new flame\net\tcp_socket();
+	yield $sock->connect("127.0.0.1", 80);
+	yield $proc->send($sock); // send to child process
+	yield flame\time\sleep(2000);
 	echo "=========\n";
 	$proc->kill();
 });

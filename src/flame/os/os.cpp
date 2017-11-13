@@ -1,7 +1,7 @@
 #include "../coroutine.h"
 #include "os.h"
 #include "process.h"
-#include "messenger.h"
+#include "cluster/cluster.h"
 
 namespace flame {
 namespace os {
@@ -18,12 +18,10 @@ namespace os {
 		class_process.add<&process::__construct>("__construct");
 		class_process.add<&process::kill>("kill");
 		class_process.add<&process::wait>("wait");
-		class_process.add<&process::send_message>("send_message");
-		class_process.add<&process::send_socket>("send_socket");
+		class_process.add<&process::send>("send");
 		ext.add(std::move(class_process));
 
-		ext.add<set_message_handler>("flame\\os\\set_message_handler");
-		ext.add<set_socket_handler>("flame\\os\\set_socket_handler");
+		cluster::init(ext);
 	}
 }
 }

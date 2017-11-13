@@ -42,3 +42,6 @@
 	path = deps/c-ares
 	url = https://github.com/c-ares/c-ares.git
 	ignore = dirty
+[submodule "deps/librdkafka"]
+	path = deps/librdkafka
+	url = https://github.com/edenhill/librdkafka.git

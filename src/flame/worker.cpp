@@ -46,11 +46,8 @@ namespace flame {
 		// 需要监控子进程并等待其退出完毕
 		// uv_unref(reinterpret_cast<uv_handle_t*>(&proc_));
 	}
-	void worker::kill() {
-		uv_process_kill(&proc_, SIGINT);
-	}
-	void worker::stop() {
-		uv_process_kill(&proc_, SIGTERM);
+	void worker::kill(int sig) {
+		uv_process_kill(&proc_, sig);
 	}
 	void worker::on_worker_exit(uv_process_t* handle, int64_t exit_status, int term_signal) {
 		worker* w = static_cast<worker*>(handle->data);
