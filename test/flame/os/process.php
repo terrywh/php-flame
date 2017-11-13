@@ -18,7 +18,6 @@ flame\go(function() {
 	yield $sock->connect("127.0.0.1", 80);
 	yield $proc->send($sock); // send to child process
 	yield flame\time\sleep(2000);
-	echo "=========\n";
 	$proc->kill();
 });
 flame\run();

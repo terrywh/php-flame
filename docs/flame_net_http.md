@@ -62,6 +62,7 @@ $req->header["content-type"] = "application/x-www-form-urlencoded";
 
 #### `mixed client_request::$body`
 Array / String 当 $method = `PUT` 或 `POST` 时的请求体；
+
 **示例**：
 ``` PHP
 <?php
@@ -72,12 +73,24 @@ $req->body = ["a"=> "b", "c"=> "d"];
 ```
 
 ### `class flame\net\http\client`
-封装 libcurl 相关的 HTTP 处理功能
+封装 libcurl 相关的 HTTP 处理功能，如无特殊需求，请尽量使用同一个 `client` 发送若干个请求（而非创建多个 `client` 对象），以减少资源占用；
 
-* 提供对 单个域名 的出口连接限制等功能；
-* 复用 client 对象以约束资源占用；
+#### `client::__construct(array $options)`
+创建请求客户端对象，支持的属性如下示例：
 
-#### `yield http_client::exec(client_request $request)`
+**示例**：
+``` PHP
+<?php
+$cli = new flame\net\http\client([
+	"conn_share" => "pipe", // null/"" => 不进行排队或并行
+	                 // "pipe" => 管道传输 HTTP/1.1 请求（同一连接）
+	                 // "plex" => 并行传输 HTTP/2 请求（STREAM）
+					 // "both"  => PIPE + PLEX
+	"conn_per_host" => 4,  // 默认 2，同 HOST:PORT 请求建立的最大连接数
+	"pipe_per_conn" => 2,  // 默认 4，单连接 HTTP/1.1 管道排队数量
+]);
+
+#### `yield client::exec(client_request $request)`
 执行指定请求并返回响应对象 `flame\net\http\client_response`；
 
 **示例**：

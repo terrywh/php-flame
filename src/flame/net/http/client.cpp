@@ -11,10 +11,32 @@ namespace net {
 namespace http {
 
 php::value client::__construct(php::parameters& params) {
-	if(params.length() > 0 && params[0].is_array()) {
-		php::array& options = params[0];
+	if(params.length() == 0 || !params[0].is_array()) {
+		return nullptr;
 	}
-	// TODO 接收选项用于控制连接数量
+	php::array&  opts = params[0];
+	php::string& conn = opts.at("conn_share");
+	if(conn.is_empty()) {
+		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_NOTHING);
+	}else if(conn.length() == 4 && std::strncmp(conn.c_str(), "pipe", 4) == 0) {
+		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_HTTP1);
+	}else if(conn.length() == 4 && std::strncmp(conn.c_str(), "plex", 4) == 0) {
+		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX);
+	}else if(conn.length() == 4 && std::strncmp(conn.c_str(), "both", 4) == 0) {
+		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_HTTP1 | CURLPIPE_MULTIPLEX);
+	}
+	int pipe = opts.at("pipe_per_conn");
+	if(pipe > 0 && pipe < 256) {
+		curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, conn);
+	}else{
+		curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
+	}
+	int host = opts.at("conn_per_host");
+	if(host > 0 && host < 512) {
+		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, conn);
+	}else{
+		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 2);
+	}
 	return nullptr;
 }
 
