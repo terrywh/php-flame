@@ -35,16 +35,6 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
 SOURCES=$(shell find ./src -name "*.cpp")
-# SOURCES=$(shell find ./src/util -name "*.cpp") \
-#  ./src/extension.cpp \
-#  $(shell find ./src/flame -maxdepth 1 -name "*.cpp") \
-#  $(shell find ./src/flame/time -name "*.cpp") \
-#  $(shell find ./src/flame/os -name "*.cpp") \
-#  $(shell find ./src/flame/log -name "*.cpp") \
-#  $(shell find ./src/flame/net -maxdepth 1 -name "*.cpp") \
-#  $(shell find ./src/flame/net/fastcgi -name "*.cpp") \
-#  $(shell find ./src/flame/net/http -name "*.cpp") \
-#  $(shell find ./src/flame/db -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 HEADERX=deps/deps.h.gch
 # 扩展编译过程

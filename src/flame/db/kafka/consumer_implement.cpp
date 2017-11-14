@@ -8,28 +8,24 @@ namespace flame {
 namespace db {
 namespace kafka {
 	consumer_implement::consumer_implement(consumer* c, php::parameters& params)
-	:consumer_(c) {
+	: consumer_(c)
+	, kafka_(nullptr)
+	, topic_(nullptr) {
 		if(!params[0].is_array() || !params[1].is_array() || !params[2].is_array()) {
 			throw php::exception("failed to create kafka consumer: illegal parameters");
 		}
-		char   errstr[1024];
-		size_t errlen = sizeof(errstr);
-
 		gconf_ = global_conf(params[0]);
 		rd_kafka_conf_set_error_cb(gconf_, error_cb);
 		rd_kafka_conf_set_offset_commit_cb(gconf_, commit_cb);
 		rd_kafka_conf_set_opaque(gconf_, this);
-		kafka_ = rd_kafka_new(RD_KAFKA_PRODUCER, gconf_, errstr, errlen);
-		if(kafka_ == nullptr) {
-			throw php::exception(errstr);
-		}
+
 		php::array& topics = params[2];
 		topic_ = rd_kafka_topic_partition_list_new(topics.length());
 		for(auto i=topics.begin(); i!=topics.end(); ++i) {
 			php::string& topic = i->second.to_string();
 			rd_kafka_topic_partition_list_add(topic_, topic.c_str(), RD_KAFKA_PARTITION_UA);
 		}
-		rd_kafka_subscribe(kafka_, topic_);
+
 		uv_check_init(flame::loop, &check_);
 	}
 	void consumer_implement::error_cb(rd_kafka_t *rk, int err, const char *reason, void *opaque) {
@@ -61,6 +57,7 @@ namespace kafka {
 		delete ctx;
 	}
 	void consumer_implement::consume(php::callable& cb) {
+		if(kafka_ == nullptr) consume_init();
 		context_ = new kafka_request_t {
 			coroutine::current, this, consumer_, cb
 		};
@@ -69,12 +66,23 @@ namespace kafka {
 		uv_check_start(&check_, consume_cb);
 	}
 	void consumer_implement::consume() {
+		if(kafka_ == nullptr) consume_init();
 		kafka_request_t* ctx = new kafka_request_t {
 			coroutine::current, this, consumer_
 		};
 		uv_check_stop(&check_);
 		check_.data = ctx;
 		uv_check_start(&check_, consume_cb);
+	}
+	void consumer_implement::consume_init() {
+		char   errstr[1024];
+		size_t errlen = sizeof(errstr);
+
+		kafka_ = rd_kafka_new(RD_KAFKA_PRODUCER, gconf_, errstr, errlen);
+		if(kafka_ == nullptr) {
+			throw php::exception(errstr);
+		}
+		rd_kafka_subscribe(kafka_, topic_);
 	}
 	void consumer_implement::commit_cb(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *offsets, void *opaque) {
 		consumer_implement* self = reinterpret_cast<consumer_implement*>(opaque);

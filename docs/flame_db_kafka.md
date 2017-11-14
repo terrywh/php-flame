@@ -45,19 +45,10 @@ flame\go(function() {
 
 **注意**：
 * 所有选项中所有 KEY / VAL 均会被转换为字符串进行设置；
-* 选项 `$global_opt` 中 `bootstrap.servers` | `metadata.broker.list` 必须存在；
-* 选项说明中标注 `set with .....` 需要使用特殊设置函数的选项**均不支持**；
-
-##### `producer::partitioner(mixed $method)`
-设置分区算法，必须在开始进行“生产”前调用；可用 `$method` 选项如下：
-
-* `"consistent"` - 一致哈希
-* `"random"` - 随机
-* `"consistent_random"` - 默认，设定了消息 KEY 则使用一致哈希，否则随机；
-* 自定以回调函数（参见头部示例）；
-
-**注意**：
-* 自定义回调函数中必须“同步计算”出目标分区数值(`0` ~ `$count`)；
+* 全局选项 `$global_opt` 中 `bootstrap.servers` 或 `metadata.broker.list` 必须存在；
+* 全局选项 `$global_opt` 中特殊 `set with .....` 选项均不支持；
+* 话题选项 `$topic_opt` 中特殊 `set with .....` 仅支持如下选项：
+	* partitioner_cb - 可以设置 `"consistent"` - 一致性哈希；`"random"` - 随机；`"consistent_random"` - 默认，设定了消息 KEY 则使用一致哈希，否则随机；`callable` - 自定义回调函数（参见顶部示例）；
 
 ##### `yield producer::produce(string $payload[, string $key])`
 生产一条消息，可选的指定消息 KEY（分区使用）；
@@ -73,8 +64,8 @@ flame\go(function() {
 
 **注意**：
 * 所有选项中所有 KEY / VAL 均会被转换为字符串进行设置；
-* 选项 `$global_opt` 中 `bootstrap.servers` | `metadata.broker.list` 必须存在；
-* 选项中标注 `set with .....` 需要使用特殊设置函数的选项，**均不支持**；
+* 全局选项 `$global_opt` 中 `bootstrap.servers` | `metadata.broker.list` 必须存在；
+* 全局选项 `$global_opt` 及 话题选项 `$topic_opt` 中所有标注 `set with .....` 的特殊选项**均不支持**；
 
 ##### `yield consumer::consume()`
 消费形式 1：消费一条消息；

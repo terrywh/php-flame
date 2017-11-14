@@ -25,6 +25,7 @@ namespace kafka {
 			php::object msg;
 		} commit_t;
 		std::map<rd_kafka_message_t*, commit_t> commits_;
+		void consume_init();
 		static void error_cb(rd_kafka_t *rk, int err, const char *reason, void *opaque);
 		static void consume_cb(uv_check_t* handle);
 		static void commit_cb(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *offsets, void *opaque);

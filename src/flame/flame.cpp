@@ -27,8 +27,9 @@ namespace flame {
 		if(params.length() > 1) {
 			init_opts(params[1]);
 		}
+		process_self->init();
 		// 直接在 module_startup 中进行 rotate 会改变无参时 PHP 命令的行为（直接退出）
-		log::default_logger->rotate();
+		log::default_logger->init();
 		status |= 0x01;
 		return nullptr;
 	}
@@ -55,9 +56,7 @@ namespace flame {
 	void init(php::extension_entry& ext) {
 		coroutine::prepare();
 		// 进程控制
-		process::prepare()->init();
-		// 线程辅助
-
+		process::prepare();
 		// 基础函数
 		ext.add<flame::init>("flame\\init");
 		ext.add<flame::go>("flame\\go");
