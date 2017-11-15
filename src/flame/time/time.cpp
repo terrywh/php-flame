@@ -21,7 +21,7 @@ namespace time {
 	// 示例：包裹 sleep 异步函数
 	// -------------------------------------------------------------------------
 	static void sleep2_timer_cb(php::value& rv, coroutine* co, void* data) {
-		std::printf("sleep2\n");
+		// std::fprintf(stderr, "sleep2\n");
 	}
 	static php::value sleep_wrapper(php::parameters& params) {
 		sleep(params);

@@ -14,11 +14,11 @@ namespace db {
 			php::of_string("name"),
 			php::of_array("arg")
 		});
-		class_redis.add<&redis::quit>("quit");
-		class_redis.add<&redis::hgetall>("hgetall");
 		class_redis.add<&redis::hmget>("hmget");
-		class_redis.add<&redis::mget>("mget");
 		class_redis.add<&redis::subscribe>("subscribe");
+		class_redis.add<&redis::psubscribe>("psubscribe");
+		class_redis.add<&redis::stop_all>("stop_all");
+		class_redis.add<&redis::quit>("quit");
 		ext.add(std::move(class_redis));
 		// mongodb
 		mongodb::init(ext);

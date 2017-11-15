@@ -45,7 +45,7 @@ namespace fastcgi {
 		}else if(nread == 0) {
 			// again
 		}else if(nread != fastcgi_parser_execute(&self->fpp_, &self->fps_, buf->base, nread)) {
-			std::printf("error: fastcgi parse failed\n");
+			std::fprintf(stderr, "error: fastcgi parse failed\n");
 			self->close();
 		}
 	}

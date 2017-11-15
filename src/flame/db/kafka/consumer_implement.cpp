@@ -131,7 +131,7 @@ namespace kafka {
 		if(err == RD_KAFKA_RESP_ERR__NO_OFFSET) {
 
 		}else if(err) {
-			std::printf("error: failed to receive offset commit cb (%d)\n", err);
+			std::fprintf(stderr, "error: failed to receive offset commit cb (%d)\n", err);
 		}else{
 			// TODO 优化查询效率
 			for(auto i=self->commit_.begin(); i!=self->commit_.end(); /* 可能删除 */) {

@@ -26,11 +26,11 @@ namespace cluster {
 	void messenger::read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
 		messenger* self = static_cast<messenger*>(handle->data);
 		if(nread < 0) {
-			std::printf("error: failed to read ipc, (%d) %s\n", nread, uv_strerror(nread));
+			std::fprintf(stderr, "error: failed to read ipc, (%d) %s\n", nread, uv_strerror(nread));
 		}else if(nread == 0) {
 
 		}else if(nread != self->parse(buf->base, nread)){
-			std::printf("error: failed to read ipc, wrong format\n");
+			std::fprintf(stderr, "error: failed to read ipc, wrong format\n");
 		}
 	}
 	size_t messenger::parse(char* data, size_t size) {

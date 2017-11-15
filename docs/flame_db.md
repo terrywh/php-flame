@@ -42,10 +42,28 @@ $val = yield $cli->get("key");
 * 不调用 `close()` 与 `Redis` 建立的连接**也会**在对象析构时自动释放；
 
 #### `yield redis::subscribe(callable $cb, string $chan[, string $chan, ...])`
-订阅指定通道 `$chan`，当另外的 redis 连接向该通道进行 `publish` 推送时，调用 `$cb` 回调函数；可指定多个 `$chan` 参数，同时订阅；
+监听（订阅）指定通道 `$chan`，当另外的 redis 连接向该通道进行 `publish` 推送时，调用 `$cb` 回调函数；可指定多个 `$chan` 参数，同时订阅；
 回调函数原型如下：
+``` PHP
+<?php
+function callback($chan, $data) {
+	// ...
+}
 ```
-function callback($chan, $data);
-```
+
 **注意**：
+* 不能（在多个协程中）同时建立订阅监听过程（`subscribe` / `psubscribe` 也不能同时使用），否则会引起；
+* 监听会“阻塞”当前协程，并在单独的“协程”中调用回调函数；
 * 当发生错误时，`subscribe` 的流程将立刻结束（即恢复运行）并抛出错误；
+
+#### `yield redis::psubscribe(callable $cb, string $chan[, string $chan, ...])`
+监听（订阅）指定通道模式匹配的所有通道，参考 `redis::subscribe()`；
+
+**注意**：
+* 不能（在多个协程中）同时建立订阅监听过程（`subscribe` / `psubscribe` 也不能同时使用），否则会引起；
+
+#### `redis::stop()`
+结束已建立的监听过程（恢复监听协程的运行）；
+
+**注意**：
+* 此函数与 REDIS 操作 `UNSUBSCRIBE` | `PUNSUBSCRIBE` 对应，但不支持传递参数；
