@@ -82,7 +82,7 @@ namespace cluster {
 			php::object obj = php::object::create<net::tcp_socket>();
 			net::tcp_socket* cpp = obj.native<net::tcp_socket>();
 			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
-				std::printf("error: failed to accept socket from parent\n");
+				std::fprintf(stderr, "error: failed to accept socket from parent\n");
 				return;
 			}
 			cpp->after_init();
@@ -91,7 +91,7 @@ namespace cluster {
 			php::object obj = php::object::create<net::unix_socket>();
 			net::unix_socket* cpp = obj.native<net::unix_socket>();
 			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
-				std::printf("error: failed to accept socket from parent\n");
+				std::fprintf(stderr, "error: failed to accept socket from parent\n");
 				return;
 			}
 			cpp->after_init();
