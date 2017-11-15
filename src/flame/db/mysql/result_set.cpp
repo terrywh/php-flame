@@ -1,11 +1,14 @@
 #include "../../coroutine.h"
+#include "../../thread_worker.h"
+#include "client.h"
 #include "result_set.h"
 
 namespace flame {
 namespace db {
 namespace mysql {
-	void result_set::init(php::object ref, MYSQLND_RES* rs) {
-		client_ref = std::move(ref);
+	void result_set::init(client* cli, MYSQLND_RES* rs) {
+		worker_ = &cli->worker_;
+		client_object = cli;
 		rs_ = rs;
 	}
 	result_set::~result_set() {
@@ -31,7 +34,7 @@ namespace mysql {
 			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, array_wk, default_cb);
+		worker_->queue_work(&ctx->req, array_wk, default_cb);
 		return flame::async();
 	}
 	void result_set::assoc_wk(uv_work_t* req) {
@@ -43,7 +46,7 @@ namespace mysql {
 			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, assoc_wk, default_cb);
+		worker_->queue_work(&ctx->req, assoc_wk, default_cb);
 		return flame::async();
 	}
 	void result_set::all1_wk(uv_work_t* req) {
@@ -81,7 +84,7 @@ namespace mysql {
 			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, wk, default_cb);
+		worker_->queue_work(&ctx->req, wk, default_cb);
 		return flame::async();
 	}
 }

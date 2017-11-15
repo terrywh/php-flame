@@ -1,8 +1,10 @@
 #pragma once
 
 namespace flame {
+	class thread_worker;
 namespace db {
 namespace mongodb {
+	class client;
 	class collection: public php::class_base {
 	public:
 		collection();
@@ -18,10 +20,11 @@ namespace mongodb {
 		php::value find_one(php::parameters& params);
 		php::value find_many(php::parameters& params);
 	private:
-		php::object          client_object;
+		thread_worker*       worker_;
+		php::value           client_object;
 		mongoc_client_t*     client_;
 		mongoc_collection_t* collection_;
-		void init(const php::object& client_object,
+		void init(client* cli,
 			mongoc_client_t* client, mongoc_collection_t* collection);
 		static void default_cb(uv_work_t* w, int status);
 		static void count_wk(uv_work_t* w);
@@ -32,7 +35,9 @@ namespace mongodb {
 		static void update_wk(uv_work_t* w);
 		static void find_one_wk(uv_work_t* w);
 		static void find_many_wk(uv_work_t* w);
+
 		friend class client;
+		friend class cursor;
 	};
 }
 }

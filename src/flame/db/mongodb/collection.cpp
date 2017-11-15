@@ -1,15 +1,19 @@
 #include "../../coroutine.h"
+#include "../../thread_worker.h"
+#include "client.h"
 #include "collection.h"
 #include "mongodb.h"
 #include "bulk_result.h"
 #include "cursor.h"
 
+
 namespace flame {
 namespace db {
 namespace mongodb {
-	void collection::init(const php::object& client_object,
+	void collection::init(client* cli,
 		mongoc_client_t* client, mongoc_collection_t* collection) {
-		this->client_object = client_object;
+		this->worker_ = &cli->worker_;
+		this->client_object = cli;
 		this->client_       = client;
 		this->collection_   = collection;
 	}
@@ -63,7 +67,7 @@ namespace mongodb {
 			fill_with(ctx->doc1, params[0]);
 		}
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, count_wk, default_cb);
+		worker_->queue_work(&ctx->req, count_wk, default_cb);
 		return flame::async();
 	}
 	void collection::insert_one_wk(uv_work_t* w) {
@@ -94,7 +98,7 @@ namespace mongodb {
 			{this, this, coroutine::current, bson_new(), nullptr};
 		ctx->req.data = ctx;
 		fill_with(ctx->doc1, doc);
-		uv_queue_work(flame::loop, &ctx->req, insert_one_wk, default_cb);
+		worker_->queue_work(&ctx->req, insert_one_wk, default_cb);
 		return flame::async();
 	}
 	void collection::insert_many_wk(uv_work_t* w) {
@@ -147,7 +151,7 @@ namespace mongodb {
 			mongoc_bulk_operation_insert(ctx->bulk, &item);
 			bson_destroy(&item);
 		}
-		uv_queue_work(flame::loop, &ctx->req, insert_many_wk, default_cb);
+		worker_->queue_work(&ctx->req, insert_many_wk, default_cb);
 		return flame::async();
 	}
 	void collection::remove_one_wk(uv_work_t* w) {
@@ -177,7 +181,7 @@ namespace mongodb {
 		};
 		ctx->req.data = ctx;
 		fill_with(ctx->doc1, params[0]);
-		uv_queue_work(flame::loop, &ctx->req, remove_one_wk, default_cb);
+		worker_->queue_work(&ctx->req, remove_one_wk, default_cb);
 		return flame::async();
 	}
 
@@ -205,7 +209,7 @@ namespace mongodb {
 			{ this, this, coroutine::current, bson_new() };
 		ctx->req.data = ctx;
 		fill_with(ctx->doc1, params[0]);
-		uv_queue_work(flame::loop, &ctx->req, remove_many_wk, default_cb);
+		worker_->queue_work(&ctx->req, remove_many_wk, default_cb);
 		return flame::async();
 	}
 	void collection::update_wk(uv_work_t* w) {
@@ -244,7 +248,7 @@ namespace mongodb {
 		if(params.length() >= 3 && params[2].is_true()) {
 			ctx->flags |= MONGOC_UPDATE_UPSERT;
 		}
-		uv_queue_work(flame::loop, &ctx->req, update_wk, default_cb);
+		worker_->queue_work(&ctx->req, update_wk, default_cb);
 		return flame::async();
 	}
 	php::value collection::update_many(php::parameters& params) {
@@ -273,7 +277,7 @@ namespace mongodb {
 		if(params.length() >= 3 && params[2].is_true()) {
 			ctx->flags |= MONGOC_UPDATE_UPSERT;
 		}
-		uv_queue_work(flame::loop, &ctx->req, update_wk, default_cb);
+		worker_->queue_work(&ctx->req, update_wk, default_cb);
 		return flame::async();
 	}
 	void collection::find_one_wk(uv_work_t* w) {
@@ -308,7 +312,7 @@ namespace mongodb {
 		ctx->req.data = ctx;
 		fill_with(ctx->doc1, params[0]);
 		fill_with(ctx->doc2, opts);
-		uv_queue_work(flame::loop, &ctx->req, find_one_wk, default_cb);
+		worker_->queue_work(&ctx->req, find_one_wk, default_cb);
 		return flame::async();
 	}
 	void collection::find_many_wk(uv_work_t* w) {
@@ -348,7 +352,7 @@ namespace mongodb {
 		ctx->req.data = ctx;
 		fill_with(ctx->doc1, params[0]);
 		fill_with(ctx->doc2, opts);
-		uv_queue_work(flame::loop, &ctx->req, find_many_wk, default_cb);
+		worker_->queue_work(&ctx->req, find_many_wk, default_cb);
 		return flame::async();
 	}
 }

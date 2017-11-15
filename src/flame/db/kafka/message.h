@@ -10,6 +10,7 @@ namespace kafka {
 		void init(rd_kafka_message_t* message, consumer* c);
 		void init(rd_kafka_message_t* message, producer* p);
 		php::value to_string(php::parameters& params);
+		php::value __destruct(php::parameters& params);
 	private:
 		rd_kafka_message_t* msg_;
 		php::object         ref_;

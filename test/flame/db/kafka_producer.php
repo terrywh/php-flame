@@ -5,10 +5,10 @@ flame\go(function() {
 		"bootstrap.servers" => "10.20.6.59:9092",
 	], [], "wuhao-test");
 	$begin = microtime(true);
-	for($i=0;$i<100;++$i) {
-		yield $producer->produce("".rand());
+	for($i=0;$i<10;++$i) {
+		yield $producer->produce("".$i);
 	}
 	$end = microtime(true);
-	echo "finished in ", $end - $begin, "s\n";
+	echo "produced in ", $end - $begin, "s\n";
 });
 flame\run();

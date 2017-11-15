@@ -20,6 +20,10 @@ namespace kafka {
 	php::value message::to_string(php::parameters& params) {
 		return prop("val", 3);
 	}
+	php::value message::__destruct(php::parameters& params) {
+		rd_kafka_message_destroy(msg_);
+		return nullptr;
+	}
 }
 }
 }

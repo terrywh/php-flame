@@ -16,9 +16,9 @@ namespace kafka {
 	}
 	php::value consumer::consume(php::parameters& params) {
 		if(params.length() > 0 && params[0].is_callable()) {
-			impl->consume(params[0]);
+			impl->consume1(params[0]);
 		}else{
-			impl->consume();
+			impl->consume2();
 		}
 		return flame::async();
 	}

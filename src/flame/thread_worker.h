@@ -6,6 +6,7 @@ namespace flame {
 		thread_worker();
 		void queue_work(uv_work_t* req, uv_work_cb work_cb, uv_after_work_cb after_work_cb);
 		~thread_worker();
+		void close();
 	private:
 		void join();
 		void run();

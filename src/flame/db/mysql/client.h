@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../thread_worker.h"
+
 namespace flame {
 namespace db {
 namespace mysql {
@@ -25,9 +27,10 @@ namespace mysql {
 		php::value commit(php::parameters& params);
 		php::value rollback(php::parameters& params);
 	private:
+		thread_worker worker_;
 		void connect_();
 		void query_(php::buffer& buf);
-		MYSQLND*               mysql_;
+		MYSQLND* mysql_;
 		std::shared_ptr<php_url> url_;
 		static void connect_wk(uv_work_t* req);
 		static void close_wk(uv_work_t* req);
@@ -40,6 +43,8 @@ namespace mysql {
 		static void commit_wk(uv_work_t* req);
 		static void rollback_wk(uv_work_t* req);
 		void insert_key(php::array& map, php::buffer& buf);
+
+		friend class result_set;
 	};
 }
 }

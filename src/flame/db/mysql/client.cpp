@@ -47,7 +47,7 @@ namespace mysql {
 	}
 	typedef struct mysql_request_t {
 		coroutine*    co;
-		MYSQLND*   mysql;
+		client*     self;
 		php::value    rv;
 		php::string  sql;
 		uv_work_t    req;
@@ -69,12 +69,12 @@ namespace mysql {
 	}
 	void client::connect_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		if(ctx->mysql) mysqlnd_close(ctx->mysql, MYSQLND_CLOSE_EXPLICIT);
+		if(ctx->self->mysql_) mysqlnd_close(ctx->self->mysql_, MYSQLND_CLOSE_EXPLICIT);
 		php::object& obj = ctx->rv;
 		client* self = obj.native<client>();
-		ctx->mysql = mysqlnd_init(MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA, true);
-		ctx->mysql = mysqlnd_connect(
-			ctx->mysql,
+		ctx->self->mysql_ = mysqlnd_init(MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA, true);
+		ctx->self->mysql_ = mysqlnd_connect(
+			ctx->self->mysql_,
 			self->url_->host,
 			self->url_->user,
 			self->url_->pass,
@@ -85,22 +85,22 @@ namespace mysql {
 			nullptr,
 			0,
 			MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA);
-		if(ctx->mysql) {
-			self->mysql_ = ctx->mysql;
-			mysqlnd_autocommit(ctx->mysql, true);
+		if(ctx->self->mysql_) {
+			self->mysql_ = ctx->self->mysql_;
+			mysqlnd_autocommit(ctx->self->mysql_, true);
 			ctx->rv = (bool)true;
 		}else{
 			self->mysql_ = nullptr;
-			ctx->rv = php::make_exception(mysqlnd_error(ctx->mysql), mysqlnd_errno(ctx->mysql));
-			mysqlnd_close(ctx->mysql, MYSQLND_CLOSE_DISCONNECTED);
+			ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
+			mysqlnd_close(ctx->self->mysql_, MYSQLND_CLOSE_DISCONNECTED);
 		}
 	}
 	void client::connect_() {
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this,
+			coroutine::current, this, this,
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, connect_wk, default_cb);
+		worker_.queue_work(&ctx->req, connect_wk, default_cb);
 	}
 	php::value client::connect(php::parameters& params) {
 		if(params.length() > 0 && params[0].is_string()) {
@@ -125,17 +125,17 @@ namespace mysql {
 	}
 	void client::close_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		mysqlnd_close(ctx->mysql, MYSQLND_CLOSE_EXPLICIT);
+		mysqlnd_close(ctx->self->mysql_, MYSQLND_CLOSE_EXPLICIT);
 		ctx->rv = true;
 	}
 	php::value client::close(php::parameters& params) {
 		if(mysql_) {
 			mysql_request_t* ctx = new mysql_request_t {
-				coroutine::current, mysql_, this
+				coroutine::current, this, this
 			};
 			mysql_ = nullptr;
 			ctx->req.data = ctx;
-			uv_queue_work(flame::loop, &ctx->req, close_wk, default_cb);
+			worker_.queue_work(&ctx->req, close_wk, default_cb);
 			return flame::async();
 		}
 		return nullptr;
@@ -159,37 +159,37 @@ namespace mysql {
 	}
 	void client::query_(php::buffer& sql) {
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this
+			coroutine::current, this, this
 		};
 		ctx->sql = std::move(sql);
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, query_wk, default_cb);
+		worker_.queue_work(&ctx->req, query_wk, default_cb);
 	}
 	void client::query_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		if(!ctx->mysql) {
+		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
 		}
-		int error = mysqlnd_query(ctx->mysql, ctx->sql.c_str(), ctx->sql.length());
+		int error = mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length());
 		if(error != 0) {
-			ctx->rv = php::make_exception(mysqlnd_error(ctx->mysql), error);
+			ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), error);
 			return;
 		}
-		MYSQLND_RES* rs = mysqlnd_store_result(ctx->mysql);
+		MYSQLND_RES* rs = mysqlnd_store_result(ctx->self->mysql_);
 		if(rs) {
 			php::object obj = php::object::create<result_set>();
 			result_set* cpp = obj.native<result_set>();
-			cpp->init(ctx->rv, rs);
 			ctx->rv = std::move(obj);
+			cpp->init(ctx->self, rs);
 			return;
 		}
-		if(mysqlnd_field_count(ctx->mysql) == 0) {
-			reinterpret_cast<php::object&>(ctx->rv).prop("affected_rows") = mysqlnd_affected_rows(ctx->mysql);
+		if(mysqlnd_field_count(ctx->self->mysql_) == 0) {
+			reinterpret_cast<php::object&>(ctx->rv).prop("affected_rows") = mysqlnd_affected_rows(ctx->self->mysql_);
 			ctx->rv = (bool)true;
 			return;
 		}
-		ctx->rv = php::make_exception(mysqlnd_error(ctx->mysql), mysqlnd_errno(ctx->mysql));
+		ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
 	}
 	php::value client::query(php::parameters& params) {
 		if(params.length() < 1 || !params[0].is_string()) {
@@ -200,13 +200,13 @@ namespace mysql {
 			sql = format(params);
 		}
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this, params[0].to_string()
+			coroutine::current, this, this, params[0].to_string()
 		};
 		if(params.length() > 1) {
 			ctx->sql = format(params);
 		}
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, query_wk, default_cb);
+		worker_.queue_work(&ctx->req, query_wk, default_cb);
 		return flame::async();
 	}
 	void client::insert_key(php::array& map, php::buffer& buf) {
@@ -301,21 +301,21 @@ namespace mysql {
 	}
 	void client::one_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		if(!ctx->mysql) {
+		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
 		}
-		int error = mysqlnd_query(ctx->mysql, ctx->sql.c_str(), ctx->sql.length());
+		int error = mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length());
 		if(error != 0) {
-			ctx->rv = php::make_exception(mysqlnd_error(ctx->mysql), error);
+			ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), error);
 			return;
 		}
-		MYSQLND_RES* rs = mysqlnd_store_result(ctx->mysql);
+		MYSQLND_RES* rs = mysqlnd_store_result(ctx->self->mysql_);
 		if(rs) {
 			mysqlnd_fetch_into(rs, MYSQLND_FETCH_NUM, (zval*)&ctx->rv, MYSQLND_MYSQLI);
 			mysqlnd_free_result(rs, false);
 		}else{
-			ctx->rv = php::make_exception(mysqlnd_error(ctx->mysql), mysqlnd_errno(ctx->mysql));
+			ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
 		}
 	}
 	php::value client::one(php::parameters& params) {
@@ -333,10 +333,10 @@ namespace mysql {
 		}
 		std::memcpy(sql.put(8), " LIMIT 1", 8);
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this, std::move(sql)
+			coroutine::current, this, this, std::move(sql)
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, one_wk, default_cb);
+		worker_.queue_work(&ctx->req, one_wk, default_cb);
 		return flame::async();
 	}
 	php::value client::select(php::parameters& params) {
@@ -381,72 +381,72 @@ namespace mysql {
 	}
 	void client::autocommit_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		if(!ctx->mysql) {
+		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
 		}
 		bool on = std::strncmp(ctx->sql.c_str(), "1", 1) == 0;
-		mysqlnd_autocommit(ctx->mysql, on);
+		mysqlnd_autocommit(ctx->self->mysql_, on);
 		ctx->rv = on;
 	}
 	void client::begin_transaction_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		if(!ctx->mysql) {
+		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
 		}
-		mysqlnd_autocommit(ctx->mysql, false);
-		mysqlnd_begin_transaction(ctx->mysql, TRANS_START_NO_OPT, nullptr);
+		mysqlnd_autocommit(ctx->self->mysql_, false);
+		mysqlnd_begin_transaction(ctx->self->mysql_, TRANS_START_NO_OPT, nullptr);
 		ctx->rv = (bool)true;
 	}
 	void client::commit_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		if(!ctx->mysql) {
+		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
 		}
-		mysqlnd_commit(ctx->mysql, TRANS_START_NO_OPT, nullptr);
+		mysqlnd_commit(ctx->self->mysql_, TRANS_START_NO_OPT, nullptr);
 		ctx->rv = (bool)true;
 	}
 	void client::rollback_wk(uv_work_t* req) {
 		mysql_request_t* ctx = reinterpret_cast<mysql_request_t*>(req->data);
-		if(!ctx->mysql) {
+		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
 		}
-		mysqlnd_rollback(ctx->mysql, TRANS_START_NO_OPT, nullptr);
+		mysqlnd_rollback(ctx->self->mysql_, TRANS_START_NO_OPT, nullptr);
 		ctx->rv = (bool)true;
 	}
 	php::value client::autocommit(php::parameters& params) {
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this, (params[0].is_true() ? php::string("1",1) : php::string("0", 1))
+			coroutine::current, this, this, (params[0].is_true() ? php::string("1",1) : php::string("0", 1))
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, autocommit_wk, default_cb);
+		worker_.queue_work(&ctx->req, autocommit_wk, default_cb);
 		return flame::async();
 	}
 	php::value client::begin_transaction(php::parameters& params) {
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this
+			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, begin_transaction_wk, default_cb);
+		worker_.queue_work(&ctx->req, begin_transaction_wk, default_cb);
 		return flame::async();
 	}
 	php::value client::commit(php::parameters& params) {
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this
+			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, commit_wk, default_cb);
+		worker_.queue_work(&ctx->req, commit_wk, default_cb);
 		return flame::async();
 	}
 	php::value client::rollback(php::parameters& params) {
 		mysql_request_t* ctx = new mysql_request_t {
-			coroutine::current, mysql_, this
+			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, rollback_wk, default_cb);
+		worker_.queue_work(&ctx->req, rollback_wk, default_cb);
 		return flame::async();
 	}
 }

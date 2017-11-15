@@ -49,7 +49,7 @@ namespace mongodb {
 			coroutine::current, client_, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, connect_wk, default_cb);
+		worker_.queue_work(&ctx->req, connect_wk, default_cb);
 	}
 	php::value client::__destruct(php::parameters& params) {
 		if(client_) {
@@ -70,7 +70,7 @@ namespace mongodb {
 			};
 			client_ = nullptr;
 			ctx->req.data = ctx;
-			uv_queue_work(flame::loop, &ctx->req, close_wk, default_cb);
+			worker_.queue_work(&ctx->req, close_wk, default_cb);
 			return flame::async();
 		}
 		return nullptr;
@@ -87,15 +87,15 @@ namespace mongodb {
 			mongoc_uri_get_database(self->uri_), ctx->name.c_str());
 		php::object          obj = php::object::create<mongodb::collection>();
 		mongodb::collection* cpp = obj.native<mongodb::collection>();
-		cpp->init(ctx->rv, self->client_, col);
 		ctx->rv = std::move(obj);
+		cpp->init(self, self->client_, col);
 	}
 	php::value client::collection(php::parameters& params) {
 		client_request_t* ctx = new client_request_t {
 			coroutine::current, client_, this, params[0]
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, collection_wk, default_cb);
+		worker_.queue_work(&ctx->req, collection_wk, default_cb);
 		return flame::async();
 	}
 }

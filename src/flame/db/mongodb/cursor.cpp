@@ -1,11 +1,14 @@
 #include "../../coroutine.h"
+#include "../../thread_worker.h"
+#include "collection.h"
 #include "cursor.h"
 #include "mongodb.h"
 
 namespace flame {
 namespace db {
 namespace mongodb {
-	void cursor::init(const php::object& col, mongoc_cursor_t* cs) {
+	void cursor::init(collection* col, mongoc_cursor_t* cs) {
+		worker_ = col->worker_;
 		collection_object = col;
 		cursor_ = cs;
 	}
@@ -42,7 +45,7 @@ namespace mongodb {
 			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, next_wk, default_cb);
+		worker_->queue_work(&ctx->req, next_wk, default_cb);
 		return flame::async();
 	}
 	void cursor::to_array_wk(uv_work_t* req) {
@@ -62,7 +65,7 @@ namespace mongodb {
 			coroutine::current, this, this
 		};
 		ctx->req.data = ctx;
-		uv_queue_work(flame::loop, &ctx->req, to_array_wk, default_cb);
+		worker_->queue_work(&ctx->req, to_array_wk, default_cb);
 		return flame::async();
 	}
 }

@@ -13,6 +13,9 @@ namespace flame {
 	thread_worker::~thread_worker() {
 		join();
 	}
+	void thread_worker::close() {
+		join();
+	}
 	void thread_worker::join() {
 		if(!exit_) {
 			exit_ = true;
@@ -48,11 +51,13 @@ namespace flame {
 
 			req->work_cb(req);
 
-			uv_mutex_lock(&mutex_master);
-			queue_master.push_back(req);
-			uv_mutex_unlock(&mutex_master);
+			if(req->after_work_cb) {
+				uv_mutex_lock(&mutex_master);
+				queue_master.push_back(req);
+				uv_mutex_unlock(&mutex_master);
 
-			uv_async_send(&async_master);
+				uv_async_send(&async_master);
+			}
 		}
 		// 退出结束线程循环
 		if(exit_) uv_stop(&loop_);
