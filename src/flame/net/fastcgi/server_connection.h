@@ -56,6 +56,8 @@ namespace fastcgi {
 		php::array  body_;
 		php::array  body_item;
 	public:
+		// server_connection 对象的生存周期由 C++ 自行控制，不受 PHP 影响
+		// 故不需要使用指针形式
 		union {
 			uv_stream_t socket_;
 			uv_pipe_t   socket_pipe;

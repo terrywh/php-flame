@@ -1,3 +1,4 @@
+#include "../flame.h"
 #include "../coroutine.h"
 #include "process.h"
 #include "cluster/cluster.h"
@@ -63,9 +64,10 @@ namespace os {
 				ios[2].data.fd = ::open(i->second.to_string().c_str(), O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 			}else if(std::strncmp(key.c_str(), "ipc", 3) == 0) {
 				ios[0].flags = (uv_stdio_flags)(UV_CREATE_PIPE | UV_READABLE_PIPE | UV_WRITABLE_PIPE);
-				uv_pipe_init(flame::loop, &pipe_, 1);
-				pipe_.data = this;
-				ios[0].data.stream = reinterpret_cast<uv_stream_t*>(&pipe_);
+				pipe_ = (uv_pipe_t*)malloc(sizeof(uv_pipe_t));
+				uv_pipe_init(flame::loop, pipe_, 1);
+				pipe_->data = this;
+				ios[0].data.stream = reinterpret_cast<uv_stream_t*>(pipe_);
 			}
 		}
 		if((options.flags & UV_PROCESS_DETACHED) > 0 && !ios.empty()) {
@@ -79,16 +81,20 @@ namespace os {
 		return std::move(obj);
 	}
 	process::process()
-	: exit_(false)
+	: pipe_(nullptr)
+	, exit_(false)
 	, detach_(false)
 	, co_(nullptr) {
-		proc_.data = this;
-		// 标识管道是否建立
-		pipe_.data = nullptr;
+		proc_ = (uv_process_t*)malloc(sizeof(uv_process_t));
+		proc_->data = this;
 	}
 	process::~process() {
 		// 还未退出 而且 未分离父子进程 需要结束进程
-		if(!exit_ && !detach_) uv_process_kill(&proc_, SIGKILL);
+		if(!exit_ && !detach_) uv_process_kill(proc_, SIGKILL);
+		uv_close((uv_handle_t*)proc_, flame::free_handle_cb);
+		if(pipe_ != nullptr) {
+			uv_close((uv_handle_t*)pipe_, flame::free_handle_cb);
+		}
 	}
 	php::value process::__construct(php::parameters& params) {
 		uv_process_options_t options;
@@ -123,11 +129,11 @@ namespace os {
 		if(options.flags & UV_PROCESS_DETACHED) {
 			detach_ = true;
 		}
-		int error = uv_spawn(flame::loop, &proc_, &options);
+		int error = uv_spawn(flame::loop, proc_, &options);
 		if(error < 0) {
 			throw php::exception(uv_strerror(error), error);
 		}
-		prop("pid") = proc_.pid;
+		prop("pid") = proc_->pid;
 		options_stdio_close(options);
 		return nullptr;
 	}
@@ -136,7 +142,8 @@ namespace os {
 		if(params.length() > 0) {
 			s = params[0];
 		}
-		uv_process_kill(&proc_, s);
+		uv_process_kill(proc_, s);
+		exit_ = true;
 		return nullptr;
 	}
 	php::value process::wait(php::parameters& params) {
@@ -154,9 +161,9 @@ namespace os {
 	}
 	php::value process::send(php::parameters& params) {
 		// 分离的进程 或 未建立 ipc 通道无法进行消息传递
-		if(detach_ || pipe_.data == nullptr) return nullptr;
+		if(detach_ || pipe_ == nullptr) return nullptr;
 		if(cluster::default_msg != nullptr) {
-			cluster::default_msg->send(params, (uv_stream_t*)&pipe_);
+			cluster::default_msg->send(params, (uv_stream_t*)pipe_);
 		}else{
 			throw php::exception("failed to send: ipc handler not set");
 		}

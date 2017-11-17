@@ -92,10 +92,10 @@ int client::curl_multi_timer_handle(CURLM* multi, long timeout_ms, void* userp) 
 	if(userp) {
 		client* self = reinterpret_cast<client*>(userp);
 		if(timeout_ms < 0) {
-			uv_timer_stop(&self->timer_);
+			uv_timer_stop(self->timer_);
 		} else {
 			if(timeout_ms == 0) timeout_ms = 1;
-			uv_timer_start(&self->timer_, curl_multi_timer_cb, timeout_ms, 0);
+			uv_timer_start(self->timer_, curl_multi_timer_cb, timeout_ms, 0);
 		}
 	}
 	return 0;
@@ -138,12 +138,14 @@ int client::curl_multi_socket_handle(CURL* easy, curl_socket_t s, int action, vo
 client::client()
 : debug_(0) {
 	multi_ = curl_multi_init();
-	uv_timer_init(flame::loop, &timer_);
-	timer_.data = this;
 	curl_multi_setopt(multi_, CURLMOPT_SOCKETFUNCTION, curl_multi_socket_handle);
 	curl_multi_setopt(multi_, CURLMOPT_SOCKETDATA, this);
 	curl_multi_setopt(multi_, CURLMOPT_TIMERFUNCTION, curl_multi_timer_handle);
 	curl_multi_setopt(multi_, CURLMOPT_TIMERDATA, this);
+
+	timer_ = (uv_timer_t*)malloc(sizeof(uv_timer_t));
+	uv_timer_init(flame::loop, timer_);
+	timer_->data = this;
 }
 size_t client::curl_easy_head_cb(char* ptr, size_t size, size_t nitems, void* userdata) {
 	exec_context_t* ctx = reinterpret_cast<exec_context_t*>(userdata);
@@ -191,11 +193,14 @@ php::value client::exec1(php::parameters& params) {
 	return exec2(obj);
 }
 
-void client::destroy() {
+client::~client() {
 	if (multi_) {
-		uv_timer_stop(&timer_);
 		curl_multi_cleanup(multi_);
 		multi_ = nullptr;
+	}
+	if(timer_) {
+		uv_timer_stop(timer_);
+		uv_close((uv_handle_t*)timer_, free_handle_cb);
 	}
 }
 

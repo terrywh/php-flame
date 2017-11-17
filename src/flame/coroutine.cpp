@@ -9,8 +9,11 @@ namespace flame {
 	}
 	php::value async() {
 		// 某些销毁逻辑流程可能不存在协程上下文
-		if(coroutine::current == nullptr) return nullptr;
-		if(coroutine::current->status_ != 0) {
+		if(coroutine::current == nullptr) {
+			php::fail("keyword 'yield' missing before async function");
+			uv_stop(flame::loop);
+			return nullptr;
+		}else if(coroutine::current->status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
 			coroutine::current->close();
 			uv_stop(flame::loop);
@@ -46,6 +49,9 @@ namespace flame {
 		delete reinterpret_cast<coroutine*>(handle->data);
 	}
 	void coroutine::close() {
+		if(status_ != 0) {
+			php::fail("keyword 'yield' missing before async function");
+		}
 		status_ = -1;
 		uv_close((uv_handle_t*)&async_, finish_cb);
 	}

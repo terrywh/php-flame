@@ -10,11 +10,8 @@ namespace http {
 	class client: public php::class_base {
 	public:
 		client();
-		~client() {
-			destroy();
-		}
+		~client();
 		php::value __construct(php::parameters& params);
-		void destroy();
 		// 执行
 		php::value exec1(php::parameters& params);
 		php::value exec2(php::object& request);
@@ -29,9 +26,10 @@ namespace http {
 
 		static size_t curl_easy_head_cb(char* ptr, size_t size, size_t nitems, void* userdata);
 		static size_t curl_easy_body_cb(char* ptr, size_t size, size_t nmemb, void *userdata);
-		CURLM*     multi_;
-		int        debug_;
-		uv_timer_t timer_;
+		CURLM*      multi_;
+		int         debug_;
+		// 生命周期需与 PHP 对象不符，故使用动态分配
+		uv_timer_t* timer_;
 
 		friend class client_request;
 	};

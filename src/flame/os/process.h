@@ -14,8 +14,9 @@ namespace os {
 		php::value send(php::parameters& params);
 		// property $pid 进程Id
 	private:
-		uv_process_t  proc_;
-		uv_pipe_t     pipe_;
+		// 生命周期需与 PHP 对象不符，故使用动态分配
+		uv_process_t*  proc_;
+		uv_pipe_t*     pipe_;
 		bool          exit_;
 		bool          detach_;
 		flame::coroutine* co_;

@@ -6,13 +6,15 @@ namespace cluster {
 	class messenger {
 	public:
 		messenger();
+		~messenger();
 		void start();
 		php::callable cb_string;
 		php::callable cb_socket;
 		int           cb_type;
 		void send(php::parameters& params, uv_stream_t* stream = nullptr);
 	private:
-		uv_pipe_t   pipe_;
+		// 生命周期需与 PHP 对象不符，故使用动态分配
+		uv_pipe_t*  pipe_;
 		int         stat_;
 		short       size_;
 		php::buffer data_;

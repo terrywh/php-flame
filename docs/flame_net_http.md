@@ -10,7 +10,7 @@
 
 * `$url` ：请求的地址；
 * `$data`：可选，请求体，若存在，将自动设置当前请求 `$req->method='POST'`，可以为 `null`；
-* `$timeout`：可选，请求超时，单位 `s`（秒），默认为 5s；
+* `$timeout`：可选，请求超时，单位 `ms`（毫秒），默认为 2500ms；
 
 **示例**：
 ``` PHP
@@ -42,13 +42,16 @@ HTTP 的请求地址，不能为空；
 请求超时，单位 `ms` (毫秒)；
 
 #### `array client_request::$header`
-请求头部，可以用于定制请求头部；
+请求头部，可以用于定制请求头部（KEY/VALUE 关联数组）；
 
 **示例**：
 ``` PHP
 <?php
 // ...
+// 单一设置
 $req->header["content-type"] = "application/x-www-form-urlencoded";
+// 统一设置
+$req->header = ["content-type"=>"application/x-www-form-urlencoded"];
 ```
 
 **注意**：

@@ -1,3 +1,4 @@
+#include "../flame.h"
 #include "../coroutine.h"
 #include "redis.h"
 
@@ -38,8 +39,9 @@ namespace db {
 	: context_(nullptr)
 	, connect_(nullptr)
 	, current_(nullptr) {
-		uv_timer_init(flame::loop, &connect_interval);
-		connect_interval.data = this;
+		connect_interval = (uv_timer_t*)malloc(sizeof(uv_timer_t));
+		uv_timer_init(flame::loop, connect_interval);
+		connect_interval->data = this;
 	}
 	redis::~redis() {
 		close();
@@ -56,8 +58,8 @@ namespace db {
 		}
 		if(self->context_ != nullptr) {
 			// 自动重连
-			uv_timer_stop(&self->connect_interval);
-			uv_timer_start(&self->connect_interval, cb_connect_interval, std::rand() % 3000 + 2000, 0);
+			uv_timer_stop(self->connect_interval);
+			uv_timer_start(self->connect_interval, cb_connect_interval, std::rand() % 3000 + 2000, 0);
 		}
 	}
 	void redis::cb_connect(const redisAsyncContext *c, int status) {
@@ -78,8 +80,8 @@ namespace db {
 		if (context_->err) {
 			std::fprintf(stderr, "error: redis failed with '%s'\n", context_->errstr);
 			// 自动重连
-			uv_timer_stop(&connect_interval);
-			uv_timer_start(&connect_interval, cb_connect_interval, std::rand() % 3000 + 2000, 0);
+			uv_timer_stop(connect_interval);
+			uv_timer_start(connect_interval, cb_connect_interval, std::rand() % 3000 + 2000, 0);
 			return;
 		}
 		context_->data = this;
@@ -108,8 +110,8 @@ namespace db {
 		connect_ = new redis_request_t {
 			coroutine::current, this
 		};
-		uv_timer_stop(&connect_interval);
-		uv_timer_start(&connect_interval, cb_connect_timeout, timeout, 0);
+		uv_timer_stop(connect_interval);
+		uv_timer_start(connect_interval, cb_connect_timeout, timeout, 0);
 
 		return flame::async();
 	}
@@ -125,7 +127,10 @@ namespace db {
 			context_ = nullptr;
 			redisAsyncDisconnect(ctx);
 		}
-		uv_timer_stop(&connect_interval);
+		if(connect_interval) {
+			uv_timer_stop(connect_interval);
+			uv_close((uv_handle_t*)connect_interval, free_handle_cb);
+		}
 	}
 	void redis::cb_default(redisAsyncContext *c, void *r, void *privdata) {
 		redis*       self = reinterpret_cast<redis*>(c->data);
@@ -235,7 +240,7 @@ namespace db {
 		if (rv.is_array()) {
 			php::string& type = rv[0];
 			if(std::strncmp(type.c_str(), "subscribe", 9) == 0) {
-				// 
+				//
 			}else if(std::strncmp(type.c_str(), "message", 7) == 0) {
 				coroutine::start(ctx->cb, rv[1], rv[2]);
 			}else if(self->current_ != nullptr && std::strncmp(type.c_str(), "unsubscribe", 7) == 0) {

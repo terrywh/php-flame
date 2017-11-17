@@ -46,6 +46,7 @@ namespace time {
 		class_ticker.add(php::property_entry("interval", 1000));
 		class_ticker.add(php::property_entry("repeat", bool(true)));
 		class_ticker.add<&ticker::__construct>("__construct");
+		class_ticker.add<&ticker::__destruct>("__destruct");
 		class_ticker.add<&ticker::start>("start");
 		class_ticker.add<&ticker::stop>("stop");
 		ext.add(std::move(class_ticker));

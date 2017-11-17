@@ -102,12 +102,12 @@ size_t client_request::body_read_cb(void *ptr, size_t size, size_t nmemb, void *
 
 void client_request::build_header() {
 	php::array& opt = prop("header");
-	if (opt.length()) return;
+	if(opt.length() == 0) return;
 
 	bool expect = false;
 	for(auto i=opt.begin();i!=opt.end();++i) {
-		php::string& key = i->first;
-		php::string& val = i->second;
+		php::string key = i->first.to_string();
+		php::string val = i->second.to_string();
 		if(std::strncmp(key.c_str(), "Expect", 6) == 0 || std::strncmp(key.c_str(), "expect", 6) == 0) {
 			expect = true;
 		}

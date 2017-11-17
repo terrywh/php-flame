@@ -32,6 +32,7 @@ namespace http {
 		class_client_request.add(php::property_entry("body", nullptr));
 		class_client_request.add(php::property_entry("timeout", 2500));
 		class_client_request.add<&client_request::__construct>("__construct");
+		class_client_request.add<&client_request::ssl>("ssl");
 		ext.add(std::move(class_client_request));
 		// class client_response
 		php::class_entry<client_response> class_client_response("flame\\net\\http\\client_response");

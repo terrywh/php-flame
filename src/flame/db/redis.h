@@ -30,7 +30,8 @@ private:
 	redis_request_t*   current_; // 用于记录 subscribe / psubscribe 状态
 	php::string host_;
 	int         port_;
-	uv_timer_t  connect_interval;
+	// 生命周期需与 PHP 对象不符，故使用动态分配
+	uv_timer_t* connect_interval;
 	void connect();
 	static void cb_connect_interval(uv_timer_t* tm);
 	void close();

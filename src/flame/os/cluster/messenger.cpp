@@ -1,3 +1,4 @@
+#include "../../flame.h"
 #include "../../coroutine.h"
 #include "messenger.h"
 #include "../../net/tcp_socket.h"
@@ -10,13 +11,17 @@ namespace cluster {
 	: cb_type()
 	, stat_(0)
 	, size_(0) {
-		uv_pipe_init(flame::loop, &pipe_, 1);
-		uv_pipe_open(&pipe_, 0);
-		pipe_.data = this;
+		pipe_ = (uv_pipe_t*)malloc(sizeof(uv_pipe_t));
+		uv_pipe_init(flame::loop, pipe_, 1);
+		uv_pipe_open(pipe_, 0);
+		pipe_->data = this;
+	}
+	messenger::~messenger() {
+		uv_close((uv_handle_t*)pipe_, free_handle_cb);
 	}
 	void messenger::start() {
-		uv_read_start((uv_stream_t*)&pipe_, alloc_cb, read_cb);
-		uv_unref((uv_handle_t*)&pipe_);
+		uv_read_start((uv_stream_t*)pipe_, alloc_cb, read_cb);
+		uv_unref((uv_handle_t*)pipe_);
 	}
 	void messenger::alloc_cb(uv_handle_t* handle, size_t suggest, uv_buf_t* buf) {
 		static char buffer[2048];
@@ -69,10 +74,10 @@ namespace cluster {
 	}
 
 	void messenger::on_socket() {
-		int  type = uv_pipe_pending_type(&pipe_);
+		int  type = uv_pipe_pending_type(pipe_);
 		if(cb_type & 0x04) { // 允许使用内部对象接管客户端对象
 			zval server;
-			ZVAL_PTR(&server, &pipe_); // 将服务器对象指针放入，用于 accept 连接
+			ZVAL_PTR(&server, pipe_); // 将服务器对象指针放入，用于 accept 连接
 			coroutine::start(cb_socket, reinterpret_cast<php::value&>(server), type);
 			return;
 		}
@@ -81,7 +86,7 @@ namespace cluster {
 		if(type == UV_TCP) {
 			php::object obj = php::object::create<net::tcp_socket>();
 			net::tcp_socket* cpp = obj.native<net::tcp_socket>();
-			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
+			if(uv_accept((uv_stream_t*)pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
 				std::fprintf(stderr, "error: failed to accept socket from parent\n");
 				return;
 			}
@@ -90,7 +95,7 @@ namespace cluster {
 		}else if(type == UV_NAMED_PIPE) {
 			php::object obj = php::object::create<net::unix_socket>();
 			net::unix_socket* cpp = obj.native<net::unix_socket>();
-			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
+			if(uv_accept((uv_stream_t*)pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
 				std::fprintf(stderr, "error: failed to accept socket from parent\n");
 				return;
 			}
@@ -134,7 +139,7 @@ namespace cluster {
 			.obj = params[0]
 		};
 		ctx->req.data = ctx;
-		if(stream == nullptr) stream = (uv_stream_t*)&pipe_;
+		if(stream == nullptr) stream = (uv_stream_t*)pipe_;
 		if(ctx->obj.is_object() && static_cast<php::object&>(ctx->obj).is_instance_of<net::unix_socket>()) {
 			uv_stream_t* ss = (uv_stream_t*)&static_cast<php::object&>(ctx->obj).native<net::unix_socket>()->impl->stream;
 			uv_buf_t data {.base = (char*)"\x00\x00", .len = 2};

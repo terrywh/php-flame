@@ -1,5 +1,6 @@
-#include "ticker.h"
+#include "../flame.h"
 #include "../coroutine.h"
+#include "ticker.h"
 
 namespace flame {
 namespace time {
@@ -10,9 +11,13 @@ namespace time {
 		}else{
 			prop("repeat", 6) = bool(true);
 		}
-		uv_timer_init(flame::loop, &tm_);
-		tm_.data = this;
+		tm_ = (uv_timer_t*)malloc(sizeof(uv_timer_t));
+		uv_timer_init(flame::loop, tm_);
+		tm_->data = this;
 		return nullptr;
+	}
+	php::value ticker::__destruct(php::parameters& params) {
+		uv_close((uv_handle_t*)tm_, flame::free_handle_cb);
 	}
 	void ticker::tick_cb(uv_timer_t* handle) {
 		ticker* self = static_cast<ticker*>(handle->data);
@@ -27,16 +32,16 @@ namespace time {
 
 		int iv = prop("interval", 8);
 		if(prop("repeat", 6).is_true()) {
-			uv_timer_start(&tm_, tick_cb, iv, iv);
+			uv_timer_start(tm_, tick_cb, iv, iv);
 		}else{
-			uv_timer_start(&tm_, tick_cb, iv, 0);
+			uv_timer_start(tm_, tick_cb, iv, 0);
 		}
 		// 异步引用
 		refer_ = this;
 		return nullptr;
 	}
 	php::value ticker::stop(php::parameters& params) {
-		uv_timer_stop(&tm_);
+		uv_timer_stop(tm_);
 		refer_ = nullptr;
 		return nullptr;
 	}
