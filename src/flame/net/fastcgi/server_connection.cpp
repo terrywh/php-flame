@@ -30,7 +30,7 @@ namespace fastcgi {
 		}
 	}
 	void server_connection::alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-		static char buffer[8192];
+		static char buffer[36 * 1024];
 		buf->base = buffer;
 		buf->len  = sizeof(buffer);
 	}
@@ -109,6 +109,7 @@ namespace fastcgi {
 	}
 	int server_connection::fp_data_cb(fastcgi_parser* parser, const char* data, size_t size) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
+
 		std::memcpy(self->val_.put(size), data, size);
 		return 0;
 	}
@@ -149,10 +150,11 @@ namespace fastcgi {
 			multipart_parser_settings settings;
 			std::memset(&settings, 0, sizeof(multipart_parser_settings));
 			std::strcpy(settings.boundary, strstr(ctype.c_str() + 20, "boundary=") + 9);
-			settings.boundary_length = std::strlen(settings.boundary);
-			settings.on_header_field = mp_key_cb;
-			settings.on_header_value = mp_val_cb;
-			settings.on_part_data    = mp_dat_cb;
+			settings.boundary_length  = std::strlen(settings.boundary);
+			settings.on_header_field  = mp_key_cb;
+			settings.on_header_value  = mp_val_cb;
+			settings.on_part_data     = mp_dat_cb;
+			settings.on_part_data_end = mp_dat_end;
 			multipart_parser_init(&mpparser, &settings);
 			mpparser.data = self;
 			// 解析
@@ -233,15 +235,23 @@ namespace fastcgi {
 		if(name.is_string()) {
 			std::memcpy(self->key_.put(name.length()), name.c_str(), name.length());
 		}
+		// self->val_.reset();
 		return 0;
 	}
 	int server_connection::mp_dat_cb(multipart_parser* parser, const char *at, size_t length) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
-		if(self->key_.size() > 0) {
-			self->body_.at(self->key_.data(), self->key_.size()) = php::string(at, length);
-			self->key_.reset();
+		if(length == 1) {
+			self->val_.add(*at);
+		}else{
+			std::memcpy(self->val_.put(length), at, length);
 		}
 		return 0;
+	}
+	int server_connection::mp_dat_end(multipart_parser* parser) {
+		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
+		php::string key = std::move(self->key_);
+		php::string val = std::move(self->val_);
+		self->body_.at(key) = val;
 	}
 	int server_connection::kv_key_cb(kv_parser* parser, const char* at, size_t length) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);

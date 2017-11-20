@@ -30,6 +30,7 @@ namespace fastcgi {
 		static int mp_key_cb(multipart_parser* parser, const char *at, size_t length);
 		static int mp_val_cb(multipart_parser* parser, const char *at, size_t length);
 		static int mp_dat_cb(multipart_parser* parser, const char *at, size_t length);
+		static int mp_dat_end(multipart_parser* parser);
 
 		static int kv_key_cb(kv_parser* parser, const char* at, size_t length);
 
