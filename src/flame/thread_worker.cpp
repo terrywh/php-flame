@@ -8,6 +8,12 @@ namespace flame {
 		async_master.data = this;
 		uv_unref((uv_handle_t*)&async_master);
 		uv_mutex_init(&mutex_master);
+
+		uv_loop_init(&loop_);
+		uv_async_init(&loop_, &async_worker, worker_cb);
+		async_worker.data = this;
+		uv_mutex_init(&mutex_worker);
+
 		uv_thread_create(&tid_, run, this);
 	}
 	thread_worker::~thread_worker() {
@@ -27,12 +33,6 @@ namespace flame {
 		reinterpret_cast<thread_worker*>(data)->run();
 	}
 	void thread_worker::run() {
-		uv_loop_init(&loop_);
-
-		uv_async_init(&loop_, &async_worker, worker_cb);
-		async_worker.data = this;
-		uv_mutex_init(&mutex_worker);
-
 		uv_run(&loop_, UV_RUN_DEFAULT);
 	}
 	void thread_worker::worker_cb(uv_async_t* handle) {

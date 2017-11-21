@@ -23,24 +23,6 @@ namespace flame {
 		process_self = new process();
 		return process_self;
 	}
-	// static void init_work_cb(uv_work_t* req) {}
-	// static void init_done_cb(uv_work_t* req, int status) {
-	// 	delete req;
-	// }
-	// static void init_thread() {
-	// 	// 设置环境变量
-	// 	char   edata[8];
-	// 	size_t esize = sizeof(edata);
-	// 	int r = uv_os_getenv("UV_THREADPOOL_SIZE", edata, &esize);
-	// 	uv_os_setenv("UV_THREADPOOL_SIZE", "1");
-	// 	uv_work_t* req = new uv_work_t;
-	// 	uv_queue_work(flame::loop, req, init_work_cb, init_done_cb);
-	// 	if(r) {
-	// 		uv_os_setenv("UV_THREADPOOL_SIZE", edata);
-	// 	}else{
-	// 		uv_os_unsetenv("UV_THREADPOOL_SIZE");
-	// 	}
-	// }
 	static void master_exit_cb(uv_signal_t* handle, int signum) {
 		process* proc = reinterpret_cast<process*>(handle->data);
 		proc->worker_stop();
@@ -54,18 +36,17 @@ namespace flame {
 		if(process_type == PROCESS_MASTER) {
 			uv_signal_init(flame::loop, &signal_);
 			uv_signal_start_oneshot(&signal_, master_exit_cb, SIGTERM);
+			worker_start();
 		}else{
 			uv_signal_init(flame::loop, &signal_);
 			uv_signal_start_oneshot(&signal_, worker_exit_cb, SIGTERM);
 		}
 		signal_.data = this;
 		uv_unref((uv_handle_t*)&signal_);
-		// init_thread();
 	}
 	void process::run() {
 		if(process_type == PROCESS_MASTER) {
 			php::callable("cli_set_process_title").invoke(process_name + " (flame-master)");
-			worker_start();
 		}else{
 			php::callable("cli_set_process_title").invoke(process_name + " (flame)");
 		}

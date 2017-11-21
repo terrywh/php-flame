@@ -54,8 +54,9 @@ namespace flame {
 		if(exit_status == 99 || term_signal == SIGINT) {
 			w->master_->on_worker_stop(w);
 		}else{
-			php::warn("worker exit prematurely, will be restarted in 3s");
-			uv_timer_start(&w->timer_, on_worker_restart, 3000, 0);
+			int timeout = 2000 + (std::rand() % 3000);
+			php::warn("worker exit prematurely (signal: %d), will be restarted in %ds", term_signal, timeout/1000);
+			uv_timer_start(&w->timer_, on_worker_restart, timeout, 0);
 		}
 	}
 	void worker::on_worker_restart(uv_timer_t* handle) {
