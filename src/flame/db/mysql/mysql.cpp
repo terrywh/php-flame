@@ -11,6 +11,7 @@ namespace mysql {
 		// ---------------------------------------------------------------------
 		php::class_entry<client> class_client("flame\\db\\mysql\\client");
 		class_client.add(php::property_entry("affected_rows", 0));
+		class_client.add(php::property_entry("insert_id", 0));
 		class_client.add<&client::__destruct>("__destruct");
 		class_client.add<&client::connect>("connect");
 		class_client.add<&client::format>("format");

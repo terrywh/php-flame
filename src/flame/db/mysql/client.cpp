@@ -175,6 +175,7 @@ namespace mysql {
 		}
 		if(mysqlnd_field_count(ctx->self->mysql_) == 0) {
 			reinterpret_cast<php::object&>(ctx->rv).prop("affected_rows") = mysqlnd_affected_rows(ctx->self->mysql_);
+			reinterpret_cast<php::object&>(ctx->rv).prop("insert_id") = mysqlnd_insert_id(ctx->self->mysql_);
 			ctx->rv = (bool)true;
 			return;
 		}

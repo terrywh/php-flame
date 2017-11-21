@@ -11,6 +11,12 @@ $cli = new flame\db\mysql\client();
 $cli->connect("127.0.0.1", 3306, "username", "password", "database_name");
 ```
 
+#### `client::$affected_rows`
+更新型 SQL 语句影响到的行数
+
+#### `client::$insert_id`
+单条插入语句执行后 插入行生成的 自增 ID（若存在）
+
 #### `yield client::query(string $sql) | yield client::query(string $format[, mixed $arg1, mixed $arg2, ...])`
 进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_info` 执行结果；注意后一种函数原型，允许进行“格式化”参数替换即：将 $arg1 / $arg2 等参数替换到 $format 定义的格式化字符串中，自动进行转义和包裹，例如：
 
