@@ -52,26 +52,13 @@ namespace mongodb {
 		worker_.queue_work(&ctx->req, connect_wk, default_cb);
 	}
 	php::value client::__destruct(php::parameters& params) {
-		if(client_) {
-			close(params);
-		}
+		close(params);
 		return nullptr;
-	}
-	void client::close_wk(uv_work_t* req) {
-		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		client* self = reinterpret_cast<php::object&>(ctx->rv).native<client>();
-		mongoc_client_destroy(ctx->cli);
-		ctx->rv = (bool)true;
 	}
 	php::value client::close(php::parameters& params) {
 		if(client_) {
-			client_request_t* ctx = new client_request_t {
-				coroutine::current, client_, this
-			};
+			mongoc_client_destroy(client_);
 			client_ = nullptr;
-			ctx->req.data = ctx;
-			worker_.queue_work(&ctx->req, close_wk, default_cb);
-			return flame::async();
 		}
 		return nullptr;
 	}

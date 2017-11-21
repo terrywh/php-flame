@@ -20,6 +20,7 @@ namespace mysql {
 		class_client.add<&client::update>("update");
 		class_client.add<&client::select>("select");
 		class_client.add<&client::one>("one");
+		class_client.add<&client::found_rows>("found_rows");
 		ext.add(std::move(class_client));
 		// ---------------------------------------------------------------------
 		php::class_entry<result_set> class_result_set("flame\\db\\mysql\\result_set");

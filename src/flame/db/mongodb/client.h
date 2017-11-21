@@ -21,7 +21,6 @@ namespace mongodb {
 		static void default_cb(uv_work_t* req, int status);
 		static void connect_wk(uv_work_t* req);
 		static void collection_wk(uv_work_t* req);
-		static void close_wk(uv_work_t* req);
 
 		friend class collection;
 	};
