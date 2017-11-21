@@ -10,7 +10,6 @@ namespace mysql {
 		void value_to_buffer(php::value& val, php::buffer& buf);
 
 		client();
-		~client();
 		php::value __destruct(php::parameters& params);
 		php::value connect(php::parameters& params);
 		php::value format(php::parameters& params);

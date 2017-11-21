@@ -52,6 +52,7 @@ namespace mysql {
 		php::string  sql;
 		uv_work_t    req;
 	} mysql_request_t;
+
 	client::client()
 	: mysql_(nullptr) {
 
@@ -361,7 +362,9 @@ namespace mysql {
 		if(params.length() > 3) {
 			sql_orderby(this, params[3], sql);
 		}
-		std::memcpy(sql.put(8), " LIMIT 1", 8);
+		if(params.length() > 4) {
+			sql_limit(this, params[4], sql);
+		}
 		query_(sql);
 		return flame::async();
 	}
