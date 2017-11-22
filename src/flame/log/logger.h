@@ -16,7 +16,6 @@ namespace log {
 		php::value warn(php::parameters& params);
 		php::value info(php::parameters& params);
 		php::value write(php::parameters& params);
-		void write(const std::string& str);
 		void close();
 	private:
 		uv_pipe_t*   pipe_;

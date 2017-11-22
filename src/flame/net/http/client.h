@@ -38,6 +38,7 @@ namespace http {
 	php::value post(php::parameters& params);
 	php::value put(php::parameters& params);
 	php::value remove(php::parameters& params);
+	php::value exec(php::parameters& params);
 }
 }
 }

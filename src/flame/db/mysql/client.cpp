@@ -1,5 +1,6 @@
 #include "../../flame.h"
 #include "../../coroutine.h"
+#include "../../time/time.h"
 #include "client.h"
 #include "result_set.h"
 #include "mysql.h"
@@ -54,8 +55,19 @@ namespace mysql {
 	} mysql_request_t;
 
 	client::client()
-	: mysql_(nullptr) {
+	: mysql_(nullptr)
+	, debug_(false) {
 
+	}
+	php::value client::__construct(php::parameters& params) {
+		if(params.length() <= 0 || !params[0].is_array()) return nullptr;
+		php::array& opts = params[0];
+		if(opts.at("debug", 5).is_true()) {
+			debug_ = true;
+		}else{
+			debug_ = false;
+		}
+		return nullptr;
 	}
 	php::value client::__destruct(php::parameters& params) {
 		close(params);
@@ -159,6 +171,9 @@ namespace mysql {
 		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
+		}
+		if(ctx->self->debug_) {
+			std::printf("[%s] (flame\\db\\mysql): %.*s\n", time::datetime(), ctx->sql.length(), ctx->sql.c_str());
 		}
 		int error = mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length());
 		if(error != 0) {
@@ -295,6 +310,9 @@ namespace mysql {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
 		}
+		if(ctx->self->debug_) {
+			std::printf("[%s] (flame\\db\\mysql): %.*s\n", time::datetime(), ctx->sql.length(), ctx->sql.c_str());
+		}
 		int error = mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length());
 		if(error != 0) {
 			ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), error);
@@ -374,6 +392,9 @@ namespace mysql {
 		if(!ctx->self->mysql_) {
 			ctx->rv = php::make_exception("mysql not connected");
 			return;
+		}
+		if(ctx->self->debug_) {
+			std::printf("[%s] (flame\\db\\mysql): %.*s\n", time::datetime(), ctx->sql.length(), ctx->sql.c_str());
 		}
 		int error = mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length());
 		if(error != 0) {

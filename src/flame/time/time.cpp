@@ -57,5 +57,19 @@ namespace time {
 		// 代价较每次取系统时间要低一些
 		return uv_now(flame::loop) - real_time_diff;
 	}
+	const char* datetime() {
+		static char buffer[24];
+		int64_t    st = time::now()/1000;
+		struct tm* tt = std::localtime((time_t*)&st);
+		sprintf(buffer, "%04d-%02d-%02d %02d:%02d:%02d",
+			tt->tm_year + 1900,
+			tt->tm_mon + 1,
+			tt->tm_mday,
+			tt->tm_hour,
+			tt->tm_min,
+			tt->tm_sec);
+		
+		return buffer;
+	}
 }
 }

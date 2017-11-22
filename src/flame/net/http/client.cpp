@@ -270,6 +270,10 @@ php::value remove(php::parameters& params) {
 	return default_client->exec2(obj);
 }
 
+php::value exec(php::parameters& params) {
+	return default_client->exec2(params[0]);
+}
+
 }
 }
 }

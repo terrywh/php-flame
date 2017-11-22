@@ -102,14 +102,16 @@ size_t client_request::body_read_cb(void *ptr, size_t size, size_t nmemb, void *
 
 void client_request::build_header() {
 	php::array& opt = prop("header");
-	if(opt.length() == 0) return;
-
-	bool expect = false;
+	
+	bool expect = false,
+		content = false;
 	for(auto i=opt.begin();i!=opt.end();++i) {
 		php::string key = i->first.to_string();
 		php::string val = i->second.to_string();
-		if(std::strncmp(key.c_str(), "Expect", 6) == 0 || std::strncmp(key.c_str(), "expect", 6) == 0) {
+		if(strncasecmp(key.c_str(), "Expect", 6) == 0) {
 			expect = true;
+		}else if(strncasecmp(key.c_str(), "Content-Type", 12) == 0) {
+			content = true;
 		}
 		php::string  str(key.length() + val.length() + 3);
 		sprintf(str.data(), "%.*s: %.*s", key.length(), key.data(), val.length(), val.data());
@@ -117,6 +119,9 @@ void client_request::build_header() {
 	}
 	if(!expect) {
 		header_ = curl_slist_append(header_, "Expect: ");
+	}
+	if(!content && body_ != nullptr && body_[0] == '{') {
+		header_ = curl_slist_append(header_, "Content-Type: application/json");
 	}
 	curl_easy_setopt(easy_, CURLOPT_HTTPHEADER, header_);
 }
@@ -147,23 +152,30 @@ void client_request::build_option() {
 	if (xbody.is_array()) {
 		xbody = php::build_query(xbody);
 		prop("body", 4) = xbody;
+		body_ = xbody.data();
+		size_ = xbody.length();
 	}else if (xbody.is_string()) {
 		// xbody = vbody;
+		body_ = xbody.data();
+		size_ = xbody.length();
 	}else if (!xbody.is_null()) {
 		xbody.to_string();
 		prop("body", 4) = xbody;
+		body_ = xbody.data();
+		size_ = xbody.length();
+	}else{
+		body_ = nullptr;
+		size_ = 0;
 	}
 	if(std::strncmp(method.c_str(), "POST", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_POST, 1L);
-		if(xbody.length() > 0) {
+		if(size_ > 0) {
 			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, xbody.c_str());
 		}
 	}else if(std::strncmp(method.c_str(), "PUT", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_UPLOAD, 1L);
 		curl_easy_setopt(easy_, CURLOPT_PUT, 1L);
-		if(xbody.length() > 0) {
-			body_ = xbody.data();
-			size_ = xbody.length();
+		if(size_ > 0) {
 			curl_easy_setopt(easy_, CURLOPT_INFILESIZE, xbody.length());
 			curl_easy_setopt(easy_, CURLOPT_READDATA, this);
 			curl_easy_setopt(easy_, CURLOPT_READFUNCTION, body_read_cb);

@@ -3,8 +3,6 @@
 #include "../time/time.h"
 #include "logger.h"
 
-
-
 namespace flame {
 namespace log {
 	logger::logger()
@@ -73,15 +71,10 @@ namespace log {
 	php::value logger::write(const std::string& level, php::parameters& params) {
 		if(pipe_ == nullptr) return nullptr;
 		php::buffer out;
-		int64_t    st = time::now()/1000;
-		struct tm* tt = std::localtime((time_t*)&st);
-		sprintf(out.put(21), "[%04d-%02d-%02d %02d:%02d:%02d]",
-			tt->tm_year + 1900,
-			tt->tm_mon + 1,
-			tt->tm_mday,
-			tt->tm_hour,
-			tt->tm_min,
-			tt->tm_sec);
+		out.add('[');
+		std::memcpy(out.put(19), time::datetime(), 19);
+		out.add(']');
+		out.add(' ');
 		std::memcpy(out.put(level.length()), level.c_str(), level.length());
 		for(int i=0;i<params.length();++i) {
 			out.add(' ');
@@ -113,9 +106,6 @@ namespace log {
 	}
 	php::value logger::write(php::parameters& params) {
 		return write(" ", params);
-	}
-	void logger::write(const std::string& str) {
-
 	}
 }
 }

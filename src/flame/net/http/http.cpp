@@ -23,6 +23,7 @@ namespace http {
 		ext.add<::flame::net::http::post>("flame\\net\\http\\post");
 		ext.add<::flame::net::http::put>("flame\\net\\http\\put");
 		ext.add<::flame::net::http::remove>("flame\\net\\http\\delete");
+		ext.add<::flame::net::http::exec>("flame\\net\\http\\exec");
 		// class client_request
 		php::class_entry<client_request> class_client_request("flame\\net\\http\\client_request");
 		class_client_request.add(php::property_entry("method", std::string("")));

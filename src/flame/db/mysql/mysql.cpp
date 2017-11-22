@@ -12,7 +12,9 @@ namespace mysql {
 		php::class_entry<client> class_client("flame\\db\\mysql\\client");
 		class_client.add(php::property_entry("affected_rows", 0));
 		class_client.add(php::property_entry("insert_id", 0));
+		class_client.add<&client::__construct>("__construct");
 		class_client.add<&client::__destruct>("__destruct");
+		class_client.add<&client::close>("close");
 		class_client.add<&client::connect>("connect");
 		class_client.add<&client::format>("format");
 		class_client.add<&client::query>("query");
@@ -102,23 +104,21 @@ namespace mysql {
 		}
 	}
 	void sql_where(client* cli, php::value& data, php::buffer& buf) {
-		std::memcpy(buf.put(7), " WHERE ", 7);
+		std::memcpy(buf.put(6), " WHERE", 6);
 		if(data.is_string()) {
+			buf.add(' ');
 			php::string& str = data;
 			std::memcpy(buf.put(str.length()), str.data(), str.length());
 			return;
 		}
-		if(!data.is_array()) {
-			throw php::exception("illegal sql where");
-		}
 		php::array& cond = data;
-		if(!cond.is_a_map()) {
+		if(!cond.is_array() || !cond.is_a_map()) {
 			throw php::exception("illegal sql where");
 		}
 		int j = -1;
 		for(auto i=cond.begin(); i!= cond.end(); ++i) {
 			if(++j > 0) {
-				std::memcpy(buf.put(5), " AND", 5);
+				std::memcpy(buf.put(4), " AND", 4);
 			}
 			condition_item(cli, i->first, i->second, buf);
 		}

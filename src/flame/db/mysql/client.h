@@ -10,6 +10,7 @@ namespace mysql {
 		void value_to_buffer(php::value& val, php::buffer& buf);
 
 		client();
+		php::value __construct(php::parameters& params);
 		php::value __destruct(php::parameters& params);
 		php::value connect(php::parameters& params);
 		php::value format(php::parameters& params);
@@ -31,6 +32,7 @@ namespace mysql {
 		void query_(php::buffer& buf);
 		MYSQLND* mysql_;
 		std::shared_ptr<php_url> url_;
+		bool  debug_;
 		static void connect_wk(uv_work_t* req);
 		static void query_wk(uv_work_t* req);
 		static void insert_wk(uv_work_t* req);
