@@ -13,9 +13,9 @@ namespace mysql {
 	void result_implement::fetch_row_wk(uv_work_t* req) {
 		result_request_t* ctx = reinterpret_cast<result_request_t*>(req->data);
 		if(ctx->type == MYSQLND_FETCH_NUM) {
-			mysqlnd_fetch_into(ctx->self->rs_, MYSQLND_FETCH_ASSOC, (zval*)&ctx->rv, MYSQLND_MYSQLI);
-		}else/* if(ctx->type == MYSQLND_FETCH_ASSOC) */{
 			mysqlnd_fetch_into(ctx->self->rs_, MYSQLND_FETCH_NUM, (zval*)&ctx->rv, MYSQLND_MYSQLI);
+		}else/* if(ctx->type == MYSQLND_FETCH_ASSOC) */{
+			mysqlnd_fetch_into(ctx->self->rs_, MYSQLND_FETCH_ASSOC, (zval*)&ctx->rv, MYSQLND_MYSQLI);
 		}
 	}
 	void result_implement::fetch_all_wk(uv_work_t* req) {

@@ -22,7 +22,7 @@ namespace kafka {
 
 		rd_kafka_conf_t* gconf_ = global_conf(params[0]);
 		rd_kafka_conf_set_error_cb(gconf_, error_cb);
-		rd_kafka_conf_set_dr_msg_cb(gconf_, dr_msg_cb);
+		// rd_kafka_conf_set_dr_msg_cb(gconf_, dr_msg_cb);
 		rd_kafka_conf_set_opaque(gconf_, this);
 		kafka_ = rd_kafka_new(RD_KAFKA_PRODUCER, gconf_, errstr, errlen);
 		if(kafka_ == nullptr) {
@@ -93,18 +93,27 @@ namespace kafka {
 			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, 0,
 				ctx->val.data(), ctx->val.length(), nullptr, 0, ctx);
 		}
-		while(ctx->rv.is_object()) {
+		// while(ctx->rv.is_object()) {
+		// 	rd_kafka_poll(ctx->self->kafka_, 1000);
+		// }
+		rd_kafka_poll(ctx->self->kafka_, 0);
+		ctx->rv = true;
+	}
+	// void producer_implement::dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque) {
+	// 	producer_request_t* ctx = reinterpret_cast<producer_request_t*>(rkmessage->_private);
+	// 	// TODO 错误、失败处理
+	// 	// ctx->rv = bool(true);
+	// }
+	void producer_implement::flush_wk(uv_work_t* req) {
+		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);
+		rd_kafka_flush(ctx->self->kafka_, 10000);
+		while (rd_kafka_outq_len(ctx->self->kafka_) > 0) {
 			rd_kafka_poll(ctx->self->kafka_, 1000);
 		}
 	}
-	void producer_implement::dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque) {
-		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(rkmessage->_private);
-		// TODO 错误、失败处理
-		ctx->rv = bool(true);
-	}
 	void producer_implement::close_wk(uv_work_t* req) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);
-		rd_kafka_flush(ctx->self->kafka_, 1000);
+		flush_wk(req);
 		rd_kafka_topic_destroy(ctx->self->topic_);
 		rd_kafka_destroy(ctx->self->kafka_);
 		delete ctx->self;

@@ -34,6 +34,14 @@ namespace kafka {
 		if(ctx->co) ctx->co->next(ctx->rv);
 		delete ctx;
 	}
+	php::value producer::flush(php::parameters& params) {
+		producer_request_t* ctx = new producer_request_t {
+			coroutine::current, impl, this
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, producer_implement::flush_wk, default_cb);
+		return nullptr;
+	}
 }
 }
 }

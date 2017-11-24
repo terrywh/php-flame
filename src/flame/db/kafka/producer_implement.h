@@ -23,9 +23,10 @@ namespace kafka {
 				const rd_kafka_topic_t *rkt, const void *keydata, size_t keylen,
 				int32_t partition_cnt, void *rkt_opaque, void *msg_opaque);
 		static void error_cb(rd_kafka_t *rk, int err, const char *reason, void *opaque);
-		static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque);
+		// static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque);
 		
 		static void produce_wk(uv_work_t* handle);
+		static void   flush_wk(uv_work_t* req);
 		static void   close_wk(uv_work_t* req);
 		friend class producer;
 	};
