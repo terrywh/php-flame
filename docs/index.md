@@ -13,8 +13,9 @@
 	5. [FastCGI 处理器](/php-flame/flame_net_fastcgi) - 挂接 Nginx 等实现 HTTP 服务；
 3. [协程式数据库驱动](/php-flame/flame_db)：
 	1. 简单 Redis 客户端；
-	2. 简单 Mongodb 客户端；
-	3. 简单 MySQL 客户端；
+	2. [简单 Mongodb 客户端](/php-flame/flame_mongodb)；
+	3. [简单 MySQL 客户端](/php-flame/flame_mysql)；
+	4. [简单 Kafka 客户端](/php-flame/flame_db_kafka)；
 
 **源码**：
 [https://github.com/terrywh/php-flame/](https://github.com/terrywh/php-flame/)
@@ -24,6 +25,7 @@
 
 **注意**：
 * 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
+* 调用包含 `yield` 关键字的函数，也需要添加 `yield` 支持 “异步” 调用；
 * 嵌套异步 `Generator` 可使用 `yield` 关键字直接调用，也可以使用 `PHP` 的嵌套语法 `yield from`；具体可参考 PHP 文档： [Gernerator Syntax](http://php.net/manual/en/language.generators.syntax.php) 的相关说明；
 
 **示例**：
