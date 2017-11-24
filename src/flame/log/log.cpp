@@ -9,10 +9,10 @@ namespace log {
 		return default_logger->fail(params);
 	}
 	static php::value warn(php::parameters& params) {
-		return default_logger->fail(params);
+		return default_logger->warn(params);
 	}
 	static php::value info(php::parameters& params) {
-		return default_logger->warn(params);
+		return default_logger->info(params);
 	}
 	static php::value write(php::parameters& params) {
 		return default_logger->write(params);

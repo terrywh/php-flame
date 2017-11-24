@@ -10,26 +10,29 @@ namespace kafka {
 		impl = new producer_implement(this, params);
 		return nullptr;
 	}
+	php::value producer::__destruct(php::parameters& params) {
+		producer_request_t* ctx = new producer_request_t {
+			nullptr, impl, nullptr
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, producer_implement::close_wk, default_cb);
+		return nullptr;
+	}
 	php::value producer::produce(php::parameters& params) {
-		if(params.length() > 1 && params[0].is_string() && params[1].is_string()) {
-			impl->produce(params[0], params[1]);
-		}else if(params[0].is_string()) {
-			impl->produce(params[0], nullptr);
-		}else{
-			throw php::exception("failed to produce: illegal parameters");
+		producer_request_t* ctx = new producer_request_t {
+			coroutine::current, impl, this, params[0].to_string()
+		};
+		ctx->req.data = ctx;
+		if(params.length() > 1) {
+			ctx->key = params[1].to_string();
 		}
+		impl->worker_.queue_work(&ctx->req, producer_implement::produce_wk, default_cb);
 		return flame::async();
 	}
-	php::value producer::close(php::parameters& params) {
-		if(impl != nullptr) {
-			impl->close();
-			impl = nullptr;
-		}
-		return nullptr;
-	}
-	php::value producer::__destruct(php::parameters& params) {
-		if(impl != nullptr) impl->close();
-		return nullptr;
+	void producer::default_cb(uv_work_t* handle, int status) {
+		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(handle->data);
+		if(ctx->co) ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 }
 }

@@ -5,19 +5,17 @@ flame\go(function() {
 	yield $cli->connect("mongodb://notify:wzysy2dcaateSjcb2rlY@10.20.6.71:27017,10.20.6.72:27017/notify_test?replicaSet=devel_repl");
 	$test1 = yield $cli->collection("test1");
 	yield $test1->insert_one(["a"=>"aaaaa"]);
+	yield $test1->remove_many(["a"=>"aaaaa"]);
 	yield $test1->insert_one(["a"=>"aaaaa"]);
 	yield $test1->insert_one(["a"=>"aaaaa"]);
 	yield $test1->remove_one(["a"=>"aaaaa"]);
-	yield $test1->remove_many(["a"=>"aaaaa"]);
 	yield $test1->update_one(["a"=>"aaaaa"], ["\$set"=>["a"=>"bbbbb","c"=>"ddddd"]]);
 	yield $test1->update_many(["a"=>"aaaaa"], ["\$set"=>["a"=>"bbbbb","c"=>"ddddd"]]);
-	$doc = yield $test1->find_one(["a"=>"bbbbb"]);
+	$doc = yield $test1->find_one(["a"=>"aaaaa"]);
 	var_dump( $doc, json_encode($doc) );
-	$cursor = yield $test1->find_many(["a"=>"bbbbb"]);
+	$cursor = yield $test1->find_many(["a"=>"aaaaa"]);
 	var_dump($cursor);
-	var_dump(yield $cursor->to_array(function(&$doc) {
-		return true;
-	}));
+	var_dump(yield $cursor->to_array());
 	// while($doc = yield $cursor->next()) {
 	// 	var_dump($doc);
 	// }

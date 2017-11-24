@@ -10,7 +10,6 @@ namespace kafka {
 		php::class_entry<producer> class_producer("flame\\db\\kafka\\producer");
 		class_producer.add<&producer::__construct>("__construct");
 		class_producer.add<&producer::produce>("produce");
-		class_producer.add<&producer::close>("close");
 		class_producer.add<&producer::__destruct>("__destruct");
 		ext.add(std::move(class_producer));
 
@@ -18,7 +17,6 @@ namespace kafka {
 		class_consumer.add<&consumer::__construct>("__construct");
 		class_consumer.add<&consumer::consume>("consume");
 		class_consumer.add<&consumer::commit>("commit");
-		class_consumer.add<&consumer::close>("close");
 		class_consumer.add<&consumer::__destruct>("__destruct");
 		ext.add(std::move(class_consumer));
 

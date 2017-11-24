@@ -1,91 +1,55 @@
 #include "../../coroutine.h"
 #include "../../thread_worker.h"
-#include "client.h"
+#include "mysql.h"
+#include "result_implement.h"
 #include "result_set.h"
 
 namespace flame {
 namespace db {
 namespace mysql {
-	void result_set::init(client* cli, MYSQLND_RES* rs) {
-		worker_ = &cli->worker_;
-		client_object = cli;
-		rs_ = rs;
+	result_set::result_set()
+	:impl(nullptr) {
+		
+	}
+	void result_set::init(std::shared_ptr<thread_worker> worker, client* cli, MYSQLND_RES* rs) {
+		impl = new result_implement(worker, rs);
+		ref_ = cli;
 	}
 	result_set::~result_set() {
-		mysqlnd_free_result(rs_, false);
+		if(impl) {
+			result_request_t* ctx = new result_request_t {
+				nullptr, impl, nullptr
+			};
+			ctx->req.data = ctx;
+			impl->worker_->queue_work(&ctx->req, result_implement::close_wk, default_cb);
+		}
 	}
-	typedef struct fetch_request_t {
-		coroutine*    co;
-		result_set* self;
-		php::value    rv;
-		uv_work_t    req;
-	} fetch_request_t;
-	static void default_cb(uv_work_t* req, int status) {
-		fetch_request_t* ctx = reinterpret_cast<fetch_request_t*>(req->data);
-		ctx->co->next(ctx->rv);
-		delete ctx;
-	}
-	void result_set::array_wk(uv_work_t* req) {
-		fetch_request_t* ctx = reinterpret_cast<fetch_request_t*>(req->data);
-		mysqlnd_fetch_into(ctx->self->rs_, MYSQLND_FETCH_NUM, (zval*)&ctx->rv, MYSQLND_MYSQLI);
-	}
-	php::value result_set::fetch_array(php::parameters& params) {
-		fetch_request_t* ctx = new fetch_request_t {
-			coroutine::current, this, this
+	php::value result_set::fetch_row(php::parameters& params) {
+		result_request_t* ctx = new result_request_t {
+			coroutine::current, impl, this, MYSQLND_FETCH_ASSOC
 		};
 		ctx->req.data = ctx;
-		worker_->queue_work(&ctx->req, array_wk, default_cb);
+		if(params.length() > 0 && params[0].to_long() == MYSQLND_FETCH_NUM) {
+			ctx->type = MYSQLND_FETCH_NUM;
+		}
+		impl->worker_->queue_work(&ctx->req, result_implement::fetch_row_wk, default_cb);
 		return flame::async();
-	}
-	void result_set::assoc_wk(uv_work_t* req) {
-		fetch_request_t* ctx = reinterpret_cast<fetch_request_t*>(req->data);
-		mysqlnd_fetch_into(ctx->self->rs_, MYSQLND_FETCH_ASSOC, (zval*)&ctx->rv, MYSQLND_MYSQLI);
-	}
-	php::value result_set::fetch_assoc(php::parameters& params) {
-		fetch_request_t* ctx = new fetch_request_t {
-			coroutine::current, this, this
-		};
-		ctx->req.data = ctx;
-		worker_->queue_work(&ctx->req, assoc_wk, default_cb);
-		return flame::async();
-	}
-	void result_set::all1_wk(uv_work_t* req) {
-		fetch_request_t* ctx = reinterpret_cast<fetch_request_t*>(req->data);
-		php::array rst(4);
-		php::value row;
-		int        idx = 0;
-		do {
-			mysqlnd_fetch_into(ctx->self->rs_, MYSQLND_FETCH_ASSOC, (zval*)&row, MYSQLND_MYSQLI);
-			if(!row.is_array()) break;
-			rst[idx++] = std::move(row);
-		} while(1);
-		ctx->rv = std::move(rst);
-	}
-	void result_set::all2_wk(uv_work_t* req) {
-		fetch_request_t* ctx = reinterpret_cast<fetch_request_t*>(req->data);
-		php::array rst(4);
-		php::value row;
-		int        idx = 0;
-		do {
-			mysqlnd_fetch_into(ctx->self->rs_, MYSQLND_FETCH_NUM, (zval*)&row, MYSQLND_MYSQLI);
-			if(!row.is_array()) break;
-			rst[idx++] = std::move(row);
-		} while(1);
-		ctx->rv = std::move(rst);
 	}
 	php::value result_set::fetch_all(php::parameters& params) {
-		uv_work_cb wk;
-		if(params.length() == 1 && params[0].to_long() == MYSQLND_FETCH_NUM) {
-			wk = all2_wk;
-		}else{
-			wk = all1_wk;
-		}
-		fetch_request_t* ctx = new fetch_request_t {
-			coroutine::current, this, this
+		result_request_t* ctx = new result_request_t {
+			coroutine::current, impl, this, MYSQLND_FETCH_ASSOC
 		};
 		ctx->req.data = ctx;
-		worker_->queue_work(&ctx->req, wk, default_cb);
+		if(params.length() > 0 && params[0].to_long() == MYSQLND_FETCH_NUM) {
+			ctx->type = MYSQLND_FETCH_NUM;
+		}
+		impl->worker_->queue_work(&ctx->req, result_implement::fetch_all_wk, default_cb);
 		return flame::async();
+	}
+	void result_set::default_cb(uv_work_t* req, int status) {
+		result_request_t* ctx = reinterpret_cast<result_request_t*>(req->data);
+		if(ctx->co != nullptr) ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 }
 }

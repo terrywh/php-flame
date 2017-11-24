@@ -150,16 +150,13 @@ void server_response::buffer_ending() {
 typedef struct write_request_t {
 	coroutine*         co;
 	server_response* self;
-	php::object       ref;
+	php::value        ref;
 	php::string      data;
 	uv_write_t        req;
 } write_request_t;
 void server_response::buffer_write() {
 	write_request_t* ctx = new write_request_t {
-		.co = coroutine::current,
-		.self = this,
-		.ref  = this,
-		.data = std::move(buffer_),
+		coroutine::current, this, this, std::move(buffer_)
 	};
 	ctx->req.data = ctx;
 	uv_buf_t    data { ctx->data.data(), ctx->data.length() };

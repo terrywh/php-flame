@@ -5,7 +5,7 @@ class coroutine;
 namespace net {
 	typedef struct connect_request_t {
 		coroutine*     co;
-		php::object   obj;
+		php::value    obj;
 		uv_connect_t  req;
 	} connect_request_t;
 
@@ -80,7 +80,7 @@ namespace net {
 	private:
 		typedef struct write_request_t {
 			coroutine*      co;
-			client_impl* ch;
+			client_impl*    ch;
 			php::value     obj;
 			php::string    buf;
 			uv_write_t     req;

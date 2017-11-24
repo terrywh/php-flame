@@ -1,88 +1,48 @@
 #include "../../coroutine.h"
+#include "../../thread_worker.h"
+#include "client_implement.h"
 #include "client.h"
-#include "collection.h"
 
 namespace flame {
 namespace db {
 namespace mongodb {
 	client::client()
-	: client_(nullptr)
-	, uri_(nullptr) {}
-	typedef struct client_request_t {
-		coroutine*        co;
-		mongoc_client_t* cli;
-		php::value        rv;
-		php::string     name;
-		uv_work_t        req;
-	} client_request_t;
-	void client::default_cb(uv_work_t* req, int status) {
-		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		ctx->co->next(ctx->rv);
-		delete ctx;
+	: impl(new client_implement(this)) {
+		
 	}
-	void client::connect_wk(uv_work_t* req) {
-		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		client* self = reinterpret_cast<php::object&>(ctx->rv).native<client>();
-		if(ctx->cli) mongoc_client_destroy(ctx->cli);
-		ctx->cli = mongoc_client_new_from_uri(self->uri_);
-		if(ctx->cli) {
-			self->client_ = ctx->cli;
-			ctx->rv = (bool)true;
-		}else{
-			self->client_ = nullptr;
-			ctx->rv = php::make_exception("failed to connect to mongodb");
-		}
-	}
-	php::value client::connect(php::parameters& params) {
-		if(params.length() > 0 && params[0].is_string()) {
-			php::string& uri = params[0];
-			uri_ = mongoc_uri_new(uri.c_str());
-		}
-		if(!uri_) {
-			throw php::exception("failed to construct mongodb client: failed to parse URI");
-		}
-		connect_();
-		return flame::async();
-	}
-	void client::connect_() {
+	client::~client() {
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, client_, this
+			nullptr, impl, nullptr
 		};
 		ctx->req.data = ctx;
-		worker_.queue_work(&ctx->req, connect_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req,
+			client_implement::close_wk,
+			default_cb);
 	}
-	php::value client::__destruct(php::parameters& params) {
-		close(params);
-		return nullptr;
-	}
-	php::value client::close(php::parameters& params) {
-		if(client_) {
-			mongoc_client_destroy(client_);
-			client_ = nullptr;
-		}
-		return nullptr;
-	}
-	void client::collection_wk(uv_work_t* req) {
+	void client::default_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(!ctx->cli) {
-			ctx->rv = php::make_exception("mongodb not connected");
-			return;
+		if(ctx->co) ctx->co->next(ctx->rv);
+		delete ctx;
+	}
+	php::value client::connect(php::parameters& params) {
+		client_request_t* ctx = new client_request_t {
+			coroutine::current, impl, this
+		};
+		ctx->req.data = ctx;
+		if(params.length() > 0 && params[0].is_string()) {
+			ctx->name = params[0];
 		}
-		client* self = reinterpret_cast<php::object&>(ctx->rv).native<client>();
-
-		mongoc_collection_t* col = mongoc_client_get_collection(ctx->cli,
-			mongoc_uri_get_database(self->uri_), ctx->name.c_str());
-		php::object          obj = php::object::create<mongodb::collection>();
-		mongodb::collection* cpp = obj.native<mongodb::collection>();
-		ctx->rv = std::move(obj);
-		cpp->init(self, self->client_, col);
+		impl->worker_->queue_work(&ctx->req,
+			client_implement::connect_wk,
+			default_cb);
+		return flame::async();
 	}
 	php::value client::collection(php::parameters& params) {
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, client_, this, params[0]
+			coroutine::current, impl, this, params[0].to_string()
 		};
 		ctx->req.data = ctx;
-		worker_.queue_work(&ctx->req, collection_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, client_implement::collection_wk, default_cb);
 		return flame::async();
 	}
 }

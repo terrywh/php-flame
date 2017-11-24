@@ -8,6 +8,7 @@ namespace mysql {
 	void sql_where(client* cli, php::value& cond, php::buffer& buf);
 	void sql_orderby(client* cli, php::value& sort, php::buffer& buf);
 	void sql_limit(client* cli, php::value& limit, php::buffer& buf);
+	void default_cb(uv_work_t* req, int status);
 }
 }
 }

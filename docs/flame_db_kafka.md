@@ -27,13 +27,10 @@ flame\go(function() {
 			return crc32($key) % $count;
 		}
 	], ["test_topic"]); // 消费者可指定多个 topic 进行消费
-	// 以下两种消费方式不可混合使用，这里仅作示范代码
-	// 方式 1.
-	$msg = yield $producer->consume();
-	// 方式 2.
-	yield $consumer->consume(function($msg) {
-		// $msg
-	});
+	while(true) {
+		$msg = yield $producer->consume();
+		// ...
+	}
 });
 ```
 
@@ -68,36 +65,16 @@ flame\go(function() {
 * 全局选项 `$global_opt` 及 话题选项 `$topic_opt` 中所有标注 `set with .....` 的特殊选项**均不支持**；
 
 ##### `yield consumer::consume()`
-消费形式 1：消费一条消息；
+消费（等待 KAFKA 返回）一条消息；
 
 **注意**：
 * **不能**将同一个 consumer 用于多个协程进行消费；
-* 消费的两种形式，不能对同一消费者同时使用；
-
 
 **示例**：
 ``` PHP
 <?php
 // $consumer = ...
 $msg = yield $consumer->consume();
-```
-
-##### `yield consumer::consume(callable $cb)`
-消费形式 2：消息消费回调
-
-**注意**：
-* **不能**将同一个 consumer 用于多个协程进行消费；
-* 消费形式 2，每个回调都在单独的“协程”中运行；
-* 消费的两种形式，不能对同一消费者同时使用；
-
-
-**示例**：
-``` PHP
-<?php
-// $consumer = ...
-yield $consumer->consume(function($msg) {
-	// $msg ...
-});
 ```
 
 ##### `yield consumer::commit(object $msg)`

@@ -7,10 +7,11 @@ namespace kafka {
 	class producer: public php::class_base {
 	public:
 		php::value __construct(php::parameters& params);
-		php::value produce(php::parameters& params);
-		php::value close(php::parameters& params);
 		php::value __destruct(php::parameters& params);
-		producer_implement* impl = nullptr;
+		php::value produce(php::parameters& params);
+		producer_implement* impl;
+	private:
+		static void default_cb(uv_work_t* req, int status);
 	};
 
 }

@@ -72,9 +72,8 @@ namespace log {
 		if(pipe_ == nullptr) return nullptr;
 		php::buffer out;
 		out.add('[');
-		std::memcpy(out.put(19), time::datetime(), 19);
+		std::memcpy(out.put(19), time::datetime(time::now()), 19);
 		out.add(']');
-		out.add(' ');
 		std::memcpy(out.put(level.length()), level.c_str(), level.length());
 		for(int i=0;i<params.length();++i) {
 			out.add(' ');

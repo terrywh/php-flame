@@ -44,9 +44,7 @@ void init(php::extension_entry& ext) {
 	// ---------------------------------------------------------------------
 	php::class_entry<client> class_client("flame\\db\\mongodb\\client");
 	class_client.add<&client::connect>("connect");
-	class_client.add<&client::__destruct>("__destruct");
 	class_client.add<&client::collection>("collection");
-	class_client.add<&client::close>("close");
 	ext.add(std::move(class_client));
 	// ---------------------------------------------------------------------
 	php::class_entry<bulk_result> class_bulk_result("flame\\db\\mongodb\\bulk_result");
@@ -59,7 +57,6 @@ void init(php::extension_entry& ext) {
 	ext.add(std::move(class_bulk_result));
 	// ---------------------------------------------------------------------
 	php::class_entry<collection> class_collection("flame\\db\\mongodb\\collection");
-	class_collection.add<&collection::__debugInfo>("__debugInfo");
 	class_collection.add<&collection::count>("count");
 	class_collection.add<&collection::insert_one>("insert_one");
 	class_collection.add<&collection::insert_many>("insert_many");
@@ -147,6 +144,13 @@ void fill_with(bson_t* doc, const php::array& arr) {
 		}
 	}
 }
+void fill_with(php::array& arr, const bson_t* doc) {
+	bson_iter_t i;
+	if(!bson_iter_init(&i, doc)) return;
+	while(bson_iter_next(&i)) {
+		arr[bson_iter_key(&i)] = from(&i);
+	}
+}
 php::value from(bson_iter_t* i) {
 	switch(bson_iter_type(i)) {
 	// 不支持这些个类型
@@ -210,15 +214,6 @@ php::value from(bson_iter_t* i) {
 	}
 	}
 }
-
-void fill_with(php::array& arr, const bson_t* doc) {
-	bson_iter_t i;
-	if(!bson_iter_init(&i, doc)) return;
-	while(bson_iter_next(&i)) {
-		arr[bson_iter_key(&i)] = from(&i);
-	}
-}
-
 }
 }
 }

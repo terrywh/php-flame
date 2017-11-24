@@ -9,18 +9,15 @@ namespace flame {
 		uv_unref((uv_handle_t*)&async_master);
 		uv_mutex_init(&mutex_master);
 
-		uv_loop_init(&loop_);
-		uv_async_init(&loop_, &async_worker, worker_cb);
+		uv_loop_init(&loop);
+		uv_async_init(&loop, &async_worker, worker_cb);
 		async_worker.data = this;
 		uv_mutex_init(&mutex_worker);
 
 		uv_thread_create(&tid_, run, this);
 	}
 	thread_worker::~thread_worker() {
-		join();
-	}
-	void thread_worker::close() {
-		join();
+		uv_stop(&loop);
 	}
 	void thread_worker::join() {
 		if(!exit_) {
@@ -33,7 +30,7 @@ namespace flame {
 		reinterpret_cast<thread_worker*>(data)->run();
 	}
 	void thread_worker::run() {
-		uv_run(&loop_, UV_RUN_DEFAULT);
+		uv_run(&loop, UV_RUN_DEFAULT);
 	}
 	void thread_worker::worker_cb(uv_async_t* handle) {
 		reinterpret_cast<thread_worker*>(handle->data)->worker_cb();
@@ -60,7 +57,7 @@ namespace flame {
 			}
 		}
 		// 退出结束线程循环
-		if(exit_) uv_stop(&loop_);
+		if(exit_) uv_stop(&loop);
 	}
 	void thread_worker::master_cb(uv_async_t* handle) {
 		reinterpret_cast<thread_worker*>(handle->data)->master_cb();

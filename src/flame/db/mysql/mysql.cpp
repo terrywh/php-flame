@@ -7,14 +7,12 @@ namespace db {
 namespace mysql {
 	void init(php::extension_entry& ext) {
 		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ASSOC", MYSQLND_FETCH_ASSOC));
-		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ARRAY", MYSQLND_FETCH_NUM));
+		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ENUMS", MYSQLND_FETCH_NUM));
 		// ---------------------------------------------------------------------
 		php::class_entry<client> class_client("flame\\db\\mysql\\client");
 		class_client.add(php::property_entry("affected_rows", 0));
 		class_client.add(php::property_entry("insert_id", 0));
 		class_client.add<&client::__construct>("__construct");
-		class_client.add<&client::__destruct>("__destruct");
-		class_client.add<&client::close>("close");
 		class_client.add<&client::connect>("connect");
 		class_client.add<&client::format>("format");
 		class_client.add<&client::query>("query");
@@ -27,8 +25,7 @@ namespace mysql {
 		ext.add(std::move(class_client));
 		// ---------------------------------------------------------------------
 		php::class_entry<result_set> class_result_set("flame\\db\\mysql\\result_set");
-		class_result_set.add<&result_set::fetch_array>("fetch_array");
-		class_result_set.add<&result_set::fetch_assoc>("fetch_assoc");
+		class_result_set.add<&result_set::fetch_row>("fetch_row");
 		class_result_set.add<&result_set::fetch_all>("fetch_all");
 		ext.add(std::move(class_result_set));
 	}
@@ -46,13 +43,13 @@ namespace mysql {
 					}
 				}else{ // IN 描述
 					std::memcpy(buf.put(4), " IN ", 4);
-					cli->value_to_buffer(val, buf);
+					cli->val_to_buffer(val, buf);
 				}
 			}else if(val.is_null()) {
 				std::memcpy(buf.put(7), "IS NULL", 7);
 			}else {
 				buf.add('=');
-				cli->value_to_buffer(val, buf);
+				cli->val_to_buffer(val, buf);
 			}
 			return;
 		}
@@ -76,29 +73,29 @@ namespace mysql {
 			buf.add(')');
 		}else if(std::strncmp(key.c_str(), "$gt", 3) == 0) {
 			buf.add('>');
-			cli->value_to_buffer(val, buf);
+			cli->val_to_buffer(val, buf);
 		}else if(std::strncmp(key.c_str(), "$gte", 4) == 0) {
 			std::memcpy(buf.put(3), ">= ", 3);
-			cli->value_to_buffer(val, buf);
+			cli->val_to_buffer(val, buf);
 		}else if(std::strncmp(key.c_str(), "$lt", 3) == 0) {
 			buf.add('<');
-			cli->value_to_buffer(val, buf);
+			cli->val_to_buffer(val, buf);
 		}else if(std::strncmp(key.c_str(), "$lte", 4) == 0) {
 			std::memcpy(buf.put(3), "<= ", 3);
-			cli->value_to_buffer(val, buf);
+			cli->val_to_buffer(val, buf);
 		}else if(std::strncmp(key.c_str(), "$ne", 3) == 0) {
 			if(val.is_null()) {
 				std::memcpy(buf.put(11), "IS NOT NULL", 11);
 			}else{
 				std::memcpy(buf.put(3), "!= ", 3);
-				cli->value_to_buffer(val, buf);
+				cli->val_to_buffer(val, buf);
 			}
 		}else if(std::strncmp(key.c_str(), "$in", 3) == 0) {
 			std::memcpy(buf.put(3), "IN ", 3);
-			cli->value_to_buffer(val, buf);
+			cli->val_to_buffer(val, buf);
 		}else if(std::strncmp(key.c_str(), "$like", 5) == 0) {
 			std::memcpy(buf.put(5), "LIKE ", 5);
-			cli->value_to_buffer(val, buf);
+			cli->val_to_buffer(val, buf);
 		}else{
 			throw php::exception("illegal sql where");
 		}

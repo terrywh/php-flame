@@ -5,23 +5,21 @@ namespace flame {
 namespace db {
 namespace mysql {
 	class client;
+	class result_implement;
 	class result_set: public php::class_base {
 	public:
+		result_set();
 		~result_set();
-		php::value fetch_array(php::parameters& params);
-		php::value fetch_assoc(php::parameters& params);
+		
+		void init(std::shared_ptr<thread_worker> worker, client* cli, MYSQLND_RES* rs);
+		
+		php::value fetch_row(php::parameters& params);
 		php::value fetch_all(php::parameters& params);
+		
+		result_implement* impl;
 	private:
-		thread_worker* worker_;
-		php::value     client_object;
-		MYSQLND_RES*   rs_;
-		void init(client* cli, MYSQLND_RES* rs);
-		static void array_wk(uv_work_t* req);
-		static void assoc_wk(uv_work_t* req);
-		static void all1_wk(uv_work_t* req);
-		static void all2_wk(uv_work_t* req);
-
-		friend class client;
+		php::object ref_;
+		static void default_cb(uv_work_t* req, int status);
 	};
 }
 }

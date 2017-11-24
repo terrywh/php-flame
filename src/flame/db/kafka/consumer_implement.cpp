@@ -18,7 +18,7 @@ namespace kafka {
 		}
 		char   errstr[1024];
 		size_t errlen = sizeof(errstr);
-
+		// 全局配置
 		rd_kafka_conf_t* gconf_ = global_conf(params[0]);
 		size_t len;
 		if(rd_kafka_conf_get(gconf_, "group.id", nullptr, &len) != RD_KAFKA_CONF_OK) {
@@ -28,7 +28,7 @@ namespace kafka {
 		rd_kafka_conf_set_error_cb(gconf_, error_cb);
 		rd_kafka_conf_set_offset_commit_cb(gconf_, offset_commit_cb);
 		rd_kafka_conf_set_opaque(gconf_, this);
-
+		// 话题配置
 		rd_kafka_topic_conf_t* tconf_ = rd_kafka_topic_conf_new();
 		php::array& tconf = params[1];
 		for(auto i=tconf.begin();i!=tconf.end();++i) {
@@ -41,21 +41,19 @@ namespace kafka {
 			}
 		}
 		rd_kafka_conf_set_default_topic_conf(gconf_, tconf_);
-
+		// KAFKA 对象
 		kafka_ = rd_kafka_new(RD_KAFKA_CONSUMER, gconf_, errstr, errlen);
 		if(kafka_ == nullptr) {
 			rd_kafka_conf_destroy(gconf_);
 			throw php::exception(errstr);
 		}
-		// rd_kafka_poll_set_consumer(kafka_);
-
 		php::array& topics = params[2];
 		topic_ = rd_kafka_topic_partition_list_new(topics.length());
 		for(auto i=topics.begin(); i!=topics.end(); ++i) {
 			php::string& topic = i->second.to_string();
 			rd_kafka_topic_partition_list_add(topic_, topic.c_str(), RD_KAFKA_PARTITION_UA);
 		}
-
+		// 订阅开始消费
 		rd_kafka_resp_err_t error = rd_kafka_subscribe(kafka_, topic_);
 		if(error != RD_KAFKA_RESP_ERR_NO_ERROR) {
 			throw php::exception(rd_kafka_err2str(error), error);
@@ -65,32 +63,8 @@ namespace kafka {
 		consumer_implement* self = reinterpret_cast<consumer_implement*>(opaque);
 		php::fail("kafka error: (%d) %s", err, reason);
 	}
-	void consumer_implement::consume1_cb(uv_work_t* handle, int status) {
-		consume_request_t* ctx = reinterpret_cast<consume_request_t*>(handle->data);
-		if(ctx->rv.is_exception()) {
-			ctx->co->fail(ctx->rv);
-			delete ctx;
-		}else if(ctx->self->ctx_ == nullptr) {
-			coroutine::start(ctx->cb, ctx->rv);
-			ctx->co->next();
-			delete ctx;
-		}else{
-			coroutine::start(ctx->cb, ctx->rv);
-			ctx->self->worker_.queue_work(&ctx->req, ctx->req.work_cb, ctx->req.after_work_cb);
-		}
-	}
-	void consumer_implement::consume1(php::callable& cb) {
-		ctx_ = new consume_request_t {
-			coroutine::current, this, consumer_, cb
-		};
-		ctx_->req.data = ctx_;
-		worker_.queue_work(&ctx_->req, consume2_wk, consume1_cb);
-	}
-	void consumer_implement::stop() {
-		ctx_ = nullptr;
-	}
-	void consumer_implement::consume2_wk(uv_work_t* handle) {
-		consume_request_t*  ctx = reinterpret_cast<consume_request_t*>(handle->data);
+	void consumer_implement::consume_wk(uv_work_t* handle) {
+		consumer_request_t*  ctx = reinterpret_cast<consumer_request_t*>(handle->data);
 		rd_kafka_message_t* msg;
 		do {
 			msg = rd_kafka_consumer_poll(ctx->self->kafka_, 10);
@@ -106,69 +80,36 @@ namespace kafka {
 			ctx->rv = php::make_exception(rd_kafka_err2str(msg->err), msg->err);
 		}
 	}
-	void consumer_implement::consume2_cb(uv_work_t* handle, int status) {
-		consume_request_t* ctx = reinterpret_cast<consume_request_t*>(handle->data);
-		ctx->co->next(ctx->rv);
-		delete ctx;
-	}
-	void consumer_implement::consume2() {
-		consume_request_t* ctx = new consume_request_t {
-			coroutine::current, this, consumer_
-		};
-		ctx->req.data = ctx;
-		worker_.queue_work(&ctx->req, consume2_wk, consume2_cb);
+	void consumer_implement::consume2_wk(uv_work_t* handle) {
+		// TODO 使用 worker 向 master 发送消息并进行单独回调
 	}
 	void consumer_implement::commit_wk(uv_work_t* handle) {
-		commit_t* ctx = reinterpret_cast<commit_t*>(handle->data);
-		rd_kafka_commit_message(ctx->self->kafka_, ctx->msg, true);
-		do {
+		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
+		ctx->self->ctx_ = ctx; // 用于在 offset_commit_cb 中访问当前 context 上下问
+		rd_kafka_commit_message(ctx->self->kafka_, ctx->msg.native<message>()->msg_, true);
+		while(ctx->rv.is_object()) {
 			rd_kafka_poll(ctx->self->kafka_, 1000);
-		} while(ctx->rv.is_undefined());
+		}
 	}
 	void consumer_implement::offset_commit_cb(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *offsets, void *opaque) {
+		// TODO 如何确认得到的 offset commit 已包含了上述 message ？
 		consumer_implement* self = reinterpret_cast<consumer_implement*>(opaque);
-
-		if(err == RD_KAFKA_RESP_ERR__NO_OFFSET) {
-
-		}else if(err) {
-			std::fprintf(stderr, "error: failed to receive offset commit cb (%d)\n", err);
-		}else{
-			// TODO 优化查询效率
-			for(auto i=self->commit_.begin(); i!=self->commit_.end(); /* 可能删除 */) {
-				commit_t* ctx = *i;
-				rd_kafka_topic_partition_t* part = rd_kafka_topic_partition_list_find(
-					offsets, rd_kafka_topic_name(ctx->msg->rkt), ctx->msg->partition);
-				if(part == nullptr || part->offset < ctx->msg->offset) ++i;
-				else {
-					ctx->rv = bool(true);
-					i = self->commit_.erase(i);
-				}
-			}
+		if(self->ctx_) {
+			self->ctx_->rv = bool(true);
+			self->ctx_ = nullptr;
 		}
 	}
-	void consumer_implement::commit_cb(uv_work_t* handle, int status) {
-		commit_t* ctx = reinterpret_cast<commit_t*>(handle->data);
-		ctx->co->next(ctx->rv);
-		delete ctx;
-	}
-	void consumer_implement::commit(php::object& msg) {
-		commit_t* ctx = new commit_t {
-			coroutine::current, this, consumer_, msg.native<message>()->msg_, msg
-		};
-		ctx->req.data = ctx;
-		worker_.queue_work(&ctx->req, commit_wk, commit_cb);
-		commit_.push_back(ctx);
-	}
-	void consumer_implement::close() {
-		worker_.close();
-		if(ctx_) stop();
-		rd_kafka_consumer_close(kafka_);
-		while (rd_kafka_outq_len(kafka_) > 0) {
-			rd_kafka_poll(kafka_, 1000);
+	void consumer_implement::close_wk(uv_work_t* handle) {
+		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
+	
+		rd_kafka_consumer_close(ctx->self->kafka_);
+		while (rd_kafka_outq_len(ctx->self->kafka_) > 0) {
+			rd_kafka_poll(ctx->self->kafka_, 1000);
 		}
-
-		rd_kafka_topic_partition_list_destroy(topic_);
-		rd_kafka_destroy(kafka_);
+		rd_kafka_topic_partition_list_destroy(ctx->self->topic_);
+		rd_kafka_destroy(ctx->self->kafka_);
+		
+		delete ctx->self;
 	}
 }
 }

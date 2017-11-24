@@ -13,8 +13,7 @@ namespace net {
 	php::value unix_socket::connect(php::parameters& params) {
 		php::string path = params[0];
 		connect_request_t* ctx = new connect_request_t {
-			.co = coroutine::current,
-			.obj = this,
+			coroutine::current, this
 		};
 		ctx->req.data = ctx;
 		uv_pipe_connect(&ctx->req, &impl->stream, path.c_str(), connect_cb);

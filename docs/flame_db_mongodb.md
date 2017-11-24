@@ -83,8 +83,8 @@ $count = yield $collection->count(['x'=>'y']);
 * `$doc` 必须是关联数组；
 * 可以自行为 `$doc` 创建 `_id` 字段（参考 `object_id` 类型）；
 
-#### `yield collection::insert_many(array $docs)`
-向当前集合插入 `$docs` 若干文档；返回批量结果对象 `bulk_result`；
+#### `yield collection::insert_many(array $docs[, boolean $ordered = false])`
+向当前集合插入 `$docs` 若干文档；当 `$ordered` 为真时，进行有序批量操作（第一个错误时停止），否则进行无需批量操作（遇到错误不会停止）；当返回批量结果对象 `bulk_result`；
 
 **注意**：
 * `$docs` 为二维数组，其中第一维度为下标数组，每个元素标识一个文档（关联数组）；

@@ -18,6 +18,7 @@ namespace time {
 	}
 	php::value ticker::__destruct(php::parameters& params) {
 		uv_close((uv_handle_t*)tm_, flame::free_handle_cb);
+		return nullptr;
 	}
 	void ticker::tick_cb(uv_timer_t* handle) {
 		ticker* self = static_cast<ticker*>(handle->data);

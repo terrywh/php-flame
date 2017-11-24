@@ -1,7 +1,8 @@
+#include "../../coroutine.h"
 #include "producer.h"
 #include "producer_implement.h"
 #include "kafka.h"
-#include "../../coroutine.h"
+
 
 namespace flame {
 namespace db {
@@ -82,17 +83,8 @@ namespace kafka {
 		producer_implement* self = reinterpret_cast<producer_implement*>(opaque);
 		php::fail("kafka error: (%d) %s", err, reason);
 	}
-	typedef struct kafka_request_t {
-		coroutine*            co;
-		producer_implement* self;
-		php::value           ref;
-		php::string          key;
-		php::string          val;
-		php::value            rv;
-		uv_work_t            req;
-	} kafka_request_t;
 	void producer_implement::produce_wk(uv_work_t* handle) {
-		kafka_request_t* ctx = reinterpret_cast<kafka_request_t*>(handle->data);
+		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(handle->data);
 
 		if(ctx->key.is_string()) {
 			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, 0,
@@ -101,33 +93,21 @@ namespace kafka {
 			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, 0,
 				ctx->val.data(), ctx->val.length(), nullptr, 0, ctx);
 		}
-		do {
-			rd_kafka_poll(ctx->self->kafka_, 10);
-		}while(ctx->rv.is_undefined());
+		while(ctx->rv.is_object()) {
+			rd_kafka_poll(ctx->self->kafka_, 1000);
+		}
 	}
 	void producer_implement::dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque) {
-		kafka_request_t* ctx = reinterpret_cast<kafka_request_t*>(rkmessage->_private);
+		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(rkmessage->_private);
 		// TODO 错误、失败处理
 		ctx->rv = bool(true);
 	}
-	void producer_implement::produce_cb(uv_work_t* handle, int status) {
-		kafka_request_t* ctx = reinterpret_cast<kafka_request_t*>(handle->data);
-		ctx->co->next(ctx->rv);
-		delete ctx;
-	}
-	void producer_implement::produce(const php::string& val, const php::string& key) {
-		kafka_request_t* ctx = new kafka_request_t {
-			coroutine::current, this, producer_, key, val
-		};
-		ctx->req.data = ctx;
-		worker_.queue_work(&ctx->req, produce_wk, produce_cb);
-	}
-	void producer_implement::close() {
-		// !!! 简化处理，下面清理过程在主线程进行
-		rd_kafka_flush(kafka_, 1000);
-
-		rd_kafka_topic_destroy(topic_);
-		rd_kafka_destroy(kafka_);
+	void producer_implement::close_wk(uv_work_t* req) {
+		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);
+		rd_kafka_flush(ctx->self->kafka_, 1000);
+		rd_kafka_topic_destroy(ctx->self->topic_);
+		rd_kafka_destroy(ctx->self->kafka_);
+		delete ctx->self;
 	}
 }
 }

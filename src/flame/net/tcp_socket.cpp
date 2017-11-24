@@ -20,8 +20,7 @@ namespace net {
 			throw php::exception(uv_strerror(error), error);
 		}
 		connect_request_t* ctx = new connect_request_t {
-			.co = coroutine::current,
-			.obj = this,
+			coroutine::current, this
 		};
 		ctx->req.data = ctx;
 		error = uv_tcp_connect(&ctx->req, &impl->stream, reinterpret_cast<struct sockaddr*>(&address), connect_cb);
@@ -36,7 +35,7 @@ namespace net {
 		if(error < 0) {
 			ctx->co->fail(uv_strerror(error), error);
 		}else{
-			ctx->obj.native<tcp_socket>()->after_init();
+			static_cast<php::object&>(ctx->obj).native<tcp_socket>()->after_init();
 			ctx->co->next();
 		}
 		delete ctx;

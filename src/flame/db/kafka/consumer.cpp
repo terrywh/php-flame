@@ -11,34 +11,44 @@ namespace kafka {
 		return nullptr;
 	}
 	php::value consumer::__destruct(php::parameters& params) {
-		if(impl != nullptr) impl->close();
+		consumer_request_t* ctx = new consumer_request_t {
+			nullptr, impl, nullptr
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, consumer_implement::close_wk, default_cb);
 		return nullptr;
 	}
 	php::value consumer::consume(php::parameters& params) {
-		if(params.length() > 0 && params[0].is_callable()) {
-			impl->consume1(params[0]);
-		}else{
-			impl->consume2();
-		}
+		consumer_request_t* ctx = new consumer_request_t {
+			coroutine::current, impl, this
+		};
+		ctx->req.data = ctx;
+		// TODO 暂时屏蔽回调方式的消费
+		// （需要提供从 worker -> master 的单独通知，调用回调函数）
+		// if(params.length() > 0 && params[0].is_callable()) {
+		// 	ctx_ = ctx;
+		// 	impl->worker_.queue_work(&ctx->req, consumer_implement::consume2_wk, default_cb);
+		// }else{
+			impl->worker_.queue_work(&ctx->req, consumer_implement::consume_wk, default_cb);
+		//}
 		return flame::async();
+	}
+	void consumer::default_cb(uv_work_t* handle, int status) {
+		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
+		if(ctx->co) ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 	php::value consumer::commit(php::parameters& params) {
-		if(params.length() == 0 || !params[0].is_object()) {
-			throw php::exception("failed to commit: illegal parameter");
+		php::object& msg = params[0];
+		if(!msg.is_instance_of<message>()) {
+			throw php::exception("only instanceof flame\\db\\kafka\\message can be commited");
 		}
-		php::object& obj = params[0];
-		if(!obj.is_instance_of<message>()) {
-			throw php::exception("failed to commit: illegal parameter");
-		}
-		impl->commit(obj);
+		consumer_request_t* ctx = new consumer_request_t {
+			coroutine::current, impl, this, params[0]
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, consumer_implement::commit_wk, default_cb);
 		return flame::async();
-	}
-	php::value consumer::close(php::parameters& params) {
-		if(impl != nullptr) {
-			impl->close();
-			impl = nullptr;
-		}
-		return nullptr;
 	}
 }
 }

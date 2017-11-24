@@ -22,13 +22,22 @@ namespace kafka {
 		static int32_t partitioner_cb(
 				const rd_kafka_topic_t *rkt, const void *keydata, size_t keylen,
 				int32_t partition_cnt, void *rkt_opaque, void *msg_opaque);
-
 		static void error_cb(rd_kafka_t *rk, int err, const char *reason, void *opaque);
-		static void produce_wk(uv_work_t* handle);
-		static void produce_cb(uv_work_t* handle, int status);
 		static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque);
-
+		
+		static void produce_wk(uv_work_t* handle);
+		static void   close_wk(uv_work_t* req);
+		friend class producer;
 	};
+	
+	typedef struct producer_request_t {
+		coroutine*            co;
+		producer_implement* self;
+		php::value            rv;
+		php::string          val;
+		php::string          key;
+		uv_work_t            req;
+	} producer_request_t;
 }
 }
 }
