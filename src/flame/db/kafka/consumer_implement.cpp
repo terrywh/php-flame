@@ -64,20 +64,29 @@ namespace kafka {
 		php::fail("kafka error: (%d) %s", err, reason);
 	}
 	void consumer_implement::consume_wk(uv_work_t* handle) {
-		consumer_request_t*  ctx = reinterpret_cast<consumer_request_t*>(handle->data);
-		rd_kafka_message_t* msg;
-		do {
-			msg = rd_kafka_consumer_poll(ctx->self->kafka_, 10);
-		} while(msg == nullptr || msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF);
-		rd_kafka_poll(ctx->self->kafka_, 0);
+		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
+		rd_kafka_message_t* msg = nullptr;
 
-		if(msg->err == 0) {
-			php::object obj = php::object::create<message>();
-			message*    cpp = obj.native<message>();
-			cpp->init(msg, ctx->self->consumer_);
-			ctx->rv = std::move(obj);
-		}else{
-			ctx->rv = php::make_exception(rd_kafka_err2str(msg->err), msg->err);
+		while(true) {
+			msg = rd_kafka_consumer_poll(ctx->self->kafka_, 10);
+			if(msg) {
+				if(msg->err == 0) {
+					php::object obj = php::object::create<message>();
+					message*    cpp = obj.native<message>();
+					cpp->init(msg, ctx->self->consumer_);
+					ctx->rv = std::move(obj);
+					break;
+				}else if(msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
+					rd_kafka_message_destroy(msg);
+				}else{
+					ctx->rv = php::make_exception(rd_kafka_err2str(msg->err), msg->err);
+					rd_kafka_message_destroy(msg);
+					break;
+				}
+			}
+		}
+		while (rd_kafka_outq_len(ctx->self->kafka_) > 0) {
+			rd_kafka_poll(ctx->self->kafka_, 1000);
 		}
 	}
 	void consumer_implement::consume2_wk(uv_work_t* handle) {
