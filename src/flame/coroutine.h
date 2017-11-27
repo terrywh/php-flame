@@ -62,9 +62,9 @@ namespace flame {
 			php::value val(nullptr);
 			next(val);
 		}
-		void fail(const php::exception& ex);
+		void fail(const php::value& ex);
 		inline void fail(const std::string& ex, int code = 0) {
-			fail(php::exception(ex, code));
+			fail(php::make_exception(ex, code));
 		}
 		static void prepare();
 

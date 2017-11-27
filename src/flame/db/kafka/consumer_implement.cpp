@@ -120,6 +120,12 @@ namespace kafka {
 		
 		delete ctx->self;
 	}
+	void consumer_implement::destroy_msg_wk(uv_work_t* handle) {
+		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
+		rd_kafka_message_t* msg = (rd_kafka_message_t*)Z_PTR((zval&)ctx->msg);
+		
+		rd_kafka_message_destroy(msg);
+	}
 }
 }
 }

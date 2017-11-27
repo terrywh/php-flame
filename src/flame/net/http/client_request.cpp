@@ -9,10 +9,8 @@ namespace net {
 namespace http {
 client_request::client_request()
 : easy_(nullptr)
-, dns_(nullptr)
 , header_(nullptr) {
 	easy_ = curl_easy_init();
-	dns_  = curl_slist_append(dns_, "senderb.xingyan.pdtv.io:8360:10.20.6.75");
 }
 php::value client_request::__construct(php::parameters& params) {
 	if (params.length() >= 3) {
@@ -97,6 +95,7 @@ size_t client_request::body_read_cb(void *ptr, size_t size, size_t nmemb, void *
 	}
 	std::memcpy(ptr, self->body_, chunk);
 	self->size_ -= chunk;
+	self->body_ += chunk;
 	return chunk;
 }
 
@@ -141,7 +140,6 @@ void client_request::build_cookie() {
 	curl_easy_setopt(easy_, CURLOPT_READDATA, cookie_str.c_str());
 }
 void client_request::build_option() {
-	curl_easy_setopt(easy_, CURLOPT_RESOLVE, dns_);
 	php::string& url = prop("url");
 	if (url.is_empty()) {
 		throw php::exception("client_request build failed: empty url", -1);

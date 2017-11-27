@@ -108,7 +108,7 @@ namespace flame {
 		}
 		current = old;
 	}
-	void coroutine::fail(const php::exception& ex) {
+	void coroutine::fail(const php::value& ex) {
 		if(status_ < 0) return;
 		coroutine* old = current;
 		current = this;

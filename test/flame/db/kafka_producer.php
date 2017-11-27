@@ -13,7 +13,7 @@ flame\go(function() {
 	while(!$exit) {
 		yield $producer->produce("".$i);
 		++$i;
-		if($i % 10000) yield $producer->flush();
+		if($i % 10000 == 0) yield $producer->flush();
 	}
 	$end = microtime(true);
 	echo "produced in ", $end - $begin, "s\n";

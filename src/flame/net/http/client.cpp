@@ -55,7 +55,8 @@ void client::curl_multi_info_check(client* self) {
 	while((message = curl_multi_info_read(self->multi_, &pending))) {
 		exec_context_t* ctx;
 		curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &ctx);
-
+		curl_multi_remove_handle(ctx->self->multi_, ctx->req->easy_);
+		
 		if (message->data.result != CURLE_OK) {
 			ctx->co->fail(curl_easy_strerror(message->data.result), message->data.result);
 		} else {
@@ -64,7 +65,6 @@ void client::curl_multi_info_check(client* self) {
 			ctx->co->next(std::move(ctx->res));
 		}
 		delete ctx;
-		curl_multi_remove_handle(ctx->self->multi_, ctx->req->easy_);
 	}
 }
 

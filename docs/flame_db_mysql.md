@@ -11,6 +11,11 @@ $cli = new flame\db\mysql\client();
 $cli->connect("127.0.0.1", 3306, "username", "password", "database_name");
 ```
 
+#### `client::__construct([array $options])`
+可用选项如下：
+* `debug` - 调试开关，输出实际执行的 SQL 语句，默认 `false`；
+* `ping`  - 定时 `ping` 保持连接活跃，默认 `60000` ms；
+
 #### `client::$affected_rows`
 更新型 SQL 语句影响到的行数
 

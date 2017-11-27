@@ -95,7 +95,7 @@ namespace db {
 			redisAsyncDisconnect(self->context_);
 			self->context_ = nullptr;
 
-			self->connect_->co->fail("redis connect timeout");
+			self->connect_->co->fail("redis connect timeout", 0);
 			self->connect_ = nullptr;
 		}
 	}
@@ -202,7 +202,7 @@ namespace db {
 		}else if(reply->type == REDIS_REPLY_ERROR) {
 			ctx->co->next(convert_redis_reply(reply));
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
-			ctx->co->fail(php::make_exception("ILLEGAL illegal reply", -2));
+			ctx->co->fail("ILLEGAL illegal reply", -2);
 		} else {
 			php::array rv(reply->elements);
 			for(int i = 0; i < reply->elements; ++i) {
@@ -340,7 +340,7 @@ namespace db {
 		int error = redisAsyncCommandArgv(context_, fn, req, count, argv, argl);
 		if(error != 0) {
 			delete req;
-			flame::coroutine::current->fail("UNKONWN failed to send command (disconnected ? subscribed ?)");
+			flame::coroutine::current->fail("UNKONWN failed to send command (disconnected ? subscribed ?)", 0);
 		}
 	}
 

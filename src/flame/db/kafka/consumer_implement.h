@@ -21,7 +21,6 @@ namespace kafka {
 		consumer_implement(consumer* p, php::parameters& params);
 	private:
 		consumer*                        consumer_;
-		// 这里不需要使用 shared_ptr 无序和其他对象共享线程
 		thread_worker                    worker_;
 		rd_kafka_t*                      kafka_;
 		rd_kafka_topic_partition_list_t* topic_;
@@ -32,8 +31,10 @@ namespace kafka {
 		static void commit_wk(uv_work_t* handle);
 		static void offset_commit_cb(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *offsets, void *opaque);
 		static void close_wk(uv_work_t* handle);
+		static void destroy_msg_wk(uv_work_t* handle);
 		
 		friend class consumer;
+		friend class message;
 	};
 }
 }

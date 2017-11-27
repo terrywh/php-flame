@@ -26,7 +26,6 @@ namespace http {
 		static size_t body_read_cb(void *ptr, size_t size, size_t nmemb, void *userdata);
 
 		CURL*         easy_;
-		curl_slist*   dns_;
 		curl_slist*   header_;
 
 		char*         body_;

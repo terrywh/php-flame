@@ -11,6 +11,7 @@ namespace mysql {
 	: worker_(worker)
 	, mysql_(nullptr)
 	, debug_(false)
+	, ping_interval(60 * 1000)
 	, url_(nullptr) {
 		uv_timer_init(&worker_->loop, &ping_);
 		ping_.data = this;
@@ -55,7 +56,7 @@ namespace mysql {
 		// 连接成功
 		mysqlnd_autocommit(ctx->self->mysql_, true);
 		ctx->rv = bool(true);
-		uv_timer_start(&ctx->self->ping_, ping_cb, 600000, 0);
+		uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->ping_interval, 0);
 	}
 	void client_implement::query_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -162,7 +163,7 @@ namespace mysql {
 		if(FAIL == mysqlnd_ping(self->mysql_)) {
 			return;
 		}
-		uv_timer_start(&self->ping_, ping_cb, 600000, 0);
+		uv_timer_start(&self->ping_, ping_cb, self->ping_interval, 0);
 	}
 	void client_implement::close_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);

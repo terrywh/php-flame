@@ -14,6 +14,7 @@ namespace mysql {
 		MYSQLND*               mysql_;
 		bool                   debug_;
 		uv_timer_t              ping_;
+		int                     ping_interval;
 		std::shared_ptr<php_url> url_;
 		// sql -> connection_uri
 		static void    connect_wk(uv_work_t* req);

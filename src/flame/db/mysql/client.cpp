@@ -74,6 +74,13 @@ namespace mysql {
 			if(opts.at("debug", 5).is_true()) {
 				impl->debug_ = true;
 			}
+			php::value ping = opts.at("ping", 4);
+			if(ping.is_long()) {
+				impl->ping_interval = static_cast<int>(ping);
+				if(impl->ping_interval < 15000) {
+					impl->ping_interval = 15 * 1000;
+				}
+			} // 默认 ping_interval = 60 * 1000
 		}
 		return nullptr;
 	}

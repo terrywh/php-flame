@@ -15,6 +15,8 @@ namespace kafka {
 	private:
 		static void default_cb(uv_work_t* req, int status);
 		// static consume_cb(uv_work_t* req, int status);
+		
+		friend class message;
 	};
 }
 }
