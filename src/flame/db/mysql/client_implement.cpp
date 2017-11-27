@@ -159,9 +159,10 @@ namespace mysql {
 		client_implement* self = reinterpret_cast<client_implement*>(req->data);
 		if(self->mysql_ == nullptr) return;
 		
-		if(FAIL == mysqlnd_ping(self->mysql_)) {
-			return;
-		}
+		if(0 != mysqlnd_query(self->mysql_, "SELECT 1", 8)) return;
+		MYSQLND_RES* rs = mysqlnd_store_result(self->mysql_);
+		if(rs == nullptr) return;
+		mysqlnd_free_result(rs, false);
 		uv_timer_start(&self->ping_, ping_cb, 600000, 0);
 	}
 	void client_implement::close_wk(uv_work_t* req) {
