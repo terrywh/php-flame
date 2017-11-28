@@ -126,7 +126,7 @@ namespace net {
 		if(status == UV_ECANCELED) {
 			ctx->co->next();
 		}else if(status < 0) {
-			ctx->co->fail(uv_strerror(status));
+			ctx->co->fail(uv_strerror(status), status);
 			ctx->us->close(true);
 		}else{
 			ctx->co->next();

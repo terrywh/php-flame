@@ -61,7 +61,7 @@ namespace kafka {
 	}
 	void consumer_implement::error_cb(rd_kafka_t *rk, int err, const char *reason, void *opaque) {
 		consumer_implement* self = reinterpret_cast<consumer_implement*>(opaque);
-		php::fail("kafka error: (%d) %s", err, reason);
+		php::info("kafka error: (%d) %s", err, reason);
 	}
 	void consumer_implement::consume_wk(uv_work_t* handle) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);

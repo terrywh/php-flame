@@ -81,7 +81,7 @@ namespace kafka {
 	}
 	void producer_implement::error_cb(rd_kafka_t *rk, int err, const char *reason, void *opaque) {
 		producer_implement* self = reinterpret_cast<producer_implement*>(opaque);
-		php::fail("kafka error: (%d) %s", err, reason);
+		php::info("kafka error: (%d) %s", err, reason);
 	}
 	void producer_implement::produce_wk(uv_work_t* handle) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(handle->data);

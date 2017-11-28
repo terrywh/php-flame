@@ -172,7 +172,7 @@ namespace net {
 				ctx->co->next();
 			}else if(status < 0) {
 				ctx->ch->close(false);
-				ctx->co->fail(uv_strerror(status));
+				ctx->co->fail(uv_strerror(status), status);
 			}else{
 				ctx->co->next();
 			}
