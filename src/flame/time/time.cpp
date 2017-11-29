@@ -48,7 +48,7 @@ namespace time {
 		ext.add<flame::time::now>("flame\\time\\now");
 		php::class_entry<ticker> class_ticker("flame\\time\\ticker");
 		class_ticker.add(php::property_entry("interval", 1000));
-		class_ticker.add(php::property_entry("repeat", php::BOOL_YES));
+		class_ticker.add(php::property_entry("repeat", (zend_bool)true));
 		class_ticker.add<&ticker::__construct>("__construct");
 		class_ticker.add<&ticker::__destruct>("__destruct");
 		class_ticker.add<&ticker::start>("start");
