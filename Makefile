@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.1.1dev
+EXT_VER=1.1.1
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -90,7 +90,7 @@ install: ${EXTENSION}
 	cd ./deps/mongo-c-driver; chmod +x ./autogen.sh; chmod +x ./src/libbson/autogen.sh;
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh;
-	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --enable-static=yes --enable-shared=no
+	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --disable-shm-counters --enable-static=yes --enable-shared=no
 	make -C ./deps/mongo-c-driver -j2
 	make -C ./deps/mongo-c-driver install
 	cd ./deps/mongo-c-driver; find -type l | xargs rm

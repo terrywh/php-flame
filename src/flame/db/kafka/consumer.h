@@ -13,6 +13,7 @@ namespace kafka {
 		php::value __destruct(php::parameters& params);
 		consumer_implement* impl;
 	private:
+		static void consume_cb(uv_work_t* req, int status);
 		static void default_cb(uv_work_t* req, int status);
 		// static consume_cb(uv_work_t* req, int status);
 		

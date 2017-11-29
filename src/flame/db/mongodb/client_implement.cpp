@@ -1,7 +1,6 @@
 #include "../../coroutine.h"
 #include "../../thread_worker.h"
 #include "client_implement.h"
-#include "collection.h"
 
 namespace flame {
 namespace db {
@@ -29,7 +28,7 @@ namespace mongodb {
 			mongoc_read_prefs_t* prefs = mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED);
 			mongoc_client_set_read_prefs(ctx->self->cli_, prefs);
 			mongoc_read_prefs_destroy(prefs);
-			ctx->rv = (bool)true;
+			ctx->rv = php::BOOL_NO;
 		}else{
 			ctx->rv = php::make_exception("failed to connect to mongodb server");
 		}
@@ -45,11 +44,12 @@ namespace mongodb {
 			mongoc_uri_get_database(ctx->self->uri_),
 			ctx->name.c_str());
 		
-		php::object          obj = php::object::create<mongodb::collection>();
-		mongodb::collection* cpp = obj.native<mongodb::collection>();
-		
-		cpp->init(ctx->self->worker_, ctx->self->client_, col);
-		ctx->rv = std::move(obj);
+		// collection 创建过程移动到主线程进行
+		ctx->rv.ptr(col); 
+		// php::object          obj = php::object::create<mongodb::collection>();
+		// mongodb::collection* cpp = obj.native<mongodb::collection>();
+		// cpp->init(ctx->self->worker_, ctx->self->client_, col);
+		// ctx->rv = std::move(obj);
 	}
 	void client_implement::close_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);

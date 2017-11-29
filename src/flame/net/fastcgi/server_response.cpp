@@ -26,7 +26,7 @@ php::value server_response::write_header(php::parameters& params) {
 		prop("status") = static_cast<int>(params[0]);
 	}
 	buffer_head();
-	prop("header_sent") = bool(true);
+	prop("header_sent") = php::BOOL_YES;
 	buffer_write();
 	return flame::async();
 }
@@ -76,7 +76,7 @@ php::value server_response::write(php::parameters& params) {
 	}
 	if(!prop("header_sent").is_true()) {
 		buffer_head();
-		prop("header_sent") = bool(true);
+		prop("header_sent") = php::BOOL_YES;
 	}
 	// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
 	php::string& data = params[0].to_string();
@@ -110,10 +110,10 @@ php::value server_response::end(php::parameters& params) {
 		php::warn("response already ended");
 		return nullptr;
 	}
-	prop("ended") = bool(true);
+	prop("ended") = php::BOOL_YES;
 	if(!prop("header_sent").is_true()) {
 		buffer_head();
-		prop("header_sent") = bool(true);
+		prop("header_sent") = php::BOOL_YES;
 	}
 	if(params.length() >= 1) {
 		// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送

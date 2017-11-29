@@ -12,7 +12,7 @@ namespace http {
 			}
 			php::value&  ptr = params[0];
 			int         type = params[1];
-			uv_stream_t* svr = (uv_stream_t*)Z_PTR((zval&)ptr);
+			uv_stream_t* svr = ptr.ptr<uv_stream_t>();
 
 			connection_t* pobj = new connection_t(this);
 			if(type == UV_NAMED_PIPE) {

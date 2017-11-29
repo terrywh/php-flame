@@ -55,7 +55,7 @@ namespace flame {
 		}
 		void next(php::value& rv);
 		inline void next(php::value&& rv) {
-			php::value val(rv);
+			php::value val(std::move(rv));
 			next(val);
 		}
 		void next() {
@@ -63,47 +63,13 @@ namespace flame {
 			next(val);
 		}
 		void fail(const php::value& ex);
-		inline void fail(const std::string& ex, int code = 0) {
+		inline void fail(const std::string& ex, int code) {
 			fail(php::make_exception(ex, code));
 		}
 		static void prepare();
 
 		friend php::value async();
 		friend php::value async(void* context);
-	};
-
-	template <typename uv_type_t, typename my_type_t>
-	class coroutine_context {
-	protected:
-		coroutine*  co_;
-		my_type_t*  ct_;
-		// uv_type_t 大小不固定，为支持强制转换，一定要在末尾
-		uv_type_t   uv_;
-	public:
-		coroutine_context(coroutine* c, my_type_t* m)
-		: co_(c)
-		, ct_(m) { // 保存对象的引用，防止临时对象在异步过程丢失
-			uv_.data = this;
-		}
-		inline uv_type_t* watcher() {
-			return &uv_;
-		}
-		inline coroutine* routine() {
-			return co_;
-		}
-		inline my_type_t* context() {
-			return ct_;
-		}
-	};
-	template <typename uv_type_t, typename my_type_t>
-	class coroutine_ref: public coroutine_context<uv_type_t, my_type_t> {
-	protected:
-		php::value  rf_;
-	public:
-		coroutine_ref(coroutine* c, my_type_t* m)
-		: rf_( *(php::value*)m ) // 保存对象的引用，防止临时对象在异步过程丢失
-		, coroutine_context<uv_type_t, my_type_t>(c, (my_type_t*)&rf_) {
-		}
 	};
 	php::value async();
 	php::value async(void* context);

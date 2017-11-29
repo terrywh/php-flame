@@ -17,12 +17,15 @@ namespace mongodb {
 		static void to_array_wk(uv_work_t* req);
 		static void    close_wk(uv_work_t* req);
 		friend class cursor;
+		friend class collection;
 	};
 	
 	typedef struct cursor_request_t {
 		coroutine*          co;
 		cursor_implement* self;
-		php::value          rv; // 引用 + 返回
+		php::value         ref; // 引用
+		int                idx;
+		php::array          rv; // 返回
 		uv_work_t          req;
 	} cursor_request_t;
 }

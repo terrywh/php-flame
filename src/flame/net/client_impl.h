@@ -70,6 +70,7 @@ namespace net {
 		bool close(bool stop_read) {
 			if(closing_) return false;
 			closing_ = true;
+			self_->impl = nullptr; // 标记关闭
 			uv_close((uv_handle_t*)&stream, close_cb);
 			if(stop_read && co_ != nullptr) { // 读取协程恢复
 				co_->next();

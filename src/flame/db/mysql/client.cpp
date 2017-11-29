@@ -3,6 +3,7 @@
 #include "mysql.h"
 #include "client_implement.h"
 #include "client.h"
+#include "result_set.h"
 
 #define MYSQL_PING_INTERVAL 10000
 namespace flame {
@@ -121,7 +122,19 @@ namespace mysql {
 			coroutine::current, impl, this, sql
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::query_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, client_implement::query_wk, queue_cb);
+	}
+	void client::queue_cb(uv_work_t* req, int status) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(ctx->rv.is_pointer()) {
+			MYSQLND_RES* rs = ctx->rv.ptr<MYSQLND_RES>();
+			php::object obj = php::object::create<result_set>();
+			result_set* cpp = obj.native<result_set>();
+			ctx->rv = std::move(obj);
+			cpp->init(ctx->self->worker_, ctx->self->client_, rs);
+		}
+		ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 	php::value client::query(php::parameters& params) {
 		if(params.length() < 1 || !params[0].is_string()) {

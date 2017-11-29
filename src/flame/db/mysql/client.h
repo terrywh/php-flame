@@ -26,6 +26,7 @@ namespace mysql {
 		client_implement* impl;
 	private:
 		void query_(const php::string& sql);
+		static void queue_cb(uv_work_t* req, int status);
 		static void default_cb(uv_work_t* req, int status);
 	};
 }

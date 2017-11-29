@@ -35,9 +35,7 @@ namespace http {
 	void client_response::body_cb(char* ptr, size_t size) {
 		std::memcpy(body_.put(size), ptr, size);
 	}
-	void client_response::done_cb(CURLMsg* msg) {
-		long status;
-		curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &status);
+	void client_response::done_cb(long status) {
 		prop("status", 6) = status;
 		prop("header", 6) = std::move(header_);
 		prop("cookie", 6) = std::move(cookie_);

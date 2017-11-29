@@ -13,6 +13,7 @@ namespace mongodb {
 		
 		client_implement* impl;
 	private:
+		static void collection_cb(uv_work_t* req, int status);
 		static void default_cb(uv_work_t* req, int status);
 	};
 }

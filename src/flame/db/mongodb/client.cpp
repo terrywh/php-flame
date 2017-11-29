@@ -2,6 +2,7 @@
 #include "../../thread_worker.h"
 #include "client_implement.h"
 #include "client.h"
+#include "collection.h"
 
 namespace flame {
 namespace db {
@@ -37,12 +38,25 @@ namespace mongodb {
 			default_cb);
 		return flame::async();
 	}
+	void client::collection_cb(uv_work_t* req, int status) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(ctx->rv.is_pointer()) {
+			mongoc_collection_t* col = ctx->rv.ptr<mongoc_collection_t>();
+			php::object          obj = php::object::create<mongodb::collection>();
+			mongodb::collection* cpp = obj.native<mongodb::collection>();
+			// ctx->self ===> impl
+			cpp->init(ctx->self->worker_, ctx->self->client_, col);
+			ctx->rv = std::move(obj);
+		}
+		ctx->co->next(ctx->rv);
+		delete ctx;
+	}
 	php::value client::collection(php::parameters& params) {
 		client_request_t* ctx = new client_request_t {
 			coroutine::current, impl, this, params[0].to_string()
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::collection_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, client_implement::collection_wk, collection_cb);
 		return flame::async();
 	}
 }

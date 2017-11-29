@@ -3,6 +3,7 @@
 #include "mysql.h"
 #include "result_implement.h"
 #include "result_set.h"
+#include "client.h"
 
 namespace flame {
 namespace db {

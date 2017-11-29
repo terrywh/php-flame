@@ -10,13 +10,16 @@ namespace net {
 		~unix_socket();
 		php::value connect(php::parameters& params);
 		inline php::value read(php::parameters& params) {
-			return impl->read(params);
+			if(impl) return impl->read(params);
+			throw php::exception("socket already closed or not connected", 0);
 		}
 		inline php::value write(php::parameters& params) {
-			return impl->write(params);
+			if(impl) return impl->write(params);
+			throw php::exception("socket already closed or not connected", 0);
 		}
 		inline php::value close(php::parameters& params) {
-			return impl->close(params);
+			if(impl) return impl->close(params);
+			throw php::exception("socket already closed or not connected", 0);
 		}
 		// property remote_address ""
 		impl_t* impl; // 由于异步关闭需要等待 close_cb 才能进行回收

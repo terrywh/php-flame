@@ -71,10 +71,12 @@ namespace kafka {
 			msg = rd_kafka_consumer_poll(ctx->self->kafka_, 10);
 			if(msg) {
 				if(msg->err == 0) {
-					php::object obj = php::object::create<message>();
-					message*    cpp = obj.native<message>();
-					cpp->init(msg, ctx->self->consumer_);
-					ctx->rv = std::move(obj);
+					// 创建对象的过程必须在主线程进行
+					ctx->rv.ptr(msg);
+					// php::object obj = php::object::create<message>();
+					// message*    cpp = obj.native<message>();
+					// cpp->init(msg, ctx->self->consumer_);
+					// ctx->rv = std::move(obj);
 					break;
 				}else if(msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
 					rd_kafka_message_destroy(msg);
@@ -104,7 +106,7 @@ namespace kafka {
 		// TODO 如何确认得到的 offset commit 已包含了上述 message ？
 		consumer_implement* self = reinterpret_cast<consumer_implement*>(opaque);
 		if(self->ctx_) {
-			self->ctx_->rv = bool(true);
+			self->ctx_->rv = php::BOOL_YES;
 			self->ctx_ = nullptr;
 		}
 	}
@@ -122,7 +124,7 @@ namespace kafka {
 	}
 	void consumer_implement::destroy_msg_wk(uv_work_t* handle) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
-		rd_kafka_message_t* msg = (rd_kafka_message_t*)Z_PTR((zval&)ctx->msg);
+		rd_kafka_message_t* msg = ctx->msg.ptr<rd_kafka_message_t>();
 		
 		rd_kafka_message_destroy(msg);
 	}

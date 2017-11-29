@@ -15,7 +15,7 @@ namespace time {
 		// 生命周期需与 PHP 对象不符，故使用动态分配
 		uv_timer_t*   tm_;
 		// 防止异步过程对象丢失
-		php::value refer_;
+		php::value   ref_;
 
 		static void tick_cb(uv_timer_t* handle);
 	};

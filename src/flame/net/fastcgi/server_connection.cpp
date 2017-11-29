@@ -194,7 +194,7 @@ namespace fastcgi {
 	void server_connection::close() {
 		if(svr_ == nullptr) return;
 		svr_ = nullptr;
-		res_.prop("ended") = bool(true);
+		res_.prop("ended") = php::BOOL_YES;
 		uv_close(
 			reinterpret_cast<uv_handle_t*>(&socket_),
 			close_cb);

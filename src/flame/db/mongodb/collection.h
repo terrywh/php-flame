@@ -23,7 +23,9 @@ namespace mongodb {
 		collection_implement* impl;
 	private:
 		php::object ref_;
-		// php::value ref_;
+		static void insert_many_cb(uv_work_t* w, int status);
+		static void find_one_cb(uv_work_t* w, int status);
+		static void find_many_cb(uv_work_t* w, int status);
 		static void default_cb(uv_work_t* w, int status);
 	};
 }

@@ -28,7 +28,7 @@ namespace kafka {
 		consumer_request_t* ctx = new consumer_request_t {
 			nullptr, consumer_->impl, ref_
 		};
-		ZVAL_PTR((zval*)&ctx->msg, msg_);
+		ctx->msg.ptr(msg_);
 		ctx->req.data = ctx;
 		consumer_->impl->worker_.queue_work(&ctx->req,
 			consumer_implement::destroy_msg_wk, consumer::default_cb);

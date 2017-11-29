@@ -85,7 +85,7 @@ namespace kafka {
 	}
 	void producer_implement::produce_wk(uv_work_t* handle) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(handle->data);
-
+		
 		if(ctx->key.is_string()) {
 			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, 0,
 				ctx->val.data(), ctx->val.length(), ctx->key.c_str(), ctx->key.length(), ctx);
@@ -102,7 +102,7 @@ namespace kafka {
 	// void producer_implement::dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque) {
 	// 	producer_request_t* ctx = reinterpret_cast<producer_request_t*>(rkmessage->_private);
 	// 	// TODO 错误、失败处理
-	// 	// ctx->rv = bool(true);
+	// 	ctx->rv = php::BOOL_YES;
 	// }
 	void producer_implement::flush_wk(uv_work_t* req) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);

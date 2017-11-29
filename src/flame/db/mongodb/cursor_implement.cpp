@@ -17,24 +17,25 @@ namespace mongodb {
 		cursor_request_t* ctx = reinterpret_cast<cursor_request_t*>(req->data);
 		const bson_t*     doc;
 		if(mongoc_cursor_next(ctx->self->css_, &doc)) {
-			php::array row;
-			fill_with(row, doc);
-			ctx->rv = std::move(row);
-		}else{
-			ctx->rv = (bool)false;
+			// 由于数据行中需要构建 object_id / date_time 对象，须在主线程进行
+			// php::array row;
+			// fill_with(row, doc);
+			ctx->idx = 0;
+			ctx->ref.ptr((void*)doc);
 		}
 	}
 	void cursor_implement::to_array_wk(uv_work_t* req) {
 		cursor_request_t* ctx = reinterpret_cast<cursor_request_t*>(req->data);
-		php::array        rv(0);
 		const bson_t*     doc;
-		int               idx = -1;
-		while(mongoc_cursor_next(ctx->self->css_, &doc)) {
-			php::array row(0);
-			fill_with(row, doc);
-			rv[++idx] = std::move(row);
+		if(mongoc_cursor_next(ctx->self->css_, &doc)) {
+			// 由于数据行中需要构建 object_id / date_time 对象，须在主线程进行
+			// php::array row;
+			// fill_with(row, doc);
+			++ctx->idx;
+			ctx->ref.ptr((void*)doc);
+		}else{
+			ctx->idx = -1;
 		}
-		ctx->rv = std::move(rv);
 	}
 	void cursor_implement::close_wk(uv_work_t* req) {
 		cursor_request_t* ctx = reinterpret_cast<cursor_request_t*>(req->data);

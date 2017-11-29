@@ -3,9 +3,6 @@
 #include "collection_implement.h"
 #include "collection.h"
 #include "mongodb.h"
-#include "bulk_result.h"
-#include "cursor.h"
-
 
 namespace flame {
 namespace db {
@@ -46,7 +43,7 @@ namespace mongodb {
 			&filter, nullptr, &error);
 		bson_destroy(&filter);
 		if(r) {
-			ctx->rv = bool(true);
+			ctx->rv = php::BOOL_YES;
 		}else{
 			ctx->rv = php::make_exception(error.message, error.code);
 		}
@@ -57,7 +54,7 @@ namespace mongodb {
 		mongoc_bulk_operation_t* bulk = mongoc_collection_create_bulk_operation(
 			ctx->self->col_, ctx->flags, nullptr);
 			
-		bson_t reply,* doc;
+		bson_t* reply,* doc;
 		php::array& docs = ctx->doc1;
 		for(auto i=docs.begin(); i!= docs.end(); ++i) {
 			php::array& item = i->second;
@@ -71,14 +68,9 @@ namespace mongodb {
 		}
 		// 执行批量操作
 		bson_error_t error;
-		uint32_t r = mongoc_bulk_operation_execute(bulk, &reply, &error);
-		if(r == 0) {
-			php::warn("insert_many failed: (%d) %s", error.code, error.message);
-			ctx->rv = bulk_result::create_from(false, &reply);
-		}else{
-			ctx->rv = bulk_result::create_from(true, &reply);
-		}
-		bson_destroy(&reply);
+		reply = bson_new();
+		ctx->flags = mongoc_bulk_operation_execute(bulk, reply, &error);
+		ctx->rv.ptr(reply); // 需要清理
 		mongoc_bulk_operation_destroy(bulk);
 	}
 	void collection_implement::remove_one_wk(uv_work_t* w) {
@@ -139,28 +131,7 @@ namespace mongodb {
 			ctx->rv = php::make_exception(error.message, error.code);
 		}
 	}
-	void collection_implement::find_one_wk(uv_work_t* w) {
-		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter, option;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
-		bson_init(&option);
-		fill_with(&option, ctx->doc2);
-		
-		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(
-			ctx->self->col_, &filter, &option, nullptr);
-		bson_destroy(&filter);
-		bson_destroy(&option);
-		
-		const bson_t* doc;
-		ctx->rv = php::array(0);
-		while (mongoc_cursor_next(cs, &doc)) {
-			ctx->rv = php::array(0);
-			fill_with(ctx->rv, doc); // 这里的 doc 不须释放
-		}
-		// 释放实际在 cursor 内部
-		mongoc_cursor_destroy(cs);
-	}
+
 	void collection_implement::find_many_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
 		bson_t filter, option;
@@ -174,10 +145,38 @@ namespace mongodb {
 		bson_destroy(&filter);
 		bson_destroy(&option);
 		
-		php::object obj = php::object::create<cursor>();
-		cursor*     cpp = obj.native<cursor>();
-		cpp->init(ctx->self->worker_, ctx->self->cpp_, cs);
-		ctx->rv = std::move(obj);
+		// cursor 对象创建需要在主线程进行
+		ctx->doc1.ptr(cs);
+		// php::object obj = php::object::create<cursor>();
+		// cursor*     cpp = obj.native<cursor>();
+		// cpp->init(ctx->self->worker_, ctx->self->cpp_, cs);
+		// ctx->rv = std::move(obj);
+	}
+	void collection_implement::find_one_wk(uv_work_t* w) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		bson_t filter, option;
+		bson_init(&filter);
+		fill_with(&filter, ctx->doc1);
+		bson_init(&option);
+		fill_with(&option, ctx->doc2);
+		
+		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(
+			ctx->self->col_, &filter, &option, nullptr);
+		bson_destroy(&filter);
+		bson_destroy(&option);
+		
+		const bson_t *doc;
+		if(mongoc_cursor_next(cs, &doc)) {
+			ctx->doc1.ptr((void*)doc);
+			ctx->doc2.ptr(cs);
+		}
+		// 需要传递 find_one_af 进行销毁
+		// mongoc_cursor_destroy(cs);
+	}
+	void collection_implement::find_one_af(uv_work_t* w) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		mongoc_cursor_t* cs = ctx->doc2.ptr<mongoc_cursor_t>();
+		mongoc_cursor_destroy(cs);
 	}
 	void collection_implement::close_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);

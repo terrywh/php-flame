@@ -27,11 +27,24 @@ namespace kafka {
 		// （需要提供从 worker -> master 的单独通知，调用回调函数）
 		// if(params.length() > 0 && params[0].is_callable()) {
 		// 	ctx_ = ctx;
-		// 	impl->worker_.queue_work(&ctx->req, consumer_implement::consume2_wk, default_cb);
+		// 	impl->worker_.queue_work(&ctx->req, consumer_implement::consume2_wk, consume_cb);
 		// }else{
-			impl->worker_.queue_work(&ctx->req, consumer_implement::consume_wk, default_cb);
+			impl->worker_.queue_work(&ctx->req, consumer_implement::consume_wk, consume_cb);
 		//}
 		return flame::async();
+	}
+	void consumer::consume_cb(uv_work_t* handle, int status) {
+		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
+		if(ctx->rv.is_pointer()) {
+			rd_kafka_message_t* msg = ctx->rv.ptr<rd_kafka_message_t>();
+			
+			php::object obj = php::object::create<message>();
+			message*    cpp = obj.native<message>();
+			cpp->init(msg, ctx->self->consumer_);
+			ctx->rv = std::move(obj);
+		}
+		ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 	void consumer::default_cb(uv_work_t* handle, int status) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);

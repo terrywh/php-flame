@@ -4,8 +4,10 @@
 #include "collection_implement.h"
 #include "collection.h"
 #include "mongodb.h"
-#include "bulk_result.h"
+#include "cursor_implement.h"
 #include "cursor.h"
+#include "bulk_result.h"
+
 
 namespace flame {
 namespace db {
@@ -69,12 +71,22 @@ namespace mongodb {
 		}else{
 			ctx->flags = false;
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::insert_many_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::insert_many_wk, insert_many_cb);
 		return flame::async();
+	}
+	void collection::insert_many_cb(uv_work_t* w, int status) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		if(ctx->rv.is_pointer()) {
+			bson_t* reply = ctx->rv.ptr<bson_t>();
+			ctx->rv = bulk_result::create_from(ctx->flags == 0, reply);
+			bson_destroy(reply);
+		}
+		ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 	php::value collection::remove_one(php::parameters& params) {
 		php::array& filter = params[0];
-		if(!filter.is_array() || !filter.is_a_map()) {
+		if(!filter.is_array()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
@@ -86,7 +98,7 @@ namespace mongodb {
 	}
 	php::value collection::remove_many(php::parameters& params) {
 		php::array& filter = params[0];
-		if(!filter.is_array() || !filter.is_a_map()) {
+		if(!filter.is_array()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
@@ -145,8 +157,22 @@ namespace mongodb {
 			coroutine::current, impl, this, filter, option
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::find_one_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::find_one_wk, find_one_cb);
 		return flame::async();
+	}
+	void collection::find_one_cb(uv_work_t* w, int status) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		if(ctx->doc1.is_pointer()) {
+			const bson_t* doc = ctx->doc1.ptr<const bson_t>();
+			php::array rv(0);
+			fill_with(rv, doc);
+			ctx->rv = std::move(rv);
+			// 销毁 doc2 中保存的 cursor
+			ctx->self->worker_->queue_work(&ctx->req, collection_implement::find_one_af, default_cb);
+		}else{
+			ctx->co->next();
+			delete ctx;
+		}
 	}
 	php::value collection::find_many(php::parameters& params) {
 		php::array& filter = params[0], option(0);
@@ -169,8 +195,20 @@ namespace mongodb {
 			coroutine::current, impl, this, filter, option
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::find_many_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::find_many_wk, find_many_cb);
 		return flame::async();
+	}
+	void collection::find_many_cb(uv_work_t* w, int status) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		if(ctx->doc1.is_pointer()) {
+			mongoc_cursor_t* cs = ctx->doc1.ptr<mongoc_cursor_t>();
+			php::object obj = php::object::create<cursor>();
+			cursor*     cpp = obj.native<cursor>();
+			cpp->init(ctx->self->worker_, ctx->self->cpp_, cs);
+			ctx->rv = std::move(obj);
+		}
+		ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 }
 }

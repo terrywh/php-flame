@@ -2,7 +2,6 @@
 #include "../../coroutine.h"
 #include "../../thread_worker.h"
 #include "client_implement.h"
-#include "result_set.h"
 
 namespace flame {
 namespace db {
@@ -55,7 +54,7 @@ namespace mysql {
 		}
 		// 连接成功
 		mysqlnd_autocommit(ctx->self->mysql_, true);
-		ctx->rv = bool(true);
+		ctx->rv = php::BOOL_YES;
 		uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->ping_interval, 0);
 	}
 	void client_implement::query_wk(uv_work_t* req) {
@@ -65,7 +64,7 @@ namespace mysql {
 			return;
 		}
 		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
-			std::printf("[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
+			std::fprintf(stderr, "[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
 		}
 		if(0 != mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length())) {
 			// 查询失败
@@ -82,7 +81,7 @@ namespace mysql {
 		if(rs == nullptr && mysqlnd_field_count(ctx->self->mysql_) == 0) {
 			reinterpret_cast<php::object&>(ctx->rv).prop("affected_rows") = mysqlnd_affected_rows(ctx->self->mysql_);
 			reinterpret_cast<php::object&>(ctx->rv).prop("insert_id") = mysqlnd_insert_id(ctx->self->mysql_);
-			ctx->rv = (bool)true;
+			ctx->rv = php::BOOL_NO;
 			return;
 		}
 		// SELECT 查询型 SQL 执行失败
@@ -90,11 +89,12 @@ namespace mysql {
 			ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
 			return;
 		}
-		// 生成结果集对象
-		php::object obj = php::object::create<result_set>();
-		result_set* cpp = obj.native<result_set>();
-		ctx->rv = std::move(obj);
-		cpp->init(ctx->self->worker_, ctx->self->client_, rs);
+		ctx->rv.ptr(rs);
+		// 生成结果集对象须在主线程进行
+		// php::object obj = php::object::create<result_set>();
+		// result_set* cpp = obj.native<result_set>();
+		// ctx->rv = std::move(obj);
+		// cpp->init(ctx->self->worker_, ctx->self->client_, rs);
 	}
 	void client_implement::one_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -103,7 +103,7 @@ namespace mysql {
 			return;
 		}
 		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
-			std::printf("[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
+			std::fprintf(stderr, "[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
 		}
 		if(FAIL == mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length())) {
 			// 查询失败
@@ -132,7 +132,7 @@ namespace mysql {
 			return;
 		}
 		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
-			std::printf("[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
+			std::fprintf(stderr, "[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
 		}
 		if(0 != mysqlnd_query(ctx->self->mysql_, ctx->sql.c_str(), ctx->sql.length())) {
 			// 查询失败
@@ -160,9 +160,10 @@ namespace mysql {
 		client_implement* self = reinterpret_cast<client_implement*>(req->data);
 		if(self->mysql_ == nullptr) return;
 		
-		if(FAIL == mysqlnd_ping(self->mysql_)) {
-			return;
-		}
+		if(0 != mysqlnd_query(self->mysql_, "SELECT 1", 8)) return;
+		MYSQLND_RES* rs = mysqlnd_store_result(self->mysql_);
+		if(rs == nullptr) return;
+		mysqlnd_free_result(rs, false);
 		uv_timer_start(&self->ping_, ping_cb, self->ping_interval, 0);
 	}
 	void client_implement::close_wk(uv_work_t* req) {

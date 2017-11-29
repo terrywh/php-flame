@@ -10,7 +10,7 @@ namespace mongodb {
 		}
 		static php::object create_from(bool success, bson_t* reply);
 	private:
-		bool success_;
+		bool    success_;
 	};
 }
 }

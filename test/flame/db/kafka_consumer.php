@@ -11,7 +11,10 @@ flame\go(function() {
 	// $count = 0;
 	while(true) {
 		$msg = yield $consumer->consume();
-		echo $msg->time, " -> ", $msg, "\n";
+		flame\go(function() use($msg) {
+			echo $msg->time, " => ", $msg, "\n";
+			yield flame\time\sleep(1);
+		});
 	}
 });
 flame\run();

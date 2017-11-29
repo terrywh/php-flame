@@ -74,10 +74,8 @@ namespace net {
 			}
 
 			if(self->cb_type == 2) { // 允许使用内部对象接管客户端对象
-				zval s;
-				ZVAL_PTR(&s, handle); // 将服务器对象指针放入，用于 accept 连接
-				error = reinterpret_cast<php::callable&>(self->cb_)(
-					reinterpret_cast<php::value&>(s), handle->type);
+				php::value svr(handle);  // 将服务器对象指针放入，用于 accept 连接
+				error = reinterpret_cast<php::callable&>(self->cb_)(svr, handle->type);
 				if(error < 0) {
 					self->ref_ = nullptr; // 重置引用须前置，防止继续执行时的副作用3
 					self->close(false);

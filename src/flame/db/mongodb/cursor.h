@@ -16,8 +16,10 @@ namespace mongodb {
 		
 		cursor_implement* impl;
 	private:
-		php::value       ref_;
-		static void default_cb(uv_work_t* req, int status);
+		php::object       ref_;
+		static void close_cb(uv_work_t* req, int status);
+		static void next_cb(uv_work_t* req, int status);
+		static void to_array_cb(uv_work_t* req, int status);
 	};
 }
 }

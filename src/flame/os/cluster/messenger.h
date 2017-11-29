@@ -5,18 +5,18 @@ namespace os {
 namespace cluster {
 	class messenger {
 	public:
-		messenger();
-		~messenger();
+		messenger(int fd = 0);
 		void start();
+		void close();
 		php::callable cb_string;
 		php::callable cb_socket;
 		int           cb_type;
-		void send(php::parameters& params, uv_stream_t* stream = nullptr);
+		void send(php::parameters& params);
+		uv_pipe_t   pipe_;
 	private:
-		// 生命周期需与 PHP 对象不符，故使用动态分配
-		uv_pipe_t*  pipe_;
 		int         stat_;
 		short       size_;
+		char        buffer_[2048];
 		php::buffer data_;
 		static void alloc_cb(uv_handle_t* handle, size_t suggest, uv_buf_t* buf);
 		static void read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);

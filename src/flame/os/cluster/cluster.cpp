@@ -48,6 +48,13 @@ namespace cluster {
 		return flame::async();
 	}
 	void init(php::extension_entry& ext) {
+		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
+			if(default_msg) {
+				delete default_msg; // 这里没有使用 ->close()
+				// 因为 flame::loop 已经停止
+			}
+			return true;
+		});
 		ext.add<handle>("flame\\os\\cluster\\handle");
 		ext.add<ondata>("flame\\os\\cluster\\ondata");
 		ext.add<send>("flame\\os\\cluster\\send");

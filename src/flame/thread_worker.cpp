@@ -2,6 +2,13 @@
 #include "coroutine.h"
 
 namespace flame {
+	thread_guard::thread_guard(uv_mutex_t* m)
+	:mutex_(m) {
+		uv_mutex_lock(mutex_);
+	}
+	thread_guard::~thread_guard() {
+		uv_mutex_unlock(mutex_);
+	}
 	thread_worker::thread_worker()
 	: exit_(false) {
 		uv_async_init(flame::loop, &async_master, master_cb);
@@ -18,6 +25,9 @@ namespace flame {
 	}
 	thread_worker::~thread_worker() {
 		uv_stop(&loop);
+	}
+	uv_mutex_t* thread_worker::worker_lock() {
+		return &mutex_worker;
 	}
 	void thread_worker::join() {
 		if(!exit_) {

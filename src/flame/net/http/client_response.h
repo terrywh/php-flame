@@ -19,7 +19,7 @@ namespace http {
 	private:
 		void head_cb(char* header, size_t size);
 		void body_cb(char* body, size_t size);
-		void done_cb(CURLMsg* msg);
+		void done_cb(long status);
 		php::buffer        body_;
 		const char*        key_data; // 缓存当前 key 指针
 		size_t             key_size;

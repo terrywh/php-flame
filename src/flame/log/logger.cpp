@@ -7,6 +7,7 @@ namespace flame {
 namespace log {
 	logger::logger()
 	: pipe_(nullptr)
+	, path_(0)
 	, file_(0) {
 
 	}

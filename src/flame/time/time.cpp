@@ -1,20 +1,24 @@
 #include "time.h"
 #include "../coroutine.h"
 #include "ticker.h"
+#include "../flame.h"
 
 namespace flame {
 namespace time {
 	static void sleep_timer_cb(uv_timer_t* handle) {
-		auto ctx = static_cast<coroutine_context<uv_timer_t, void>*>(handle->data);
-		ctx->routine()->next();
-		delete ctx;
+		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
+		if(co) co->next();
+		uv_close((uv_handle_t*)handle, flame::free_handle_cb);
+		// delete handle;
 	}
 	static php::value sleep(php::parameters& params) {
-		auto ctx = new coroutine_context<uv_timer_t, void>(coroutine::current, nullptr);
+		// auto ctx = new coroutine_context<uv_timer_t, void>(coroutine::current, nullptr);
 		int64_t ms = params[0];
-		uv_timer_init(flame::loop, ctx->watcher());
+		uv_timer_t* req = (uv_timer_t*)malloc(sizeof(uv_timer_t));
+		req->data = coroutine::current;
+		uv_timer_init(flame::loop, req);
 		// default_timer_cb -> 继续协程 删除 context 对象
-		uv_timer_start(ctx->watcher(), sleep_timer_cb, ms, 0);
+		uv_timer_start(req, sleep_timer_cb, ms, 0);
 		// 标记异步任务的特殊返回值
 		return flame::async();
 	}
@@ -44,7 +48,7 @@ namespace time {
 		ext.add<flame::time::now>("flame\\time\\now");
 		php::class_entry<ticker> class_ticker("flame\\time\\ticker");
 		class_ticker.add(php::property_entry("interval", 1000));
-		class_ticker.add(php::property_entry("repeat", bool(true)));
+		class_ticker.add(php::property_entry("repeat", php::BOOL_YES));
 		class_ticker.add<&ticker::__construct>("__construct");
 		class_ticker.add<&ticker::__destruct>("__destruct");
 		class_ticker.add<&ticker::start>("start");

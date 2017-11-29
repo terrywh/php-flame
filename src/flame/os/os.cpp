@@ -19,6 +19,7 @@ namespace os {
 		class_process.add<&process::kill>("kill");
 		class_process.add<&process::wait>("wait");
 		class_process.add<&process::send>("send");
+		class_process.add<&process::ondata>("ondata");
 		ext.add(std::move(class_process));
 
 		cluster::init(ext);

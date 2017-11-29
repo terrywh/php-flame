@@ -3,6 +3,7 @@
 #include "client.h"
 #include "client_request.h"
 #include "client_response.h"
+#include "../../time/time.h"
 
 // 所有导出到 PHP 的函数必须符合下面形式：
 // php::value fn(php::parameters& params);
@@ -53,18 +54,25 @@ void client::curl_multi_info_check(client* self) {
 	int pending;
 	CURLMsg *message;
 	while((message = curl_multi_info_read(self->multi_, &pending))) {
-		exec_context_t* ctx;
-		curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &ctx);
-		curl_multi_remove_handle(ctx->self->multi_, ctx->req->easy_);
-		
-		if (message->data.result != CURLE_OK) {
-			ctx->co->fail(curl_easy_strerror(message->data.result), message->data.result);
-		} else {
-			ctx->req->done_cb(message);
-			ctx->res->done_cb(message);
-			ctx->co->next(std::move(ctx->res));
+		if(message->msg == CURLMSG_DONE) {
+			exec_context_t* ctx;
+			curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &ctx);
+			if (message->data.result != CURLE_OK) {
+				// std::printf("error: %s (%d)\n", curl_easy_strerror(message->data.result), message->data.result);
+				ctx->co->fail(curl_easy_strerror(message->data.result), message->data.result);				
+			} else {
+				long status;
+				curl_easy_getinfo(message->easy_handle, CURLINFO_RESPONSE_CODE, &status);
+				ctx->res->done_cb(status);
+				// 因为 req 的 done_cb 将关闭 easy_handle（导致所有 msg 数据无法访问）
+				ctx->req->done_cb(message); 
+				ctx->co->next(std::move(ctx->res));
+			}
+			curl_multi_remove_handle(ctx->self->multi_, ctx->req->easy_);
+			delete ctx;
+		}else{
+			std::fprintf(stderr, "[%s] (flame\\net\\http\\client): error: message not done\n", time::datetime(time::now()));
 		}
-		delete ctx;
 	}
 }
 

@@ -21,15 +21,16 @@ namespace mongodb {
 		static void remove_many_wk(uv_work_t* w);
 		static void update_wk(uv_work_t* w);
 		static void find_one_wk(uv_work_t* w);
+		static void find_one_af(uv_work_t* w);
 		static void find_many_wk(uv_work_t* w);
 		static void close_wk(uv_work_t* w);
 		friend class collection;
 	};
 	
 	typedef struct collection_request_t {
-		coroutine*  co;
+		coroutine*    co;
 		collection_implement* self;
-		php::value  rv; // 异步启动时作为引用，返回时作为结果
+		php::value    rv; // 异步启动时作为引用，返回时作为结果
 		php::array  doc1;
 		php::array  doc2;
 		int         flags;

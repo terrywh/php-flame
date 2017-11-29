@@ -9,7 +9,7 @@ namespace time {
 		if(params.length() > 1) {
 			prop("repeat", 6) = params[1].is_true();
 		}else{
-			prop("repeat", 6) = bool(true);
+			prop("repeat", 6) = php::BOOL_YES;
 		}
 		tm_ = (uv_timer_t*)malloc(sizeof(uv_timer_t));
 		uv_timer_init(flame::loop, tm_);
@@ -25,7 +25,7 @@ namespace time {
 		coroutine::start(self->cb_, self);
 		if(!self->prop("repeat").is_true()) {
 			// 非重复定时器立即清理引用
-			self->refer_ = nullptr;
+			self->ref_ = nullptr;
 		}
 	}
 	php::value ticker::start(php::parameters& params) {
@@ -38,25 +38,25 @@ namespace time {
 			uv_timer_start(tm_, tick_cb, iv, 0);
 		}
 		// 异步引用
-		refer_ = this;
+		ref_ = this;
 		return nullptr;
 	}
 	php::value ticker::stop(php::parameters& params) {
 		uv_timer_stop(tm_);
-		refer_ = nullptr;
+		ref_ = nullptr;
 		return nullptr;
 	}
 
 	php::value after(php::parameters& params) {
 		php::object tick = php::object::create<ticker>();
-		tick.call("__construct", params[0], bool(false));
+		tick.call("__construct", params[0], php::BOOL_NO);
 		php::callable cb = params[1];
 		tick.call("start", cb);
 		return std::move(tick);
 	}
 	php::value tick(php::parameters& params) {
 		php::object tick = php::object::create<ticker>();
-		tick.call("__construct", params[0], bool(true));
+		tick.call("__construct", params[0], php::BOOL_YES);
 		php::callable cb = params[1];
 		tick.call("start", cb);
 		return std::move(tick);

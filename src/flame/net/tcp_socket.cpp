@@ -9,7 +9,8 @@ namespace net {
 		uv_tcp_init(flame::loop, &impl->stream);
 	}
 	tcp_socket::~tcp_socket() {
-		impl->close(false); // 析构时 read 过程一定已经停止
+		// tcp_socket 通过 messenger 发送传递后，impl 已被关闭
+		if(impl) impl->close(false); // 析构时 read 过程一定已经停止
 	}
 	php::value tcp_socket::connect(php::parameters& params) {
 		php::string addr = params[0];

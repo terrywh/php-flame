@@ -8,7 +8,8 @@ namespace net {
 		uv_pipe_init(flame::loop, &impl->stream, 0);
 	}
 	unix_socket::~unix_socket() {
-		impl->close(false); // 析构时 read 过程一定已经停止
+		// unix_socket 在通过 messenger 发送后，impl 已被关闭
+		if(impl) impl->close(false); // 析构时 read 过程一定已经停止
 	}
 	php::value unix_socket::connect(php::parameters& params) {
 		php::string path = params[0];

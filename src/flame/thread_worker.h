@@ -1,6 +1,13 @@
 #pragma once
 
 namespace flame {
+	class thread_guard {
+	public:
+		thread_guard(uv_mutex_t* m);
+		~thread_guard();
+	private:
+		uv_mutex_t* mutex_;
+	};
 	class thread_worker {
 	public:
 		thread_worker();
@@ -8,6 +15,8 @@ namespace flame {
 		~thread_worker();
 		
 		uv_loop_t   loop;
+		
+		uv_mutex_t* worker_lock();
 	private:
 		void join();
 		void run();

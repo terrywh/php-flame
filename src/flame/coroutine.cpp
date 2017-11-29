@@ -5,7 +5,7 @@ namespace flame {
 	coroutine* coroutine::current;
 
 	void coroutine::prepare() {
-
+		
 	}
 	php::value async() {
 		// 某些销毁逻辑流程可能不存在协程上下文
@@ -20,9 +20,7 @@ namespace flame {
 			return nullptr;
 		}
 		++ coroutine::current->status_;
-		php::value v;
-		ZVAL_PTR((zval*)&v, coroutine::current);
-		return std::move(v);
+		return php::value(coroutine::current);
 	}
 	php::value async(void* context) {
 		// 某些销毁逻辑流程可能不存在协程上下文
@@ -34,9 +32,7 @@ namespace flame {
 			return nullptr;
 		}
 		++ coroutine::current->status_;
-		php::value v;
-		ZVAL_PTR((zval*)&v, context);
-		return std::move(v);
+		return php::value(context);
 	}
 	coroutine::coroutine(coroutine* parent)
 	: status_(0)
@@ -53,6 +49,7 @@ namespace flame {
 			php::fail("keyword 'yield' missing before async function");
 		}
 		status_ = -1;
+		coroutine::current = nullptr;
 		uv_close((uv_handle_t*)&async_, finish_cb);
 	}
 	void coroutine::run() {
@@ -60,8 +57,11 @@ namespace flame {
 			if(EG(exception) || !generator_.valid()) {
 				// 可能由于 valid() 调用，引发新的异常（故需要二次捕获）
 				if(EG(exception)) {
-					close();
 					uv_stop(flame::loop);
+					// panic
+					zend_exception_error(EG(exception), E_ERROR);
+					exit(-1);
+					// close();
 				}else if(this->parent_ != nullptr) {
 					coroutine* parent = this->parent_;
 					php::value rv = generator_.get_return();
@@ -76,6 +76,7 @@ namespace flame {
 			if(v.is_pointer()) { // 使用内置 IS_PTR 类型标识异步操作
 				if(--status_ != 0) {
 					php::fail("keyword 'yield' missing before async function");
+					status_ = 0;
 					close();
 					uv_stop(flame::loop);
 				}
