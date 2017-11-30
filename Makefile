@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.1.1
+EXT_VER=1.1.2dev
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -112,11 +112,18 @@ install: ${EXTENSION}
 # ---------------------------------------------------------------------
 clean-deps:
 	rm -f ${HEADERX}
-	make -C ./deps/libphpext clean
-	make -C ./deps/libuv clean
-	make -C ./deps/hiredis clean
-	make -C ./deps/curl clean
 	make -C ./deps/nghttp2 clean
 	rm -rf ./deps/nghttp2/bin
+	make -C ./deps/libphpext clean
+	make -C ./deps/libuv clean
+	make -C ./deps/curl clean
+	make -C ./deps/hiredis clean
+	make -C ./deps/multipart-parser-c clean
+	make -C ./deps/kv-parser clean
+	make -C ./deps/fastcgi-parser clean
 	make -C ./deps/mongo-c-driver clean
 	rm -rf ./deps/mongo-c-driver/bin
+	make -C ./deps/fmt clean
+	make -C ./deps/c-ares clean
+	rm -rf ./deps/c-ares/bin
+	make -C ./deps/librdkafka clean

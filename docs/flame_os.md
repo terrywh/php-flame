@@ -3,6 +3,9 @@
 
 封装系统相关的 API，目前提供了启动子进程等功能；
 
+**注意**：
+* 这里提供的子进程控制相关功能与通过 `flame::init` 启动“工作线程”没有直接相关性；
+
 #### `flame\os\process flame\os\spawn(string $exec[, array $argv[, array $env[, string $cwd[, array $opts])`
 启动进程，相关参数如下：
 * `$exec` - 可执行文件名或路径；

@@ -18,7 +18,7 @@
 #### `yield flame\log\write(mixed $message, ...)`
 向输出目标输出指定的日志内容，并补充时间戳（不含日志等级外与上述 `fail`/`warn`/`info` 等函数一致）
 
-**日志**：
+**注意**：
 * 每项函数参数输出前时均会前置一个空格；
 
 ### `class flame\log\logger`
@@ -29,4 +29,4 @@
 #### `yield logger::fail(mixed $message, ...)`
 #### `yield logger::warn(mixed $message, ...)`
 #### `yield logger::info(mixed $message, ...)`
-与上述全局 API 功能一致，但仅对当前 logger 实例生效。
+与上述全局 API 功能一致。

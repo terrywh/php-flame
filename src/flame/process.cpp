@@ -46,9 +46,9 @@ namespace flame {
 	}
 	void process::run() {
 		if(process_type == PROCESS_MASTER) {
-			php::callable("cli_set_process_title").invoke(process_name + " (flame-master)");
+			php::callable("cli_set_process_title").invoke(process_name + " (fm)");
 		}else{
-			php::callable("cli_set_process_title").invoke(process_name + " (flame)");
+			php::callable("cli_set_process_title").invoke(process_name + " (fw)");
 		}
 		uv_run(flame::loop, UV_RUN_DEFAULT);
 		if(!EG(exception)) {

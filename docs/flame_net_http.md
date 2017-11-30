@@ -92,6 +92,7 @@ $cli = new flame\net\http\client([
 	"conn_per_host" => 4,  // 默认 2，同 HOST:PORT 请求建立的最大连接数
 	"pipe_per_conn" => 2,  // 默认 4，单连接 HTTP/1.1 管道排队数量
 ]);
+```
 
 #### `yield client::exec(client_request $request)`
 执行指定请求并返回响应对象 `flame\net\http\client_response`；
@@ -107,6 +108,10 @@ var_dump($res1);
 $res2 = yield $cli->exec($req2);
 var_dump($res2);
 ```
+
+**注意**：
+* 执行请求失败可能抛出异常（例如：超时，无法连接等）；
+* 下述简化请求方法，实际也相当于调用 `exec` 故可能抛出异常；
 
 #### `yield flame\net\http\get(string $url, integer $timeout = 2500)`
 简单的 `GET` 请求方法。

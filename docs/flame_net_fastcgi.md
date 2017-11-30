@@ -4,8 +4,7 @@
 ### `class flame\net\fastcgi\handler`
 监听 `unix socket` 提供后端服务，用于 tcp_server / unix_server 解析 `fastcgi/1.1` 协议，并提供 HTTP 服务；
 
-**示例**：
-`test/flame/net/fastcgi/server.php`
+参考：`test/flame/net/fastcgi_server.php`
 
 #### `server::get/post/put/remove(string $path, callable $cb)`
 分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调；
@@ -34,7 +33,7 @@ $server->get("/hello", function($req, $res) {
 由上述 `handler` 生成，并回调传递给处理函数使用，用于返回响应数据给 Web 服务器；
 
 #### `array server_response::$header`
-响应头部 KEY/VAL 数组，默认包含 `Content-Type: text/plain`（注意**区分**大小写）；其他响应头请酌情考虑添加、覆盖；
+响应头部 KEY/VAL 数组，默认包含 `Content-Type: text/plain`（）；其他响应头请酌情考虑添加、覆盖；
 
 **示例**：
 ``` PHP
@@ -42,6 +41,9 @@ $server->get("/hello", function($req, $res) {
 $res->header["Content-Type"] = "text/html";
 $res->header["X-Server"] = "Flame/0.7.0";
 ```
+
+**注意**：
+* 所有输出的 HEADER 数据 **区分大小写**；
 
 #### `yield server_response::write_header(integer $status_code)`
 设置并输出响应头部（含上述响应头 KEY/VAL 及响应状态行），请参照标准 HTTP/1.1 STATUS_CODE 设置数值；

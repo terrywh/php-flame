@@ -10,19 +10,25 @@
 当前协程休眠 `$ms` 毫秒；
 
 #### `$tick = flame\time\after(integer $ms, callable $cb)`
-在 `$ms` 毫秒后，执行 `$cb` 回调（仅执行一次）；请参考下述 `class ticker` 说明；
+在 `$ms` 毫秒后，执行 `$cb` 回调（仅执行一次）；返回 `class ticker` 的实例，请参考后续说明；
+
+**注意**：
+* 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行；
 
 #### `$tick = flame\time\tick(integer $ms, callable $cb)`
-**每**隔 `$ms` 毫秒后，执行 `$cb` 回调；请参考下述 `class ticker` 说明；
+**每隔** `$ms` 毫秒后，执行 `$cb` 回调；返回 `class ticker` 的实例，请参考后续说明；
 
 **示例**：
 ``` PHP
 <?php
-flame\time\tick(5000, function($tick) {
+$tick = flame\time\tick(5000, function($tick) {
 	$tick->stop(); // 终止计时器，即回调函数不会被再次调用了
 	// 在这里调用 stop() 相当于使用 after(5000, function($tick) {})
 });
 ```
+
+**注意**：
+* 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行；
 
 ### `class flame\time\ticker`
 定时器
@@ -51,4 +57,7 @@ $tick->start(function($tick) {
 * 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行；
 
 #### `ticker::stop()`
-停止定时器。可以外部使用，也可以在定时器回调中使用。
+停止定时器（若定时器还未执行，将不会被执行；）。
+
+**注意**：
+* 调用 `stop` 函数可以在回调函数内，也可以在其他协程；

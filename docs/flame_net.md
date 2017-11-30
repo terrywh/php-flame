@@ -1,8 +1,10 @@
 ### `namespace flame\net`
 1. 提供基本的TCP UDP 协议网络协程式客户端、服务器封装；
 2. 提供以下协议的支持内部包：
-	* **HTTP** - HTTP 协议支持（目前仅提供了客户端支持）；
-	* **FastCGI** - 精简版本的应用服务支持，可以挂接 Nginx 等 Web 服务器使用；
+	* [HTTP](/php-flame/flame_net_http)
+	HTTP 协议支持（目前仅提供了客户端支持）；
+	* [FastCGI](/php-flame/flame_net_fastcgi)
+	精简版本的应用服务支持，可以挂接 Nginx 等 Web 服务器使用；
 
 ### `class flame\net\udp_socket`
 封装 UDP 协议网络服务器、客户端连接
@@ -51,7 +53,7 @@
 <?php
 // $socket instanceof flame\net\unix_socket
 function callback($socket) {
-	// $socket->read()
+	// yield $socket->read()
 }
 ```
 
@@ -69,12 +71,16 @@ yield $server->run();
 // ...
 ```
 
+**注意**：
+* `$cb` 必须是 `Generator Function`，即包含 `yield` 关键字；
+
 #### `unix_server::bind(string $path)`
 绑定到指定路径并生成 UnixSocket 文件；
 
 **注意**：
 * 若指定路径文件已存在，则无法绑定（即禁止同时监听同一 Socket 文件，）；请先删除现有监听文件；
 * 生成的文件遵循默认的文件权限，如果需要请使用 `chmod()` 等函数自行更改；
+* 如需多进程处理 `unix_server` 可以考虑使用 `os` 命名空间提供的相关方法，将 `accept` 后的 `socket` 传递到单独启动的工作进程；
 
 #### `yield unix_server::run()`
 启动并运行当前服务器
@@ -112,8 +118,14 @@ $data = yield $sock->read("\n"); // $data = "aaaaaaa\n";
 $data = yield $sock->read(); // $data = "aaaaa";
 ```
 
+**注意**：
+* 除正常的网络关闭外，读取动作发生错误时可能抛出异常；
+
 #### `yield unix_socket::write(string $data)`
 想当前套接字写入（发送）指定数据；
+
+**注意**：
+* 当网络连接已断开等错误状态时，调用 `write` 会抛出异常；
 
 #### `yield unix_socket::close()`
 关闭当前套接字对象；（已启用的异步动作会继续进行，完成后关闭）
@@ -133,14 +145,20 @@ $data = yield $sock->read(); // $data = "aaaaa";
 **注意**：
 * `addr` 仅允许合法的 IPv4 或 IPv6 地址；若希望使用域名，请先对域名进行解析；
 
-#### `yield tcp_socket::read()`
-进行一次网络读取操作（接收），若网络已关闭（EOF）则返回 NULL；否则返回读取到的内容；
+#### `yield tcp_socket::read([mixed $completion])`
+从当前网络套接字中读取数据，可选的指定读取数据的“结束条件”（同 `unix_socket::read`）;
 
 **注意**：
 * 每次读取到的内容**长度不固定**，但不会过大（一般不会超过 2048 字节）；
 
+**注意**：
+* 除正常的网络关闭外，读取动作发生错误时可能抛出异常；
+
 #### `yield tcp_socket::write(string data)`
 进行一次网络写入操作（发送）；
+
+**注意**：
+* 当网络连接已断开等错误状态时，调用 `write` 会抛出异常；
 
 #### `yield tcp_socket::close()`
 关闭网络连接；
@@ -154,6 +172,9 @@ $data = yield $sock->read(); // $data = "aaaaa";
 	服务器本地监听地址
 #### `tcp_server::bind(string addr, long port)`
 绑定服务器地址端口，绑定后调用 `run()` 启动服务器开始监听指定的地址、端口；
+
+**注意**：
+* 框架默认使用 `REUSE_PORT` 可直接支持多进程监听同一端口同时处理；
 
 #### `yield tcp_server::run()`
 启动、运行服务器；

@@ -77,7 +77,7 @@ $count = yield $collection->count(['x'=>'y']);
 获取当前集合中（符合条件的）文档数量；
 
 #### `yield collection::insert_one(array $doc)`
-向当前集合插入一条新的 `$doc` 文档；
+向当前集合插入一条新的 `$doc` 文档；请参考 [Insert Documents](https://docs.mongodb.com/manual/tutorial/insert-documents/)；
 
 **注意**：
 * `$doc` 必须是关联数组；
@@ -85,33 +85,34 @@ $count = yield $collection->count(['x'=>'y']);
 
 #### `yield collection::insert_many(array $docs[, boolean $ordered = false])`
 向当前集合插入 `$docs` 若干文档；当 `$ordered` 为真时，进行有序批量操作（第一个错误时停止），否则进行无需批量操作（遇到错误不会停止）；当返回批量结果对象 `bulk_result`；
+请参考 [Insert Documents](https://docs.mongodb.com/manual/tutorial/insert-documents/)；
 
 **注意**：
 * `$docs` 为二维数组，其中第一维度为下标数组，每个元素标识一个文档（关联数组）；
 
 #### `yield collection::remove_one(array $query)`
-从当前集合中删除第一个符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；
+从当前集合中删除第一个符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；请参考 [Delete Documents](https://docs.mongodb.com/manual/tutorial/remove-documents/)；
 
 #### `yield collection::delete_many(array $query)`
-从当前集合中删除所有符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；
+从当前集合中删除所有符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；请参考 [Delete Documents](https://docs.mongodb.com/manual/tutorial/remove-documents/)；
 
 #### `yield collection::update_one(array $query, array $data)`
-从当前集合中查询第一个符合 `$query` 的文档，并使用 `$data` 更新它；
+从当前集合中查询第一个符合 `$query` 的文档，并使用 `$data` 更新它；请参考 [Update Documents](https://docs.mongodb.com/manual/tutorial/update-documents/)
 
 #### `yield collection::update_many(array $query, array $data)`
-从当前集合中查询所有符合 `$query` 的文档，并使用 `$data` 更新它们；
+从当前集合中查询所有符合 `$query` 的文档，并使用 `$data` 更新它们；请参考 [Update Documents](https://docs.mongodb.com/manual/tutorial/update-documents/)
 
-#### `yield collection::find_many(array $query[, array $sort[, integer $skip[, integer $count[, array $fields]]]])`
-查询当前集合，返回结果集指针 `cursor` 对象；
-* `$query` - 查询内容
-* `$sort`  - 排序
-* `$skip`  - 结果集起始跳过；
-* `$count` - 限制结果集数量；
-* `$fields` - 仅返回特定字段；
+#### `yield collection::find_many(array $query[, array $sort[, integer $skip[, integer $count[, array $project]]]])`
+查询当前集合，返回结果集指针 `cursor` 对象；请参考 [Query Document](https://docs.mongodb.com/manual/tutorial/query-documents/) ；
+
+* `$query`  - 查询条件；
+* `$sort`   - 排序，例如 `["a"=>1,"b"=>-1]` 即 按照 `a` 字段正序后，再按照 `b` 字段逆序；
+* `$skip`   - 结果集起始跳过；
+* `$count`  - 限制结果集数量；
+* `$project` - 仅返回特定字段，例如 `["a"=>1, "b"=>1, "c"=>0]`  即 包含 `a` | `b` 字段，去除 `c` 字段；
 
 #### `yield collection::find_one(array $query, array $sort)`
-查询当前集合，返回单条文档记录（关联数组）；
-
+查询当前集合，返回单条文档记录（关联数组）；请参考 [Query Document](https://docs.mongodb.com/manual/tutorial/query-documents/) ；
 
 ### `class flame\db\mongodb\cursor`
 封装结果集指针类型，用于访问查询结果数据；
@@ -128,18 +129,8 @@ while($doc = yield $cursor->next()) {
 }
 ```
 
-#### `yield cursor::toArray([callable $cb])`
-遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组；可选使用 `$cb` 回调函数对结果集的每个文档进行过滤；
-
-**示例**：
-``` PHP
-<?php
-// $cursor = .....
-$cursor->toArray(function(&$doc) { // COW 故也可以不使用引用
-	if($doc["a"] == "bbb") return true;
-	return false;
-});
-```
+#### `yield cursor::toArray()`
+遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组；
 
 **注意**：
-* 不要混合使用 `next()` 和 `toArray()` 两种读取方式，可能导致未知问题；
+* 如可能，请不要混合使用 `next()` 和 `toArray()` 两种读取方式（可能导致未知问题）；
