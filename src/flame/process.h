@@ -18,12 +18,12 @@ namespace flame {
 		void run();
 
 		void worker_start();
-		void worker_stop();
+		void worker_kill(int sig = SIGINT);
 		void on_worker_stop(worker* w);
 	private:
 		std::set<worker*> workers_;
-		uv_signal_t       signal_;
-
+		uv_signal_t       sigterm_;
+		uv_signal_t       sigusr2_;
 	};
 	// 当前进程
 	extern process* process_self;

@@ -24,25 +24,34 @@ namespace flame {
 		return process_self;
 	}
 	static void master_exit_cb(uv_signal_t* handle, int signum) {
-		process* proc = reinterpret_cast<process*>(handle->data);
-		proc->worker_stop();
+		process* self = reinterpret_cast<process*>(handle->data);
+		self->worker_kill(SIGINT); // SIGINT 按“正常退出”处理
 		uv_stop(flame::loop);
 	}
 	static void worker_exit_cb(uv_signal_t* handle, int signum) {
-		process* proc = reinterpret_cast<process*>(handle->data);
+		process* self = reinterpret_cast<process*>(handle->data);
 		uv_stop(flame::loop);
+	}
+	static void master_usr2_cb(uv_signal_t* handle, int signum) {
+		process* proc = reinterpret_cast<process*>(handle->data);
+		proc->worker_kill(SIGUSR2);
 	}
 	void process::init() {
 		if(process_type == PROCESS_MASTER) {
-			uv_signal_init(flame::loop, &signal_);
-			uv_signal_start_oneshot(&signal_, master_exit_cb, SIGTERM);
+			uv_signal_init(flame::loop, &sigterm_);
+			uv_signal_start_oneshot(&sigterm_, master_exit_cb, SIGTERM);
+			uv_signal_init(flame::loop, &sigusr2_);
+			uv_signal_start(&sigusr2_, master_usr2_cb, SIGUSR2);
+			uv_unref((uv_handle_t*)&sigusr2_);
+			sigusr2_.data = this;
+			
 			worker_start();
 		}else{
-			uv_signal_init(flame::loop, &signal_);
-			uv_signal_start_oneshot(&signal_, worker_exit_cb, SIGTERM);
+			uv_signal_init(flame::loop, &sigterm_);
+			uv_signal_start_oneshot(&sigterm_, worker_exit_cb, SIGINT);
 		}
-		signal_.data = this;
-		uv_unref((uv_handle_t*)&signal_);
+		uv_unref((uv_handle_t*)&sigterm_);
+		sigterm_.data = this;
 	}
 	void process::run() {
 		if(process_type == PROCESS_MASTER) {
@@ -57,11 +66,11 @@ namespace flame {
 				quit_cb.pop_back();
 			}
 			uv_run(flame::loop, UV_RUN_NOWAIT);
-		}
-		if(process_type == PROCESS_WORKER) {
-			delete flame::loop;
-			// 标记退出状态用于确认是否自动重启工作进程
-			exit(99);
+			if(process_type == PROCESS_WORKER) {
+				delete flame::loop;
+				// 标记退出状态用于确认是否自动重启工作进程
+				exit(99);
+			}
 		}
 	}
 	void process::worker_start() {
@@ -71,9 +80,9 @@ namespace flame {
 			workers_.insert(w);
 		}
 	}
-	void process::worker_stop() {
+	void process::worker_kill(int sig) {
 		for(auto i=workers_.begin();i!=workers_.end();++i) {
-			(*i)->kill();
+			(*i)->kill(sig);
 		}
 	}
 	void process::on_worker_stop(worker* w) {

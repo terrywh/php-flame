@@ -6,7 +6,7 @@ namespace log {
 	public:
 		logger();
 		~logger();
-		php::value rotate(php::parameters& params);
+		php::value set_output(php::parameters& params);
 		void rotate(const php::string& path);
 		void rotate();
 		void init() {
@@ -21,7 +21,9 @@ namespace log {
 		uv_pipe_t*   pipe_;
 		php::string  path_;
 		int          file_;
+		uv_signal_t*  sig_;
 		static void write_cb(uv_write_t* req, int status);
+		static void signal_cb(uv_signal_t* handle, int signal);
 		php::value write(const std::string& level, php::parameters& params);
 	};
 }
