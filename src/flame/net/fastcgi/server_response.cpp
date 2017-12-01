@@ -3,6 +3,7 @@
 #include "fastcgi.h"
 #include "server_connection.h"
 #include "../http/http.h"
+#include "../../time/time.h"
 
 namespace flame {
 namespace net {
@@ -18,20 +19,20 @@ server_response::~server_response() {
 #define CACULATE_PADDING(size) (size) % 8 == 0 ? 0 : 8 - (size) % 8;
 
 php::value server_response::write_header(php::parameters& params) {
-	if(prop("header_sent").is_true() || prop("ended").is_true()) {
-		php::warn("header already sent");
+	if(header_sent || body_sent) {
+		php::warn("response header has already sent");
 		return nullptr;
 	}
 	if(params.length() >= 1) {
 		prop("status") = static_cast<int>(params[0]);
 	}
-	buffer_head();
-	prop("header_sent") = php::BOOL_YES;
-	buffer_write();
-	return flame::async();
+	buffer_header();
+	header_sent = true;
+	write_buffer();
+	return flame::async(this);
 }
 
-void server_response::buffer_head() {
+void server_response::buffer_header() {
 	// 预留头部
 	char* head = buffer_.put(sizeof(header_));
 	// STATUS_CODE STATUS_TEXT\r\n
@@ -46,12 +47,18 @@ void server_response::buffer_head() {
 	for(auto i=header.begin(); i!=header.end(); ++i) {
 		php::string& key = i->first;
 		php::string& val = i->second.to_string();
-		sprintf(
-			buffer_.put(key.length() + val.length() + 4),
-			"%.*s: %.*s\r\n",
-			key.length(), key.data(), val.length(), val.data());
+		sprintf(buffer_.put(key.length() + val.length() + 4),
+			"%.*s: %.*s\r\n", key.length(), key.data(),
+			val.length(), val.data());
+	}
+	// Set-Cookie: .....
+	for(auto i=cookie_.begin(); i!=cookie_.end(); ++i) {
+		std::printf("Set-Cookie: %.*s\n", i->second.length(), i->second.c_str());
+		sprintf(buffer_.put(14 + i->second.length()),
+			"Set-Cookie: %.*s\r\n", i->second.length(), i->second.c_str());
 	}
 	sprintf(buffer_.put(2), "\r\n");
+	
 	// 根据长度填充头部
 	header_.version        = FASTCGI_VERSION;
 	header_.type           = FASTCGI_TYPE_STDOUT;
@@ -68,23 +75,66 @@ void server_response::buffer_head() {
 		std::memset(buffer_.put(header_.padding_length), 0, header_.padding_length);
 	}
 }
-
-php::value server_response::write(php::parameters& params) {
-	if(prop("ended").is_true()) {
-		php::warn("response already ended");
+php::value server_response::set_cookie(php::parameters& params) {
+	if(header_sent) {
+		php::warn("response header has already sent");
 		return nullptr;
 	}
-	if(!prop("header_sent").is_true()) {
-		buffer_head();
-		prop("header_sent") = php::BOOL_YES;
+	php::buffer data;
+	
+	std::string name = params[0];
+	std::memcpy(data.put(name.length()), name.c_str(), name.length());
+	if(params.length() > 1) {
+		php::string val = params[1].to_string();
+		val = php::url_encode(val.c_str(), val.length());
+		data.add('=');
+		std::memcpy(data.put(val.length()), val.c_str(), val.length());
+	}else{
+		std::memcpy(data.put(58), "=deleted; Expires=Thu, 01 Jan 1970 00:00:00 GMT", 58);
+	}
+	if(params.length() > 2) {
+		int64_t ts = params[0].to_long();
+		if(ts > 0) {
+			struct tm* expire = gmtime((time_t*)&ts);
+			strftime(data.put(39), 39, "; Expires=%a, %d %b %Y %H:%M:%S GMT", expire);
+		}
+	}
+	if(params.length() > 3 && params[3].is_string()) {
+		php::string& path = params[3];
+		sprintf(data.put(7+path.length()), "; Path=%.*s", path.length(), path.c_str());
+	}
+	if(params.length() > 4 && params[4].is_string()) {
+		php::string& domain = params[4];
+		sprintf(data.put(9+domain.length()), "; Domain=%.*s", domain.length(), domain.c_str());
+	}
+	if(params.length() > 5) {
+		if(params[5].to_bool()) {
+			std::memcpy(data.put(8), "; Secure", 8);
+		}
+	}
+	if(params.length() > 6) {
+		if(params[6].to_bool()) {
+			std::memcpy(data.put(10), "; HttpOnly", 10);
+		}
+	}
+	cookie_[name] = std::move(data);
+	return nullptr;
+}
+php::value server_response::write(php::parameters& params) {
+	if(body_sent) {
+		php::warn("response body has already ended");
+		return nullptr;
+	}
+	if(!header_sent) {
+		buffer_header();
+		header_sent = true;
 	}
 	// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
 	php::string& data = params[0].to_string();
 	buffer_body(data.data(), data.length());
-	buffer_write();
-	return flame::async();
+	write_buffer();
+	return flame::async(this);
 }
-
 void server_response::buffer_body(const char* data, unsigned short size) {
 	// 根据长度填充头部
 	header_.version        = FASTCGI_VERSION;
@@ -104,16 +154,15 @@ void server_response::buffer_body(const char* data, unsigned short size) {
 		std::memset(buffer_.put(header_.padding_length), 0, header_.padding_length);
 	}
 }
-
 php::value server_response::end(php::parameters& params) {
-	if(prop("ended").is_true()) {
-		php::warn("response already ended");
+	if(body_sent) {
+		php::warn("response body already ended");
 		return nullptr;
 	}
-	prop("ended") = php::BOOL_YES;
-	if(!prop("header_sent").is_true()) {
-		buffer_head();
-		prop("header_sent") = php::BOOL_YES;
+	body_sent = true;
+	if(!header_sent) {
+		buffer_header();
+		header_sent = true;
 	}
 	if(params.length() >= 1) {
 		// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
@@ -121,8 +170,8 @@ php::value server_response::end(php::parameters& params) {
 		buffer_body(data.data(), data.length());
 	}
 	buffer_ending();
-	buffer_write();
-	return flame::async();
+	write_buffer();
+	return flame::async(this);
 }
 
 void server_response::buffer_ending() {
@@ -146,24 +195,21 @@ void server_response::buffer_ending() {
 	std::memset(buffer_.put(8), 0, 8);
 	// 无填充
 }
-
 typedef struct write_request_t {
 	coroutine*         co;
 	server_response* self;
-	php::value        ref;
 	php::string      data;
 	uv_write_t        req;
 } write_request_t;
-void server_response::buffer_write() {
+void server_response::write_buffer() {
 	write_request_t* ctx = new write_request_t {
-		coroutine::current, this, this, std::move(buffer_)
+		coroutine::current, this, std::move(buffer_)
 	};
 	ctx->req.data = ctx;
 	uv_buf_t    data { ctx->data.data(), ctx->data.length() };
 	uv_write(&ctx->req, reinterpret_cast<uv_stream_t*>(&conn_->socket_),
 		&data, 1, write_cb);
 }
-
 void server_response::write_cb(uv_write_t* req, int status) {
 	auto ctx = reinterpret_cast<write_request_t*>(req->data);
 
@@ -173,7 +219,7 @@ void server_response::write_cb(uv_write_t* req, int status) {
 		ctx->self->conn_->close();
 	}
 	if(status < 0) {
-		php::info("response write/end failed with '%s'", uv_strerror(status));
+		php::warn("failed to write response: %s", uv_strerror(status));
 	}
 	ctx->co->next();
 	delete ctx;

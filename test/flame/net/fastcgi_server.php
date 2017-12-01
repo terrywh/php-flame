@@ -6,7 +6,8 @@ flame\go(function() {
 	// 设置处理程序
 	$a = $handler->get("/hello", function($req, $res) {
 		yield flame\time\sleep(2000);
-		var_dump($req->method, $req->body); // GET ....
+		var_dump($req->method, $req->cookie); // GET
+		$res->set_cookie("test", "bbbb", 1000, "/hello", null, false, true);
 		yield $res->write("hello ");
 		yield $res->end("world\n");
 	})

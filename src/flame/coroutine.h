@@ -22,6 +22,8 @@ namespace flame {
 			(static_cast<K*>(data)->*method)(rv, co);
 		}
 		void run();
+		
+		php::object          ref_;
 	public:
 		static coroutine* current;
 
@@ -69,8 +71,9 @@ namespace flame {
 		static void prepare();
 
 		friend php::value async();
+		friend php::value async(php::class_base* obj);
 		friend php::value async(void* context);
 	};
 	php::value async();
-	php::value async(void* context);
+	php::value async(php::class_base* cpp);
 }

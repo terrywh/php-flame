@@ -10,6 +10,7 @@ namespace http {
 	class client: public php::class_base {
 	public:
 		client();
+		void default_options();
 		~client();
 		php::value __construct(php::parameters& params);
 		// 执行

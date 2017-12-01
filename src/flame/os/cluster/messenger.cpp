@@ -90,7 +90,7 @@ namespace cluster {
 		if(type == UV_TCP) {
 			php::object obj = php::object::create<net::tcp_socket>();
 			net::tcp_socket* cpp = obj.native<net::tcp_socket>();
-			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
+			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)cpp->sck) < 0) {
 				std::fprintf(stderr, "error: failed to accept socket from parent\n");
 				return;
 			}
@@ -99,7 +99,7 @@ namespace cluster {
 		}else if(type == UV_NAMED_PIPE) {
 			php::object obj = php::object::create<net::unix_socket>();
 			net::unix_socket* cpp = obj.native<net::unix_socket>();
-			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)&cpp->impl->stream) < 0) {
+			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)cpp->sck) < 0) {
 				std::fprintf(stderr, "error: failed to accept socket from parent\n");
 				return;
 			}
@@ -128,9 +128,9 @@ namespace cluster {
 		send_request_t* ctx = static_cast<send_request_t*>(handle->data);
 		// 当前进程中的连接需要关闭
 		if(static_cast<php::object&>(ctx->obj).is_instance_of<net::tcp_socket>()) {
-			static_cast<php::object&>(ctx->obj).native<net::tcp_socket>()->impl->close(true);
+			static_cast<php::object&>(ctx->obj).native<net::tcp_socket>()->close();
 		}else{
-			static_cast<php::object&>(ctx->obj).native<net::unix_socket>()->impl->close(true);
+			static_cast<php::object&>(ctx->obj).native<net::unix_socket>()->close();
 		}
 		if(ctx->co != nullptr) ctx->co->next();
 		delete ctx;
@@ -142,12 +142,12 @@ namespace cluster {
 		ctx->req.data = ctx;
 		
 		if(ctx->obj.is_object() && static_cast<php::object&>(ctx->obj).is_instance_of<net::unix_socket>()) {
-			uv_stream_t* ss = (uv_stream_t*)&static_cast<php::object&>(ctx->obj).native<net::unix_socket>()->impl->stream;
+			uv_stream_t* ss = (uv_stream_t*)static_cast<php::object&>(ctx->obj).native<net::unix_socket>()->sck;
 			uv_buf_t data {.base = (char*)"\x00\x00", .len = 2};
 
 			uv_write2(&ctx->req, (uv_stream_t*)&pipe_, &data, 1, ss, send_socket_cb);
 		}else if(ctx->obj.is_object() && static_cast<php::object&>(ctx->obj).is_instance_of<net::tcp_socket>()) {
-			uv_stream_t* ss = (uv_stream_t*)&static_cast<php::object&>(ctx->obj).native<net::tcp_socket>()->impl->stream;
+			uv_stream_t* ss = (uv_stream_t*)static_cast<php::object&>(ctx->obj).native<net::tcp_socket>()->sck;
 			uv_buf_t data {.base = (char*)"\x00\x00", .len = 2};
 
 			uv_write2(&ctx->req, (uv_stream_t*)&pipe_, &data, 1, ss, send_socket_cb);

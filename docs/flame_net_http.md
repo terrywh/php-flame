@@ -32,6 +32,18 @@ $request->ssl([
 ]);
 ```
 
+#### `client_request::version(integer $version)`
+设置请求使用的 HTTP 版本，请使用如下常量进行设置：
+* `flame\\net\\http\\HTTP_VERSION_AUTO` - 自动适配，由框架自行决定使用合适的版本；
+* `flame\\net\\http\\HTTP_VERSION_1_0` - 强制 HTTP/1.0 协议
+* `flame\\net\\http\\HTTP_VERSION_1_1` - 强制 HTTP/1.1 协议
+* `flame\\net\\http\\HTTP_VERSION_2_0` - 尝试协商 HTTP/2 请求，若无法实现时使用 HTTP/1.1 协议
+* `flame\\net\\http\\HTTP_VERSION_2TLS` - 尝试在 HTTPS 下协商 HTTP/2 请求，若无法实现时，使用 HTTP/1.1 协议
+* `flame\\net\\http\\HTTP_VERSION_2_PRIOR_KNOWLEDGE` - 强制 HTTP/2 协议（若服务端不支持 HTTP/2 将发生错误）
+
+**注意**：
+* 默认情况下，请求使用 `HTTP_VERSION_2TLS` 选项功能；
+
 #### `string client_request::$method`
 HTTP 的方法，目前支持的有 GET , POST , PUT；
 
@@ -130,6 +142,9 @@ var_dump($ret);
 
 #### `yield flame\net\http\remove(string $url, integer $timeout = 2500)`
 简单的 `DELETE` 请求方法。
+
+#### `yield flame\net\http\exec(client_request $request)`
+执行指定的请求（使用默认的客户端）；
 
 ### `class flame\net\http\client_response`
 客户端请求的响应，可自动转换为文本 (`toString()`)，也可以按属性访问对应数据；

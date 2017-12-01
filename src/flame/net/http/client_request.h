@@ -14,6 +14,7 @@ namespace http {
 		}
 		php::value __construct(php::parameters& params);
 		php::value ssl(php::parameters& params);
+		php::value version(php::parameters& params);
 	private:
 
 		void build();

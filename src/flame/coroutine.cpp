@@ -8,12 +8,7 @@ namespace flame {
 		
 	}
 	php::value async() {
-		// 某些销毁逻辑流程可能不存在协程上下文
-		if(coroutine::current == nullptr) {
-			php::fail("keyword 'yield' missing before async function");
-			uv_stop(flame::loop);
-			return nullptr;
-		}else if(coroutine::current->status_ != 0) {
+		if(coroutine::current->status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
 			coroutine::current->close();
 			uv_stop(flame::loop);
@@ -22,9 +17,7 @@ namespace flame {
 		++ coroutine::current->status_;
 		return php::value(coroutine::current);
 	}
-	php::value async(void* context) {
-		// 某些销毁逻辑流程可能不存在协程上下文
-		if(coroutine::current == nullptr) return nullptr;
+	php::value async(php::class_base* cpp) {
 		if(coroutine::current->status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
 			coroutine::current->close();
@@ -32,7 +25,8 @@ namespace flame {
 			return nullptr;
 		}
 		++ coroutine::current->status_;
-		return php::value(context);
+		coroutine::current->ref_ = cpp; // 在协程中保存当前对象的引用（防止异步流程丢失当前对象）
+		return php::value((void*)cpp);
 	}
 	coroutine::coroutine(coroutine* parent)
 	: status_(0)
@@ -101,6 +95,8 @@ namespace flame {
 			run();
 		}else if(yields_.empty()) {
 			generator_.send(rv);
+			// 清理当前引用
+			ref_ = nullptr;
 			run();
 		}else{
 			stack_t st = yields_.front();

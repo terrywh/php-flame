@@ -57,8 +57,7 @@ namespace time {
 		ext.add<flame::time::tick>("flame\\time\\tick");
 		ext.add<flame::time::after>("flame\\time\\after");
 	}
-	int64_t now() {
-		// 代价较每次取系统时间要低一些
+	int64_t now() { // 代价较每次取系统时间要低一些
 		return uv_now(flame::loop) - real_time_diff;
 	}
 	const char* datetime(int64_t st) {

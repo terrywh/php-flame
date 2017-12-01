@@ -11,6 +11,7 @@ namespace http {
 		curl_global_init(CURL_GLOBAL_DEFAULT);
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
 			default_client = new client();
+			default_client->default_options();
 			return true;
 		});
 		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
@@ -18,6 +19,12 @@ namespace http {
 			curl_global_cleanup();
 			return true;
 		});
+		ext.add(php::constant_entry("flame\\net\\http\\HTTP_VERSION_AUTO", CURL_HTTP_VERSION_NONE));
+		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0));
+		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1));
+		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0));
+		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_2TLS", CURL_HTTP_VERSION_2TLS));
+		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_2_PRIOR_KNOWLEDGE", CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE));
 		// shortcut for class_client
 		ext.add<::flame::net::http::get>("flame\\net\\http\\get");
 		ext.add<::flame::net::http::post>("flame\\net\\http\\post");

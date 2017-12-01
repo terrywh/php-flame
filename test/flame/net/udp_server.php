@@ -4,10 +4,8 @@ flame\go(function() {
 	$server = new flame\net\udp_socket();
 	$server->bind("::", 7678);
 	while(true) {
-		$addr = "";
-		$port = 0;
-		$data = yield $server->recv($addr, $port);
-		echo "from: ", $addr, ":", $port, " => ",$data, "\n";
+		$data = yield $server->recv();
+		echo "data: ", $data, " <= ", $data->remote_address, ":", $data->remote_port, "\n";
 	}
 });
 flame\run();

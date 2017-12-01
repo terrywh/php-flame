@@ -40,6 +40,11 @@ php::value client::__construct(php::parameters& params) {
 	}
 	return nullptr;
 }
+void client::default_options() {
+	curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_HTTP1 | CURLPIPE_MULTIPLEX);
+	curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
+	curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 2);
+}
 
 typedef struct exec_context_t {
 	coroutine*       co;
@@ -192,7 +197,6 @@ php::value client::exec2(php::object& req_obj) {
 	curl_multi_add_handle(multi_, req->easy_);
 	return flame::async();
 }
-
 php::value client::exec1(php::parameters& params) {
 	php::object& obj = params[0];
 	if(!obj.is_instance_of<client_request>()) {
@@ -200,7 +204,6 @@ php::value client::exec1(php::parameters& params) {
 	}
 	return exec2(obj);
 }
-
 client::~client() {
 	if (multi_) {
 		curl_multi_cleanup(multi_);
@@ -211,9 +214,7 @@ client::~client() {
 		uv_close((uv_handle_t*)timer_, free_handle_cb);
 	}
 }
-
 client* default_client = nullptr;
-
 php::value get(php::parameters& params) {
 	php::object     obj  = php::object::create<client_request>();
 	client_request* req  = obj.native<client_request>();
@@ -229,7 +230,6 @@ php::value get(php::parameters& params) {
 	}
 	return default_client->exec2(obj);
 }
-
 php::value post(php::parameters& params) {
 	php::object     obj = php::object::create<client_request>();
 	// client_request* req = obj.native<client_request>();
@@ -245,7 +245,6 @@ php::value post(php::parameters& params) {
 	}
 	return default_client->exec2(obj);
 }
-
 php::value put(php::parameters& params) {
 	php::object     obj = php::object::create<client_request>();
 	client_request* req = obj.native<client_request>();
@@ -261,7 +260,6 @@ php::value put(php::parameters& params) {
 	}
 	return default_client->exec2(obj);
 }
-
 php::value remove(php::parameters& params) {
 	php::object     obj = php::object::create<client_request>();
 	client_request* req = obj.native<client_request>();
@@ -277,9 +275,12 @@ php::value remove(php::parameters& params) {
 	}
 	return default_client->exec2(obj);
 }
-
 php::value exec(php::parameters& params) {
-	return default_client->exec2(params[0]);
+	php::object& obj = params[0];
+	if(!obj.is_instance_of<client_request>()) {
+		throw php::exception("object of type 'client_request' is required");
+	}
+	return default_client->exec2(obj);
 }
 
 }

@@ -23,18 +23,23 @@ namespace fastcgi {
 		// property status integer
 		// property header array
 		// property header_sent boolean
+		php::value set_cookie(php::parameters& params);
 		php::value write_header(php::parameters& params);
 		php::value write(php::parameters& params);
 		php::value end(php::parameters& params);
 	private:
-		void buffer_head();
+		void buffer_header();
+		void buffer_cookie();
 		void buffer_body(const char* data, unsigned short size);
 		void buffer_ending();
-		void buffer_write();
+		void write_buffer();
+		static void write_cb(uv_write_t* req, int status);
+		
 		server_connection* conn_;
 		record_header_t  header_;
 		php::buffer      buffer_;
-		static void write_cb(uv_write_t* req, int status);
+		std::map<std::string, php::string> cookie_;
+		bool header_sent, body_sent;
 		friend class handler;
 		friend class server_connection;
 	};

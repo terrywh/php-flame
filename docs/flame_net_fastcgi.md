@@ -43,17 +43,21 @@ $res->header["Content-Type"] = "text/html";
 $res->header["X-Server"] = "Flame/0.7.0";
 ```
 
+#### `server_response::set_cookie(string $name [, string $value = "" [, int $expire = 0 [, string $path = "" [, string $domain = "" [, bool $secure = false [, bool $httponly = false ]]]]]])`
+
+定义一个 Cookie 并通过在响应头 `Set-Cookie` 下发（实际发送在 `writer_header` 时触发）；功能与 PHP 内置函数 [setcookie](http://php.net/manual/en/function.setcookie.php) 一致；
+
 #### `yield server_response::write_header(integer $status_code)`
 设置并输出响应头部（含上述响应头 KEY/VAL 及响应状态行），请参照标准 HTTP/1.1 STATUS_CODE 设置数值；
 
 #### `yield server_response::write(string $data)`
-输出指定响应内容，请参考 `handle()` 的相关示例；
+输出指定响应内容，若还未发送相应头，将自动调用 `write_header` 发送相应头（默认 200 OK）；请参考 `handle()` 的相关示例；
 
 **注意**：
 * 不要在多个协程中使用 `write`/`end` 函数；
 
 #### `yield server_response::end([string $data])`
-结束请求，可选输出响应内容（输出功能与 `write()` 完全相同）；
+结束请求，若还未发送响应头，将自动调用 `write_header` 发送相应头（默认 200 OK）；可选输出响应内容（功能与 `write()` 完全相同）；
 
 **注意**：
 * 若服务端设置保留 fastcgi 连接（NGINX 配置 `fastcgi_keep_conn on;`），在结束响应后与 Web 服务器的连接将被保留；否则将会立即关闭；

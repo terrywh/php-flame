@@ -103,7 +103,8 @@ void client_request::build_header() {
 	php::array& opt = prop("header");
 	
 	bool expect = false,
-		content = false;
+		content = false,
+		agent   = false;
 	for(auto i=opt.begin();i!=opt.end();++i) {
 		php::string key = i->first.to_string();
 		php::string val = i->second.to_string();
@@ -111,6 +112,8 @@ void client_request::build_header() {
 			expect = true;
 		}else if(strncasecmp(key.c_str(), "Content-Type", 12) == 0) {
 			content = true;
+		}else if(strncasecmp(key.c_str(), "User-Agent", 10) == 0) {
+			agent = true;
 		}
 		php::string  str(key.length() + val.length() + 3);
 		sprintf(str.data(), "%.*s: %.*s", key.length(), key.data(), val.length(), val.data());
@@ -119,8 +122,11 @@ void client_request::build_header() {
 	if(!expect) {
 		header_ = curl_slist_append(header_, "Expect: ");
 	}
-	if(!content && body_ != nullptr && body_[0] == '{') {
+	if(!content && body_ != nullptr && (body_[0] == '{' || body_[0] == '[')) {
 		header_ = curl_slist_append(header_, "Content-Type: application/json");
+	}
+	if(!agent) {
+		header_ = curl_slist_append(header_, "User-Agent: Flame");
 	}
 	curl_easy_setopt(easy_, CURLOPT_HTTPHEADER, header_);
 }
@@ -180,10 +186,18 @@ void client_request::build_option() {
 		}
 	}
 	curl_easy_setopt(easy_, CURLOPT_TIMEOUT_MS, static_cast<long>(prop("timeout")));
-	curl_easy_setopt(easy_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2);
 	curl_easy_setopt(easy_, CURLOPT_NOPROGRESS, 1L);
+	// 默认仅在 HTTPS 下尝试 HTTP2 协议
+	curl_easy_setopt(easy_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
 }
-
+php::value client_request::version(php::parameters& params) {
+	if(params.length() < 1 || !params[0].is_long()) {
+		throw php::exception("failed to set http version: option missing");
+	}else if(CURLE_OK != curl_easy_setopt(easy_, CURLOPT_HTTP_VERSION, params[0].to_long())) {
+		throw php::exception("failed to set http version: option unknown");
+	}
+	return nullptr;
+}
 void client_request::build() {
 	build_option();
 	build_header();

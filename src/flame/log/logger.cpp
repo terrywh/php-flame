@@ -60,7 +60,6 @@ namespace log {
 	typedef struct write_request_t {
 		coroutine*   co;
 		logger*    self;
-		php::value   rv;
 		php::string str;
 		uv_write_t  req;
 	} write_request_t;
@@ -88,12 +87,12 @@ namespace log {
 		}
 		out.add('\n');
 		write_request_t* ctx = new write_request_t {
-			coroutine::current, this, this, std::move(out)
+			coroutine::current, this, std::move(out)
 		};
 		ctx->req.data = ctx;
 		uv_buf_t data {.base = ctx->str.data(), .len = ctx->str.length()};
 		uv_write(&ctx->req, (uv_stream_t*)pipe_, &data, 1, write_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value logger::fail(php::parameters& params) {
 		return write(" (FAIL)", params);
