@@ -94,6 +94,52 @@ namespace log {
 		uv_write(&ctx->req, (uv_stream_t*)pipe_, &data, 1, write_cb);
 		return flame::async(this);
 	}
+	void logger::panic() {
+		php::object ex(EG(exception), true);
+		EG(exception) = nullptr;
+		if(file_) { // 若设置了文件输出，额外向文件进行一次输出
+			// 以下相关代码参考 zend_exception.c 中 zend_exception_error 函数相关代码
+			char   errstr[4096];
+			size_t errlen = sizeof(errstr);
+			if(static_cast<zend_class_entry*>(ex) == zend_ce_parse_error) {
+				php::string& data = ex.prop("message", 7);
+				php::string& file = ex.prop("file", 4);
+				zend_long    line = ex.prop("line", 4);
+				
+				errlen = sprintf(errstr, "[%s] (PANIC) %.*s in %.*s:%d\n",
+					time::datetime(time::now()), data.length(), data.c_str(),
+					file.length(), file.c_str(), line);
+				goto ERROR_OUTPUT;
+			}else if(ex.is_instance_of(zend_ce_throwable)) {
+				php::string data;
+				// 调用过程本身还会产生一个异常（一定的）
+				zend_call_method_with_0_params((zval*)&ex, ex, nullptr, "__tostring", (zval*)&data);
+				if(data.is_string()) {
+					
+					php::string& file = ex.prop("file", 4);
+					zend_long    line = ex.prop("line", 4);
+					
+					errlen = sprintf(errstr, "[%s] (PANIC) %.*s\n",
+						time::datetime(time::now()), data.length(), data.c_str(),
+						file.length(), file.c_str(), line);
+					goto ERROR_OUTPUT;
+				}
+			}
+			errlen = sprintf(errstr, "[%s] (PANIC) Uncaught exception '%s'\n",
+				time::datetime(time::now()),
+				static_cast<zend_class_entry*>(ex)->name->val);
+ERROR_OUTPUT:
+			::lseek(file_, SEEK_END, 0);
+			::write(file_, errstr, errlen);
+			
+			uv_fs_t req;
+			uv_fs_close(flame::loop, &req, file_, nullptr);
+			file_ = 0;
+		}
+		// 保持默认的输出
+		zend_exception_error(ex, E_ERROR);
+		::exit(-1);
+	}
 	php::value logger::fail(php::parameters& params) {
 		return write(" (FAIL)", params);
 	}
@@ -106,5 +152,6 @@ namespace log {
 	php::value logger::write(php::parameters& params) {
 		return write(" ", params);
 	}
+	
 }
 }

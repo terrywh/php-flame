@@ -1,5 +1,7 @@
 #include "flame.h"
 #include "coroutine.h"
+#include "log/log.h"
+#include "log/logger.h"
 
 namespace flame {
 	coroutine* coroutine::current;
@@ -12,6 +14,7 @@ namespace flame {
 			php::fail("keyword 'yield' missing before async function");
 			coroutine::current->close();
 			uv_stop(flame::loop);
+			exit(-1);
 			return nullptr;
 		}
 		++ coroutine::current->status_;
@@ -22,6 +25,7 @@ namespace flame {
 			php::fail("keyword 'yield' missing before async function");
 			coroutine::current->close();
 			uv_stop(flame::loop);
+			exit(-1);
 			return nullptr;
 		}
 		++ coroutine::current->status_;
@@ -41,6 +45,7 @@ namespace flame {
 	void coroutine::close() {
 		if(status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
+			exit(-1);
 		}
 		status_ = -1;
 		coroutine::current = nullptr;
@@ -53,9 +58,9 @@ namespace flame {
 				if(EG(exception)) {
 					uv_stop(flame::loop);
 					// panic
-					zend_exception_error(EG(exception), E_ERROR);
-					exit(-1);
+					log::default_logger->panic();
 					// close();
+					// exit(-1);
 				}else if(this->parent_ != nullptr) {
 					coroutine* parent = this->parent_;
 					php::value rv = generator_.get_return();
