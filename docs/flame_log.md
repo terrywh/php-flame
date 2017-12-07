@@ -1,14 +1,15 @@
 ### `namespace flame\log`
-提供简单 log 日志 API，并提供 “ROTATE” 和输出文件指定。
-
-#### `flame\log\rotate()`
-重新打开输出文件；
+提供简单 log 日志 API，并提供 “ROTATE” 和输出文件指定；
 
 #### `flame\log\set_output(string $output)`
 设置输出目标：
 1. "stdout" - 将日志输出到“标准输出”；
 2. "stdlog"/"stderr" - 将日志输出到“标准错误”；
 3. 文件路径 - 将日志输出到指定文件；
+
+**注意**：
+* 使用文件作为输出目标，在系统发生异常并导致退出时，该错误信息也会被记录进对应日志文件，并标记 `(PANIC)` 以区别其他类型；
+* 使用文件作为输出目标，当进程或进程组接收到 `SIGUSR2` 信号时，将自动对日志输出文件进行 `ROTATE` 即关闭并重新按照路径打开；
 
 #### `yield flame\log\fail(mixed $message, ...)`
 #### `yield flame\log\warn(mixed $message, ...)`
@@ -24,7 +25,6 @@
 ### `class flame\log\logger`
 日志类封装，外层 `flame\log\*` 提供的 API 即对全局的默认 logger 实例进行操作。
 
-#### `logger::rotate()`
 #### `logger::set_output(string $output)`
 #### `yield logger::fail(mixed $message, ...)`
 #### `yield logger::warn(mixed $message, ...)`

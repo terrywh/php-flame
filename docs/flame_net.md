@@ -4,17 +4,26 @@
 	* **HTTP** - HTTP 协议支持（目前仅提供了客户端支持）；
 	* **FastCGI** - 精简版本的应用服务支持，可以挂接 Nginx 等 Web 服务器使用；
 
+### `class flame\net\udp_packet`
+封装通过 `udp_socket` 进行数据接收获得的数据包及对应来源；能够自动转换为文本数据；
+
+#### `string udp_packet::$payload`
+接收到的实际数据，同 `__toString()` 一致；
+
+#### `string udp_packet::$remote_address`
+数据来源远端地址；
+
+#### `integer udp_packet::$remote_port`
+数据来源远端端口；
+
+#### `udp_packet::__toString()`
+接收到的实际数据，同 `udp_packet::$payload` 一致；
+
 ### `class flame\net\udp_socket`
 封装 UDP 协议网络服务器、客户端连接
 
 #### `string udp_socket::$local_address`
 本地网络地址
-
-#### `string udp_socket::$remote_address`
-当成功接收数据后 `yield recv()`，保存数据来源地址
-
-#### `string udp_socket::$remote_port`
-当成功接收数据后 `yield recv()`，保存数据来源端口
 
 #### `udp_socket::bind(string addr, long port)`
 将当前对象绑定到指定的地址、端口；绑定后，可以接收来自这个地址、端口的数据；
@@ -23,11 +32,21 @@
 * 下述 `recv()` 和 `send()` 函数会在未绑定地址、端口时，自动进行绑定；
 
 #### `yield udp_socket::recv()`
-接收数据，设置 udp_socket::$remote_address/$remote_port 属性，并返回接收到的数据；若当前套接字被关闭，将返回 `NULL`；
+接收数据，并返回接收到的`udp_packet` 类型 数据包对象；若当前套接字被关闭，将返回 `NULL`；
 
 **注意**：
-* 仅允许唯一的协程调用上述 `recv()` 过程；多个协程调用可能引起未定义的错误；
+* 多个协程同时对对象进行 `recv()` 接收过程可能引起未定义的错误；
+* 返回的 `udp_packet` 能够自动转换为文本；
 * 若当前对象还未绑定地址、端口，系统将自动绑定 `0.0.0.0` 的随机端口；
+
+**示例**：
+``` PHP
+<?php
+// ....
+$packet = yield $socket->recv();
+echo "packet data: ", $packet, "\n";
+echo "from: ", $packet->remote_address, ":", $packet->remote_port, "\n";
+```
 
 #### `yield udp_socket::send(string $data, string $addr, integer $port)`
 向指定 `$addr` 地址，`$port` 端口发送指定 `$data` 内容

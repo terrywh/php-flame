@@ -3,7 +3,22 @@
 
 封装系统相关的 API，目前提供了启动子进程等功能；
 
-#### `flame\os\process flame\os\spawn(string $exec[, array $argv[, array $opts])`
+#### `yield flame\os\exec(string $exec[, array $argv[, array $opts])`
+启动进程，并返回该进程的输出文本数据；
+（参照下述 `spawn` 的参数说明，本函数自动设置了 `detach` | `stdout` 参数，并在内部获取输出内容并返回）
+
+**示例**：
+``` PHP
+<?php
+// ....
+$output = yield flame\os\exec("ps", ["-ef"]);
+echo $output, "\n";
+```
+
+**注意**：
+* 由于本函数使用了 `stdout` 选项对输出进行了重定向，故无法再次对其重定向；
+
+#### `flame\os\spawn(string $exec[, array $argv[, array $opts])`
 启动进程，相关参数如下：
 * `$exec` - string - 可执行文件名或路径；
 * `$argv` - array | null - 参数；

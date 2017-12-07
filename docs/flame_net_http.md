@@ -68,6 +68,7 @@ $req->header = ["content-type"=>"application/x-www-form-urlencoded"];
 
 **注意**：
 * 设置 Cookie 时请示用专用的 $cookie 属性数组，否则可能导致相互覆盖；
+* 当用户未设置 `Content-Type` 时，默认会使用 "application/x-www-form-urlencoded" 类型；当发送含有 BODY 的请求时，请求体首个字符为 '[' 或 '{' 时，默认会使用 "application/json" 类型；
 
 #### `array client_request::$cookie`
 请求头部定制 Cookie 项；
