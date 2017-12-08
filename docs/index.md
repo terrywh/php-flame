@@ -1,18 +1,18 @@
 ## Flame
 **Flame** 是一个 PHP 框架，借用 PHP Generator 实现 协程式 的编程服务。目前，flame 中提供了如下功能：
-1. 协程核心；
-	1. 核心协程函数；
+1. [协程核心](/php-flame)；
+	1. [核心协程函数](/php-flame)；
 	2. [时间协程函数](/php-flame/flame_time) - 调度休眠、定时器；
 	3. [操作系统函数](/php-flame/flame_os) - 异步进程、PHP 路径；
 	4. [日志输出](/php-flame/flame_log)；
 2. [协程式网络](/php-flame/flame_net)；
 	1. [HTTP 客户端](/php-flame/flame_net_http) - 支持 HTTP/2 协议；
-	2. Unix Socket 客户端、服务端；
-	3. TCP 客户端、服务端；
-	4. UDP 客户端、服务端；
+	2. [Unix Socket 客户端、服务端](/php-flame/flame_net)；
+	3. [TCP 客户端、服务端](/php-flame/flame_net)；
+	4. [UDP 客户端、服务端](/php-flame/flame_net)；
 	5. [FastCGI 处理器](/php-flame/flame_net_fastcgi) - 挂接 Nginx 等实现 HTTP 服务；
 3. [协程式数据库驱动](/php-flame/flame_db)：
-	1. 简单 Redis 客户端；
+	1. [简单 Redis 客户端](/php-flame/flame_db)；
 	2. [简单 Mongodb 客户端](/php-flame/flame_mongodb)；
 	3. [简单 MySQL 客户端](/php-flame/flame_mysql)；
 	4. [简单 Kafka 客户端](/php-flame/flame_db_kafka)；
@@ -56,15 +56,20 @@ flame\run();
 最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
 
 #### `flame\init(string $app_name, array $options)`
-可选，设置并初始化框架；
+可选，设置并初始化框架；设置 `$app_name` 应用名称将被用于重置进程名称；
 
-**实例**：
+**示例**：
 ``` php
 <?php
 flame\init("test_app", [ // 可选
-	"worker" => 4, // 工作进程数，默认为 0
+	"worker" => 4, // 进程数，默认为 0
 ]);
 ```
+
+**注意**：
+* 注意进程数不包含当前“主进程”，即指定 4 将启动额外的 4 个进程和当前 1 个主进程；
+* 启动的“工作进程”与当前“主进程”完全平级功能相同（除维护、启动子进程功能本身）；
+* 进程名称后会附加 `(fm)`（主进程）或 `(fw)` (子进程)；
 
 #### `flame\go(callable $g)`
 生成一个“协程”；
@@ -103,3 +108,4 @@ flame\run(); // 实际程序在此循环调度
 
 **注意**:
 * 此函数调用一般放置在入口执行文件的最后，开始后本函数会阻塞，直到所有协程执行结束；
+* 由于所有异步调度动作在本函数中进行，故当有错误发生时 PHP 的错误信息可能无法准确识别错误位置；

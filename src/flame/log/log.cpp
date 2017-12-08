@@ -17,8 +17,8 @@ namespace log {
 	static php::value write(php::parameters& params) {
 		return default_logger->write(params);
 	}
-	static php::value rotate(php::parameters& params) {
-		return default_logger->rotate(params);
+	static php::value set_output(php::parameters& params) {
+		return default_logger->set_output(params);
 	}
 
 	void init(php::extension_entry& ext) {
@@ -32,15 +32,14 @@ namespace log {
 		});
 		// ---------------------------------------------------------------------
 		php::class_entry<logger> class_logger("flame\\log\\logger");
-		class_logger.add<&logger::rotate>("set_output");
-		class_logger.add<&logger::rotate>("rotate");
+		class_logger.add<&logger::set_output>("set_output");
 		class_logger.add<&logger::fail>("fail");
 		class_logger.add<&logger::fail>("warn");
 		class_logger.add<&logger::fail>("info");
 		class_logger.add<&logger::write>("write");
 		ext.add(std::move(class_logger));
 		// ---------------------------------------------------------------------
-		ext.add<rotate>("flame\\log\\set_output");
+		ext.add<set_output>("flame\\log\\set_output");
 		ext.add<fail>("flame\\log\\fail");
 		ext.add<warn>("flame\\log\\warn");
 		ext.add<info>("flame\\log\\info");

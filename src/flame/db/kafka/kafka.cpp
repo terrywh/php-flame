@@ -24,8 +24,10 @@ namespace kafka {
 		php::class_entry<message> class_message("flame\\db\\kafka\\message");
 		class_message.add(php::property_entry("key", std::string("")));
 		class_message.add(php::property_entry("val", std::string("")));
-		class_message.add(php::property_entry("time", std::int64_t(0)));
+		// class_message.add(php::property_entry("time", std::int64_t(0)));
 		class_message.add<&message::to_string>("__toString");
+		class_message.add<&message::timestamp>("timestamp");
+		class_message.add<&message::timestamp_ms>("timestamp_ms");
 		class_message.add<&message::__destruct>("__destruct");
 		ext.add(std::move(class_message));
 	}

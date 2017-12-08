@@ -1,7 +1,7 @@
 
 ## `namespace flame\os`
 
-封装系统相关的 API，目前提供了启动子进程等功能；
+封装系统相关的 API，目前提供了启动子进程等功能；注意，此命名空间封装的进程功能与通过 `flame\init()` 函数指定的多进程没有直接的关系；
 
 #### `yield flame\os\exec(string $exec[, array $argv[, array $opts])`
 启动进程，并返回该进程的输出文本数据；

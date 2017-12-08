@@ -24,31 +24,40 @@ namespace flame {
 		return process_self;
 	}
 	static void master_exit_cb(uv_signal_t* handle, int signum) {
-		process* proc = reinterpret_cast<process*>(handle->data);
-		proc->worker_stop();
+		process* self = reinterpret_cast<process*>(handle->data);
+		self->worker_kill(SIGINT); // SIGINT 按“正常退出”处理
 		uv_stop(flame::loop);
 	}
 	static void worker_exit_cb(uv_signal_t* handle, int signum) {
-		process* proc = reinterpret_cast<process*>(handle->data);
+		process* self = reinterpret_cast<process*>(handle->data);
 		uv_stop(flame::loop);
+	}
+	static void master_usr2_cb(uv_signal_t* handle, int signum) {
+		process* proc = reinterpret_cast<process*>(handle->data);
+		proc->worker_kill(SIGUSR2);
 	}
 	void process::init() {
 		if(process_type == PROCESS_MASTER) {
-			uv_signal_init(flame::loop, &signal_);
-			uv_signal_start_oneshot(&signal_, master_exit_cb, SIGTERM);
+			uv_signal_init(flame::loop, &sigterm_);
+			uv_signal_start_oneshot(&sigterm_, master_exit_cb, SIGTERM);
+			uv_signal_init(flame::loop, &sigusr2_);
+			uv_signal_start(&sigusr2_, master_usr2_cb, SIGUSR2);
+			uv_unref((uv_handle_t*)&sigusr2_);
+			sigusr2_.data = this;
+			
 			worker_start();
 		}else{
-			uv_signal_init(flame::loop, &signal_);
-			uv_signal_start_oneshot(&signal_, worker_exit_cb, SIGTERM);
+			uv_signal_init(flame::loop, &sigterm_);
+			uv_signal_start_oneshot(&sigterm_, worker_exit_cb, SIGINT);
 		}
-		signal_.data = this;
-		uv_unref((uv_handle_t*)&signal_);
+		uv_unref((uv_handle_t*)&sigterm_);
+		sigterm_.data = this;
 	}
 	void process::run() {
 		if(process_type == PROCESS_MASTER) {
-			php::callable("cli_set_process_title").invoke(process_name + " (flame-master)");
+			php::callable("cli_set_process_title").invoke(process_name + " (fm)");
 		}else{
-			php::callable("cli_set_process_title").invoke(process_name + " (flame)");
+			php::callable("cli_set_process_title").invoke(process_name + " (fw)");
 		}
 		uv_run(flame::loop, UV_RUN_DEFAULT);
 		// 非错误引发的问题（因异常引发时，进程已经提前结束，不会到达这里）
@@ -77,9 +86,9 @@ namespace flame {
 			workers_.insert(w);
 		}
 	}
-	void process::worker_stop() {
+	void process::worker_kill(int sig) {
 		for(auto i=workers_.begin();i!=workers_.end();++i) {
-			(*i)->kill();
+			(*i)->kill(sig);
 		}
 	}
 	void process::on_worker_stop(worker* w) {

@@ -26,7 +26,7 @@ $cli->connect("127.0.0.1", 3306, "username", "password", "database_name");
 最后一次执行的查询 SQL 语句，仅供少量调试使用（大量并行请求可能互相覆盖）；
 
 #### `yield client::query(string $sql) | yield client::query(string $format[, mixed $arg1, mixed $arg2, ...])`
-进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_info` 执行结果；注意后一种函数原型，允许进行“格式化”参数替换即：将 $arg1 / $arg2 等参数替换到 $format 定义的格式化字符串中，自动进行转义和包裹，例如：
+进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_info` 执行结果；注意后一种函数原型，允许进行“格式化”参数替换即：将 $arg1 / $arg2 等参数替换到 $format 定义的格式化字符串中，自动进行转义和包裹（防止 SQL 注入），例如：
 
 ``` PHP
 $rs = $cli->query("SELECT * FROM `test`");
@@ -37,7 +37,7 @@ $rb = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa);
 ```
 
 **注意**：
-* 请不要直接拼接 二进制数据 进行 SQL 语句，使用 `prepare` -> `bind` 代替；
+* 由于目前不支持 PREPARE STATEMENT 故暂不允许直接使用二进制数据（可靠率使用 BASE64 等编码进行转换）；
 
 #### `yield client::insert(string $table, array $data)`
 插入一行或多行数据，对应 `INSERT INTO ....`：
@@ -100,7 +100,7 @@ $rb = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa);
 ```
 
 **注意**：
-* 如需要在字段名称上使用 SQL 函数，请使用文本形式自行指定 $fields 参数；数组形式不支持此种语法；
+* 如需要在字段名称上使用 SQL 函数，请使用文本形式自行指定 `$fields` 参数；数组形式不支持此种语法；
 
 #### `yield client::one(string $table, array $conditions[, mixed $sort])`
 执行查询并限定结果集大小为1，若找到匹配数据，直接返回数据（关联数组）；若未找到，返回 null；
@@ -128,16 +128,3 @@ while($row = yield $rs->fetch_row()) { // 依次获取每行数据关联数组
 
 #### `yield result_set::fetch_row([$type = flame\\db\\mysql\\FETCH_ASSOC])`
 获取结果集中的下一数据，返回该行数据的关联数组；
-
-### `class flame\db\mysql\result_info`
-
-#### `yield result_info::affect_array()`
-获取一行数据，下标数组（不存在字段名）；
-
-#### `yield result_info::affect_assoc()`
-获取一行数据，关联数组；
-
-#### `yield result_info::fetch_all([$type = flame\db\mysql\FETCH_ASSOC])`
-获取全部数据，默认关联数组；`$type` 字段可选值如下：
-* `flame\db\mysql\FETCH_ASSOC` - 关联数组
-* `flame\db\mysql\FETCH_ARRAY` - 下标数组

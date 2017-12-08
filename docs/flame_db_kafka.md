@@ -54,7 +54,7 @@ flame\go(function() {
 消费者
 
 **注意**：
-* 不能将同一个 consumer 用于多个协程；
+* 目前的实现方式，ke
 
 ##### `consumer::__construct(array $global_opt, array $topic_opt, array $topics)`
 创建消费者，准备消费指定的所有话题消息；选项 `$global_opt` | `$topic_opt` 请参考 [CONFIGURATION.md](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md) 进行配置；被消费话题由 `$topics` 数组指定；
@@ -90,11 +90,14 @@ $msg = yield $consumer->consume();
 ##### `string  message::$key`
 消息生产时指定的 KEY；
 
-##### `integer message::$time`
-消息时间戳（毫秒级）；
-
 ##### `string message::$val`
-消息体，与 `__toString()` 一致；
+消息体；
 
 ##### `message::__toString()`
 消息体，与 `$val` 一致；
+
+##### `message::timestamp()`
+秒级时间戳，相当于 `intval($time / 1000)`；
+
+##### `message::timestamp_ms()`
+毫秒级时间戳，与 `$time` 一致；

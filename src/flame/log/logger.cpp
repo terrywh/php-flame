@@ -9,12 +9,18 @@ namespace log {
 	: pipe_(nullptr)
 	, path_(0)
 	, file_(0) {
-
+		sig_ = (uv_signal_t*)malloc(sizeof(uv_signal_t));
+		uv_signal_init(flame::loop, sig_);
+		sig_->data = this;
+		uv_signal_start(sig_, signal_cb, SIGUSR2);
+		uv_unref((uv_handle_t*)sig_);
 	}
 	logger::~logger() {
 		close();
+		uv_close((uv_handle_t*)sig_, free_handle_cb);
 	}
 	void logger::close() {
+		// 下面对象允许重复打开关闭
 		if(pipe_) {
 			uv_close((uv_handle_t*)pipe_, free_handle_cb);
 			pipe_ = nullptr;
@@ -25,11 +31,11 @@ namespace log {
 			file_ = 0;
 		}
 	}
-	php::value logger::rotate(php::parameters& params) {
+	php::value logger::set_output(php::parameters& params) {
 		if(params.length() > 0) {
 			rotate(params[0]);
 		}else{
-			rotate();
+			throw php::exception("failed to set output: stderr / stdout / stdlog or filepath is required");
 		}
 		return nullptr;
 	}
@@ -139,6 +145,10 @@ ERROR_OUTPUT:
 		// 保持默认的输出
 		zend_exception_error(ex, E_ERROR);
 		::exit(-1);
+	}
+	void logger::signal_cb(uv_signal_t* handle, int signal) {
+		logger* self = reinterpret_cast<logger*>(handle->data);
+		self->rotate();
 	}
 	php::value logger::fail(php::parameters& params) {
 		return write(" (FAIL)", params);
