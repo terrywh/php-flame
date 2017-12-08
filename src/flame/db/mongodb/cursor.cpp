@@ -59,19 +59,19 @@ namespace mongodb {
 	}
 	php::value cursor::to_array(php::parameters& params) {
 		cursor_request_t* ctx = new cursor_request_t {
-			coroutine::current, impl, this, -2, php::array(0)
+			coroutine::current, impl, nullptr, -2, php::array(0)
 		};
 		ctx->req.data = ctx;
 		to_array_cb(&ctx->req, 0);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value cursor::next(php::parameters& params) {
 		cursor_request_t* ctx = new cursor_request_t {
-			coroutine::current, impl, this, 0, php::array(nullptr)
+			coroutine::current, impl, nullptr, 0, php::array(nullptr)
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, cursor_implement::next_wk, next_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 }
 }

@@ -108,12 +108,12 @@ namespace db {
 		}
 		connect();
 		connect_ = new redis_request_t {
-			coroutine::current, this
+			coroutine::current, nullptr
 		};
 		uv_timer_stop(connect_interval);
 		uv_timer_start(connect_interval, cb_connect_timeout, timeout, 0);
 
-		return flame::async();
+		return flame::async(this);
 	}
 
 	php::value redis::close(php::parameters& params) {
@@ -177,7 +177,7 @@ namespace db {
 		argv.push_back(name.c_str());
 		argl.push_back(name.length());
 		redis_request_t* ctx = new redis_request_t {
-			coroutine::current, this
+			coroutine::current, nullptr
 		};
 		for(int i=0; i<data.length(); ++i) {
 			php::string str = data[i].to_string();
@@ -190,7 +190,7 @@ namespace db {
 			argl.push_back(str.length());
 		}
 		exec(argv.data(), argl.data(), argv.size(), ctx, cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void redis::cb_assoc_keys(redisAsyncContext *c, void *r, void *privdata) {
 		redis*       self = reinterpret_cast<redis*>(c->data);
@@ -221,7 +221,7 @@ namespace db {
 		argv.push_back(name.c_str());
 		argl.push_back(name.length());
 		redis_request_t* ctx = new redis_request_t {
-			coroutine::current, this
+			coroutine::current, nullptr
 		};
 		for(int i=1; i<params.length();++i) {
 			php::string str = params[i].to_string();
@@ -230,7 +230,7 @@ namespace db {
 			ctx->key.push_back(str);
 		}
 		exec(argv.data(), argl.data(), argv.size(), ctx, cb_assoc_keys);
-		return flame::async();
+		return flame::async(this);
 	}
 	void redis::cb_subscribe(redisAsyncContext *c, void *r, void *privdata) {
 		redis*          self = reinterpret_cast<redis*>(c->data);
@@ -266,7 +266,7 @@ namespace db {
 		argv.push_back("SUBSCRIBE");
 		argl.push_back(9);
 		redis_request_t* ctx = new redis_request_t {
-			coroutine::current, this, params[params.length()-1]
+			coroutine::current, nullptr, params[params.length()-1]
 		};
 		ctx->key.push_back(php::string("UNSUBSCRIBE", 11));
 		for(int i=0; i<params.length()-1;++i) {
@@ -276,7 +276,7 @@ namespace db {
 		}
 		exec(argv.data(), argl.data(), argv.size(), ctx, cb_subscribe);
 		current_ = ctx;
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value redis::psubscribe(php::parameters& params) {
 		if(current_ != nullptr) {
@@ -290,7 +290,7 @@ namespace db {
 		argv.push_back("PSUBSCRIBE");
 		argl.push_back(10);
 		redis_request_t* ctx = new redis_request_t {
-			coroutine::current, this, params[params.length()-1]
+			coroutine::current, nullptr, params[params.length()-1]
 		};
 		ctx->key.push_back(php::string("UNPSUBSCRIBE", 12));
 		for(int i=0; i<params.length()-1;++i) {
@@ -300,7 +300,7 @@ namespace db {
 		}
 		exec(argv.data(), argl.data(), argv.size(), ctx, cb_subscribe);
 		current_ = ctx;
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value redis::stop_all(php::parameters& params) {
 		if(current_ == nullptr) return nullptr;
@@ -330,10 +330,10 @@ namespace db {
 		argv.push_back("QUIT");
 		argl.push_back(4);
 		redis_request_t* ctx = new redis_request_t {
-			coroutine::current, this
+			coroutine::current, nullptr
 		};
 		exec(argv.data(), argl.data(), argv.size(), ctx, cb_quit);
-		return flame::async();
+		return flame::async(this);
 	}
 	void redis::exec(const char** argv, const size_t* argl, size_t count, redis_request_t* req, redisCallbackFn* fn) {
 		// TODO 命令超时？

@@ -89,16 +89,16 @@ namespace mysql {
 		client_request_t* ctx;
 		if(params.length() > 0 && params[0].is_string()) {
 			ctx = new client_request_t {
-				coroutine::current, impl, this, params[0]
+				coroutine::current, impl, nullptr, params[0]
 			};
 		}else{ // 不指定连接字符串时一般时重新连接
 			ctx = new client_request_t {
-				coroutine::current, impl, this
+				coroutine::current, impl, nullptr
 			};
 		}
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, client_implement::connect_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value client::format(php::parameters& params) {
 		if(params.length() < 1 || !params[0].is_string()) {
@@ -119,7 +119,7 @@ namespace mysql {
 	}
 	void client::query_(const php::string& sql) {
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl, this, sql
+			coroutine::current, impl, nullptr, sql
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, client_implement::query_wk, queue_cb);
@@ -145,7 +145,7 @@ namespace mysql {
 			sql = format(params);
 		}
 		query_(sql);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value client::insert(php::parameters& params) {
 		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
@@ -173,7 +173,7 @@ namespace mysql {
 			}
 		}
 		query_(std::move(sql));
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value client::remove(php::parameters& params) {
 		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
@@ -192,7 +192,7 @@ namespace mysql {
 			sql_limit(this, params[3], sql);
 		}
 		query_(std::move(sql));
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value client::update(php::parameters& params) {
 		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array() || !params[2].is_array()) {
@@ -223,7 +223,7 @@ namespace mysql {
 			sql_limit(this, params[4], sql);
 		}
 		query_(std::move(sql));
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value client::one(php::parameters& params) {
 		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
@@ -240,11 +240,11 @@ namespace mysql {
 		}
 		std::memcpy(sql.put(8), " LIMIT 1", 8);
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl, this, std::move(sql)
+			coroutine::current, impl, nullptr, std::move(sql)
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, client_implement::one_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value client::select(php::parameters& params) {
 		if(params.length() < 1 || !params[0].is_string()) {
@@ -284,16 +284,16 @@ namespace mysql {
 			sql_limit(this, params[4], sql);
 		}
 		query_(std::move(sql));
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value client::found_rows(php::parameters& params) {
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl, this
+			coroutine::current, impl, nullptr
 		};
 		ctx->sql = php::string("SELECT FOUND_ROWS()");
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, client_implement::found_rows_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void client::default_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);

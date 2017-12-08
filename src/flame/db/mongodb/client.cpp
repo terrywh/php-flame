@@ -27,7 +27,7 @@ namespace mongodb {
 	}
 	php::value client::connect(php::parameters& params) {
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl, this
+			coroutine::current, impl, nullptr
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 0 && params[0].is_string()) {
@@ -36,7 +36,7 @@ namespace mongodb {
 		impl->worker_->queue_work(&ctx->req,
 			client_implement::connect_wk,
 			default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void client::collection_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -53,11 +53,11 @@ namespace mongodb {
 	}
 	php::value client::collection(php::parameters& params) {
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl, this, params[0].to_string()
+			coroutine::current, impl, nullptr, params[0].to_string()
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, client_implement::collection_wk, collection_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 }
 }

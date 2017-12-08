@@ -107,9 +107,7 @@ namespace kafka {
 	void producer_implement::flush_wk(uv_work_t* req) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);
 		rd_kafka_flush(ctx->self->kafka_, 10000);
-		while (rd_kafka_outq_len(ctx->self->kafka_) > 0) {
-			rd_kafka_poll(ctx->self->kafka_, 1000);
-		}
+		rd_kafka_poll(ctx->self->kafka_, 0);
 	}
 	void producer_implement::close_wk(uv_work_t* req) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);

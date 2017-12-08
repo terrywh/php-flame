@@ -1,6 +1,7 @@
 #include "../../time/time.h"
 #include "../../coroutine.h"
 #include "../../thread_worker.h"
+#include "client.h"
 #include "client_implement.h"
 
 namespace flame {
@@ -8,6 +9,7 @@ namespace db {
 namespace mysql {
 	client_implement::client_implement(std::shared_ptr<thread_worker> worker, client* cli)
 	: worker_(worker)
+	, client_(cli)
 	, mysql_(nullptr)
 	, debug_(false)
 	, ping_interval(60 * 1000)
@@ -79,8 +81,8 @@ namespace mysql {
 		MYSQLND_RES* rs = mysqlnd_store_result(ctx->self->mysql_);
 		// INSERT / UPDATE / DELETE “更新”型 SQL 执行结果
 		if(rs == nullptr && mysqlnd_field_count(ctx->self->mysql_) == 0) {
-			reinterpret_cast<php::object&>(ctx->rv).prop("affected_rows") = mysqlnd_affected_rows(ctx->self->mysql_);
-			reinterpret_cast<php::object&>(ctx->rv).prop("insert_id") = mysqlnd_insert_id(ctx->self->mysql_);
+			ctx->self->client_->prop("affected_rows") = mysqlnd_affected_rows(ctx->self->mysql_);
+			ctx->self->client_->prop("insert_id")     = mysqlnd_insert_id(ctx->self->mysql_);
 			ctx->rv = php::BOOL_NO;
 			return;
 		}

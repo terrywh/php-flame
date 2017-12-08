@@ -27,25 +27,25 @@ namespace mysql {
 	}
 	php::value result_set::fetch_row(php::parameters& params) {
 		result_request_t* ctx = new result_request_t {
-			coroutine::current, impl, this, MYSQLND_FETCH_ASSOC
+			coroutine::current, impl, nullptr, MYSQLND_FETCH_ASSOC
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 0 && params[0].to_long() == MYSQLND_FETCH_NUM) {
 			ctx->type = MYSQLND_FETCH_NUM;
 		}
 		impl->worker_->queue_work(&ctx->req, result_implement::fetch_row_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value result_set::fetch_all(php::parameters& params) {
 		result_request_t* ctx = new result_request_t {
-			coroutine::current, impl, this, MYSQLND_FETCH_ASSOC
+			coroutine::current, impl, nullptr, MYSQLND_FETCH_ASSOC
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 0 && params[0].to_long() == MYSQLND_FETCH_NUM) {
 			ctx->type = MYSQLND_FETCH_NUM;
 		}
 		impl->worker_->queue_work(&ctx->req, result_implement::fetch_all_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void result_set::default_cb(uv_work_t* req, int status) {
 		result_request_t* ctx = reinterpret_cast<result_request_t*>(req->data);

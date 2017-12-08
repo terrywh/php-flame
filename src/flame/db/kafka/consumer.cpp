@@ -20,7 +20,7 @@ namespace kafka {
 	}
 	php::value consumer::consume(php::parameters& params) {
 		consumer_request_t* ctx = new consumer_request_t {
-			coroutine::current, impl, this
+			coroutine::current, impl, nullptr
 		};
 		ctx->req.data = ctx;
 		// TODO 暂时屏蔽回调方式的消费
@@ -31,7 +31,7 @@ namespace kafka {
 		// }else{
 			impl->worker_.queue_work(&ctx->req, consumer_implement::consume_wk, consume_cb);
 		//}
-		return flame::async();
+		return flame::async(this);
 	}
 	void consumer::consume_cb(uv_work_t* handle, int status) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
@@ -57,11 +57,11 @@ namespace kafka {
 			throw php::exception("only instanceof flame\\db\\kafka\\message can be commited");
 		}
 		consumer_request_t* ctx = new consumer_request_t {
-			coroutine::current, impl, this, params[0]
+			coroutine::current, impl, nullptr, params[0]
 		};
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req, consumer_implement::commit_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 }
 }

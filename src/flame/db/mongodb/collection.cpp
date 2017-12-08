@@ -37,14 +37,14 @@ namespace mongodb {
 	}
 	php::value collection::count(php::parameters& params) {
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this
+			coroutine::current, impl, nullptr
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 0 && params[0].is_array()) {
 			ctx->doc1 = params[0];
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::count_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value collection::insert_one(php::parameters& params) {
 		php::array& doc = params[0];
@@ -52,10 +52,10 @@ namespace mongodb {
 			throw php::exception("illegal document, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, doc};
+			coroutine::current, impl, nullptr, doc};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, collection_implement::insert_one_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value collection::insert_many(php::parameters& params) {
 		php::array& docs = params[0];
@@ -63,7 +63,7 @@ namespace mongodb {
 			throw php::exception("illegal document, document array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, docs
+			coroutine::current, impl, nullptr, docs
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 1 && params[1].is_true()) {
@@ -72,7 +72,7 @@ namespace mongodb {
 			ctx->flags = false;
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::insert_many_wk, insert_many_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void collection::insert_many_cb(uv_work_t* w, int status) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
@@ -90,11 +90,11 @@ namespace mongodb {
 			throw php::exception("illegal selector, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, filter
+			coroutine::current, impl, nullptr, filter
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, collection_implement::remove_one_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value collection::remove_many(php::parameters& params) {
 		php::array& filter = params[0];
@@ -102,11 +102,11 @@ namespace mongodb {
 			throw php::exception("illegal selector, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, filter
+			coroutine::current, impl, nullptr, filter
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, collection_implement::remove_many_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value collection::update_one(php::parameters& params) {
 		php::array& filter = params[0];
@@ -117,14 +117,14 @@ namespace mongodb {
 		}
 
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, filter, update, MONGOC_UPDATE_NONE
+			coroutine::current, impl, nullptr, filter, update, MONGOC_UPDATE_NONE
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 2 && params[2].is_true()) {
 			ctx->flags |= MONGOC_UPDATE_UPSERT;
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value collection::update_many(php::parameters& params) {
 		php::array& filter = params[0];
@@ -135,14 +135,14 @@ namespace mongodb {
 		}
 
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, filter, update, MONGOC_UPDATE_MULTI_UPDATE
+			coroutine::current, impl, nullptr, filter, update, MONGOC_UPDATE_MULTI_UPDATE
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 2 && params[2].is_true()) {
 			ctx->flags |= MONGOC_UPDATE_UPSERT;
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	php::value collection::find_one(php::parameters& params) {
 		php::array& filter = params[0], option(0);
@@ -154,11 +154,11 @@ namespace mongodb {
 		}
 		option.at("limit", 5) = 1;
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, filter, option
+			coroutine::current, impl, nullptr, filter, option
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, collection_implement::find_one_wk, find_one_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void collection::find_one_cb(uv_work_t* w, int status) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
@@ -192,11 +192,11 @@ namespace mongodb {
 			option.at("projection", 10) = params[4];
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, this, filter, option
+			coroutine::current, impl, nullptr, filter, option
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, collection_implement::find_many_wk, find_many_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void collection::find_many_cb(uv_work_t* w, int status) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);

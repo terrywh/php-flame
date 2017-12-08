@@ -11,6 +11,7 @@ namespace kafka {
 		return nullptr;
 	}
 	php::value producer::__destruct(php::parameters& params) {
+		std::printf("__destruct\n");
 		producer_request_t* ctx = new producer_request_t {
 			nullptr, impl, nullptr
 		};
@@ -20,14 +21,14 @@ namespace kafka {
 	}
 	php::value producer::produce(php::parameters& params) {
 		producer_request_t* ctx = new producer_request_t {
-			coroutine::current, impl, this, params[0].to_string()
+			coroutine::current, impl, nullptr, params[0].to_string()
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 1) {
 			ctx->key = params[1].to_string();
 		}
 		impl->worker_.queue_work(&ctx->req, producer_implement::produce_wk, default_cb);
-		return flame::async();
+		return flame::async(this);
 	}
 	void producer::default_cb(uv_work_t* handle, int status) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(handle->data);
@@ -36,11 +37,11 @@ namespace kafka {
 	}
 	php::value producer::flush(php::parameters& params) {
 		producer_request_t* ctx = new producer_request_t {
-			coroutine::current, impl, this
+			coroutine::current, impl
 		};
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req, producer_implement::flush_wk, default_cb);
-		return nullptr;
+		return flame::async(this);
 	}
 }
 }
