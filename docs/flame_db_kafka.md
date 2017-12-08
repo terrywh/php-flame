@@ -53,9 +53,6 @@ flame\go(function() {
 #### `class flame\db\kafka\consumer`
 消费者
 
-**注意**：
-* 目前的实现方式，ke
-
 ##### `consumer::__construct(array $global_opt, array $topic_opt, array $topics)`
 创建消费者，准备消费指定的所有话题消息；选项 `$global_opt` | `$topic_opt` 请参考 [CONFIGURATION.md](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md) 进行配置；被消费话题由 `$topics` 数组指定；
 
@@ -68,7 +65,7 @@ flame\go(function() {
 消费（等待 KAFKA 返回）一条消息；
 
 **注意**：
-* **不能**将同一个 consumer 用于多个协程进行消费；
+* 多个协程进行消费同一个 consumer 会导致未知错误；
 
 **示例**：
 ``` PHP
@@ -82,12 +79,12 @@ $msg = yield $consumer->consume();
 
 **注意**：
 * 需要手动提交，请设置 `enable.auto.commit` 为 `"false"`
-* 相较之下，手动提交效率较低，请斟酌使用；
+* 相较之下，手动提交效率很低，请斟酌使用；
 
 #### `class flame\db\kafka\message`
 消费者消费过程返回的消息对象，用于包裹实际的消息内容和其相关数据
 
-##### `string  message::$key`
+##### `string message::$key`
 消息生产时指定的 KEY；
 
 ##### `string message::$val`

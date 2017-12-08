@@ -2,11 +2,12 @@
 flame\init("spawn_ipc_master");
 flame\go(function() {
 	// 简单启动进程，并获取输出
-	yield flame\os\exec("ps", ["-ef"])
+	$data = yield flame\os\exec("ps", ["-ef"]);
+	var_dump($data);
 	 
 	$proc = new flame\os\process(
 		flame\os\executable(),
-		[__DIR__."/worker.php"],
+		[__DIR__."/spawn_worker.php"],
 		[
 			"env"    => ["TEST_KEY_1" => "TEST_VAL_1"],
 			"cwd"    => __DIR__,
