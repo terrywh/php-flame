@@ -13,8 +13,8 @@
 	5. [FastCGI 处理器](/php-flame/flame_net_fastcgi) - 挂接 Nginx 等实现 HTTP 服务；
 3. [协程式数据库驱动](/php-flame/flame_db)：
 	1. [简单 Redis 客户端](/php-flame/flame_db)；
-	2. [简单 Mongodb 客户端](/php-flame/flame_mongodb)；
-	3. [简单 MySQL 客户端](/php-flame/flame_mysql)；
+	2. [简单 Mongodb 客户端](/php-flame/flame_db_mongodb)；
+	3. [简单 MySQL 客户端](/php-flame/flame_db_mysql)；
 	4. [简单 Kafka 客户端](/php-flame/flame_db_kafka)；
 
 **源码**：

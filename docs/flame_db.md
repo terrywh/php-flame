@@ -1,8 +1,8 @@
 ## `namespace flame\db`
 提供基本的数据库资源客户端的异步协程式端封装：
-1. Redis
-2. [MySQL](/php-flame/flame_mysql)；
-3. [Mongodb](/php-flame/flame_mongodb)；
+1. [Redis](/php-flame/flame_db)
+2. [MySQL](/php-flame/flame_db_mysql)；
+3. [Mongodb](/php-flame/flame_db_mongodb)；
 4. [Kafka](/php-flame/flame_db_kafka)；
 
 ### `class flame\db\redis`
