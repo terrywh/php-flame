@@ -110,7 +110,7 @@ namespace log {
 		EG(exception) = nullptr;
 		if(file_ >= 3) {
 			// 若设置了文件输出，额外向文件进行一次输出
-			panic_file(ex);
+			panic_to_file(ex);
 		}
 		// 保持默认的输出
 		zend_exception_error(ex, E_ERROR);
