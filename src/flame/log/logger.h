@@ -27,6 +27,7 @@ namespace log {
 		static void write_cb(uv_write_t* req, int status);
 		static void signal_cb(uv_signal_t* handle, int signal);
 		php::value write(const std::string& level, php::parameters& params);
+		void panic_to_file(php::object& ex);
 	};
 }
 }

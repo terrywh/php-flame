@@ -53,7 +53,6 @@ void server_response::buffer_header() {
 	}
 	// Set-Cookie: .....
 	for(auto i=cookie_.begin(); i!=cookie_.end(); ++i) {
-		std::printf("Set-Cookie: %.*s\n", i->second.length(), i->second.c_str());
 		sprintf(buffer_.put(14 + i->second.length()),
 			"Set-Cookie: %.*s\r\n", i->second.length(), i->second.c_str());
 	}

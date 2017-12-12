@@ -252,6 +252,7 @@ namespace fastcgi {
 		php::string key = std::move(self->key_);
 		php::string val = std::move(self->val_);
 		self->body_.at(key) = val;
+		return 0;
 	}
 	int server_connection::kv_key_cb(kv_parser* parser, const char* at, size_t length) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);

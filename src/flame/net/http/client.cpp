@@ -63,7 +63,6 @@ void client::curl_multi_info_check(client* self) {
 			exec_context_t* ctx;
 			curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &ctx);
 			if (message->data.result != CURLE_OK) {
-				// std::printf("error: %s (%d)\n", curl_easy_strerror(message->data.result), message->data.result);
 				ctx->co->fail(curl_easy_strerror(message->data.result), message->data.result);				
 			} else {
 				long status;

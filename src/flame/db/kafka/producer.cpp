@@ -11,7 +11,6 @@ namespace kafka {
 		return nullptr;
 	}
 	php::value producer::__destruct(php::parameters& params) {
-		std::printf("__destruct\n");
 		producer_request_t* ctx = new producer_request_t {
 			nullptr, impl, nullptr
 		};

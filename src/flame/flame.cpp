@@ -53,6 +53,12 @@ namespace flame {
 			return quit_cb.size();
 		}
 	}
+	static php::value output_test(php::parameters& params) {
+		for(int i=0;i<1000;++i) {
+			std::fprintf(stderr, "==================================================\n");
+		}
+		return nullptr;
+	}
 	void init(php::extension_entry& ext) {
 		coroutine::prepare();
 		// 进程控制
@@ -62,6 +68,7 @@ namespace flame {
 		ext.add<flame::go>("flame\\go");
 		ext.add<flame::run>("flame\\run");
 		ext.add<flame::quit>("flame\\quit");
+		ext.add<flame::output_test>("flame\\output_test");
 	}
 
 }
