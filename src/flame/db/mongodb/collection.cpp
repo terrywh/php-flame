@@ -39,10 +39,11 @@ namespace mongodb {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
 		if(ctx->rv.is_pointer()) {
 			bson_error_t* error = ctx->rv.ptr<bson_error_t>();
-			ctx->rv = php::make_exception(error->message, error->code);
+			ctx->co->fail(error->message, error->code);
 			delete error;
+		}else{
+			ctx->co->next(ctx->rv);
 		}
-		ctx->co->next(ctx->rv);
 		delete ctx;
 	}
 	php::value collection::count(php::parameters& params) {

@@ -106,14 +106,15 @@ namespace log {
 		}
 	}
 	void logger::panic() {
-		php::object ex(EG(exception), true);
+		php::object ex1(EG(exception), true);
 		EG(exception) = nullptr;
-		if(file_ >= 3) {
+		
+		if(file_ >= 0) {
 			// 若设置了文件输出，额外向文件进行一次输出
-			panic_to_file(ex);
+			panic_to_file(ex1);
 		}
 		// 保持默认的输出
-		zend_exception_error(ex, E_ERROR);
+		zend_exception_error(ex1, E_ERROR);
 		::exit(-1);
 	}
 	void logger::panic_to_file(php::object& ex) {
@@ -121,9 +122,9 @@ namespace log {
 		char   errstr[4096];
 		size_t errlen = sizeof(errstr);
 		if(static_cast<zend_class_entry*>(ex) == zend_ce_parse_error) {
-			php::string& data = ex.prop("message", 7);
-			php::string& file = ex.prop("file", 4);
-			zend_long    line = ex.prop("line", 4);
+			php::string data = ex.prop("message", 7);
+			php::string file = ex.prop("file", 4);
+			zend_long   line = ex.prop("line", 4);
 			
 			errlen = sprintf(errstr, "[%s] (PANIC) %.*s in %.*s:%d\n",
 				time::datetime(time::now()), data.length(), data.c_str(),
@@ -134,9 +135,8 @@ namespace log {
 			// 调用过程本身还会产生一个异常（一定的）
 			zend_call_method_with_0_params((zval*)&ex, ex, nullptr, "__tostring", (zval*)&data);
 			if(data.is_string()) {
-				
-				php::string& file = ex.prop("file", 4);
-				zend_long    line = ex.prop("line", 4);
+				php::string file = ex.prop("file", 4);
+				zend_long   line = ex.prop("line", 4);
 				
 				errlen = sprintf(errstr, "[%s] (PANIC) %.*s\n",
 					time::datetime(time::now()), data.length(), data.c_str(),

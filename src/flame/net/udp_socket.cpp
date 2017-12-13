@@ -134,7 +134,7 @@ namespace net {
 		if(co_) {
 			coroutine* co = co_;
 			if(err == 0) co->next();
-			else co->next(php::make_exception(uv_strerror(err), err));
+			else co->fail(uv_strerror(err), err);
 		}
 		if(sck) {
 			if(init_) uv_close((uv_handle_t*)sck, free_handle_cb);

@@ -28,7 +28,7 @@ namespace io {
 			ctx->co->next();
 		}else if(status < 0) {
 			ctx->self->close();
-			ctx->co->next(php::make_exception(uv_strerror(status), status));
+			ctx->co->fail(uv_strerror(status), status);
 		}else{
 			ctx->co->next();
 		}

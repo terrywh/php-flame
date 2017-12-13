@@ -42,9 +42,10 @@ namespace mongodb {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		if(ctx->rv.is_string()) {
 			php::string& message = ctx->rv;
-			ctx->rv = php::make_exception(message.c_str(), 0);
+			ctx->co->fail(message, 0);
+		}else{
+			ctx->co->next(ctx->rv);
 		}
-		ctx->co->next(ctx->rv);
 		delete ctx;
 	}
 	void client::collection_cb(uv_work_t* req, int status) {

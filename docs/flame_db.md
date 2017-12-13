@@ -60,8 +60,8 @@ function callback($chan, $data) {
 **注意**：
 * 不能（在多个协程中）同时建立订阅监听过程（`subscribe` / `psubscribe` 也不能同时使用），否则会引起；
 
-#### `redis::stop()`
+#### `redis::stop_all()`
 结束已建立的监听过程（恢复监听协程的运行）；
 
 **注意**：
-* 此函数与 REDIS 操作 `UNSUBSCRIBE` | `PUNSUBSCRIBE` 对应，但不支持传递参数；
+* 此函数与 REDIS 操作 `UNSUBSCRIBE` | `PUNSUBSCRIBE` 对应，但不支持传递参数（关闭所有当前连接建立的订阅监听）；

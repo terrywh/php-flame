@@ -22,7 +22,7 @@ namespace io {
 			// 故 self->co_ = nullptr 必须置于 co->next() 之前
 			// 否则可能导致将下次的 co_ 被清理
 			if(err == 0) co->next();
-			else co->next(php::make_exception(uv_strerror(err), err));
+			else co->fail(uv_strerror(err), err);
 		}
 		if(tm_) {
 			uv_close((uv_handle_t*)tm_, flame::free_handle_cb);

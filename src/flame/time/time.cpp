@@ -7,18 +7,28 @@ namespace flame {
 namespace time {
 	static void sleep_timer_cb(uv_timer_t* handle) {
 		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
-		if(co) co->next();
+		co->next();
 		uv_close((uv_handle_t*)handle, flame::free_handle_cb);
-		// delete handle;
 	}
 	static php::value sleep(php::parameters& params) {
-		// auto ctx = new coroutine_context<uv_timer_t, void>(coroutine::current, nullptr);
 		int64_t ms = params[0];
 		uv_timer_t* req = (uv_timer_t*)malloc(sizeof(uv_timer_t));
 		req->data = coroutine::current;
 		uv_timer_init(flame::loop, req);
-		// default_timer_cb -> 继续协程 删除 context 对象
 		uv_timer_start(req, sleep_timer_cb, ms, 0);
+		// 标记异步任务的特殊返回值
+		return flame::async();
+	}
+	static void async_exception_cb(uv_timer_t* handle) {
+		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
+		co->fail("test async exception");
+		uv_close((uv_handle_t*)handle, flame::free_handle_cb);
+	}
+	static php::value async_exception(php::parameters& params) {
+		uv_timer_t* req = (uv_timer_t*)malloc(sizeof(uv_timer_t));
+		req->data = coroutine::current;
+		uv_timer_init(flame::loop, req);
+		uv_timer_start(req, async_exception_cb, 1, 0);
 		// 标记异步任务的特殊返回值
 		return flame::async();
 	}
@@ -44,8 +54,9 @@ namespace time {
 				std::chrono::system_clock::now().time_since_epoch()).count();
 		real_time_diff = uv_now(flame::loop) - rtime;
 
-		ext.add<flame::time::sleep>("flame\\time\\sleep");
-		ext.add<flame::time::now>("flame\\time\\now");
+		ext.add<async_exception>("flame\\async_exception");
+		ext.add<sleep>("flame\\time\\sleep");
+		ext.add<now>("flame\\time\\now");
 		php::class_entry<ticker> class_ticker("flame\\time\\ticker");
 		class_ticker.add(php::property_entry("interval", 1000));
 		class_ticker.add(php::property_entry("repeat", (zend_bool)true));

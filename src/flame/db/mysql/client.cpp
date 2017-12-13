@@ -301,11 +301,12 @@ namespace mysql {
 			// 使用 rv 可能带回错误信息
 			if(ctx->rv.is_string()) {
 				php::string& msg = ctx->rv;
-				ctx->rv = php::make_exception(msg.c_str(), 0);
+				ctx->co->fail(msg, 0);
 			}else if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQLND>() == ctx->self->mysql_) {
-				ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
+				ctx->co->fail(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
+			}else{
+				ctx->co->next(ctx->rv);
 			}
-			ctx->co->next(ctx->rv);
 		}
 		delete ctx;
 	}

@@ -96,7 +96,9 @@ namespace flame {
 			while(!yields_.empty()) {
 				yields_.pop_front();
 			}
-			generator_.throw_exception(rv);
+			php::object& ex = rv;
+			// 由于异步问题，这里不能直接使用 throw_exception，需要在协程回复的上下文中构建异常
+			generator_.async_exception(ex.prop("message"), ex.prop("code"));
 			run();
 		}else if(yields_.empty()) {
 			generator_.send(rv);
@@ -108,6 +110,19 @@ namespace flame {
 			yields_.pop_front();
 			st.cb(rv, current, st.data);
 		}
+		current = old;
+	}
+	void coroutine::fail(const std::string& message, int code) {
+		if(status_ < 0) return;
+		coroutine* old = current;
+		current = this;
+
+		while(!yields_.empty()) {
+			yields_.pop_front();
+		}
+		generator_.async_exception(message, code);
+		run();
+
 		current = old;
 	}
 }

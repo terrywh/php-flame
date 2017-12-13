@@ -7,31 +7,29 @@ namespace db {
 
 	static php::value convert_redis_reply(redisReply* reply) {
 		php::value rv(nullptr);
-		if (reply != nullptr) {
-			switch(reply->type) {
-			case REDIS_REPLY_INTEGER:
-				rv = (std::int64_t)reply->integer;
-			break;
-			case REDIS_REPLY_STRING:
-			case REDIS_REPLY_STATUS:
-				rv = php::string(reply->str);
-			break;
-			case REDIS_REPLY_ERROR:
-				rv = php::make_exception(reply->str);
-			break;
-			case REDIS_REPLY_ARRAY: {
-				php::array arr(reply->elements);
-				for(int i = 0; i < reply->elements; ++i) {
-					arr[i] = convert_redis_reply(reply->element[i]);
-				}
-				rv = arr;
+
+		switch(reply->type) {
+		case REDIS_REPLY_INTEGER:
+			rv = (std::int64_t)reply->integer;
+		break;
+		case REDIS_REPLY_STRING:
+		case REDIS_REPLY_STATUS:
+			rv = php::string(reply->str);
+		break;
+		
+		case REDIS_REPLY_ARRAY: {
+			php::array arr(reply->elements);
+			for(int i = 0; i < reply->elements; ++i) {
+				arr[i] = convert_redis_reply(reply->element[i]);
 			}
-			break;
-			case REDIS_REPLY_NIL:
-			break;
-			}
-		} else {
-			rv = php::make_exception("EMPTY empty reply", -2);
+			rv = arr;
+		}
+		break;
+		case REDIS_REPLY_NIL:
+		break;
+		case REDIS_REPLY_ERROR:
+		default:
+			assert(0);
 		}
 		return std::move(rv);
 	}
@@ -95,7 +93,7 @@ namespace db {
 			redisAsyncDisconnect(self->context_);
 			self->context_ = nullptr;
 
-			self->connect_->co->next(php::make_exception("redis connect timeout", 0));
+			self->connect_->co->fail("redis connect timeout", 0);
 			self->connect_ = nullptr;
 		}
 	}
@@ -136,7 +134,13 @@ namespace db {
 		redis*       self = reinterpret_cast<redis*>(c->data);
 		redisReply* reply = reinterpret_cast<redisReply*>(r);
 		redis_request_t* ctx = reinterpret_cast<redis_request_t*>(privdata);
-		ctx->co->next(convert_redis_reply(reply));
+		if(reply == nullptr) {
+			ctx->co->next();
+		}else if(reply->type == REDIS_REPLY_ERROR) {
+			ctx->co->fail(reply->str);
+		}else{
+			ctx->co->next(convert_redis_reply(reply));
+		}
 		delete ctx;
 	}
 	void redis::cb_assoc_even(redisAsyncContext *c, void *r, void *privdata) {
@@ -147,9 +151,9 @@ namespace db {
 		if (reply == nullptr) {
 			ctx->co->next(nullptr);
 		}else if(reply->type == REDIS_REPLY_ERROR) {
-			ctx->co->next(convert_redis_reply(reply));
+			ctx->co->fail(reply->str);
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
-			ctx->co->next(php::make_exception("ILLEGAL illegal reply", -2));
+			ctx->co->fail("ILLEGAL illegal reply", -2);
 		} else {
 			php::array rv(reply->elements/2);
 			for(int i = 0; i < reply->elements; i=i+2) { // i 是 key，i+1 就是value
@@ -200,9 +204,9 @@ namespace db {
 		if (reply == nullptr) {
 			ctx->co->next(nullptr);
 		}else if(reply->type == REDIS_REPLY_ERROR) {
-			ctx->co->next(convert_redis_reply(reply));
+			ctx->co->fail(reply->str);
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
-			ctx->co->next(php::make_exception("ILLEGAL illegal reply", -2));
+			ctx->co->fail("ILLEGAL illegal reply", -2);
 		} else {
 			php::array rv(reply->elements);
 			for(int i = 0; i < reply->elements; ++i) {
@@ -236,8 +240,21 @@ namespace db {
 		redis*          self = reinterpret_cast<redis*>(c->data);
 		redisReply*    reply = reinterpret_cast<redisReply*>(r);
 		redis_request_t* ctx = reinterpret_cast<redis_request_t*>(privdata);
-		php::array        rv = convert_redis_reply(reply);
-		if (rv.is_array()) {
+		
+		if (reply == nullptr) {
+			ctx->co->fail("ILLEGAL illegal reply", -2);
+			self->current_ = nullptr;
+			delete ctx;
+		}else if(reply->type == REDIS_REPLY_ERROR) {
+			ctx->co->fail(reply->str);
+			self->current_ = nullptr;
+			delete ctx;
+		}else if(reply->type != REDIS_REPLY_ARRAY) {
+			ctx->co->fail("ILLEGAL illegal reply", -2);
+			self->current_ = nullptr;
+			delete ctx;
+		}else{
+			php::array rv = convert_redis_reply(reply);
 			php::string& type = rv[0];
 			if(std::strncmp(type.c_str(), "subscribe", 9) == 0) {
 				//
@@ -248,10 +265,6 @@ namespace db {
 				ctx->co->next();
 				delete ctx;
 			}
-		} else {
-			ctx->co->next(php::make_exception("ILLEGAL illegal reply", -2));
-			self->current_ = nullptr;
-			delete ctx;
 		}
 	}
 	php::value redis::subscribe(php::parameters& params) {
