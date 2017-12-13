@@ -25,7 +25,7 @@ namespace log {
 			uv_close((uv_handle_t*)pipe_, free_handle_cb);
 			pipe_ = nullptr;
 		}
-		if(file_ < 3) { // 排除 file_ = 1 / file_ = 2 标准输出的情况
+		if(file_ < 0) { // 排除 file_ = 1 / file_ = 2 标准输出的情况
 			uv_fs_t req;
 			uv_fs_close(flame::loop, &req, file_, nullptr);
 			file_ = 0;
@@ -44,9 +44,9 @@ namespace log {
 		
 		if(path_.length() == 0 || path_.length() == 6 && (std::strncmp(path_.c_str(), "stderr", 6) == 0
 				|| std::strncmp(path_.c_str(), "stdlog", 6) == 0)) {
-			file_ = 2;
+			file_ = -2;
 		}else if(path_.length() == 6 && std::strncmp(path_.c_str(), "stdout", 6) == 0) {
-			file_ = 1;
+			file_ = -1;
 		}else{
 			uv_fs_t req;
 			file_ = uv_fs_open(flame::loop, &req, path_.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0777, nullptr);
@@ -91,10 +91,10 @@ namespace log {
 		}
 		out.add('\n');
 
-		if(file_ == 1) {
-			std::fprintf(stdout, out.data());
-		}else if(file_ == 2) {
+		if(file_ == -2) {
 			std::fprintf(stderr, out.data());
+		}else if(file_ == -1) {
+			std::fprintf(stdout, out.data());
 		}else{
 			write_request_t* ctx = new write_request_t {
 				coroutine::current, this, std::move(out)

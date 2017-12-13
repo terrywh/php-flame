@@ -11,8 +11,9 @@
 **示例**：
 ``` PHP
 <?php
+// ...
 $cli = new flame\db\redis();
-$cli->connect("127.0.0.1",6379);
+yield $cli->connect("127.0.0.1",6379);
 // 可选
 yield $cli->auth("123456");
 yield $cli->select(31);
@@ -29,11 +30,8 @@ $val = yield $cli->get("key");
 **注意**：
 * 所有命令函数均需前置 `yield` 关键字进行调用；
 
-#### `redis::connect(string $host, integer $port)` | `redis::connect(string $uri)`
-配置 `redis` 连接相关属性；
-
-**注意**：
-* `connect()` 不会立刻完成对 `Redis` 的连接，函数也不会阻塞（实际会在第一次命令请求时进行连接）；
+#### `yield redis::connect(string $host, integer $port)`
+连接 `redis` 服务器；
 
 #### `redis::close()`
 立刻主动关闭和 `redis` 的连接；

@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.2.0dev
+EXT_VER=1.2.0
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -11,7 +11,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
 # ---------------------------------------------------------------------
 CXX?=/usr/local/gcc-7.1.0/bin/g++
-CXXFLAGS?= -O0 -g
+CXXFLAGS?= -O2
 CXXFLAGS_CORE= -std=c++14 -fPIC
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
 # 链接参数
