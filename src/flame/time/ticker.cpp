@@ -5,6 +5,9 @@
 namespace flame {
 namespace time {
 	php::value ticker::__construct(php::parameters& params) {
+		if(!params[0].is_long()) {
+			throw php::exception("tick interval of type integer is required");
+		}
 		prop("interval", 8) = static_cast<int>(params[0]);
 		if(params.length() > 1) {
 			prop("repeat", 6) = params[1].is_true();

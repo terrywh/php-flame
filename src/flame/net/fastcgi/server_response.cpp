@@ -10,8 +10,9 @@ namespace net {
 namespace fastcgi {
 
 server_response::~server_response() {
+	std::printf("server_response destroy\n");
 	// 强制的请求结束
-	if((conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0 && !prop("ended").is_true()) {
+	if((conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0 && !body_sent) {
 		conn_->close();
 	}
 }
@@ -128,8 +129,11 @@ php::value server_response::write(php::parameters& params) {
 		buffer_header();
 		header_sent = true;
 	}
-	// TODO 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
+	// 若实际传递的 data 大于可容纳的 body 最大值 64k，需要截断若干次发送 buffer_body 发送
 	php::string& data = params[0].to_string();
+	if(data.length() > 64 * 1024) {
+		throw php::exception("write single buffer larger than 64kb is not supported");
+	}
 	buffer_body(data.data(), data.length());
 	write_buffer();
 	return flame::async(this);
@@ -214,13 +218,13 @@ void server_response::write_cb(uv_write_t* req, int status) {
 
 	// 若 Web 服务器没有保持连接的标记，在请求结束后关闭连接
 	if((ctx->self->conn_->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0
-		&& ctx->self->prop("ended").is_true()) {
+		&& ctx->self->body_sent) {
 		ctx->self->conn_->close();
 	}
 	if(status < 0) {
 		php::warn("failed to write response: %s", uv_strerror(status));
 	}
-	ctx->co->next();
+	ctx->co->next(php::BOOL_YES);
 	delete ctx;
 }
 

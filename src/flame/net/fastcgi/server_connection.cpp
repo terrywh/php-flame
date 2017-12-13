@@ -37,9 +37,9 @@ namespace fastcgi {
 	void server_connection::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 		server_connection* self = reinterpret_cast<server_connection*>(stream->data);
 		if(nread < 0) {
-			if(nread != UV_EOF) {
-				// TODO 记录发生的错误信息日志？
-			}else if(nread != UV_ECANCELED) {
+			if(nread == UV_ECANCELED) {
+				
+			}else{
 				self->close();
 			}
 		}else if(nread == 0) {
@@ -194,7 +194,7 @@ namespace fastcgi {
 	void server_connection::close() {
 		if(svr_ == nullptr) return;
 		svr_ = nullptr;
-		res_.prop("ended") = php::BOOL_YES;
+		res_.native<server_response>()->body_sent = true;
 		uv_close(
 			reinterpret_cast<uv_handle_t*>(&socket_),
 			close_cb);

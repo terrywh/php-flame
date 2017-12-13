@@ -10,9 +10,9 @@ namespace flame {
 		
 	}
 	php::value async() {
-		if(coroutine::current->status_ != 0) {
+		if(!coroutine::current ||coroutine::current->status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
-			coroutine::current->close();
+			if(coroutine::current) coroutine::current->close();
 			uv_stop(flame::loop);
 			exit(-1);
 			return nullptr;
@@ -21,9 +21,9 @@ namespace flame {
 		return php::value(coroutine::current);
 	}
 	php::value async(php::class_base* cpp) {
-		if(coroutine::current->status_ != 0) {
+		if(!coroutine::current ||coroutine::current->status_ != 0) {
 			php::fail("keyword 'yield' missing before async function");
-			coroutine::current->close();
+			if(coroutine::current) coroutine::current->close();
 			uv_stop(flame::loop);
 			exit(-1);
 			return nullptr;
