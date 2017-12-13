@@ -87,10 +87,10 @@ namespace kafka {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(handle->data);
 		
 		if(ctx->key.is_string()) {
-			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, 0,
+			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY,
 				ctx->val.data(), ctx->val.length(), ctx->key.c_str(), ctx->key.length(), ctx);
 		}else{
-			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, 0,
+			rd_kafka_produce(ctx->self->topic_, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY,
 				ctx->val.data(), ctx->val.length(), nullptr, 0, ctx);
 		}
 		// while(ctx->rv.is_object()) {

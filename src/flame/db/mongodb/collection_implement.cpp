@@ -20,14 +20,15 @@ namespace mongodb {
 		bson_init(&filter);
 		fill_with(&filter, ctx->doc1);
 		
-		bson_error_t error;
+		// 由于错误对象可能被传递到主线程使用，故需要在堆进行分配
+		bson_error_t* error = new bson_error_t;
 		int64_t c = mongoc_collection_count(
-			ctx->self->col_, MONGOC_QUERY_SLAVE_OK,
-			&filter, 0, 0, nullptr, &error);
+			ctx->self->col_, MONGOC_QUERY_SLAVE_OK, &filter, 0, 0, nullptr, error);
 		bson_destroy(&filter);
 		if(c == -1) {
-			ctx->rv = php::make_exception(error.message, error.code);
+			ctx->rv.ptr(error);
 		}else{
+			delete error;
 			ctx->rv = c;
 		}
 	}
@@ -37,15 +38,15 @@ namespace mongodb {
 		bson_init(&filter);
 		fill_with(&filter, ctx->doc1);
 		
-		bson_error_t error;
+		bson_error_t* error = new bson_error_t;
 		bool r = mongoc_collection_insert(
-			ctx->self->col_, MONGOC_INSERT_NONE,
-			&filter, nullptr, &error);
+			ctx->self->col_, MONGOC_INSERT_NONE, &filter, nullptr, error);
 		bson_destroy(&filter);
 		if(r) {
 			ctx->rv = php::BOOL_YES;
+			delete error;
 		}else{
-			ctx->rv = php::make_exception(error.message, error.code);
+			ctx->rv.ptr(error);
 		}
 	}
 	void collection_implement::insert_many_wk(uv_work_t* w) {
@@ -78,19 +79,16 @@ namespace mongodb {
 		bson_t filter;
 		bson_init(&filter);
 		fill_with(&filter, ctx->doc1);
-		
-		bson_error_t error;
+		// 由于错误对象可能被传递到主线程使用，故需要在堆进行分配
+		bson_error_t* error = new bson_error_t;
 		bool r = mongoc_collection_remove(
-			ctx->self->col_,
-			MONGOC_REMOVE_SINGLE_REMOVE,
-			&filter,
-			nullptr,
-			&error);
+			ctx->self->col_, MONGOC_REMOVE_SINGLE_REMOVE, &filter, nullptr, error);
 		bson_destroy(&filter);
 		if(r) {
-			ctx->rv = true;
+			delete error;
+			ctx->rv = php::BOOL_YES;
 		}else{
-			ctx->rv = php::make_exception(error.message, error.code);
+			ctx->rv.ptr(error);
 		}
 	}
 	void collection_implement::remove_many_wk(uv_work_t* w) {
@@ -100,14 +98,15 @@ namespace mongodb {
 		bson_init(&filter);
 		fill_with(&filter, ctx->doc1);
 		
-		bson_error_t error;
+		bson_error_t* error = new bson_error_t;
 		bool r = mongoc_collection_remove(
-			ctx->self->col_, MONGOC_REMOVE_NONE, &filter, nullptr, &error);
+			ctx->self->col_, MONGOC_REMOVE_NONE, &filter, nullptr, error);
 		bson_destroy(&filter);
 		if(r) {
-			ctx->rv = true;
+			delete error;
+			ctx->rv = php::BOOL_YES;
 		}else{
-			ctx->rv = php::make_exception(error.message, error.code);
+			ctx->rv.ptr(error);
 		}
 	}
 	void collection_implement::update_wk(uv_work_t* w) {
@@ -119,16 +118,17 @@ namespace mongodb {
 		bson_init(&update);
 		fill_with(&update, ctx->doc2);
 		
-		bson_error_t error;
+		bson_error_t* error = new bson_error_t;
 		bool r = mongoc_collection_update(
 			ctx->self->col_, (mongoc_update_flags_t)ctx->flags, &filter, &update,
-			nullptr, &error);
+			nullptr, error);
 		bson_destroy(&filter);
 		bson_destroy(&update);
 		if(r) {
-			ctx->rv = true;
+			delete error;
+			ctx->rv = php::BOOL_YES;
 		}else{
-			ctx->rv = php::make_exception(error.message, error.code);
+			ctx->rv.ptr(error);
 		}
 	}
 
@@ -147,10 +147,6 @@ namespace mongodb {
 		
 		// cursor 对象创建需要在主线程进行
 		ctx->doc1.ptr(cs);
-		// php::object obj = php::object::create<cursor>();
-		// cursor*     cpp = obj.native<cursor>();
-		// cpp->init(ctx->self->worker_, ctx->self->cpp_, cs);
-		// ctx->rv = std::move(obj);
 	}
 	void collection_implement::find_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);

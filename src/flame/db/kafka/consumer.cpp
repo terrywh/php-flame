@@ -23,28 +23,27 @@ namespace kafka {
 			coroutine::current, impl, nullptr
 		};
 		ctx->req.data = ctx;
-		// TODO 暂时屏蔽回调方式的消费
-		// （需要提供从 worker -> master 的单独通知，调用回调函数）
-		// if(params.length() > 0 && params[0].is_callable()) {
-		// 	ctx_ = ctx;
-		// 	impl->worker_.queue_work(&ctx->req, consumer_implement::consume2_wk, consume_cb);
-		// }else{
-			impl->worker_.queue_work(&ctx->req, consumer_implement::consume_wk, consume_cb);
-		//}
+		impl->worker_.queue_work(&ctx->req, consumer_implement::consume_wk, consume_cb);
 		return flame::async(this);
 	}
 	void consumer::consume_cb(uv_work_t* handle, int status) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
-		if(ctx->rv.is_pointer()) {
-			rd_kafka_message_t* msg = ctx->rv.ptr<rd_kafka_message_t>();
-			
-			php::object obj = php::object::create<message>();
-			message*    cpp = obj.native<message>();
-			cpp->init(msg, ctx->self->consumer_);
-			ctx->rv = std::move(obj);
+		if(ctx->msg.is_pointer()) {
+			rd_kafka_message_t* msg = ctx->msg.ptr<rd_kafka_message_t>();
+			if(msg->err == 0) {
+				php::object obj = php::object::create<message>();
+				message*    cpp = obj.native<message>();
+				cpp->init(msg, ctx->self->consumer_);
+				// ctx->rv = std::move(obj);
+				ctx->co->next(std::move(obj));
+				delete ctx;
+			}else{
+				ctx->rv = php::make_exception(rd_kafka_err2str(msg->err), msg->err);
+				ctx->self->worker_.queue_work(&ctx->req, consumer_implement::destroy_msg_wk, default_cb);
+			}
+		}else{
+			assert(0); // 不应出现的返回值
 		}
-		ctx->co->next(ctx->rv);
-		delete ctx;
 	}
 	void consumer::default_cb(uv_work_t* handle, int status) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);

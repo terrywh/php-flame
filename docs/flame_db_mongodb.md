@@ -6,7 +6,8 @@ mongodb 客户端（连接）；
 **示例**：
 ``` PHP
 <?php
-$cli = new flame\db\mongo("mongodb://127.0.0.1:27017/database");
+$cli = new new flame\db\mongodb\client();
+yield $cli->connect("mongodb://127.0.0.1:27017/database");
 // 以下两行代码功能相同
 $collection = $cli->col_abc;
 $collection = $cli->collection("col_abc");

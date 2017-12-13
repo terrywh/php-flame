@@ -70,19 +70,12 @@ namespace kafka {
 		while(true) {
 			msg = rd_kafka_consumer_poll(ctx->self->kafka_, 10);
 			if(msg) {
-				if(msg->err == 0) {
-					// 创建对象的过程必须在主线程进行
-					ctx->rv.ptr(msg);
-					// php::object obj = php::object::create<message>();
-					// message*    cpp = obj.native<message>();
-					// cpp->init(msg, ctx->self->consumer_);
-					// ctx->rv = std::move(obj);
-					break;
-				}else if(msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
+				if(msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
 					rd_kafka_message_destroy(msg);
+					// 继续等待数据
 				}else{
-					ctx->rv = php::make_exception(rd_kafka_err2str(msg->err), msg->err);
-					rd_kafka_message_destroy(msg);
+					ctx->msg.ptr(msg);
+					// 返回的数据可能包含异常情况需要处理
 					break;
 				}
 			}
@@ -90,9 +83,6 @@ namespace kafka {
 		while (rd_kafka_outq_len(ctx->self->kafka_) > 0) {
 			rd_kafka_poll(ctx->self->kafka_, 1000);
 		}
-	}
-	void consumer_implement::consume2_wk(uv_work_t* handle) {
-		// TODO 使用 worker 向 master 发送消息并进行单独回调
 	}
 	void consumer_implement::commit_wk(uv_work_t* handle) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);

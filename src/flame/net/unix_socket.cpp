@@ -31,7 +31,7 @@ namespace net {
 	}
 	void unix_socket::connect_cb(uv_connect_t* handle, int error) {
 		connect_request_t* ctx = static_cast<connect_request_t*>(handle->data);
-		if(error < 0) ctx->co->fail(uv_strerror(error), error);
+		if(error < 0) ctx->co->next(php::make_exception(uv_strerror(error), error));
 		else ctx->co->next();
 		delete ctx;
 	}

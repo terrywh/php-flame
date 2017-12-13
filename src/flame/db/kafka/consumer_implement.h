@@ -27,7 +27,6 @@ namespace kafka {
 		consumer_request_t*      ctx_; // 用于 commit
 		static void error_cb(rd_kafka_t *rk, int err, const char *reason, void *opaque);
 		static void consume_wk(uv_work_t* handle);
-		static void consume2_wk(uv_work_t* handle);
 		static void commit_wk(uv_work_t* handle);
 		static void offset_commit_cb(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *offsets, void *opaque);
 		static void close_wk(uv_work_t* handle);

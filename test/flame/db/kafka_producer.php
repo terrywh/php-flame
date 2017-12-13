@@ -6,7 +6,8 @@ flame\go(function() {
 	], [], "wuhao-test");
 	$begin = microtime(true);
 	$exit = false;
-	flame\time\after(600000, function() use(&$exit) {
+	$tick = flame\time\after(600000, function() use(&$exit) {
+		// 600s 后退出
 		$exit = true;
 	});
 	$i = 0;
@@ -14,11 +15,12 @@ flame\go(function() {
 		yield $producer->produce("".$i);
 		++$i;
 		if($i % 10000 == 0) {
-			echo "flush\n";
 			yield $producer->flush();
+			echo "flush\n";
 		}
 	}
 	$end = microtime(true);
 	echo "produced in ", $end - $begin, "s\n";
+	$tick->stop();
 });
 flame\run();

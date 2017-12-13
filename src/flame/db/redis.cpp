@@ -95,7 +95,7 @@ namespace db {
 			redisAsyncDisconnect(self->context_);
 			self->context_ = nullptr;
 
-			self->connect_->co->fail("redis connect timeout", 0);
+			self->connect_->co->next(php::make_exception("redis connect timeout", 0));
 			self->connect_ = nullptr;
 		}
 	}
@@ -149,7 +149,7 @@ namespace db {
 		}else if(reply->type == REDIS_REPLY_ERROR) {
 			ctx->co->next(convert_redis_reply(reply));
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
-			ctx->co->fail("ILLEGAL illegal reply", -2);
+			ctx->co->next(php::make_exception("ILLEGAL illegal reply", -2));
 		} else {
 			php::array rv(reply->elements/2);
 			for(int i = 0; i < reply->elements; i=i+2) { // i 是 key，i+1 就是value
@@ -202,7 +202,7 @@ namespace db {
 		}else if(reply->type == REDIS_REPLY_ERROR) {
 			ctx->co->next(convert_redis_reply(reply));
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
-			ctx->co->fail("ILLEGAL illegal reply", -2);
+			ctx->co->next(php::make_exception("ILLEGAL illegal reply", -2));
 		} else {
 			php::array rv(reply->elements);
 			for(int i = 0; i < reply->elements; ++i) {
@@ -249,7 +249,7 @@ namespace db {
 				delete ctx;
 			}
 		} else {
-			ctx->co->fail("ILLEGAL illegal reply", -2);
+			ctx->co->next(php::make_exception("ILLEGAL illegal reply", -2));
 			self->current_ = nullptr;
 			delete ctx;
 		}

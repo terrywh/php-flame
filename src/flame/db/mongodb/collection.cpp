@@ -35,6 +35,16 @@ namespace mongodb {
 		if(ctx->co) ctx->co->next(ctx->rv);
 		delete ctx;
 	}
+	void collection::boolean_cb(uv_work_t* w, int status) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		if(ctx->rv.is_pointer()) {
+			bson_error_t* error = ctx->rv.ptr<bson_error_t>();
+			ctx->rv = php::make_exception(error->message, error->code);
+			delete error;
+		}
+		ctx->co->next(ctx->rv);
+		delete ctx;
+	}
 	php::value collection::count(php::parameters& params) {
 		collection_request_t* ctx = new collection_request_t {
 			coroutine::current, impl, nullptr
@@ -43,7 +53,7 @@ namespace mongodb {
 		if(params.length() > 0 && params[0].is_array()) {
 			ctx->doc1 = params[0];
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::count_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::count_wk, boolean_cb);
 		return flame::async(this);
 	}
 	php::value collection::insert_one(php::parameters& params) {
@@ -54,7 +64,7 @@ namespace mongodb {
 		collection_request_t* ctx = new collection_request_t {
 			coroutine::current, impl, nullptr, doc};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::insert_one_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::insert_one_wk, boolean_cb);
 		return flame::async(this);
 	}
 	php::value collection::insert_many(php::parameters& params) {
@@ -93,7 +103,7 @@ namespace mongodb {
 			coroutine::current, impl, nullptr, filter
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::remove_one_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::remove_one_wk, boolean_cb);
 		return flame::async(this);
 	}
 	php::value collection::remove_many(php::parameters& params) {
@@ -105,7 +115,7 @@ namespace mongodb {
 			coroutine::current, impl, nullptr, filter
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::remove_many_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::remove_many_wk, boolean_cb);
 		return flame::async(this);
 	}
 	php::value collection::update_one(php::parameters& params) {
@@ -123,7 +133,7 @@ namespace mongodb {
 		if(params.length() > 2 && params[2].is_true()) {
 			ctx->flags |= MONGOC_UPDATE_UPSERT;
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, boolean_cb);
 		return flame::async(this);
 	}
 	php::value collection::update_many(php::parameters& params) {
@@ -141,7 +151,7 @@ namespace mongodb {
 		if(params.length() > 2 && params[2].is_true()) {
 			ctx->flags |= MONGOC_UPDATE_UPSERT;
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, default_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, boolean_cb);
 		return flame::async(this);
 	}
 	php::value collection::find_one(php::parameters& params) {

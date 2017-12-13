@@ -21,7 +21,7 @@ namespace mongodb {
 			ctx->self->uri_ = mongoc_uri_new(ctx->name.c_str());
 		}
 		if(!ctx->self->uri_) {
-			ctx->rv = php::make_exception("failed to parse mongodb connection uri");
+			ctx->rv = php::string("failed to parse mongodb connection uri", 38);
 		}
 		ctx->self->cli_ = mongoc_client_new_from_uri(ctx->self->uri_);
 		if(ctx->self->cli_) {
@@ -30,7 +30,7 @@ namespace mongodb {
 			mongoc_read_prefs_destroy(prefs);
 			ctx->rv = php::BOOL_NO;
 		}else{
-			ctx->rv = php::make_exception("failed to connect to mongodb server");
+			ctx->rv = php::string("failed to connect to mongodb server", 35);
 		}
 	}
 	void client_implement::collection_wk(uv_work_t* req) {
@@ -45,11 +45,7 @@ namespace mongodb {
 			ctx->name.c_str());
 		
 		// collection 创建过程移动到主线程进行
-		ctx->rv.ptr(col); 
-		// php::object          obj = php::object::create<mongodb::collection>();
-		// mongodb::collection* cpp = obj.native<mongodb::collection>();
-		// cpp->init(ctx->self->worker_, ctx->self->client_, col);
-		// ctx->rv = std::move(obj);
+		ctx->rv.ptr(col);
 	}
 	void client_implement::close_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);

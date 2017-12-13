@@ -41,7 +41,7 @@ namespace net {
 	void tcp_socket::connect_cb(uv_connect_t* handle, int err) {
 		connect_request_t* ctx = static_cast<connect_request_t*>(handle->data);
 		if(err < 0) {
-			ctx->co->fail(uv_strerror(err), err);
+			ctx->co->next(php::make_exception(uv_strerror(err), err));
 		}else{
 			ctx->self->after_init();
 			ctx->co->next();

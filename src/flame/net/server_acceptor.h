@@ -38,7 +38,7 @@ public:
 	}
 	void close(int err = 0) {
 		if(co_) {
-			if(err) co_->fail(uv_strerror(err), err);
+			if(err) co_->next(php::make_exception(uv_strerror(err), err));
 			else co_->next();
 		}
 	}

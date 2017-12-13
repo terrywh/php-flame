@@ -186,9 +186,11 @@ $data = yield $sock->read(); // $data = "aaaaa";
 * 执行本函数会导致还未完成的 `read()` 和 `write()` 动作立刻结束并抛出错误；
 
 ### `class flame\net\tcp_server`
-	封装 TCP 协议的网络服务器相关功能、接口；
+封装 TCP 协议的网络服务器相关功能、接口；
+
 #### `string tcp_server::$local_address`
-	服务器本地监听地址
+服务器本地监听地址
+
 #### `tcp_server::bind(string addr, long port)`
 绑定服务器地址端口，绑定后调用 `run()` 启动服务器开始监听指定的地址、端口；
 

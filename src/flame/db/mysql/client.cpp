@@ -297,7 +297,16 @@ namespace mysql {
 	}
 	void client::default_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(ctx->co != nullptr) ctx->co->next(ctx->rv);
+		if(ctx->co != nullptr) {
+			// 使用 rv 可能带回错误信息
+			if(ctx->rv.is_string()) {
+				php::string& msg = ctx->rv;
+				ctx->rv = php::make_exception(msg.c_str(), 0);
+			}else if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQLND>() == ctx->self->mysql_) {
+				ctx->rv = php::make_exception(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
+			}
+			ctx->co->next(ctx->rv);
+		}
 		delete ctx;
 	}
 }

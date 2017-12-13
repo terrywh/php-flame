@@ -63,7 +63,7 @@ void client::curl_multi_info_check(client* self) {
 			exec_context_t* ctx;
 			curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &ctx);
 			if (message->data.result != CURLE_OK) {
-				ctx->co->fail(curl_easy_strerror(message->data.result), message->data.result);				
+				ctx->co->next(php::make_exception(curl_easy_strerror(message->data.result), message->data.result));				
 			} else {
 				long status;
 				curl_easy_getinfo(message->easy_handle, CURLINFO_RESPONSE_CODE, &status);

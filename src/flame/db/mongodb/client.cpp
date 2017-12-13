@@ -35,8 +35,17 @@ namespace mongodb {
 		}
 		impl->worker_->queue_work(&ctx->req,
 			client_implement::connect_wk,
-			default_cb);
+			connect_cb);
 		return flame::async(this);
+	}
+	void client::connect_cb(uv_work_t* req, int status) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(ctx->rv.is_string()) {
+			php::string& message = ctx->rv;
+			ctx->rv = php::make_exception(message.c_str(), 0);
+		}
+		ctx->co->next(ctx->rv);
+		delete ctx;
 	}
 	void client::collection_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
