@@ -340,7 +340,7 @@ namespace db {
 		int error = redisAsyncCommandArgv(context_, fn, req, count, argv, argl);
 		if(error != 0) {
 			delete req;
-			flame::coroutine::current->fail("UNKONWN failed to send command (disconnected ? subscribed ?)", 0);
+			throw php::exception("UNKONWN failed to send command (disconnected ? subscribed ?)", 0);
 		}
 	}
 
