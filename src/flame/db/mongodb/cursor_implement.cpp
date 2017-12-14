@@ -18,10 +18,10 @@ namespace mongodb {
 		const bson_t*     doc;
 		if(mongoc_cursor_next(ctx->self->css_, &doc)) {
 			// 由于数据行中需要构建 object_id / date_time 对象，须在主线程进行
-			// php::array row;
-			// fill_with(row, doc);
 			ctx->idx = 0;
-			ctx->ref.ptr((void*)doc);
+			ctx->doc = doc;
+		}else{
+			ctx->idx = -1;
 		}
 	}
 	void cursor_implement::to_array_wk(uv_work_t* req) {
@@ -29,10 +29,8 @@ namespace mongodb {
 		const bson_t*     doc;
 		if(mongoc_cursor_next(ctx->self->css_, &doc)) {
 			// 由于数据行中需要构建 object_id / date_time 对象，须在主线程进行
-			// php::array row;
-			// fill_with(row, doc);
 			++ctx->idx;
-			ctx->ref.ptr((void*)doc);
+			ctx->doc = doc;
 		}else{
 			ctx->idx = -1;
 		}

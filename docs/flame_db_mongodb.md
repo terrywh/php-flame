@@ -103,17 +103,19 @@ $count = yield $collection->count(['x'=>'y']);
 #### `yield collection::update_many(array $query, array $data)`
 从当前集合中查询所有符合 `$query` 的文档，并使用 `$data` 更新它们；请参考 [Update Documents](https://docs.mongodb.com/manual/tutorial/update-documents/)
 
-#### `yield collection::find_many(array $query[, array $sort[, integer $skip[, integer $count[, array $project]]]])`
+#### `yield collection::find_many(array $query[, array $options])`
 查询当前集合，返回结果集指针 `cursor` 对象；请参考 [Query Document](https://docs.mongodb.com/manual/tutorial/query-documents/) ；
 
-* `$query`  - 查询条件；
-* `$sort`   - 排序，例如 `["a"=>1,"b"=>-1]` 即 按照 `a` 字段正序后，再按照 `b` 字段逆序；
-* `$skip`   - 结果集起始跳过；
-* `$count`  - 限制结果集数量；
-* `$project` - 仅返回特定字段，例如 `["a"=>1, "b"=>1, "c"=>0]`  即 包含 `a` | `b` 字段，去除 `c` 字段；
+常见 $options 选项如下：
+* `sort`       - 排序，例如 `["a"=>1,"b"=>-1]` 即 按照 `a` 字段正序后，再按照 `b` 字段逆序；
+* `skip`       - 结果集起始跳过；
+* `count`      - 限制结果集数量；
+* `projection` - 仅返回特定字段，例如 `["a"=>1, "b"=>1, "c"=>0]`  即 包含 `a` | `b` 字段，去除 `c` 字段；
 
-#### `yield collection::find_one(array $query, array $sort)`
+#### `yield collection::find_one(array $query[, array $options])`
 查询当前集合，返回单条文档记录（关联数组）；请参考 [Query Document](https://docs.mongodb.com/manual/tutorial/query-documents/) ；
+
+选项 $options 请参考 `find_many` 相关说明；
 
 ### `class flame\db\mongodb\cursor`
 封装结果集指针类型，用于访问查询结果数据；

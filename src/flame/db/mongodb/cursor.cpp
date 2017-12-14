@@ -19,7 +19,7 @@ namespace mongodb {
 	cursor::~cursor() {
 		if(impl) {
 			cursor_request_t* ctx = new cursor_request_t {
-				nullptr, impl, nullptr
+				nullptr, impl, php::array(nullptr)
 			};
 			ctx->req.data = ctx;
 			impl->worker_->queue_work(&ctx->req, cursor_implement::close_wk, close_cb);
@@ -30,36 +30,34 @@ namespace mongodb {
 	}
 	void cursor::next_cb(uv_work_t* req, int status) {
 		cursor_request_t* ctx = reinterpret_cast<cursor_request_t*>(req->data);
+		std::printf("next_cb: %d\n", ctx->idx);
 		if(ctx->idx == 0) {
-			const bson_t* doc = ctx->ref.ptr<const bson_t>();
 			ctx->rv = php::array(0);
-			fill_with(ctx->rv, doc);
+			fill_with(ctx->rv, ctx->doc);
 		}
 		ctx->co->next(std::move(ctx->rv));
 		delete ctx;
 	}
 	void cursor::to_array_cb(uv_work_t* req, int status) {
 		cursor_request_t* ctx = reinterpret_cast<cursor_request_t*>(req->data);
-		if(ctx->idx == -1) {  // 遍历结束
+		if(ctx->idx == -2) { // 遍历启动
+			// ctx->self ==> impl
+			ctx->idx = -1;
+			ctx->self->worker_->queue_work(&ctx->req, cursor_implement::to_array_wk, to_array_cb);
+		}else if(ctx->idx == -1) {  // 遍历结束
 			ctx->co->next(std::move(ctx->rv));
 			delete ctx;
-			return; // 遍历结束
-		}
-		
-		if(ctx->idx == -2) {
-			++ctx->idx;
 		}else if(ctx->idx >= 0) {
-			const bson_t* doc = ctx->ref.ptr<const bson_t>();
 			php::array row(0);
-			fill_with(row, doc);
+			fill_with(row, ctx->doc);
 			ctx->rv[ctx->idx] = std::move(row);
+			// ctx->self ==> impl
+			ctx->self->worker_->queue_work(&ctx->req, cursor_implement::to_array_wk, to_array_cb);
 		}
-		// ctx->self ==> impl
-		ctx->self->worker_->queue_work(&ctx->req, cursor_implement::to_array_wk, to_array_cb);
 	}
 	php::value cursor::to_array(php::parameters& params) {
 		cursor_request_t* ctx = new cursor_request_t {
-			coroutine::current, impl, nullptr, -2, php::array(0)
+			coroutine::current, impl, php::array(0), nullptr, -2
 		};
 		ctx->req.data = ctx;
 		to_array_cb(&ctx->req, 0);
@@ -67,7 +65,7 @@ namespace mongodb {
 	}
 	php::value cursor::next(php::parameters& params) {
 		cursor_request_t* ctx = new cursor_request_t {
-			coroutine::current, impl, nullptr, 0, php::array(nullptr)
+			coroutine::current, impl, php::array(nullptr), nullptr, -2
 		};
 		ctx->req.data = ctx;
 		impl->worker_->queue_work(&ctx->req, cursor_implement::next_wk, next_cb);

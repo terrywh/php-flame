@@ -156,14 +156,15 @@ namespace mongodb {
 		return flame::async(this);
 	}
 	php::value collection::find_one(php::parameters& params) {
-		php::array& filter = params[0], option(0);
+		php::array& filter = params[0], option;
 		if(!filter.is_array() || !filter.is_a_map()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
 		if(params.length() > 1 && params[1].is_array()) {
-			option.at("sort",4) = params[1];
+			option = params[1];
+		}else{
+			option = php::array(0);
 		}
-		option.at("limit", 5) = 1;
 		collection_request_t* ctx = new collection_request_t {
 			coroutine::current, impl, nullptr, filter, option
 		};
@@ -186,21 +187,14 @@ namespace mongodb {
 		}
 	}
 	php::value collection::find_many(php::parameters& params) {
-		php::array& filter = params[0], option(0);
 		if(params.length() < 1 && !params[0].is_array()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
+		php::array& filter = params[0], option;
 		if(params.length() > 1 && params[1].is_array()) {
-			option.at("sort",4) = params[1];
-		}
-		if(params.length() > 2) {
-			option.at("skip",4) = params[2].to_long();
-		}
-		if(params.length() > 3) {
-			option.at("limit",5) = params[3].to_long();
-		}
-		if(params.length() > 4 && params[4].is_array()) {
-			option.at("projection", 10) = params[4];
+			option = params[1];
+		}else{
+			option = php::array(0);
 		}
 		collection_request_t* ctx = new collection_request_t {
 			coroutine::current, impl, nullptr, filter, option

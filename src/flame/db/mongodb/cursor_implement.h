@@ -23,9 +23,9 @@ namespace mongodb {
 	typedef struct cursor_request_t {
 		coroutine*          co;
 		cursor_implement* self;
-		php::value         ref; // 引用
-		int                idx;
 		php::array          rv; // 返回
+		const bson_t*      doc;
+		int                idx;
 		uv_work_t          req;
 	} cursor_request_t;
 }
