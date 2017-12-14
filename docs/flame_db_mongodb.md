@@ -130,8 +130,8 @@ while($doc = yield $cursor->next()) {
 }
 ```
 
-#### `yield cursor::toArray()`
+#### `yield cursor::to_array()`
 遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组；
 
 **注意**：
-* 如可能，请不要混合使用 `next()` 和 `toArray()` 两种读取方式（可能导致未知问题）；
+* 如可能，请不要混合使用 `next()` 和 `to_array()` 两种读取方式（某些高并发奇拿况下可能导致数据问题）；

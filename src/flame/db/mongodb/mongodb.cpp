@@ -78,7 +78,7 @@ void fill_with(bson_t* doc, const php::array& arr) {
 	if(!arr.is_array()) return;
 	php::array& a = const_cast<php::array&>(arr);
 	for(auto i=a.begin(); i!=a.end(); ++i) {
-		php::string& key = i->first.to_string();
+		php::string key = i->first.to_string();
 		php::value& val = i->second;
 		switch(val.type()) {
 		case IS_UNDEF:
