@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.2.1dev
+EXT_VER=1.3.0dev
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -30,7 +30,6 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/hiredis/libhiredis.a \
  ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a \
  ./deps/mongo-c-driver/bin/lib/libbson-1.0.a \
- ./deps/mongo-c-driver/bin/lib/libsnappy.a \
  ./deps/librdkafka/src/librdkafka.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------

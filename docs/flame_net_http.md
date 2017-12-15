@@ -159,10 +159,13 @@ var_dump($ret);
 响应码，例如 `200`；
 
 #### `array client_response::$header`
-HTTP 响应头；
+HTTP 响应头，K/V 数组；
+
+**注意**：
+* 所有 KEY 统一被处理为小写；
 
 #### `array client_response::$cookie`
-COOKIE，对应 HTTP 响应头中 Set-Cookie 的部分；
+COOKIE，对应 HTTP 响应头中 Set-Cookie 的部分；每项元素的 KEY 为该项 Cookie 的名称，VAL 为该项 Cookie 的所有属性对应的 K/V 关联数组；
 
 #### `string client_response::$body`
 HTTP 响应体；
@@ -171,16 +174,19 @@ HTTP 响应体；
 HTTP 响应体，方便直接将对象作为文本使用；
 
 ### `class flame\net\http\server_request`
-作为服务端时，收到的来自客户端、浏览器请求的描述对象；
+作为服务端时，收到的来自客户端、浏览器的请求封装对象；
 
 #### `array server_request::$method`
-请求方法，如 'GET' 'POST' 等；
+请求方法，如 'GET' 'POST' 等，统一处理为大写；
 
 #### `string server_request::$uri`
-请求路径，**不含** 查询字符串 `query string`；
+请求路径；
+
+**注意**：
+* 请求路径中 **不包含** 查询字符串 `query string`；
 
 #### `array server_request::$query`
-请求 `GET` 参数；数据来源于请求 `URL` 的 `PATH` 之后 `?` 与 `#` 之间 或 `URL` 结束之前的文本，并通过 `parse_str()` 进行解析得到；
+请求 `GET` 参数；数据来源于请求 `URL` 中 `PATH` 之后 `?` 与 `#` 之间 或 `URL` 结束之前的文本，并通过 `parse_str()` 进行解析得到 K/V 数组；
 
 #### `array server_request::$header`
 请求头信息，注意：
@@ -189,16 +195,18 @@ HTTP 响应体，方便直接将对象作为文本使用；
 * 仅存在字段名而无字段值的请求头将被忽略（不存在于 `$header` 属性中）;
 
 #### `array server_request::$cookie`
-请求附带的 cookie 信息（已解析为数组）；
+请求附带的 `Cookie` 信息，K/V 数组；
 
-* 原始的 cookie 字符串可以使用 `$request->header["cookie"]` 获得；
+**注意**：
+* 原始的 `Cookie` 字符串可以使用 `$request->header["cookie"]` 获得；
 
 #### `mixed server_request::$body`
-请求体；
+请求体；存在如下可能：
 
-* 当请求类型 `Content-Type` 标记为 `application/x-www-form-urlencoded` 时，会通过 `parse_str()` 解析得到 K/V 数组 `array`；
-* 当请求类型标记为 `multipart/form-data` 时，会通过内置解析器得到 K/V 数组 `array` ；
+* 当请求类型 `Content-Type` 标记为 `application/x-www-form-urlencoded` 时，会通过 `parse_str()` 解析得到 K/V 数组；
+* 当请求类型 `Content-Type` 标记为 `multipart/form-data` 时，会通过内置解析器得到 K/V 数组 ；
+* 当请求类型 `Content-Type` 标记为 `application/json` 时，会通过 `json_decode` 解析得到 K/V 数组；
 * 其他请求类型仅能得到原始数据 `string`；
 
 **注意**：
-* 文件上传请求的请求体会按照 `multipart/form-data` 进行解析，**没有** 生成 `PHP` 中类似 `$_FILES` 的结构；
+* 文件上传请求的请求体类型为 `multipart/form-data` ，提取 `name` 作为 KEY 文件内容数据作为 VAL，**不会** 生成 `PHP` 中类似 `$_FILES` 的结构；

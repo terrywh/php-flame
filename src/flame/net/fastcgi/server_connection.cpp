@@ -119,50 +119,54 @@ namespace fastcgi {
 		self->req_.prop("rawBody") = raw;
 		// 头部信息均为小写，下划线
 		php::string ctype = self->header_.at("content-type", 12);
-		// urlencoded
-		if(ctype.is_string() && ctype.length() >= 33
-			&& strncmp(ctype.c_str(), "application/x-www-form-urlencoded", 33) == 0) {
+		// application/x-www-form-urlencoded
+		if(ctype.is_string()) {
+			if(ctype.length() >= 33 && strncmp(ctype.c_str(), "application/x-www-form-urlencoded", 33) == 0) {
+				//application/x-www-form-urlencoded
+				self->body_ = php::array(1);
+				// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
+				// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
+				kv_parser          kvparser;
+				kv_parser_settings settings;
+				std::memset(&settings, 0, sizeof(kv_parser_settings));
+				settings.s1 = '=';
+				settings.s2 = '&';
+				settings.on_key = kv_key_cb;
+				settings.on_val = body_val_cb;
+				kv_parser_init(&kvparser);
+				kvparser.data = self;
+				// 解析
+				kv_parser_execute(&kvparser, &settings, raw.c_str(), raw.length());
+			}else if(ctype.length() > 32 && strncmp(ctype.c_str(), "multipart/form-data", 19) == 0) {
+				// multipart/form-data; boundary=---------xxxxxx
 
-			self->body_ = php::array(1);
-			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
-			// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
-			kv_parser          kvparser;
-			kv_parser_settings settings;
-			std::memset(&settings, 0, sizeof(kv_parser_settings));
-			settings.s1 = '=';
-			settings.s2 = '&';
-			settings.on_key = kv_key_cb;
-			settings.on_val = body_val_cb;
-			kv_parser_init(&kvparser);
-			kvparser.data = self;
-			// 解析
-			kv_parser_execute(&kvparser, &settings, raw.c_str(), raw.length());
-			return 0;
+				self->body_ = php::array(1);
+				// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
+				// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
+				multipart_parser          mpparser;
+				multipart_parser_settings settings;
+				std::memset(&settings, 0, sizeof(multipart_parser_settings));
+				std::strcpy(settings.boundary, strstr(ctype.c_str() + 20, "boundary=") + 9);
+				settings.boundary_length  = std::strlen(settings.boundary);
+				settings.on_header_field  = mp_key_cb;
+				settings.on_header_value  = mp_val_cb;
+				settings.on_part_data     = mp_dat_cb;
+				settings.on_part_data_end = mp_dat_end;
+				multipart_parser_init(&mpparser, &settings);
+				mpparser.data = self;
+				// 解析
+				multipart_parser_execute(&mpparser, &settings, raw.c_str(), raw.length());
+				return 0;
+			}else if(ctype.length() >= 16 && strncmp(ctype.c_str(), "application/json", 16) == 0) {
+				self->body_ = php::json_decode(raw.c_str(), raw.length());
+			}else{
+				// unknown
+				self->body_ = raw;
+			}
+		}else{
+			// unknown
+			self->body_ = raw;
 		}
-		// multipart/form-data; boundary=---------xxxxxx
-		if(ctype.is_string() && ctype.length() > 32
-			&& strncmp(ctype.c_str(), "multipart/form-data", 19) == 0) {
-
-			self->body_ = php::array(1);
-			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
-			// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
-			multipart_parser          mpparser;
-			multipart_parser_settings settings;
-			std::memset(&settings, 0, sizeof(multipart_parser_settings));
-			std::strcpy(settings.boundary, strstr(ctype.c_str() + 20, "boundary=") + 9);
-			settings.boundary_length  = std::strlen(settings.boundary);
-			settings.on_header_field  = mp_key_cb;
-			settings.on_header_value  = mp_val_cb;
-			settings.on_part_data     = mp_dat_cb;
-			settings.on_part_data_end = mp_dat_end;
-			multipart_parser_init(&mpparser, &settings);
-			mpparser.data = self;
-			// 解析
-			multipart_parser_execute(&mpparser, &settings, raw.c_str(), raw.length());
-			return 0;
-		}
-		// unknown
-		self->body_ = raw;
 		return 0;
 	}
 	int server_connection::fp_end_request_cb(fastcgi_parser* parser) {

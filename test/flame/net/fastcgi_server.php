@@ -13,7 +13,7 @@ flame\go(function() {
 	})
 	->post("/hello", function($req, $res) {
 		yield flame\time\sleep(2000);
-		var_dump($req->method, $req->body); // POST ....
+		var_dump($req->method, $req->header, $req->body); // POST ....
 		yield $res->write("hello ");
 		yield $res->end("world\n");
 	})

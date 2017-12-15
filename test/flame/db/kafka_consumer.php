@@ -15,7 +15,7 @@ flame\go(function() {
 		$exit = true;
 	});
 	$begin = microtime(true);
-	while($exit) {
+	while(!$exit) {
 		$msg = yield $consumer->consume();
 		++ $count;
 		echo $msg->timestamp_ms(), " => ", $msg, "\n";
@@ -24,7 +24,7 @@ flame\go(function() {
 		// });
 	}
 	$end = microtime(true);
-	echo $count, "messages consumed in ", $end - $begin, "s\n";
+	echo $count, " messages consumed in ", $end - $begin, "s\n";
 	$tick->stop();
 });
 flame\run();

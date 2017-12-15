@@ -14,16 +14,13 @@ $cli->connect("127.0.0.1", 3306, "username", "password", "database_name");
 #### `client::__construct([array $options])`
 可用选项如下：
 * `debug` - 调试开关，输出实际执行的 SQL 语句，默认 `false`；
-* `ping`  - 定时 `ping` 保持连接活跃，默认 `60000` ms；
+* `ping`  - 周期性执行 `SELECT 1` 语句，以此保持连接活跃，默认 `60000` ms；
 
 #### `client::$affected_rows`
 更新型 SQL 语句影响到的行数
 
 #### `client::$insert_id`
 单条插入语句执行后 插入行生成的 自增 ID（若存在）
-
-#### `client::$debug_last_query`
-最后一次执行的查询 SQL 语句，仅供少量调试使用（大量并行请求可能互相覆盖）；
 
 #### `yield client::query(string $sql) | yield client::query(string $format[, mixed $arg1, mixed $arg2, ...])`
 进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_info` 执行结果；注意后一种函数原型，允许进行“格式化”参数替换即：将 $arg1 / $arg2 等参数替换到 $format 定义的格式化字符串中，自动进行转义和包裹（防止 SQL 注入），例如：
@@ -81,12 +78,11 @@ $rb = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa);
 2. 当 `$limit` 为数值时，直接拼接，例如 `10` -> `LIMIT 10`；
 3. 当 `$limit` 为数组时，其首项 和 次项 分别作为 LIMIT 的首个和次个参数，例如：`[10, 20]` => `LIMIT 10, 20`;
 
-
 #### `yield client::delete(string $table, array $conditions[, mixed $sort[, mixed $limit]])`
 删除匹配条件的所有行；
+
 #### `yield client::update(string $table, array $conditions, array $modify[, mixed $sort[, mixed $limit]])`
 更新匹配条件的所有行，并应用由 `$modify` 描述的更改；
-
 
 #### `yield client::select(string $table, mixed $fields[, array $conditions[, mixed $sort[, mixed $limit]]])`
 执行查询并返回结果集 result_set 对象；其中 `$fields` 参数可以使用下述两种形式：

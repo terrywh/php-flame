@@ -44,15 +44,14 @@ namespace http {
 	int client_response::header_key_cb(kv_parser* parser, const char* data, size_t size) {
 		client_response* self = reinterpret_cast<client_response*>(parser->data);
 		// 由于 curl 回调的 header 行完整，不需要考虑数据段问题
+		php::strtolower_inplace(const_cast<char*>(data), size); // 统一响应头 KEY 大小写
 		self->key_data = data;
 		self->key_size = size;
 		return 0;
 	}
 	int client_response::header_val_cb(kv_parser* parser, const char* data, size_t size) {
 		client_response* self = reinterpret_cast<client_response*>(parser->data);
-		if(self->key_size == 10 && (std::strncmp(self->key_data, "Set-Cookie", 10) == 0
-			|| std::strncmp(self->key_data, "set-cookie", 10) == 0)) {
-
+		if(self->key_size == 10 && std::strncmp(self->key_data, "set-cookie", 10) == 0) {
 			self->cookie_item = nullptr;
 			kv_parser_reset(&self->cookie_parser);
 			kv_parser_execute(&self->cookie_parser, &self->cookie_parser_conf, data, size);
