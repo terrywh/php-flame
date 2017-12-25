@@ -8,6 +8,7 @@ flame\init("coroutine_test");
 			yield flame\time\sleep(1);
 			flame\go(function() {
 				yield flame\time\sleep(2);
+				echo $i, "\n";
 			});
 		}
 		echo "done\n";
