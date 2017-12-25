@@ -91,7 +91,7 @@ yield $server->run();
 ```
 
 **注意**：
-* `$cb` 必须是 `Generator Function`，即包含 `yield` 关键字；
+* `$cb` 必须是 `Generator Function`，即 函数定义中包含 `yield` 表达式；
 
 #### `unix_server::bind(string $path)`
 绑定到指定路径并生成 UnixSocket 文件；
@@ -138,7 +138,7 @@ $data = yield $sock->read(); // $data = "aaaaa";
 ```
 
 **注意**：
-* 除正常的网络关闭外，读取动作发生错误时可能抛出异常；
+* 当对方关闭网络后，`read()` 将返回 NULL；
 
 #### `yield unix_socket::write(string $data)`
 想当前套接字写入（发送）指定数据；
@@ -147,7 +147,10 @@ $data = yield $sock->read(); // $data = "aaaaa";
 * 当网络连接已断开等错误状态时，调用 `write` 会抛出异常；
 
 #### `yield unix_socket::close()`
-关闭当前套接字对象；（已启用的异步动作会继续进行，完成后关闭）
+关闭当前套接字对象；
+
+**注意**：
+* 执行本函数会导致还未完成的 `read()` 和 `write()` 动作立刻结束并抛出异常；
 
 ### `class flame\net\tcp_socket`
 提供 TCP 协议的网络连接对象的封装
@@ -183,7 +186,7 @@ $data = yield $sock->read(); // $data = "aaaaa";
 关闭网络连接；
 
 **注意**：
-* 执行本函数会导致还未完成的 `read()` 和 `write()` 动作立刻结束并抛出错误；
+* 执行本函数会导致还未完成的 `read()` 和 `write()` 动作立刻结束并抛出异常；
 
 ### `class flame\net\tcp_server`
 封装 TCP 协议的网络服务器相关功能、接口；
@@ -210,7 +213,7 @@ $data = yield $sock->read(); // $data = "aaaaa";
 * `cb` 必须是 `Generator Function` 即 函数定义中包含 `yield` 表达式；
 * 每个连接的处理过程在单独的协程中运行；
 
-#### `yield tcp_socket::close()`
+#### `yield tcp_server::close()`
 关闭服务器；
 
 **注意**：

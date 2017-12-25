@@ -29,16 +29,22 @@ $collection = $cli->collection("col_abc");
 秒级时间戳，表示当前 `object_id` 的创建时间
 
 ### `class flame\db\mongodb\date_time`
+
 #### `date_time::__toString()`
+
 #### `date_time::jsonSerialize()`
+
 #### `date_time::timestamp()`
-秒级时间戳
+时间戳（单位：秒）
+
 #### `date_time::timestamp_ms()`
-毫秒级时间戳
+时间戳（单位：毫秒）
+
 #### `date_time::to_datetime()`
-转换为 [`DateTime`](http://php.net/manual/en/class.datetime.php) PHP 内置类型对象；
+转换为 PHP 内置 [`DateTime`](http://php.net/manual/en/class.datetime.php) 类型对象；
 
 ### `class flame\db\mongodb\bulk_result`
+
 #### `boolean bulk_result::success()`
 检查批量操作的总体结果，`true` 全部成功，`false` 失败或部分失败；
 
@@ -72,7 +78,7 @@ $count = yield $collection->count(['x'=>'y']);
 * 日期时间 `DateTime` 字段需要使用单独的类型 `date_time`；
 * 暂不支持 时间戳、正则 等在 Web 开发中不常用的字段类型；
 * 其他字段对应相关 PHP 内置类型；
-* 请尽量使用 `'` 单引号，防止功能符号被转义，例如 `$gt = "aaa"; $filter = ["a" => ["$gt"=>1234]]`；
+* 在使用 operator 时，可考虑使用 `'` 单引号，防止功能符号被转义，例如 `$gt = "aaa"; $filter = ["a" => ['$gt'=>1234]]`；或使用转义符号；
 
 #### `yield collection::count([array $query])`
 获取当前集合中（符合条件的）文档数量；
@@ -81,7 +87,7 @@ $count = yield $collection->count(['x'=>'y']);
 向当前集合插入一条新的 `$doc` 文档；请参考 [Insert Documents](https://docs.mongodb.com/manual/tutorial/insert-documents/)；
 
 **注意**：
-* `$doc` 必须是关联数组；
+* 顶级 `$doc` 必须是关联数组，但其成员可以存在下标数组；
 * 可以自行为 `$doc` 创建 `_id` 字段（参考 `object_id` 类型）；
 
 #### `yield collection::insert_many(array $docs[, boolean $ordered = false])`
@@ -89,7 +95,7 @@ $count = yield $collection->count(['x'=>'y']);
 请参考 [Insert Documents](https://docs.mongodb.com/manual/tutorial/insert-documents/)；
 
 **注意**：
-* `$docs` 为二维数组，其中第一维度为下标数组，每个元素标识一个文档（关联数组）；
+* 顶级 `$docs` 为下标数组，每个元素为关联数组标识一个文档；
 
 #### `yield collection::remove_one(array $query)`
 从当前集合中删除第一个符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；请参考 [Delete Documents](https://docs.mongodb.com/manual/tutorial/remove-documents/)；

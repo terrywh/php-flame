@@ -1,8 +1,34 @@
 ### `namespace flame\net`
 提供基本的 HTTP 协议网络协程式客户端封装；底层使用 curl 并内置使用 nghttp2 提供了 HTTP/2 支持；
 
-### `class flame\net\http\client_request`
+#### `yield flame\net\http\get(string $url, integer $timeout = 2500)`
+简单的 `GET` 请求方法。
 
+#### `yield flame\net\http\post(string $url, mixed $post, integer $timeout = 2500)`
+简单的 `POST` 请求方法；
+* 当 `$post` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
+* 当 `$post` 为文本时直接进行发送；
+
+**示例**：
+``` PHP
+<?php
+$ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
+var_dump($ret);
+```
+
+#### `yield flame\net\http\put(string $url, mixed $put, integer $timeout = 2500)`
+简单的 `PUT` 请求方法。
+* 当 `$put` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
+* 当 `$put` 为文本时直接进行发送；
+
+#### `yield flame\net\http\remove(string $url, integer $timeout = 2500)`
+简单的 `DELETE` 请求方法。
+
+#### `yield flame\net\http\exec(client_request $request)`
+执行指定的请求（使用默认的客户端）；
+
+
+### `class flame\net\http\client_request`
 封装 HTTP 协议的客户端请求请求
 
 #### `client_request::__construct(string $url[, mixed $data[, integer $timeout]])`
@@ -126,32 +152,6 @@ var_dump($res2);
 * 执行请求失败可能抛出异常（例如：超时，无法连接等）；
 * 下述简化请求方法，实际也相当于调用 `exec` 故可能抛出异常；
 
-#### `yield flame\net\http\get(string $url, integer $timeout = 2500)`
-简单的 `GET` 请求方法。
-
-#### `yield flame\net\http\post(string $url, mixed $post, integer $timeout = 2500)`
-简单的 `POST` 请求方法；
-* 当 `$post` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
-* 当 `$post` 为文本时直接进行发送；
-
-**示例**：
-``` PHP
-<?php
-$ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
-var_dump($ret);
-```
-
-#### `yield flame\net\http\put(string $url, mixed $put, integer $timeout = 2500)`
-简单的 `PUT` 请求方法。
-* 当 `$put` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
-* 当 `$put` 为文本时直接进行发送；
-
-#### `yield flame\net\http\remove(string $url, integer $timeout = 2500)`
-简单的 `DELETE` 请求方法。
-
-#### `yield flame\net\http\exec(client_request $request)`
-执行指定的请求（使用默认的客户端）；
-
 ### `class flame\net\http\client_response`
 客户端请求的响应，可自动转换为文本 (`toString()`)，也可以按属性访问对应数据；
 
@@ -165,7 +165,7 @@ HTTP 响应头，K/V 数组；
 * 所有 KEY 统一被处理为小写；
 
 #### `array client_response::$cookie`
-COOKIE，对应 HTTP 响应头中 Set-Cookie 的部分；每项元素的 KEY 为该项 Cookie 的名称，VAL 为该项 Cookie 的所有属性对应的 K/V 关联数组；
+COOKIE，对应 HTTP 响应头中 Set-Cookie 的部分；每项元素的 KEY 为该项 Cookie 的名称，VAL 为该项 Cookie 的所有属性（例如 expire / path 等）对应的 K/V 关联数组；
 
 #### `string client_response::$body`
 HTTP 响应体；
@@ -203,9 +203,9 @@ HTTP 响应体，方便直接将对象作为文本使用；
 #### `mixed server_request::$body`
 请求体；存在如下可能：
 
-* 当请求类型 `Content-Type` 标记为 `application/x-www-form-urlencoded` 时，会通过 `parse_str()` 解析得到 K/V 数组；
+* 当请求类型 `Content-Type` 标记为 `application/x-www-form-urlencoded` 时，会通过内置解析器得到 K/V 数组；
 * 当请求类型 `Content-Type` 标记为 `multipart/form-data` 时，会通过内置解析器得到 K/V 数组 ；
-* 当请求类型 `Content-Type` 标记为 `application/json` 时，会通过 `json_decode` 解析得到 K/V 数组；
+* 当请求类型 `Content-Type` 标记为 `application/json` 时，会通过 PHP 引擎的 `json_decode` 解析得到 K/V 数组；
 * 其他请求类型仅能得到原始数据 `string`；
 
 **注意**：

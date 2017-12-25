@@ -3,21 +3,6 @@
 
 封装系统相关的 API，目前提供了启动子进程等功能；注意，此命名空间封装的进程功能与通过 `flame\init()` 函数指定的多进程没有直接的关系；
 
-#### `yield flame\os\exec(string $exec[, array $argv[, array $opts])`
-启动进程，并返回该进程的输出文本数据；
-（参照下述 `spawn` 的参数说明，本函数自动设置了 `detach` | `stdout` 参数，并在内部获取输出内容并返回）
-
-**示例**：
-``` PHP
-<?php
-// ....
-$output = yield flame\os\exec("ps", ["-ef"]);
-echo $output, "\n";
-```
-
-**注意**：
-* 由于本函数使用了 `stdout` 选项对输出进行了重定向，故无法再次对其重定向；
-
 #### `flame\os\spawn(string $exec[, array $argv[, array $opts])`
 启动进程，相关参数如下：
 * `$exec` - string - 可执行文件名或路径；
@@ -64,29 +49,44 @@ flame\go(function() {
 * 若进程未与父进程脱离（`detach`），则当该进程对象销毁时，实际进程将被强制结束（SIGKILL）；
 * 被启动的进程将会“异步”运行，不会阻塞当前 PHP 程序进程；
 
+#### `yield flame\os\exec(string $exec[, array $argv[, array $opts])`
+启动进程，并返回该进程的输出文本数据；
+（参照上述 `spawn` 的参数说明，本函数自动设置了 `detach` | `stdout` 参数，并在内部获取输出内容并返回）
+
+**示例**：
+``` PHP
+<?php
+// ....
+$output = yield flame\os\exec("ps", ["-ef"]);
+echo $output, "\n";
+```
+
+**注意**：
+* 由于本函数使用了 `stdout` 选项对输出进行了重定向，故无法再次对其重定向；
+
 #### `class flame\os\process`
 进程对象;
 
 **注意**：
 * 若启动进程时未指定 `detach` 分离父子进程，进程对象销毁将导致实际进程被强制结束；
 
-##### `process::__construct(string $exec[, array $argv[, array $env[, string $cwd[, array $opts])`
-与上述 `spawn()` 函数功能相同，请参考该函数相关说明；
+##### `process::__construct(string $exec[, array $argv[, array $opts])`
+上述 `spawn()` 函数内部调用此构造函数，并透传参数（功能相同）；请参考该函数相关说明；
 
 ##### `integer process::$pid`
 被启动的进程的进程ID；
 
 ##### `process::stdout()`
-获取进程的标准输出管道 `unix_socket` 对象实例（只读）；
+获取进程的标准输出管道 `unix_socket` 对象实例（只读，且仅在设置了 `stdout` 选项时有效）；
 
 ##### `process::stderr()`
-获取进程的错误输出管道 `unix_socket` 对象实例（只读）；
+获取进程的错误输出管道 `unix_socket` 对象实例（只读，且仅在设置了 `stderr` 选项时有效）；
 
-##### `function process::kill([$signal = SIGTERM])`
-向当前进程发送信号，默认 SIGTERM 信号
+##### `process::kill([$signal = SIGTERM])`
+向当前进程发送信号，默认 SIGTERM 信号；
 
 ##### `yield process::wait()`
-等待当前进程结束
+等待当前进程结束；
 
 **注意**：
 * 只能够在一个协程中调用 `yield $proc->wait()` 否则会导致协程僵死；
@@ -115,11 +115,11 @@ flame\go(function() {
 设置文本消息处理器，接收来自父进程或子进程的文本消息：回调函数；
 
 #### `string flame\os\executable()`
-返回当前运行的 PHP 进程路径。
+返回当前运行的 PHP 可执行文件路径；
 
 **示例**：
 ``` PHP
 <?php
 $php_path = flame\os\executable();
-// "/usr/local/php/bin/php"
+// 例如："/usr/local/php/bin/php"
 ```

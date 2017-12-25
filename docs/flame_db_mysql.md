@@ -23,18 +23,21 @@ $cli->connect("127.0.0.1", 3306, "username", "password", "database_name");
 单条插入语句执行后 插入行生成的 自增 ID（若存在）
 
 #### `yield client::query(string $sql) | yield client::query(string $format[, mixed $arg1, mixed $arg2, ...])`
-进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_info` 执行结果；注意后一种函数原型，允许进行“格式化”参数替换即：将 $arg1 / $arg2 等参数替换到 $format 定义的格式化字符串中，自动进行转义和包裹（防止 SQL 注入），例如：
+进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_info` 执行结果；
+
+后一种函数原型，允许进行“格式化”参数替换即：将 $arg1 / $arg2 等参数替换到 $format 定义的格式化字符串中，并自动进行转义和包裹；例如：
 
 ``` PHP
 $rs = $cli->query("SELECT * FROM `test`");
 $aa = "aaaa";
 $bb = 123456;
-$rs = $cli->query("SELECT * FROM `test` WHERE `a`=? AND `b`=?", $aa, $bb);
-$rb = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa);
+$rs = $cli->query("SELECT * FROM `test` WHERE `a`=? AND `b`=?", $aa, $bb); // SELECT * FROM `test` WHERE `a`='aaaa' AND `b`=123456
+$aa = "aaa'aa"
+$rs = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa); // DELETE FROM `test` WHERE `a`='aaa\'aa';
 ```
 
 **注意**：
-* 由于目前不支持 PREPARE STATEMENT 故暂不允许直接使用二进制数据（可靠率使用 BASE64 等编码进行转换）；
+* 后一种函数原型支持的包裹转义流程不支持二进制数据，请使用 `Base64` 等编码手段预先处理；
 
 #### `yield client::insert(string $table, array $data)`
 插入一行或多行数据，对应 `INSERT INTO ....`：

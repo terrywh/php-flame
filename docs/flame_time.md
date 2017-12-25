@@ -13,7 +13,7 @@
 在 `$ms` 毫秒后，执行 `$cb` 回调（仅执行一次）；返回 `class ticker` 的实例，请参考后续说明；
 
 **注意**：
-* 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行；
+* 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行，否则仅作为普通回调；
 
 #### `$tick = flame\time\tick(integer $ms, callable $cb)`
 **每隔** `$ms` 毫秒后，执行 `$cb` 回调；返回 `class ticker` 的实例，请参考后续说明；
@@ -54,7 +54,7 @@ $tick->start(function($tick) {
 ```
 
 **注意**：
-* 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行；
+* 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行，否则仅作为普通回调；
 
 #### `ticker::stop()`
 停止定时器（若定时器回调函数还未执行，将不会被执行；已经执行的定时器将停止后续的回调）。

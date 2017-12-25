@@ -94,7 +94,7 @@ $msg = yield $consumer->consume();
 消息体，与 `$val` 一致；
 
 ##### `message::timestamp()`
-秒级时间戳，相当于 `intval($time / 1000)`；
+时间戳（单位：秒）；
 
 ##### `message::timestamp_ms()`
-毫秒级时间戳，与 `$time` 一致；
+时间戳（单位：毫秒）；
