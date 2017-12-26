@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.3.0dev
+EXT_VER=1.3.0
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -11,7 +11,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
 # ---------------------------------------------------------------------
 CXX?=/usr/local/gcc-7.1.0/bin/g++
-CXXFLAGS?= -O0 -g
+CXXFLAGS?= -O2
 CXXFLAGS_CORE= -std=c++14 -fPIC
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
 # 链接参数
@@ -92,7 +92,7 @@ install: ${EXTENSION}
 	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --disable-shm-counters --enable-static=yes --enable-shared=no
 	make -C ./deps/mongo-c-driver -j2
 	make -C ./deps/mongo-c-driver install
-	cd ./deps/mongo-c-driver; find -type l | xargs rm
+	cd ./deps/mongo-c-driver; find -type l | xargs rm; 
 ./deps/fmt/fmt/libfmt.a:
 	cd ./deps/fmt; cmake -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC .
 	make -C ./deps/fmt -j2
@@ -101,7 +101,7 @@ install: ${EXTENSION}
 	cd ./deps/c-ares; CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=`pwd`/bin
 	make -C ./deps/c-ares -j2
 	make -C ./deps/c-ares install
-	cd ./deps/c-ares; find -type l | xargs rm; rm -f bin/lib/libcares.la; rm -f bin/lib/libcares.so*; rm -rf bin/lib/pkgconfig
+	cd ./deps/c-ares; find -type l | xargs rm; rm -f bin/lib/libcares.la; rm -f bin/lib/libcares.so*; rm -rf bin/lib/pkgconfig;
 ./deps/librdkafka/src/librdkafka.a:
 	cd ./deps/librdkafka; chmod +x ./configure; chmod +x ./lds-gen.py; ./configure --enable-static
 	make -C ./deps/librdkafka -j2
