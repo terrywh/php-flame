@@ -46,3 +46,7 @@
 	path = deps/librdkafka
 	url = https://github.com/edenhill/librdkafka.git
 	ignore = dirty
+[submodule "deps/http-parser"]
+	path = deps/http-parser
+	url = https://github.com/nodejs/http-parser
+	ignore = dirty
