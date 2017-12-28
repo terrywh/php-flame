@@ -1,10 +1,11 @@
 <?php
-flame\init("fastcgi-server");
+flame\init("http-server");
 flame\go(function() {
-	// 创建 fastcgi 处理器
-	$handler = new flame\net\fastcgi\handler();
+	// 创建 http 处理器
+	$handler = new flame\net\http\handler();
 	// 设置处理程序
 	$a = $handler->get("/favicon.ico", function($req, $res) {
+		var_dump($req);
 		yield $res->write_header(404);
 		yield $res->end();
 	})
@@ -19,7 +20,6 @@ flame\go(function() {
 		yield flame\time\sleep(2000);
 		var_dump($req->method, $req->header, "[[[", $req->body, "]]]"); // POST ....
 		$res->set_cookie("test", "bbbb", 1000, "/hello", null, false, true);
-
 		yield $res->write("hello '");
 		yield $res->write($req->method);
 		yield $res->end("'\n");
@@ -28,7 +28,6 @@ flame\go(function() {
 		$res->header["Content-Type"]  = "text/event-stream";
 		$res->header["Cache-Control"] = "no-cache";
 		yield $res->write_header(200);
-
 		flame\time\tick(1000, function($tick) use($res) {
 			$r = yield $res->write("data: this is a message containing randomg data, ". rand() ."\n\n");
 			if(!$r) $tick->stop();
@@ -60,7 +59,7 @@ HTMLCODE;
 	// 创建网络服务器
 	$server = new flame\net\tcp_server();
 	$server->handle($handler); // 指定服务程序
-	$server->bind("127.0.0.1", 19001);
+	$server->bind("::", 19002);
 	yield $server->run();
 });
 flame\run();

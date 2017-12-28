@@ -1,12 +1,19 @@
+#include "../../coroutine.h"
 #include "http.h"
 #include "client.h"
 #include "client_request.h"
-#include "server_request.h"
 #include "client_response.h"
+#include "server_connection_base.h"
+#include "server_connection.h"
+#include "server_request.h"
+#include "server_response.h"
+#include "server_handler.h"
 
 namespace flame {
 namespace net {
 namespace http {
+	typedef server_handler<server_connection> handler_t;
+
 	void init(php::extension_entry& ext) {
 		curl_global_init(CURL_GLOBAL_DEFAULT);
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
@@ -56,6 +63,16 @@ namespace http {
 		class_client.add<&client::__construct>("__construct");
 		class_client.add<&client::exec1>("exec");
 		ext.add(std::move(class_client));
+		// class handler
+		php::class_entry<handler_t> class_handler("flame\\net\\http\\handler");
+		class_handler.add(php::property_entry("__CONNECTION_HANDLER__", (zend_bool)true));
+		class_handler.add<&handler_t::put>("put");
+		class_handler.add<&handler_t::remove>("delete");
+		class_handler.add<&handler_t::post>("post");
+		class_handler.add<&handler_t::get>("get");
+		class_handler.add<&handler_t::handle>("handle");
+		class_handler.add<&handler_t::__invoke>("__invoke");
+		ext.add(std::move(class_handler));
 		// class server_request
 		php::class_entry<server_request> class_server_request("flame\\net\\http\\server_request");
 		class_server_request.add(php::property_entry("method", std::string("")));
@@ -67,6 +84,16 @@ namespace http {
 		class_server_request.add(php::property_entry("rawBody", std::string("")));
 		class_server_request.add<&server_request::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		ext.add(std::move(class_server_request));
+		// class server_request
+		php::class_entry<server_response> class_server_response("flame\\net\\http\\server_response");
+		class_server_response.add(php::property_entry("status", 200));
+		class_server_response.add(php::property_entry("header", nullptr));
+		class_server_response.add<&server_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
+		class_server_response.add<&server_response::set_cookie>("set_cookie");
+		class_server_response.add<&server_response::write_header>("write_header");
+		class_server_response.add<&server_response::write>("write");
+		class_server_response.add<&server_response::end>("end");
+		ext.add(std::move(class_server_response));
 	}
 	// 下面 HTTP 状态定义来自 nodejs/http_parser
 	std::map<int, std::string> status_mapper {

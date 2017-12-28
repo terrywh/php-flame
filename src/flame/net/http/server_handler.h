@@ -14,20 +14,21 @@ namespace http {
 			int         type = params[1];
 			uv_stream_t* svr = ptr.ptr<uv_stream_t>();
 
-			connection_t* pobj = new connection_t(this);
+			connection_t* conn = new connection_t(this);
 			if(type == UV_NAMED_PIPE) {
-				uv_pipe_init(flame::loop, &pobj->socket_pipe, 0);
+				uv_pipe_init(flame::loop, &conn->sock_uds, 0);
 			}else if(type == UV_TCP) {
-				uv_tcp_init(flame::loop, &pobj->socket_tcp);
+				uv_tcp_init(flame::loop, &conn->sock_tcp);
 			}else{
 				throw php::exception("unknown server type");
 			}
-			int error = uv_accept(svr, &pobj->socket_);
+			int error = uv_accept(svr, &conn->sock_);
 			if(error < 0) {
-				delete pobj;
+				delete conn;
 				return error;
 			}
-			pobj->start();
+			conn->on_request = on_request;
+			conn->start();
 			return 0;
 		}
 		php::value put(php::parameters& params) {
@@ -54,7 +55,7 @@ namespace http {
 			handle_def = params[0];
 			return this;
 		}
-		void on_request(php::object& req, php::object& res) {
+		void handle(const php::object& req, const php::object& res) {
 			php::string path   = req.prop("uri");
 			php::string method = req.prop("method");
 
@@ -64,14 +65,14 @@ namespace http {
 				exit(-2);
 			}
 			std::map<std::string, php::callable>* map;
-			if(std::strncmp(method.data(), "PUT", 3) == 0) {
+			if(std::strncmp(method.data(), "GET", 3) == 0) {
+				map = &handle_get;
+			}else if(std::strncmp(method.data(), "POST", 4) == 0) {
+				map = &handle_post;
+			}else if(std::strncmp(method.data(), "PUT", 3) == 0) {
 				map = &handle_put;
 			}else if(std::strncmp(method.data(), "DELETE", 7) == 0) {
 				map = &handle_delete;
-			}else if(std::strncmp(method.data(), "POST", 4) == 0) {
-				map = &handle_post;
-			}else if(std::strncmp(method.data(), "GET", 3) == 0) {
-				map = &handle_get;
 			}else{
 				coroutine::start(handle_def, req, res);
 				return;
@@ -89,6 +90,11 @@ namespace http {
 		std::map<std::string, php::callable> handle_post;
 		std::map<std::string, php::callable> handle_get;
 		php::callable                        handle_def;
+
+		static void on_request(const php::object& req, const php::object& res, void* data) {
+			server_handler<connection_t>* self = reinterpret_cast<server_handler<connection_t>*>(data);
+			self->handle(req, res);
+		}
 	};
 }
 }

@@ -1,3 +1,4 @@
+#include "log/log.h"
 #include "coroutine.h"
 #include "worker.h"
 #include "process.h"
@@ -55,7 +56,7 @@ namespace flame {
 			w->master_->on_worker_stop(w);
 		}else{
 			int timeout = 2000 + (std::rand() % 3000);
-			php::warn("worker exit prematurely (signal: %d), will be restarted in %ds", term_signal, timeout/1000);
+			log::default_logger->write(fmt::format("(WARN) worker exit prematurely ({0}), restart in {1}", term_signal, timeout/1000));
 			uv_timer_start(&w->timer_, on_worker_restart, timeout, 0);
 		}
 	}

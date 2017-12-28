@@ -73,37 +73,15 @@ namespace log {
 		ctx->co->next();
 		delete ctx;
 	}
-	php::value logger::write(const std::string& level, php::parameters& params) {
+	bool logger::write(const std::string& data) {
 		php::buffer out;
 		out.add('[');
 		std::memcpy(out.put(19), time::datetime(time::now()), 19);
 		out.add(']');
-		std::memcpy(out.put(level.length()), level.c_str(), level.length());
-		for(int i=0;i<params.length();++i) {
-			out.add(' ');
-			if(params[i].is_array()) { // 自动输出 JSON 数据
-				php::string str = php::json_encode(params[i]);
-				std::memcpy(out.put(str.length()), str.c_str(), str.length());
-			}else{
-				php::string& str = params[i].to_string();
-				std::memcpy(out.put(str.length()), str.c_str(), str.length());
-			}
-		}
+		out.add(' ');
+		std::memcpy(out.put(data.length()), data.c_str(), data.length());
 		out.add('\n');
-
-		if(file_ == -2) {
-			std::fprintf(stderr, out.data());
-		}else if(file_ == -1) {
-			std::fprintf(stdout, out.data());
-		}else{
-			write_request_t* ctx = new write_request_t {
-				coroutine::current, this, std::move(out)
-			};
-			ctx->req.data = ctx;
-			uv_buf_t data {.base = ctx->str.data(), .len = ctx->str.length()};
-			uv_write(&ctx->req, (uv_stream_t*)pipe_, &data, 1, write_cb);
-			return flame::async(this);
-		}
+		return write(std::move(out));
 	}
 	void logger::panic() {
 		php::object ex1(EG(exception), true);
@@ -160,17 +138,66 @@ ERROR_OUTPUT:
 		self->rotate();
 	}
 	php::value logger::fail(php::parameters& params) {
-		return write(" (FAIL)", params);
+		if(write(make_buffer(" (FAIL)", params))) {
+			return flame::async(this);
+		}
+		return nullptr;
 	}
 	php::value logger::warn(php::parameters& params) {
-		return write(" (WARN)", params);
+		if(write(make_buffer(" (WARN)", params))) {
+			return flame::async(this);
+		}
+		return nullptr;
 	}
 	php::value logger::info(php::parameters& params) {
-		return write(" (INFO)", params);
+		if(write(make_buffer(" (INFO)", params))) {
+			return flame::async(this);
+		}
+		return nullptr;
 	}
 	php::value logger::write(php::parameters& params) {
-		return write(" ", params);
+		if(write(make_buffer("", params))) {
+			return flame::async(this);
+		}
+		return nullptr;
 	}
-	
+	php::string logger::make_buffer(const std::string& level, php::parameters& params) {
+		php::buffer out;
+		out.add('[');
+		std::memcpy(out.put(19), time::datetime(time::now()), 19);
+		out.add(']');
+		if(level.length() > 0) {
+			std::memcpy(out.put(level.length()), level.c_str(), level.length());
+		}
+		for(int i=0;i<params.length();++i) {
+			out.add(' ');
+			if(params[i].is_array()) { // 自动输出 JSON 数据
+				php::string str = php::json_encode(params[i]);
+				std::memcpy(out.put(str.length()), str.c_str(), str.length());
+			}else{
+				php::string& str = params[i].to_string();
+				std::memcpy(out.put(str.length()), str.c_str(), str.length());
+			}
+		}
+		out.add('\n');
+		return std::move(out);
+	}
+	bool logger::write(const php::string& out) {
+		if(file_ == -2) {
+			std::fprintf(stderr, out.c_str());
+			return false;
+		}else if(file_ == -1) {
+			std::fprintf(stdout, out.c_str());
+			return false;
+		}else{
+			write_request_t* ctx = new write_request_t {
+				coroutine::current, this, std::move(out)
+			};
+			ctx->req.data = ctx;
+			uv_buf_t data {.base = ctx->str.data(), .len = ctx->str.length()};
+			uv_write(&ctx->req, (uv_stream_t*)pipe_, &data, 1, write_cb);
+			return true;
+		}
+	}
 }
 }

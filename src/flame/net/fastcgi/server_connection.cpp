@@ -1,19 +1,18 @@
 #include "../../coroutine.h"
+#include "../http/server_connection_base.h"
+#include "../http/server_request.h"
 #include "fastcgi.h"
 #include "server_connection.h"
-#include "../http/server_request.h"
 #include "server_response.h"
 
 namespace flame {
 namespace net {
 namespace fastcgi {
-	server_connection::server_connection(handler_t* svr)
-	: svr_(svr)
-	, query_(0)
-	, header_(2)
-	, cookie_(0) {}
-
-	void server_connection::start() {
+	server_connection::server_connection(void* data)
+	: http::server_connection_base(data)
+	, query_(nullptr)
+	, header_(nullptr)
+	, cookie_(nullptr) {
 		memset(&fps_, 0, sizeof(fps_));
 		// !!! fastcgi 解析过程中，数据并不一定完整，需要缓存 !!!
 		fps_.on_begin_request    = fp_begin_request_cb;
@@ -23,40 +22,20 @@ namespace fastcgi {
 		fps_.on_data             = fp_data_cb;
 		fps_.on_end_request      = fp_end_request_cb;
 		fastcgi_parser_init(&fpp_);
-		fpp_.data   = this;
-		socket_.data = this;
-		if(0 > uv_read_start(&socket_, alloc_cb, read_cb)) {
-			close();
-		}
+		fpp_.data = this;
 	}
-	void server_connection::alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-		static char buffer[36 * 1024];
-		buf->base = buffer;
-		buf->len  = sizeof(buffer);
-	}
-	void server_connection::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
-		server_connection* self = reinterpret_cast<server_connection*>(stream->data);
-		if(nread < 0) {
-			if(nread == UV_ECANCELED) {
-				
-			}else{
-				self->close();
-			}
-		}else if(nread == 0) {
-			// again
-		}else if(nread != fastcgi_parser_execute(&self->fpp_, &self->fps_, buf->base, nread)) {
-			std::fprintf(stderr, "error: fastcgi parse failed\n");
-			self->close();
-		}
+	ssize_t server_connection::parse(const char* data, ssize_t size) {
+		return fastcgi_parser_execute(&fpp_, &fps_, data, size);
 	}
 	int server_connection::fp_begin_request_cb(fastcgi_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		self->req_ = php::object::create<http::server_request>();
+		self->header_ = php::array(0);
 		self->res_ = php::object::create<fastcgi::server_response>();
 		self->res_.prop("header") = php::array(0);
 
 		fastcgi::server_response* res = self->res_.native<fastcgi::server_response>();
-		res->conn_ = self;
+		res->init(self);
 		return 0;
 	}
 	int server_connection::fp_param_key_cb(fastcgi_parser* parser, const char* data, size_t size) {
@@ -85,6 +64,7 @@ namespace fastcgi {
 		}else if(strncmp(kdata, "REQUEST_URI", 11) == 0) {
 			self->req_.prop("uri") = php::string(vdata, vsize);
 		}else if(strncmp(kdata, "QUERY_STRING", 12) == 0) {
+			self->query_ = php::array(0);
 			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
 			// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
 			kv_parser          kvparser;
@@ -99,9 +79,9 @@ namespace fastcgi {
 			// 解析
 			kv_parser_execute(&kvparser, &settings, vdata, vsize);
 		}else if(strncmp(kdata, "HTTP_", 5) == 0) {
-			php::strtolower_inplace(kdata, ksize);
 			for(char *c = kdata; c < kdata + ksize; ++c) {
 				if(*c == '_') *c = '-';
+				else if(*c >= 'A' && *c <= 'Z') *c = *c - 'A' + 'a';
 			}
 			self->header_.at(kdata + 5, ksize - 5) = php::string(vdata, vsize);
 		}
@@ -119,52 +99,50 @@ namespace fastcgi {
 		self->req_.prop("rawBody") = raw;
 		// 头部信息均为小写，下划线
 		php::string ctype = self->header_.at("content-type", 12);
+		if(!ctype.is_string()) { // 除非 content-type 不存在，否则一定是字符串
+			self->body_ = std::move(raw);
+			return 0;
+		}
+		// 除非 content-type 不存在，否则一定是字符串
 		// application/x-www-form-urlencoded
-		if(ctype.is_string()) {
-			if(ctype.length() >= 33 && strncmp(ctype.c_str(), "application/x-www-form-urlencoded", 33) == 0) {
-				//application/x-www-form-urlencoded
-				self->body_ = php::array(1);
-				// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
-				// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
-				kv_parser          kvparser;
-				kv_parser_settings settings;
-				std::memset(&settings, 0, sizeof(kv_parser_settings));
-				settings.s1 = '=';
-				settings.s2 = '&';
-				settings.on_key = kv_key_cb;
-				settings.on_val = body_val_cb;
-				kv_parser_init(&kvparser);
-				kvparser.data = self;
-				// 解析
-				kv_parser_execute(&kvparser, &settings, raw.c_str(), raw.length());
-			}else if(ctype.length() > 32 && strncmp(ctype.c_str(), "multipart/form-data", 19) == 0) {
-				// multipart/form-data; boundary=---------xxxxxx
+		if(ctype.length() >= 33 && strncmp(ctype.c_str(), "application/x-www-form-urlencoded", 33) == 0) {
+			self->body_ = php::array(1);
+			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
+			// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
+			kv_parser          kvparser;
+			kv_parser_settings settings;
+			std::memset(&settings, 0, sizeof(kv_parser_settings));
+			settings.s1 = '=';
+			settings.s2 = '&';
+			settings.on_key = kv_key_cb;
+			settings.on_val = body_val_cb;
+			kv_parser_init(&kvparser);
+			kvparser.data = self;
+			// 解析
+			kv_parser_execute(&kvparser, &settings, raw.c_str(), raw.length());
+		}else if(ctype.length() > 32 && strncmp(ctype.c_str(), "multipart/form-data", 19) == 0) {
+			// multipart/form-data; boundary=---------xxxxxx
 
-				self->body_ = php::array(1);
-				// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
-				// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
-				multipart_parser          mpparser;
-				multipart_parser_settings settings;
-				std::memset(&settings, 0, sizeof(multipart_parser_settings));
-				std::strcpy(settings.boundary, strstr(ctype.c_str() + 20, "boundary=") + 9);
-				settings.boundary_length  = std::strlen(settings.boundary);
-				settings.on_header_field  = mp_key_cb;
-				settings.on_header_value  = mp_val_cb;
-				settings.on_part_data     = mp_dat_cb;
-				settings.on_part_data_end = mp_dat_end;
-				multipart_parser_init(&mpparser, &settings);
-				mpparser.data = self;
-				// 解析
-				multipart_parser_execute(&mpparser, &settings, raw.c_str(), raw.length());
-				return 0;
-			}else if(ctype.length() >= 16 && strncmp(ctype.c_str(), "application/json", 16) == 0) {
-				self->body_ = php::json_decode(raw.c_str(), raw.length());
-			}else{
-				// unknown
-				self->body_ = raw;
-			}
-		}else{
-			// unknown
+			self->body_ = php::array(1);
+			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
+			// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
+			multipart_parser          mpparser;
+			multipart_parser_settings settings;
+			std::memset(&settings, 0, sizeof(multipart_parser_settings));
+			std::strcpy(settings.boundary, strstr(ctype.c_str() + 20, "boundary=") + 9);
+			settings.boundary_length  = std::strlen(settings.boundary);
+			settings.on_header_field  = mp_key_cb;
+			settings.on_header_value  = mp_val_cb;
+			settings.on_part_data     = mp_dat_cb;
+			settings.on_part_data_end = mp_dat_end;
+			multipart_parser_init(&mpparser, &settings);
+			mpparser.data = self;
+			// 解析
+			multipart_parser_execute(&mpparser, &settings, raw.c_str(), raw.length());
+			return 0;
+		}else if(ctype.length() >= 16 && strncmp(ctype.c_str(), "application/json", 16) == 0) {
+			self->body_ = php::json_decode(raw.c_str(), raw.length());
+		}else{ // unknown
 			self->body_ = raw;
 		}
 		return 0;
@@ -174,6 +152,7 @@ namespace fastcgi {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		php::string cookie = self->header_.at("cookie", 6);
 		if(cookie.is_string()) {
+			self->cookie_ = php::array(0);
 			kv_parser parser;
 			kv_parser_settings settings;
 			std::memset(&settings, 0, sizeof(kv_parser_settings));
@@ -192,20 +171,8 @@ namespace fastcgi {
 		self->req_.prop("cookie") = std::move(self->cookie_);
 		self->req_.prop("body")   = std::move(self->body_);
 
-		self->svr_->on_request(self->req_, self->res_);
+		self->on_request(self->req_, self->res_, self->data);
 		return 0;
-	}
-	void server_connection::close() {
-		if(svr_ == nullptr) return;
-		svr_ = nullptr;
-		res_.native<server_response>()->body_sent = true;
-		uv_close(
-			reinterpret_cast<uv_handle_t*>(&socket_),
-			close_cb);
-	}
-	void server_connection::close_cb(uv_handle_t* handle) {
-		server_connection* self = reinterpret_cast<server_connection*>(handle->data);
-		delete self;
 	}
 	int server_connection::mp_key_cb(multipart_parser* parser, const char *at, size_t length) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);

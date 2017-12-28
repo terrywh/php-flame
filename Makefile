@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=1.3.0
+EXT_VER=1.4.0dev
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php-7.0.25
@@ -10,8 +10,8 @@ PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
 # ---------------------------------------------------------------------
-CXX?=/usr/local/gcc-7.1.0/bin/g++
-CXXFLAGS?= -O2
+CXX=/usr/local/gcc-7.1.0/bin/g++
+CXXFLAGS?= -O0 -g
 CXXFLAGS_CORE= -std=c++14 -fPIC
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
 # 链接参数
@@ -30,7 +30,8 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/hiredis/libhiredis.a \
  ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a \
  ./deps/mongo-c-driver/bin/lib/libbson-1.0.a \
- ./deps/librdkafka/src/librdkafka.a
+ ./deps/librdkafka/src/librdkafka.a \
+ ./deps/http-parser/libhttp_parser.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
 SOURCES=$(shell find ./src -name "*.cpp")
@@ -106,7 +107,8 @@ install: ${EXTENSION}
 	cd ./deps/librdkafka; chmod +x ./configure; chmod +x ./lds-gen.py; ./configure --enable-static
 	make -C ./deps/librdkafka -j2
 	cd ./deps/librdkafka; find -type l | xargs rm;
-
+./deps/http-parser/libhttp_parser.a:
+	cd ./deps/http-parser; CFLAGS="-fPIC" make package
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:
@@ -126,3 +128,4 @@ clean-deps:
 	make -C ./deps/c-ares clean
 	rm -rf ./deps/c-ares/bin
 	make -C ./deps/librdkafka clean
+	make -C ./deps/http-parser clean
