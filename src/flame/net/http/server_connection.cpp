@@ -1,5 +1,6 @@
 #include "../../coroutine.h"
 #include "../http/server_connection_base.h"
+#include "../http/server_response_base.h"
 #include "../http/server_request.h"
 #include "http.h"
 #include "server_connection.h"

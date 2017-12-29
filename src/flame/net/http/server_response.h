@@ -5,7 +5,7 @@ namespace net {
 namespace http {
 	// class handler;
 	// class server_connection;
-	class server_response: public php::class_base {
+	class server_response: public server_response_base {
 	public:
 		~server_response();
 		// 声明 ZEND_ACC_PRIVATE 禁止手动创建
@@ -14,22 +14,23 @@ namespace http {
 		}
 		// property status integer
 		// property header array
-		php::value set_cookie(php::parameters& params);
-		php::value write_header(php::parameters& params);
-		php::value write(php::parameters& params);
-		php::value end(php::parameters& params);
+		php::value set_cookie(php::parameters& params) {
+			return server_response_base::set_cookie(params);
+		}
+		php::value write_header(php::parameters& params) {
+			return server_response_base::write_header(params);
+		}
+		php::value write(php::parameters& params) {
+			return server_response_base::write(params);
+		}
+		php::value end(php::parameters& params) {
+			return server_response_base::end(params);
+		}
 	private:
-		void buffer_header();
-		void buffer_body(const char* data, unsigned short size);
-		php::value write_buffer(php::parameters& params);
+		virtual void buffer_header() override;
+		virtual void buffer_body(const char* data, unsigned short size) override;
 
-		void init(server_connection* conn);
-
-		server_connection*                   conn_;
-		php::buffer                        buffer_;
-		std::map<std::string, php::string> cookie_;
-		bool is_head_sent;
-		bool is_body_sent;
+		virtual void init(server_connection_base* conn) override;
 		bool is_chunked;
 
 		friend class server_connection;

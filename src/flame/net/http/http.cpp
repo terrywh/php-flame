@@ -6,6 +6,7 @@
 #include "server_connection_base.h"
 #include "server_connection.h"
 #include "server_request.h"
+#include "server_response_base.h"
 #include "server_response.h"
 #include "server_handler.h"
 
