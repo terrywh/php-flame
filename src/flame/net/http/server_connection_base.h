@@ -13,7 +13,7 @@ namespace http {
 		};
 		server_connection_base(void* ptr);
 		
-		bool write(const php::string& str, coroutine* co);
+		bool write(const php::string& str, coroutine* co, bool silent = false);
 		void start();
 		virtual ssize_t parse(const char* data, ssize_t size);
 		// 回调 server 函数（避免循环模板引用）

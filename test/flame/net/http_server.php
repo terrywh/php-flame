@@ -29,7 +29,7 @@ flame\go(function() {
 		$res->header["Cache-Control"] = "no-cache";
 		yield $res->write_header(200);
 		flame\time\tick(1000, function($tick) use($res) {
-			$r = yield $res->write("data: this is a message containing randomg data, ". rand() ."\n\n");
+			$r = yield $res->write("data: this is a message containing randomg data, ". rand() ."\n\n", true);
 			if(!$r) $tick->stop();
 		});
 	})

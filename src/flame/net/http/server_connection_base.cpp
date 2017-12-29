@@ -28,8 +28,11 @@ namespace http {
 		php::string             data;
 		uv_write_t               req;
 	} write_request_t;
-	bool server_connection_base::write(const php::string& str, coroutine* co) {
-		if(is_closing) return false;
+	bool server_connection_base::write(const php::string& str, coroutine* co, bool silent) {
+		if(is_closing) {
+			if(!silent) log::default_logger->write("(WARN) write failed: connection already closed");
+			return false;
+		}
 
 		write_request_t* ctx = new write_request_t {
 			co, this, str

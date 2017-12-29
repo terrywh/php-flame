@@ -97,9 +97,11 @@ php::value server_response_base::end(php::parameters& params) {
 	return write_buffer(params);
 }
 php::value server_response_base::write_buffer(php::parameters& params) {
-	if(conn_->write(std::move(buffer_), coroutine::current)) return flame::async(this);
-	if(params.length() > 0 && !params[params.length()-1].is_true()) {
-		log::default_logger->write("(WARN) write failed: connection already closed");
+	if(conn_->write(std::move(buffer_)
+		, coroutine::current
+		, params.length() > 0 && params[params.length()-1].is_true())
+	) {
+		return flame::async(this);
 	}
 	return php::BOOL_NO;
 }
