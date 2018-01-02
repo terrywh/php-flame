@@ -33,8 +33,6 @@ namespace fastcgi {
 		self->req_ = php::object::create<http::server_request>();
 		self->header_ = php::array(0);
 		self->res_ = php::object::create<fastcgi::server_response>();
-		self->res_.prop("header") = php::array(0);
-
 		fastcgi::server_response* res = self->res_.native<fastcgi::server_response>();
 		res->init(self);
 		return 0;
