@@ -1,5 +1,5 @@
 ### `namespace flame\db\kafka`
-提供基本的异步 Kafka 协程式客户端封装；基于 [librdkafka]((https://github.com/edenhill/librdkafka/) 封装。
+提供基本的异步 Kafka 协程式客户端封装；基于 [librdkafka](https://github.com/edenhill/librdkafka/) 封装。
 
 **示例**：
 ``` PHP
@@ -26,7 +26,7 @@ flame\go(function() {
 		"partitioner_cb" => function($key, $count) {
 			return crc32($key) % $count;
 		}
-	], ["test_topic"]); // 消费者可指定多个 topic 进行消费
+	], "test_topic"); // 或 ["test_topic"] 消费者可指定多个 topic 进行消费
 	while(true) {
 		$msg = yield $producer->consume();
 		// ...
@@ -61,18 +61,19 @@ flame\go(function() {
 * 全局选项 `$global_opt` 中 `bootstrap.servers` | `metadata.broker.list` 必须存在；
 * 全局选项 `$global_opt` 及 话题选项 `$topic_opt` 中所有标注 `set with .....` 的特殊选项**均不支持**；
 
-##### `yield consumer::consume()`
-消费（等待 KAFKA 返回）一条消息；
-
-**注意**：
-* 多个协程进行消费同一个 consumer 会导致未知错误；
+##### `yield consumer::consume([integer $timeout = 0])`
+消费（等待 KAFKA 返回）一条消息；可选的指定 `$timeout` 超时（单位 `ms` 毫秒），`0` 不超时；当指定超时设置时，若在指定时间内未能获取消息（队列空），则返回 `null`；
 
 **示例**：
 ``` PHP
 <?php
 // $consumer = ...
 $msg = yield $consumer->consume();
+$msg = yield $consumer->consume(5000);
 ```
+
+**注意**：
+* 多个协程进行消费同一个 consumer 会导致未知错误；
 
 ##### `yield consumer::commit(object $msg)`
 手动提交消息偏移；

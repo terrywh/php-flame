@@ -20,6 +20,7 @@ namespace time {
 		return nullptr;
 	}
 	php::value ticker::__destruct(php::parameters& params) {
+		uv_timer_stop(tm_);
 		uv_close((uv_handle_t*)tm_, flame::free_handle_cb);
 		return nullptr;
 	}

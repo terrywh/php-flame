@@ -6,8 +6,7 @@ namespace flame {
 namespace db {
 namespace mongodb {
 	client_implement::client_implement(client* cli) 
-	: worker_(new thread_worker())
-	, client_(cli)
+	: client_(cli)
 	, cli_(nullptr)
 	, uri_(nullptr)
 	{
@@ -47,10 +46,12 @@ namespace mongodb {
 		// collection 创建过程移动到主线程进行
 		ctx->rv.ptr(col);
 	}
-	void client_implement::close_wk(uv_work_t* req) {
-		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		mongoc_client_destroy(ctx->self->cli_);
-		delete ctx->self;
+	void client_implement::destroy_wk(uv_work_t* req) {
+		client_implement* self = reinterpret_cast<client_implement*>(req->data);
+		mongoc_client_destroy(self->cli_);
+	}
+	void client_implement::destroy_cb(uv_work_t* req, int status) {
+		delete reinterpret_cast<client_implement*>(req->data);
 	}
 }
 }

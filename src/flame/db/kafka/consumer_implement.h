@@ -29,7 +29,8 @@ namespace kafka {
 		static void consume_wk(uv_work_t* handle);
 		static void commit_wk(uv_work_t* handle);
 		static void offset_commit_cb(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *offsets, void *opaque);
-		static void close_wk(uv_work_t* handle);
+		static void destroy_wk(uv_work_t* handle);
+		static void destroy_cb(uv_work_t* handle, int status);
 		static void destroy_msg_wk(uv_work_t* handle);
 		
 		friend class consumer;

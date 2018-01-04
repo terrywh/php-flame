@@ -27,7 +27,8 @@ namespace kafka {
 		
 		static void produce_wk(uv_work_t* handle);
 		static void   flush_wk(uv_work_t* req);
-		static void   close_wk(uv_work_t* req);
+		static void  destroy_wk(uv_work_t* req);
+		static void  destroy_cb(uv_work_t* req, int status);
 		friend class producer;
 	};
 	

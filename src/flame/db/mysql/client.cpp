@@ -58,18 +58,8 @@ namespace mysql {
 		}
 		buf.add(')');
 	}
-	client::client()
-	: impl(new client_implement(std::make_shared<thread_worker>(), this)) {
-		
-	}
-	client::~client() {
-		client_request_t* ctx = new client_request_t {
-			nullptr, impl, nullptr
-		};
-		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::close_wk, default_cb);
-	}
 	php::value client::__construct(php::parameters& params) {
+		impl = new client_implement(this);
 		if(params.length() > 0 && params[0].is_array()) {
 			php::array& opts = params[0];
 			if(opts.at("debug", 5).is_true()) {
@@ -77,13 +67,26 @@ namespace mysql {
 			}
 			php::value ping = opts.at("ping", 4);
 			if(ping.is_long()) {
-				impl->ping_interval = static_cast<int>(ping);
-				if(impl->ping_interval < 15000) {
-					impl->ping_interval = 15 * 1000;
+				ping_interval = static_cast<int>(ping);
+				if(ping_interval < 15000) {
+					ping_interval = 15 * 1000;
 				}
-			} // 默认 ping_interval = 60 * 1000
+			}else{
+				ping_interval = 60 * 1000;
+			}
+		}else{ // 默认
+			ping_interval = 60 * 1000;
 		}
 		return nullptr;
+	}
+	php::value client::__destruct(php::parameters& params) {
+		uv_timer_stop(&impl->ping_);
+		uv_close((uv_handle_t*)&impl->ping_, destroy_cb);
+		return nullptr;
+	}
+	void client::destroy_cb(uv_handle_t* handle) {
+		client_implement* impl = reinterpret_cast<client_implement*>(handle->data);
+		impl->worker_.close_work(impl, client_implement::destroy_wk, client_implement::destroy_cb);
 	}
 	php::value client::connect(php::parameters& params) {
 		client_request_t* ctx;
@@ -97,8 +100,34 @@ namespace mysql {
 			};
 		}
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::connect_wk, default_cb);
+		impl->worker_.queue_work(&ctx->req, client_implement::connect_wk, connect_cb);
 		return flame::async(this);
+	}
+	void client::connect_cb(uv_work_t* req, int status) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		// 使用 rv 可能带回错误信息
+		if(ctx->rv.is_string()) {
+			php::string& msg = ctx->rv;
+			ctx->co->fail(msg, 0);
+		}else if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQLND>() == ctx->self->mysql_) {
+			ctx->co->fail(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
+		}else{
+			uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->client_->ping_interval, 0);
+			ctx->co->next(ctx->rv);
+		}
+		delete ctx;
+	}
+	void client::ping_cb(uv_timer_t* handle) {
+		client_implement* impl = reinterpret_cast<client_implement*>(handle->data);
+		client_request_t* ctx = new client_request_t {
+			coroutine::current, impl, nullptr
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, client_implement::ping_wk, ping_cb);
+	}
+	void client::ping_cb(uv_work_t* req, int status) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->client_->ping_interval, 0);
 	}
 	php::value client::format(php::parameters& params) {
 		if(params.length() < 1 || !params[0].is_string()) {
@@ -122,7 +151,7 @@ namespace mysql {
 			coroutine::current, impl, nullptr, sql
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::query_wk, queue_cb);
+		impl->worker_.queue_work(&ctx->req, client_implement::query_wk, queue_cb);
 	}
 	void client::queue_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -131,7 +160,7 @@ namespace mysql {
 			php::object obj = php::object::create<result_set>();
 			result_set* cpp = obj.native<result_set>();
 			ctx->rv = std::move(obj);
-			cpp->init(ctx->self->worker_, ctx->self->client_, rs);
+			cpp->init(&ctx->self->worker_, ctx->self->client_, rs);
 		}
 		ctx->co->next(ctx->rv);
 		delete ctx;
@@ -243,7 +272,7 @@ namespace mysql {
 			coroutine::current, impl, nullptr, std::move(sql)
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::one_wk, default_cb);
+		impl->worker_.queue_work(&ctx->req, client_implement::one_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value client::select(php::parameters& params) {
@@ -292,7 +321,7 @@ namespace mysql {
 		};
 		ctx->sql = php::string("SELECT FOUND_ROWS()");
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::found_rows_wk, default_cb);
+		impl->worker_.queue_work(&ctx->req, client_implement::found_rows_wk, default_cb);
 		return flame::async(this);
 	}
 	void client::default_cb(uv_work_t* req, int status) {
@@ -309,6 +338,30 @@ namespace mysql {
 			}
 		}
 		delete ctx;
+	}
+	php::value client::begin_transaction(php::parameters& params) {
+		client_request_t* ctx = new client_request_t {
+			coroutine::current, impl
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, client_implement::begin_wk, default_cb);
+		return flame::async(this);
+	}
+	php::value client::commit(php::parameters& params) {
+		client_request_t* ctx = new client_request_t {
+			coroutine::current, impl
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, client_implement::commit_wk, default_cb);
+		return flame::async(this);
+	}
+	php::value client::rollback(php::parameters& params) {
+		client_request_t* ctx = new client_request_t {
+			coroutine::current, impl, nullptr
+		};
+		ctx->req.data = ctx;
+		impl->worker_.queue_work(&ctx->req, client_implement::rollback_wk, default_cb);
+		return flame::async(this);
 	}
 }
 }

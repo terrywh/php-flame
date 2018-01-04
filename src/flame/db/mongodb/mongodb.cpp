@@ -43,6 +43,8 @@ void init(php::extension_entry& ext) {
 	ext.add(std::move(class_date_time));
 	// ---------------------------------------------------------------------
 	php::class_entry<client> class_client("flame\\db\\mongodb\\client");
+	class_client.add<&client::__construct>("__construct");
+	class_client.add<&client::__destruct>("__destruct");
 	class_client.add<&client::connect>("connect");
 	class_client.add<&client::collection>("collection");
 	ext.add(std::move(class_client));
@@ -53,10 +55,13 @@ void init(php::extension_entry& ext) {
 	class_bulk_result.add(php::property_entry("modified", 0));
 	class_bulk_result.add(php::property_entry("removed", 0));
 	class_bulk_result.add(php::property_entry("upserted", 0));
+	class_bulk_result.add<&bulk_result::__construct>("__construct", ZEND_ACC_PRIVATE);
 	class_bulk_result.add<&bulk_result::success>("success");
 	ext.add(std::move(class_bulk_result));
 	// ---------------------------------------------------------------------
 	php::class_entry<collection> class_collection("flame\\db\\mongodb\\collection");
+	class_collection.add<&collection::__construct>("__construct", ZEND_ACC_PRIVATE);
+	class_collection.add<&collection::__destruct>("__destruct");
 	class_collection.add<&collection::count>("count");
 	class_collection.add<&collection::insert_one>("insert_one");
 	class_collection.add<&collection::insert_many>("insert_many");
@@ -69,6 +74,8 @@ void init(php::extension_entry& ext) {
 	ext.add(std::move(class_collection));
 
 	php::class_entry<cursor> class_cursor("flame\\db\\mongodb\\cursor");
+	class_cursor.add<&cursor::__construct>("__construct", ZEND_ACC_PRIVATE);
+	class_cursor.add<&cursor::__destruct>("__destruct");
 	class_cursor.add<&cursor::to_array>("to_array");
 	class_cursor.add<&cursor::next>("next");
 	ext.add(std::move(class_cursor));

@@ -7,18 +7,13 @@
 namespace flame {
 namespace db {
 namespace mongodb {
-	client::client()
-	: impl(new client_implement(this)) {
-		
+	php::value client::__construct(php::parameters& params) {
+		impl = new client_implement(this);
+		return nullptr;
 	}
-	client::~client() {
-		client_request_t* ctx = new client_request_t {
-			nullptr, impl, nullptr
-		};
-		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req,
-			client_implement::close_wk,
-			default_cb);
+	php::value client::__destruct(php::parameters& params) {
+		impl->worker_.close_work(impl, client_implement::destroy_wk, client_implement::destroy_cb);
+		return nullptr;
 	}
 	void client::default_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -33,7 +28,7 @@ namespace mongodb {
 		if(params.length() > 0 && params[0].is_string()) {
 			ctx->name = params[0];
 		}
-		impl->worker_->queue_work(&ctx->req,
+		impl->worker_.queue_work(&ctx->req,
 			client_implement::connect_wk,
 			connect_cb);
 		return flame::async(this);
@@ -55,7 +50,7 @@ namespace mongodb {
 			php::object          obj = php::object::create<mongodb::collection>();
 			mongodb::collection* cpp = obj.native<mongodb::collection>();
 			// ctx->self ===> impl
-			cpp->init(ctx->self->worker_, ctx->self->client_, col);
+			cpp->init(&ctx->self->worker_, ctx->self->client_, col);
 			ctx->rv = std::move(obj);
 		}
 		ctx->co->next(ctx->rv);
@@ -66,7 +61,7 @@ namespace mongodb {
 			coroutine::current, impl, nullptr, params[0].to_string()
 		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, client_implement::collection_wk, collection_cb);
+		impl->worker_.queue_work(&ctx->req, client_implement::collection_wk, collection_cb);
 		return flame::async(this);
 	}
 }

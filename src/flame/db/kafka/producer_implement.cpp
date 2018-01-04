@@ -109,12 +109,15 @@ namespace kafka {
 		rd_kafka_flush(ctx->self->kafka_, 10000);
 		rd_kafka_poll(ctx->self->kafka_, 0);
 	}
-	void producer_implement::close_wk(uv_work_t* req) {
-		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);
-		flush_wk(req);
-		rd_kafka_topic_destroy(ctx->self->topic_);
-		rd_kafka_destroy(ctx->self->kafka_);
-		delete ctx->self;
+	void producer_implement::destroy_wk(uv_work_t* req) {
+		producer_implement* self = reinterpret_cast<producer_implement*>(req->data);
+		rd_kafka_flush(self->kafka_, 10000);
+		rd_kafka_poll(self->kafka_, 0);
+		rd_kafka_topic_destroy(self->topic_);
+		rd_kafka_destroy(self->kafka_);
+	}
+	void producer_implement::destroy_cb(uv_work_t* req, int status) {
+		delete reinterpret_cast<producer_implement*>(req->data);
 	}
 }
 }

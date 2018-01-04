@@ -7,15 +7,13 @@
 namespace flame {
 namespace db {
 namespace mysql {
-	client_implement::client_implement(std::shared_ptr<thread_worker> worker, client* cli)
-	: worker_(worker)
-	, client_(cli)
+	client_implement::client_implement(client* cli)
+	: client_(cli)
 	, mysql_(mysqlnd_init(MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA, true))
 	, debug_(false)
-	, ping_interval(60 * 1000)
 	, url_(nullptr)
 	, connected_(false) {
-		uv_timer_init(&worker_->loop, &ping_);
+		uv_timer_init(flame::loop, &ping_);
 		ping_.data = this;
 	}
 	void client_implement::connect_wk(uv_work_t* req) {
@@ -55,7 +53,6 @@ namespace mysql {
 		ctx->self->connected_ = true;
 		mysqlnd_autocommit(ctx->self->mysql_, true);
 		ctx->rv = php::BOOL_YES;
-		uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->ping_interval, 0);
 	}
 	void client_implement::query_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -146,31 +143,63 @@ namespace mysql {
 		php::array& row = ctx->rv;
 		ctx->rv = row[0].to_long();
 	}
-	void client_implement::ping_cb(uv_timer_t* req) {
-		client_implement* self = reinterpret_cast<client_implement*>(req->data);
-		if(!self->connected_) { // 若还未连接成功
+	void client_implement::ping_wk(uv_work_t* req) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(!ctx->self->connected_) { // 若还未连接成功
 			return;
 		}
-		
-		if(0 != mysqlnd_query(self->mysql_, "SELECT 1", 8)) return;
-		MYSQLND_RES* rs = mysqlnd_store_result(self->mysql_);
+		if(mysqlnd_query(ctx->self->mysql_, "SELECT 1", 8) != 0) return;
+		MYSQLND_RES* rs = mysqlnd_store_result(ctx->self->mysql_);
 		if(rs == nullptr) return;
 		mysqlnd_free_result(rs, false);
-		uv_timer_start(&self->ping_, ping_cb, self->ping_interval, 0);
 	}
-	void client_implement::close_wk(uv_work_t* req) {
-		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(ctx->self->mysql_ != nullptr) {
-			mysqlnd_close(ctx->self->mysql_, MYSQLND_CLOSE_EXPLICIT);
-			ctx->self->mysql_ = nullptr;
+	void client_implement::destroy_wk(uv_work_t* req) {
+		client_implement* self = reinterpret_cast<client_implement*>(req->data);
+		if(self->mysql_ != nullptr) {
+			mysqlnd_close(self->mysql_, MYSQLND_CLOSE_EXPLICIT);
+			self->mysql_ = nullptr;
 		}
-		uv_close((uv_handle_t*)&ctx->self->ping_, close_cb);
 	}
-	void client_implement::close_cb(uv_handle_t* handle) {
-		client_implement* self = reinterpret_cast<client_implement*>(handle->data);
-		// 由于工作线程可能与 result_set 对象共享，故这里不做操作
-		delete self;
+	void client_implement::destroy_cb(uv_work_t* req, int status) {
+		delete reinterpret_cast<client_implement*>(req->data);
 	}
+	void client_implement::begin_wk(uv_work_t* req) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(!ctx->self->connected_) { // 若还未连接成功
+			ctx->rv = nullptr;
+			return;
+		}
+		if(mysqlnd_begin_transaction(ctx->self->mysql_, TRANS_START_NO_OPT, nullptr) == FAIL) {
+			ctx->rv.ptr(ctx->self->mysql_);
+		}else{
+			ctx->rv = php::BOOL_YES;
+		}
+	}
+	void client_implement::commit_wk(uv_work_t* req) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(!ctx->self->connected_) { // 若还未连接成功
+			ctx->rv = nullptr;
+			return;
+		}
+		if(mysqlnd_commit(ctx->self->mysql_, TRANS_START_NO_OPT, nullptr) == FAIL) {
+			ctx->rv.ptr(ctx->self->mysql_);
+		}else{
+			ctx->rv = php::BOOL_YES;
+		}
+	}
+	void client_implement::rollback_wk(uv_work_t* req) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(!ctx->self->connected_) { // 若还未连接成功
+			ctx->rv = nullptr;
+			return;
+		}
+		if(mysqlnd_rollback(ctx->self->mysql_, TRANS_START_NO_OPT, nullptr) == FAIL) {
+			ctx->rv.ptr(ctx->self->mysql_);
+		}else{
+			ctx->rv = php::BOOL_YES;
+		}
+	}
+
 }
 }
 }

@@ -11,17 +11,16 @@ namespace kafka {
 		return nullptr;
 	}
 	php::value consumer::__destruct(php::parameters& params) {
-		consumer_request_t* ctx = new consumer_request_t {
-			nullptr, impl, nullptr
-		};
-		ctx->req.data = ctx;
-		impl->worker_.queue_work(&ctx->req, consumer_implement::close_wk, default_cb);
+		impl->worker_.close_work(impl, consumer_implement::destroy_wk, consumer_implement::destroy_cb);
 		return nullptr;
 	}
 	php::value consumer::consume(php::parameters& params) {
 		consumer_request_t* ctx = new consumer_request_t {
-			coroutine::current, impl, nullptr
+			coroutine::current, impl, int(0)
 		};
+		if(params.length() > 0 && params[0].is_long()) {
+			ctx->rv = params[0];
+		}
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req, consumer_implement::consume_wk, consume_cb);
 		return flame::async(this);
@@ -41,8 +40,8 @@ namespace kafka {
 				ctx->rv = php::object::create_exception(rd_kafka_err2str(msg->err), msg->err);
 				ctx->self->worker_.queue_work(&ctx->req, consumer_implement::destroy_msg_wk, default_cb);
 			}
-		}else{
-			assert(0); // 不应出现的返回值
+		}else{ // 超时的情况
+			ctx->co->next(nullptr);
 		}
 	}
 	void consumer::default_cb(uv_work_t* handle, int status) {

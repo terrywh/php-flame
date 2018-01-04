@@ -7,7 +7,7 @@ namespace mongodb {
 	class cursor;
 	class cursor_implement {
 	public:
-		cursor_implement(std::shared_ptr<thread_worker> worker, cursor* c, mongoc_cursor_t* cs);
+		cursor_implement(thread_worker* worker, cursor* c, mongoc_cursor_t* cs);
 	private:
 		std::shared_ptr<thread_worker> worker_;
 		cursor*                        cpp_;

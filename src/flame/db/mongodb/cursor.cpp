@@ -8,22 +8,20 @@
 namespace flame {
 namespace db {
 namespace mongodb {
-	cursor::cursor()
-	:impl(nullptr) {
-
-	}
-	void cursor::init(std::shared_ptr<thread_worker> worker, collection* col, mongoc_cursor_t* css) {
+	void cursor::init(thread_worker* worker, collection* col, mongoc_cursor_t* css) {
 		impl = new cursor_implement(worker, this, css);
 		ref_ = col;
 	}
-	cursor::~cursor() {
+	php::value cursor::__destruct(php::parameters& params) {
 		if(impl) {
 			cursor_request_t* ctx = new cursor_request_t {
 				nullptr, impl, php::array(nullptr)
 			};
 			ctx->req.data = ctx;
+			// 这里不适用 close_work，实际停止动作在 client 中
 			impl->worker_->queue_work(&ctx->req, cursor_implement::close_wk, close_cb);
 		}
+		return nullptr;
 	}
 	void cursor::close_cb(uv_work_t* req, int status) {
 		delete reinterpret_cast<cursor_request_t*>(req->data);

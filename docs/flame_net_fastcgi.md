@@ -2,7 +2,7 @@
 提供对 `fastcgi/1.1` 协议的简化封装，支持挂接到 nginx 等 Web 服务器提供应用服务。
 
 ### `class flame\net\fastcgi\handler`
-监听 `unix socket` 提供后端服务，用于 tcp_server / unix_server 解析 `fastcgi/1.1` 协议，并提供 HTTP 服务；
+FastCGI 处理器，用于 tcp_server / unix_server 解析 `fastcgi/1.1` 协议，并提供 HTTP 服务；
 
 参考：`test/flame/net/fastcgi_server.php`
 
@@ -52,13 +52,13 @@ $res->header["X-Server"] = "Flame/0.7.0";
 设置并输出响应头部（含上述响应头 KEY/VAL 及响应状态行），请参照标准 HTTP/1.1 STATUS_CODE 设置数值；
 
 #### `yield server_response::write(string $data)`
-输出指定响应内容，若还未发送相应头，将自动调用 `write_header` 发送相应头（默认 200 OK）；请参考 `handle()` 的相关示例；
+输出指定响应内容，若还未发送相应头，将自动调用 `write_header` 发送相应头（默认 `200 OK`）；请参考 `handle()` 的相关示例；
 
 **注意**：
 * 请谨慎在多个协程中使用 `write`/`end` 函数时，防止输出顺序混乱；
 
 #### `yield server_response::end([string $data])`
-结束请求，若还未发送响应头，将自动调用 `write_header` 发送相应头（默认 200 OK）；可选输出响应内容；输出完成后结束响应；
+结束请求，若还未发送响应头，将自动调用 `write_header` 发送相应头（默认 `200 OK`）；可选输出响应内容；输出完成后结束响应；
 
 **注意**：
 * 若服务端设置保留 fastcgi 连接（NGINX 配置 `fastcgi_keep_conn on;`），在结束响应后与 Web 服务器的连接将被保留；否则将会立即关闭；

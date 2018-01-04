@@ -3,6 +3,7 @@
 #include "mongodb/mongodb.h"
 #include "mysql/mysql.h"
 #include "kafka/kafka.h"
+#include "rabbitmq/rabbitmq.h"
 
 namespace flame {
 namespace db {
@@ -20,12 +21,11 @@ namespace db {
 		class_redis.add<&redis::stop_all>("stop_all");
 		class_redis.add<&redis::quit>("quit");
 		ext.add(std::move(class_redis));
-		// mongodb
+		// 子模块
 		mongodb::init(ext);
-		// mysql
 		mysql::init(ext);
-		// kafka
 		kafka::init(ext);
+		rabbitmq::init(ext);
 	}
 }
 }

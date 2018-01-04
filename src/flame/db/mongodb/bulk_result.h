@@ -5,6 +5,9 @@ namespace db {
 namespace mongodb {
 	class bulk_result: public php::class_base {
 	public:
+		php::value __construct(php::parameters& params) {
+			return nullptr;
+		}
 		inline php::value success(php::parameters& params) {
 			return success_;
 		}

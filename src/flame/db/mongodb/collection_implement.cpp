@@ -7,7 +7,7 @@
 namespace flame {
 namespace db {
 namespace mongodb {
-	collection_implement::collection_implement(std::shared_ptr<thread_worker> worker,
+	collection_implement::collection_implement(thread_worker* worker,
 		collection* cpp, mongoc_collection_t* col)
 	: worker_(worker)
 	, cpp_(cpp)

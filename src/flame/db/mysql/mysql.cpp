@@ -13,6 +13,7 @@ namespace mysql {
 		class_client.add(php::property_entry("affected_rows", 0));
 		class_client.add(php::property_entry("insert_id", 0));
 		class_client.add<&client::__construct>("__construct");
+		class_client.add<&client::__destruct>("__destruct");
 		class_client.add<&client::connect>("connect");
 		class_client.add<&client::format>("format");
 		class_client.add<&client::query>("query");
@@ -22,6 +23,9 @@ namespace mysql {
 		class_client.add<&client::select>("select");
 		class_client.add<&client::one>("one");
 		class_client.add<&client::found_rows>("found_rows");
+		// class_client.add<&client::begin_transaction>("begin_transaction");
+		// class_client.add<&client::commit>("commit");
+		// class_client.add<&client::rollback>("rollback");
 		ext.add(std::move(class_client));
 		// ---------------------------------------------------------------------
 		php::class_entry<result_set> class_result_set("flame\\db\\mysql\\result_set");

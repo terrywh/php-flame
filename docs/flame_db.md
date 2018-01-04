@@ -4,6 +4,7 @@
 2. [MySQL](/php-flame/flame_db_mysql)；
 3. [Mongodb](/php-flame/flame_db_mongodb)；
 4. [Kafka](/php-flame/flame_db_kafka)；
+5. [RabbitMQ](/php-flame/flame_db_rabbitmq)；
 
 ### `class flame\db\redis`
 封装 REDIS 协议的请求、命令，注意需要前置 `yield` 来调用命令，例如：

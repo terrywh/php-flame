@@ -9,8 +9,11 @@ namespace mongodb {
 	class cursor: public php::class_base {
 	public:
 		cursor();
-		void init(std::shared_ptr<thread_worker> worker, collection* col, mongoc_cursor_t* cs);
-		~cursor();
+		void init(thread_worker* worker, collection* col, mongoc_cursor_t* cs);
+		php::value __construct(php::parameters& params) {
+			return nullptr;
+		}
+		php::value __destruct(php::parameters& params);
 		php::value to_array(php::parameters& params);
 		php::value next(php::parameters& params);
 		

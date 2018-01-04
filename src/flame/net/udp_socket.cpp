@@ -137,7 +137,10 @@ namespace net {
 			else co->fail(uv_strerror(err), err);
 		}
 		if(sck) {
-			if(init_) uv_close((uv_handle_t*)sck, free_handle_cb);
+			if(init_) {
+				uv_udp_recv_stop(sck);
+				uv_close((uv_handle_t*)sck, free_handle_cb);
+			}
 			else free(sck); // 未初始化，直接释放即可
 			sck = nullptr;
 		}

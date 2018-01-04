@@ -11,11 +11,7 @@ namespace kafka {
 		return nullptr;
 	}
 	php::value producer::__destruct(php::parameters& params) {
-		producer_request_t* ctx = new producer_request_t {
-			nullptr, impl, nullptr
-		};
-		ctx->req.data = ctx;
-		impl->worker_.queue_work(&ctx->req, producer_implement::close_wk, default_cb);
+		impl->worker_.close_work(impl, producer_implement::destroy_wk, producer_implement::destroy_cb);
 		return nullptr;
 	}
 	php::value producer::produce(php::parameters& params) {

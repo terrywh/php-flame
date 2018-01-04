@@ -8,9 +8,11 @@ namespace mongodb {
 	class collection_implement;
 	class collection: public php::class_base {
 	public:
-		collection();
-		~collection();
-		void init(std::shared_ptr<thread_worker> worker, client* cli, mongoc_collection_t* collection);
+		php::value __construct(php::parameters& params) {
+			return nullptr;
+		}
+		php::value __destruct(php::parameters& params);
+		void init(thread_worker* worker, client* cli, mongoc_collection_t* collection);
 		php::value count(php::parameters& params);
 		php::value insert_one(php::parameters& params);
 		php::value insert_many(php::parameters& params);

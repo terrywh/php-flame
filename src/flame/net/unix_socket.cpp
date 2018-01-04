@@ -78,9 +78,9 @@ namespace net {
 	// property remote_address ""
 	void unix_socket::close(int err) {
 		if(sck) {
-			uv_close((uv_handle_t*)sck, free_handle_cb);
 			rdr.close();
 			wtr.close();
+			uv_close((uv_handle_t*)sck, free_handle_cb);
 			sck = nullptr;
 		}
 	}

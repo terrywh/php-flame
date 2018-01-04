@@ -47,10 +47,16 @@ namespace kafka {
 			rd_kafka_conf_destroy(gconf_);
 			throw php::exception(errstr);
 		}
-		php::array& topics = params[2];
-		topic_ = rd_kafka_topic_partition_list_new(topics.length());
-		for(auto i=topics.begin(); i!=topics.end(); ++i) {
-			php::string& topic = i->second.to_string();
+		if(params[2].is_array()) {
+			php::array& topics = params[2];
+			topic_ = rd_kafka_topic_partition_list_new(topics.length());
+			for(auto i=topics.begin(); i!=topics.end(); ++i) {
+				php::string& topic = i->second.to_string();
+				rd_kafka_topic_partition_list_add(topic_, topic.c_str(), RD_KAFKA_PARTITION_UA);
+			}
+		}else{
+			php::string topic = params[2].to_string();
+			topic_ = rd_kafka_topic_partition_list_new(1);
 			rd_kafka_topic_partition_list_add(topic_, topic.c_str(), RD_KAFKA_PARTITION_UA);
 		}
 		// 订阅开始消费
@@ -66,9 +72,10 @@ namespace kafka {
 	void consumer_implement::consume_wk(uv_work_t* handle) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
 		rd_kafka_message_t* msg = nullptr;
-
+		int64_t timeout = ctx->rv, elapse = 0;
 		while(true) {
-			msg = rd_kafka_consumer_poll(ctx->self->kafka_, 10);
+			msg     = rd_kafka_consumer_poll(ctx->self->kafka_, 100);
+			elapse += 100;
 			if(msg) {
 				if(msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
 					rd_kafka_message_destroy(msg);
@@ -78,6 +85,9 @@ namespace kafka {
 					// 返回的数据可能包含异常情况需要处理
 					break;
 				}
+			}else if(timeout > 0 && elapse > timeout) { // 若用户指定了超时，进行超时处理
+				ctx->msg = nullptr;
+				break;
 			}
 		}
 		while (rd_kafka_outq_len(ctx->self->kafka_) > 0) {
@@ -100,17 +110,18 @@ namespace kafka {
 			self->ctx_ = nullptr;
 		}
 	}
-	void consumer_implement::close_wk(uv_work_t* handle) {
-		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);
+	void consumer_implement::destroy_wk(uv_work_t* handle) {
+		consumer_implement* self = reinterpret_cast<consumer_implement*>(handle->data);
 	
-		rd_kafka_consumer_close(ctx->self->kafka_);
-		while (rd_kafka_outq_len(ctx->self->kafka_) > 0) {
-			rd_kafka_poll(ctx->self->kafka_, 1000);
+		rd_kafka_consumer_close(self->kafka_);
+		while (rd_kafka_outq_len(self->kafka_) > 0) {
+			rd_kafka_poll(self->kafka_, 1000);
 		}
-		rd_kafka_topic_partition_list_destroy(ctx->self->topic_);
-		rd_kafka_destroy(ctx->self->kafka_);
-		
-		delete ctx->self;
+		rd_kafka_topic_partition_list_destroy(self->topic_);
+		rd_kafka_destroy(self->kafka_);
+	}
+	void consumer_implement::destroy_cb(uv_work_t* handle, int status) {
+		delete reinterpret_cast<consumer_implement*>(handle->data);
 	}
 	void consumer_implement::destroy_msg_wk(uv_work_t* handle) {
 		consumer_request_t* ctx = reinterpret_cast<consumer_request_t*>(handle->data);

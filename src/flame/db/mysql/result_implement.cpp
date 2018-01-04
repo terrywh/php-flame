@@ -5,7 +5,7 @@
 namespace flame {
 namespace db {
 namespace mysql {
-	result_implement::result_implement(std::shared_ptr<thread_worker> worker, MYSQLND_RES* rs)
+	result_implement::result_implement(thread_worker* worker, MYSQLND_RES* rs)
 	: worker_(worker)
 	, rs_(rs) {
 		

@@ -1,5 +1,5 @@
 ### `namespace flame\net`
-提供基本的 HTTP 协议网络协程式客户端封装；底层使用 curl 并内置使用 nghttp2 提供了 HTTP/2 支持；
+提供基本的 HTTP/1 协议服务器封装，协程式客户端封装（底层使用 curl 并内置使用 nghttp2 提供了 HTTP/2 支持）；
 
 #### `yield flame\net\http\get(string $url, integer $timeout = 2500)`
 简单的 `GET` 请求方法。
@@ -210,3 +210,65 @@ HTTP 响应体，方便直接将对象作为文本使用；
 
 **注意**：
 * 文件上传请求的请求体类型为 `multipart/form-data` ，提取 `name` 作为 KEY 文件内容数据作为 VAL，**不会** 生成 `PHP` 中类似 `$_FILES` 的结构；
+
+### `class flame\net\http\handler`
+HTTP/1 协议处理器，用于 tcp_server / unix_server 解析 `HTTP/1` 协议，并提供 HTTP 服务；
+
+参考：`test/flame/net/http_server.php`
+
+#### `handler::get/post/put/remove(string $path, callable $cb)`
+分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调；
+
+#### `handler::handle(callable $cb)`
+设置默认处理回调（未匹配路径回调），或设置指定路径的请求处理回调（`$path` 参数可选）；回调函数接收两个参数：
+* `$request` - 类型 `class flame\net\http\server_request` 的实例，请参考 `flame\net\http` 命名空间中的相关说明；
+* `$response` - 类型 `class flame\net\fastcgi\server_response` 的实例，请参考下文；
+
+**示例**：
+``` PHP
+<?php
+$handler->get("/hello", function($req, $res) {
+	var_dump($req->header["host"]);
+	yield $res->write("hello world\n");
+	yield $res->end();
+})->handle(function($req, $res) {
+	yield $res->end('{"error":"router not found"}');
+});
+```
+
+**注意**：
+* `handler` 会为每次回调启用新的协程，故 `$cb` 必须为 `Generator Function` ，即 函数定义中包含 `yield` 表达式；
+
+### `class flame\net\http\server_response`
+由上述 `handler` 生成，并回调传递给处理函数使用，用于返回响应数据给 Web 服务器；
+
+#### `array server_response::$header`
+响应头部 KEY/VAL 数组，默认包含 `Content-Type: text/plain`（）；其他响应头请酌情考虑添加、覆盖；
+
+**示例**：
+``` PHP
+<?php
+$res->header["Content-Type"] = "text/html";
+$res->header["X-Server"] = "Flame/0.7.0";
+```
+
+* 所有输出的 HEADER 数据 **区分大小写**；
+
+#### `server_response::set_cookie(string $name [, string $value = "" [, int $expire = 0 [, string $path = "" [, string $domain = "" [, bool $secure = false [, bool $httponly = false ]]]]]])`
+
+定义一个 Cookie 并通过在响应头 `Set-Cookie` 下发（实际发送在 `writer_header` 时触发）；效果与 PHP 内置函数 [setcookie](http://php.net/manual/en/function.setcookie.php) 类似；
+
+#### `yield server_response::write_header(integer $status_code)`
+设置并输出响应头部（含上述响应头 KEY/VAL 及响应状态行），请参照标准 HTTP/1.1 STATUS_CODE 设置数值；
+
+#### `yield server_response::write(string $data)`
+输出指定响应内容，若还未发送相应头，将自动调用 `write_header` 发送相应头（默认 `200 OK`）；请参考 `handle()` 的相关示例；
+
+**注意**：
+* 请谨慎在多个协程中使用 `write`/`end` 函数时，防止输出顺序混乱；
+
+#### `yield server_response::end([string $data])`
+结束请求，若还未发送响应头，将自动调用 `write_header` 发送相应头（默认 `200 OK`）；可选输出响应内容；输出完成后结束响应；
+
+**注意**：
+* 当 `server_response` 对象被销毁时，会自动结束响应 `end()` ；

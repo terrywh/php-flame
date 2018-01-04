@@ -36,6 +36,8 @@
 #include "librdkafka/src/rdkafka.h"
 #include "fmt/fmt/format.h"
 #include "http-parser/http_parser.h"
+#include "rabbitmq-c/librabbitmq/amqp.h"
+#include "rabbitmq-c/librabbitmq/amqp_tcp_socket.h"
 
 extern "C" {
 #include "ext/mysqlnd/mysqlnd.h"

@@ -17,6 +17,7 @@ namespace log {
 	}
 	logger::~logger() {
 		close();
+		uv_signal_stop(sig_);
 		uv_close((uv_handle_t*)sig_, free_handle_cb);
 	}
 	void logger::close() {

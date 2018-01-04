@@ -7,12 +7,12 @@ namespace mongodb {
 	class collection;
 	class collection_implement {
 	public:
-		collection_implement(std::shared_ptr<thread_worker> worker,
-			collection* cpp, mongoc_collection_t* col);
+		collection_implement(thread_worker* worker, collection* cpp,
+			mongoc_collection_t* col);
 	private:
-		std::shared_ptr<thread_worker> worker_;
-		collection*                cpp_;
-		mongoc_collection_t*       col_;
+		thread_worker*       worker_;
+		collection*             cpp_;
+		mongoc_collection_t*    col_;
 		
 		static void count_wk(uv_work_t* w);
 		static void insert_one_wk(uv_work_t* w);

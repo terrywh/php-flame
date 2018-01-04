@@ -9,16 +9,17 @@ namespace mongodb {
 	private:
 		client_implement(client* cli);
 		
-		std::shared_ptr<thread_worker> worker_;
-		client*                        client_;
-		mongoc_client_t*                  cli_;
-		mongoc_uri_t*                     uri_;
+		thread_worker     worker_;
+		client*           client_;
+		mongoc_client_t*     cli_;
+		mongoc_uri_t*        uri_;
 		
 		// name -> connection_uri
 		static void    connect_wk(uv_work_t* req);
 		// name -> collection_name
 		static void collection_wk(uv_work_t* req);
-		static void      close_wk(uv_work_t* req);
+		static void    destroy_wk(uv_work_t* req);
+		static void    destroy_cb(uv_work_t* req, int status);
 		
 		friend class client;
 	};

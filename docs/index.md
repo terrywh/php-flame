@@ -12,10 +12,11 @@
 	4. [UDP 客户端、服务端](/php-flame/flame_net)；
 	5. [FastCGI 处理器](/php-flame/flame_net_fastcgi) - 挂接 Nginx 等实现 HTTP 服务；
 3. [协程式数据库驱动](/php-flame/flame_db)：
-	1. [简单 Redis 客户端](/php-flame/flame_db)；
-	2. [简单 Mongodb 客户端](/php-flame/flame_db_mongodb)；
-	3. [简单 MySQL 客户端](/php-flame/flame_db_mysql)；
-	4. [简单 Kafka 客户端](/php-flame/flame_db_kafka)；
+	1. [Redis 客户端](/php-flame/flame_db) - 简单封装；
+	2. [Mongodb 客户端](/php-flame/flame_db_mongodb) - 简单封装；
+	3. [MySQL 客户端](/php-flame/flame_db_mysql) - 简单封装；
+	4. [Kafka](/php-flame/flame_db_kafka) - 简单生产消费；
+	4. [RabbitMQ](/php-flame/flame_db_rabbitmq) - 简单生产消费；
 
 **源码**：
 [https://github.com/terrywh/php-flame/](https://github.com/terrywh/php-flame/)

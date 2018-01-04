@@ -12,7 +12,7 @@ namespace mysql {
 	:impl(nullptr) {
 		
 	}
-	void result_set::init(std::shared_ptr<thread_worker> worker, client* cli, MYSQLND_RES* rs) {
+	void result_set::init(thread_worker* worker, client* cli, MYSQLND_RES* rs) {
 		impl = new result_implement(worker, rs);
 		ref_ = cli;
 	}
@@ -22,6 +22,7 @@ namespace mysql {
 				nullptr, impl, nullptr
 			};
 			ctx->req.data = ctx;
+			// 这里不适用 close_work ( worker 不销毁 )
 			impl->worker_->queue_work(&ctx->req, result_implement::close_wk, default_cb);
 		}
 	}

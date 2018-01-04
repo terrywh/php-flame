@@ -6,8 +6,8 @@ namespace mongodb {
 	class client_implement;
 	class client: public php::class_base {
 	public:
-		client();
-		~client();
+		php::value __construct(php::parameters& params);
+		php::value __destruct(php::parameters& params);
 		php::value connect(php::parameters& params);
 		php::value collection(php::parameters& params);
 		

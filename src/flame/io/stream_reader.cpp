@@ -25,10 +25,14 @@ namespace io {
 			else co->fail(uv_strerror(err), err);
 		}
 		if(tm_) {
+			uv_timer_stop(tm_);
 			uv_close((uv_handle_t*)tm_, flame::free_handle_cb);
 			tm_ = nullptr;
 		}
-		cli_ = nullptr;
+		if(cli_) {
+			uv_read_stop(cli_);
+			cli_ = nullptr;
+		}
 	}
 	void stream_reader::read() {
 		if(!cli_) throw php::exception("failed to read: socket is already closed");

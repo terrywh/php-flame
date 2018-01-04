@@ -13,7 +13,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 CXX=/usr/local/gcc-7.1.0/bin/g++
 CXXFLAGS?= -O0 -g
 CXXFLAGS_CORE= -std=c++14 -fPIC
-INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0
+INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0 -I./deps/rabbitmq-c/librabbitmq
 # 链接参数
 # ---------------------------------------------------------------------
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc-7.1.0/lib64/
@@ -31,7 +31,8 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a \
  ./deps/mongo-c-driver/bin/lib/libbson-1.0.a \
  ./deps/librdkafka/src/librdkafka.a \
- ./deps/http-parser/libhttp_parser.a
+ ./deps/http-parser/libhttp_parser.a \
+ ./deps/rabbitmq-c/build/librabbitmq/librabbitmq.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
 SOURCES=$(shell find ./src -name "*.cpp")
@@ -109,6 +110,10 @@ install: ${EXTENSION}
 	cd ./deps/librdkafka; find -type l | xargs rm;
 ./deps/http-parser/libhttp_parser.a:
 	cd ./deps/http-parser; CFLAGS="-fPIC" make package
+./deps/rabbitmq-c/build/librabbitmq/librabbitmq.a:
+	cd ./deps/rabbitmq-c; mkdir build; cd build;cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-fPIC" ..
+	cd ./deps/rabbitmq-c/build; CFLAGS="-fPIC" make
+
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:
@@ -129,3 +134,4 @@ clean-deps:
 	rm -rf ./deps/c-ares/bin
 	make -C ./deps/librdkafka clean
 	make -C ./deps/http-parser clean
+	rm -rf ./deps/rabbitmq-c/build
