@@ -100,7 +100,6 @@ namespace flame {
 		if(self->exit_req.work_cb) {
 			self->exit_req.work_cb(&self->exit_req);
 		}
-		uv_print_all_handles(&self->loop, stdout);
 		uv_loop_close(&self->loop);
 		// 主线程任务
 		uv_mutex_lock(&self->mutex_master);

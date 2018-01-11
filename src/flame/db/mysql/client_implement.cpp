@@ -11,7 +11,6 @@ namespace mysql {
 	: client_(cli)
 	, mysql_(mysqlnd_init(MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA, true))
 	, debug_(false)
-	, url_(nullptr)
 	, connected_(false) {
 		uv_timer_init(flame::loop, &ping_);
 		ping_.data = this;
@@ -24,25 +23,16 @@ namespace mysql {
 			// 重新创建
 			ctx->self->mysql_ = mysqlnd_init(MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA, true);
 		}
-		// 解析 URL 参数（重新连接的情况可能没有指定新的字符串）
-		if(ctx->sql.is_string()) {
-			ctx->self->url_ = php::parse_url(ctx->sql.c_str(), ctx->sql.length());
-			if(strncasecmp(ctx->self->url_->scheme, "mysql", 5) != 0 || std::strlen(ctx->self->url_->path) < 1) {
-				ctx->rv = php::string("failed to parse mysql connection uri", 36);
-				return;
-			}
-			if(!ctx->self->url_->port) { // 默认端口
-				ctx->self->url_->port = 3306;
-			}
-		}else if(!ctx->self->url_) {
+		if(!ctx->self->client_->url_) {
 			ctx->rv = php::string("failed to parse mysql connection uri", 36);
+			return;
 		}
 		// 使用 URL 进行连接
 		if(mysqlnd_connect(
-			ctx->self->mysql_, ctx->self->url_->host,
-			ctx->self->url_->user, ctx->self->url_->pass,
-			std::strlen(ctx->self->url_->pass), ctx->self->url_->path+1,
-			std::strlen(ctx->self->url_->path) - 1, ctx->self->url_->port,
+			ctx->self->mysql_, ctx->self->client_->url_->host,
+			ctx->self->client_->url_->user, ctx->self->client_->url_->pass,
+			std::strlen(ctx->self->client_->url_->pass), ctx->self->client_->url_->path+1,
+			std::strlen(ctx->self->client_->url_->path) - 1, ctx->self->client_->url_->port,
 			nullptr, 0,
 			MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA) == nullptr) {
 			// 连接失败，错误在主线程获取生成
@@ -76,7 +66,7 @@ namespace mysql {
 		if(rs == nullptr && mysqlnd_field_count(ctx->self->mysql_) == 0) {
 			ctx->self->client_->prop("affected_rows") = mysqlnd_affected_rows(ctx->self->mysql_);
 			ctx->self->client_->prop("insert_id")     = mysqlnd_insert_id(ctx->self->mysql_);
-			ctx->rv = php::BOOL_NO;
+			ctx->rv = php::BOOL_YES;
 			return;
 		}
 		// SELECT 查询型 SQL 执行失败

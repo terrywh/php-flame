@@ -89,16 +89,21 @@ namespace mysql {
 		impl->worker_.close_work(impl, client_implement::destroy_wk, client_implement::destroy_cb);
 	}
 	php::value client::connect(php::parameters& params) {
-		client_request_t* ctx;
+		// 指定参数时连接指定的服务器
 		if(params.length() > 0 && params[0].is_string()) {
-			ctx = new client_request_t {
-				coroutine::current, impl, nullptr, params[0]
-			};
-		}else{ // 不指定连接字符串时一般时重新连接
-			ctx = new client_request_t {
-				coroutine::current, impl, nullptr
-			};
+			php::string& url = params[0];
+			url_ = php::parse_url(url.c_str(), url.length());
+			if(!url_ || !url_->scheme || !url_->path || ! url_->host
+				|| strncasecmp(url_->scheme, "mysql", 5) != 0 || std::strlen(url_->path) < 1) {
+				throw php::exception("failed to parse mysql connection uri", 36);
+			}
+			if(!url_->port) { // 默认端口
+				url_->port = 3306;
+			}
 		}
+		client_request_t* ctx = new client_request_t {
+			coroutine::current, impl, nullptr
+		};
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req, client_implement::connect_wk, connect_cb);
 		return flame::async(this);

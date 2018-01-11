@@ -6,6 +6,7 @@ namespace mysql {
 	class client_implement;
 	class client: public php::class_base {
 	public:
+		client(): url_(nullptr) {}
 		void val_to_buffer(php::value& val, php::buffer& buf);
 		void key_to_buffer(php::array& map, php::buffer& buf);
 
@@ -36,6 +37,7 @@ namespace mysql {
 		static void ping_cb(uv_work_t* req, int status);
 		static void destroy_cb(uv_handle_t* handle);
 
+		std::shared_ptr<php_url> url_;
 		friend class client_implement;
 	};
 }

@@ -6,15 +6,22 @@ MySQL 客户端（连接）；
 
 **示例**：
 ``` PHP
-<?php
+// ...
 $cli = new flame\db\mysql\client();
-$cli->connect("127.0.0.1", 3306, "username", "password", "database_name");
+yield $cli->connect(mysql://username:password@127.0.0.1:3306/database_name");
 ```
 
 #### `client::__construct([array $options])`
 可用选项如下：
 * `debug` - 调试开关，输出实际执行的 SQL 语句，默认 `false`；
 * `ping`  - 周期性执行 `SELECT 1` 语句，以此保持连接活跃，默认 `60000` ms；
+
+#### `yield client::connect(string $url)`
+连接 MySQL 服务器，`$url` 形式如下：
+
+```
+mysql://{username}:{password}@{host}:{port}/{database}
+```
 
 #### `client::$affected_rows`
 更新型 SQL 语句影响到的行数
@@ -84,8 +91,14 @@ $rs = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa); // DELETE FROM `test` 
 #### `yield client::delete(string $table, array $conditions[, mixed $sort[, mixed $limit]])`
 删除匹配条件的所有行；
 
+**注意**：
+* 当需要指定 `$limit` 但无 `$sort` 请在 `$sort` 字段填写 `NULL`；
+
 #### `yield client::update(string $table, array $conditions, array $modify[, mixed $sort[, mixed $limit]])`
 更新匹配条件的所有行，并应用由 `$modify` 描述的更改；
+
+**注意**：
+* 当需要指定 `$limit` 但无 `$sort` 请在 `$sort` 字段填写 `NULL`；
 
 #### `yield client::select(string $table, mixed $fields[, array $conditions[, mixed $sort[, mixed $limit]]])`
 执行查询并返回结果集 result_set 对象；其中 `$fields` 参数可以使用下述两种形式：
@@ -100,6 +113,7 @@ $rs = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa); // DELETE FROM `test` 
 
 **注意**：
 * 如需要在字段名称上使用 SQL 函数，请使用文本形式自行指定 `$fields` 参数；数组形式不支持此种语法；
+* 当需要指定 `$sort` 但无 `$conditions` 请在 `$conditions` 字段填写 `NULL`；`$limit` 与 `$sort` 类似；
 
 #### `yield client::one(string $table, array $conditions[, mixed $sort])`
 执行查询并限定结果集大小为1，若找到匹配数据，直接返回数据（关联数组）；若未找到，返回 null；

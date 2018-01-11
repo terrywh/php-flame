@@ -12,7 +12,6 @@ namespace mysql {
 		client*               client_;
 		MYSQLND*               mysql_;
 		bool                   debug_;
-		std::shared_ptr<php_url> url_;
 		bool               connected_;
 		uv_timer_t              ping_;
 		// sql -> connection_uri
