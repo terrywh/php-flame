@@ -7,20 +7,28 @@ namespace net {
 namespace http {
 	server_connection_base::server_connection_base(void* ptr)
 	: on_request(nullptr)
-	// , on_close(nullptr)
 	, data(ptr)
 	, refer_(0)
 	, is_closing(false) {
 
 	}
 	// 用于在 response 中关闭连接
-	void server_connection_base::close(bool by_response) {
+	void server_connection_base::close() {
 		// 下述条件满足时，销毁 connection 对象
 		// 1. 由 response 进行关闭时，所有关联 response 全部引用结束
 		// 2. 无 response 引用
-		if(by_response && --refer_ == 0 || refer_ == 0)	uv_close((uv_handle_t*)&sock_, close_cb);
+		if(--refer_ == 0)	{
+			uv_read_stop(&sock_);
+			is_closing = true;
+			uv_close((uv_handle_t*)&sock_, close_cb);
+		}
+	}
+	void server_connection_base::close_ex() {
 		uv_read_stop(&sock_);
 		is_closing = true;
+		if(refer_ == 0)	{
+			uv_close((uv_handle_t*)&sock_, close_cb);
+		}
 	}
 	typedef struct write_request_t {
 		coroutine*                co;
@@ -44,7 +52,7 @@ namespace http {
 	}
 	void server_connection_base::start() {
 		sock_.data = this;
-		if(uv_read_start(&sock_, alloc_cb, read_cb) < 0) close(false);
+		if(uv_read_start(&sock_, alloc_cb, read_cb) < 0) close_ex();
 	}
 	ssize_t server_connection_base::parse(const char* data, ssize_t size) {
 		return size;
@@ -57,15 +65,15 @@ namespace http {
 	void server_connection_base::read_cb (uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
 		server_connection_base* self = reinterpret_cast<server_connection_base*>(handle->data);
 		if(nread == UV_EOF) {
-			self->close(false);
+			self->close_ex();
 		}else if(nread < 0) {
 			log::default_logger->write(fmt::format("(WARN) read failed: ({0}) {1}", nread, uv_strerror(nread)));
-			self->close(false);
+			self->close_ex();
 		}else if(self->parse(buf->base, nread) == nread) {
 			// continue
 		}else{
 			log::default_logger->write("(WARN) read failed: illegal data");
-			self->close(false);
+			self->close_ex();
 		}
 	}
 	void server_connection_base::write_cb(uv_write_t* handle, int status) {

@@ -12,12 +12,11 @@ namespace net {
 namespace fastcgi {
 
 #define CACULATE_PADDING(size) (size) % 8 == 0 ? 0 : 8 - (size) % 8;
-
+server_response::server_response() {
+	
+}
 server_response::~server_response() {
-	// fastcgi 协议标志：连接保持
-	if((dynamic_cast<server_connection*>(conn_)->fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0) {
-		dynamic_cast<server_connection*>(conn_)->close();
-	}
+	conn_->close();
 }
 void server_response::buffer_header() {
 	// 预留头部

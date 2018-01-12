@@ -55,7 +55,15 @@ namespace http {
 			handle_def = params[0];
 			return this;
 		}
-		void handle(const php::object& req, const php::object& res) {
+	private:
+		std::map<std::string, php::callable> handle_put;
+		std::map<std::string, php::callable> handle_delete;
+		std::map<std::string, php::callable> handle_post;
+		std::map<std::string, php::callable> handle_get;
+		php::callable                        handle_def;
+
+		static void on_request(php::object req, php::object res, void* data) {
+			server_handler<connection_t>* self = reinterpret_cast<server_handler<connection_t>*>(data);
 			php::string path   = req.prop("uri");
 			php::string method = req.prop("method");
 
@@ -66,34 +74,23 @@ namespace http {
 			}
 			std::map<std::string, php::callable>* map;
 			if(std::strncmp(method.data(), "GET", 3) == 0) {
-				map = &handle_get;
+				map = &self->handle_get;
 			}else if(std::strncmp(method.data(), "POST", 4) == 0) {
-				map = &handle_post;
+				map = &self->handle_post;
 			}else if(std::strncmp(method.data(), "PUT", 3) == 0) {
-				map = &handle_put;
+				map = &self->handle_put;
 			}else if(std::strncmp(method.data(), "DELETE", 7) == 0) {
-				map = &handle_delete;
+				map = &self->handle_delete;
 			}else{
-				coroutine::start(handle_def, req, res);
+				coroutine::start(self->handle_def, req, res);
 				return;
 			}
 			auto fi = map->find(path);
 			if(fi != map->end()) {
 				coroutine::start(fi->second, req, res);
 			}else{
-				coroutine::start(handle_def, req, res);
+				coroutine::start(self->handle_def, req, res);
 			}
-		}
-	private:
-		std::map<std::string, php::callable> handle_put;
-		std::map<std::string, php::callable> handle_delete;
-		std::map<std::string, php::callable> handle_post;
-		std::map<std::string, php::callable> handle_get;
-		php::callable                        handle_def;
-
-		static void on_request(const php::object& req, const php::object& res, void* data) {
-			server_handler<connection_t>* self = reinterpret_cast<server_handler<connection_t>*>(data);
-			self->handle(req, res);
 		}
 	};
 }

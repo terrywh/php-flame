@@ -9,12 +9,11 @@
 namespace flame {
 namespace net {
 namespace http {
+server_response::server_response() {
 
+}
 server_response::~server_response() {
-	// HTTP 协议标志：连接保持
-	if(!http_should_keep_alive(&dynamic_cast<server_connection*>(conn_)->hpp_)) {
-		conn_->close();
-	}
+	conn_->close();
 }
 void server_response::buffer_header() {
 	// STATUS_CODE STATUS_TEXT\r\n

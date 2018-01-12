@@ -25,8 +25,16 @@ namespace http {
 		http_parser_init(&hpp_, HTTP_REQUEST);
 		hpp_.data = this;
 	}
+	server_connection::~server_connection() {
+		
+	}
 	ssize_t server_connection::parse(const char* data, ssize_t size) {
 		return http_parser_execute(&hpp_, &hps_, data, size);
+	}
+	void server_connection::close() {
+		if(--refer_ == 0 && !http_should_keep_alive(&hpp_)) {
+			server_connection_base::close_ex();
+		}
 	}
 	int server_connection::hp_url_cb(http_parser* parser, const char* at, size_t size) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
@@ -167,7 +175,7 @@ namespace http {
 			self->req_.prop("body", 4) = std::move(self->body_);
 		}
 		// 交由 PHP 处理请求
-		self->on_request(self->req_, self->res_, self->data);
+		self->on_request(std::move(self->req_), std::move(self->res_), self->data);
 		return 0;
 	}
 	int server_connection::mp_key_cb(multipart_parser* parser, const char *at, size_t length) {

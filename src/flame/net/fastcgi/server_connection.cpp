@@ -25,8 +25,21 @@ namespace fastcgi {
 		fastcgi_parser_init(&fpp_);
 		fpp_.data = this;
 	}
+	server_connection::~server_connection() {
+		
+	}
 	ssize_t server_connection::parse(const char* data, ssize_t size) {
+		// for(int i=0;i<size;++i) {
+		// 	std::printf("%02x ", (unsigned char)data[i]);
+		// }
+		// std::printf("\n");
 		return fastcgi_parser_execute(&fpp_, &fps_, data, size);
+	}
+	void server_connection::close() {
+		// 当前连接请求处理完成 而且 无保持连接标记
+		if(--refer_ == 0 && (fpp_.flag & FASTCGI_FLAGS_KEEP_CONN) == 0) {
+			close_ex();
+		}
 	}
 	int server_connection::fp_begin_request_cb(fastcgi_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
@@ -170,7 +183,7 @@ namespace fastcgi {
 		self->req_.prop("cookie") = std::move(self->cookie_);
 		self->req_.prop("body")   = std::move(self->body_);
 
-		self->on_request(self->req_, self->res_, self->data);
+		self->on_request(std::move(self->req_), std::move(self->res_), self->data);
 		return 0;
 	}
 	int server_connection::mp_key_cb(multipart_parser* parser, const char *at, size_t length) {

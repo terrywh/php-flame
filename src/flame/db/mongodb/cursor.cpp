@@ -28,7 +28,6 @@ namespace mongodb {
 	}
 	void cursor::next_cb(uv_work_t* req, int status) {
 		cursor_request_t* ctx = reinterpret_cast<cursor_request_t*>(req->data);
-		std::printf("next_cb: %d\n", ctx->idx);
 		if(ctx->idx == 0) {
 			ctx->rv = php::array(0);
 			fill_with(ctx->rv, ctx->doc);

@@ -6,6 +6,7 @@ namespace http {
 
 	class server_response_base: public php::class_base {
 	public:
+		virtual ~server_response_base() {};
 		// property status integer
 		// property header array
 		php::value set_cookie(php::parameters& params);

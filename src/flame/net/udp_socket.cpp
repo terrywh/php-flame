@@ -20,7 +20,7 @@ namespace net {
 		if(sck == nullptr) throw php::exception("bind failed: socket is already closed");
 		
 		std::string addr = params[0];
-		int         port = params[1], err;
+		int         port = params[1].to_long(), err;
 		struct sockaddr_storage address;
 		err = sock_addrfrom(&address, addr.c_str(), port);
 		if(err < 0) {
@@ -89,7 +89,7 @@ namespace net {
 		if(sck == nullptr) throw php::exception("send failed: socket is already closed"); // 已关闭
 		
 		php::string addr = params[1];
-		int         port = params[2], err;
+		int         port = params[2].to_long(), err;
 
 		struct sockaddr_storage address;
 		err = sock_addrfrom(&address, addr.c_str(), port);

@@ -12,6 +12,12 @@ namespace http {
 		php::value __construct(php::parameters& params) {
 			return nullptr;
 		}
+		server_request() {
+
+		}
+		~server_request() {
+			
+		}
 	};
 }
 }

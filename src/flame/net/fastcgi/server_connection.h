@@ -6,7 +6,9 @@ namespace fastcgi {
 	class server_connection: public http::server_connection_base {
 	public:
 		server_connection(void* ptr);
+		virtual ~server_connection();
 		virtual ssize_t parse(const char* data, ssize_t size) override;
+		virtual void close() override;
 	private:
 		fastcgi_parser          fpp_;
 		fastcgi_parser_settings fps_;

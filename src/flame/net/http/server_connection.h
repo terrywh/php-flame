@@ -6,7 +6,9 @@ namespace http {
 	class server_connection: public server_connection_base {
 	public:
 		server_connection(void* ptr);
+		virtual ~server_connection();
 		virtual ssize_t parse(const char* data, ssize_t size) override;
+		virtual void close() override;
 	private:
 		http_parser          hpp_;
 		http_parser_settings hps_;

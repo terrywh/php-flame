@@ -96,14 +96,16 @@ namespace flame {
 			while(!yields_.empty()) {
 				yields_.pop_front();
 			}
+			// 清理当前引用
+			ref_ = nullptr;
 			php::object& ex = rv;
 			// 由于异步问题，这里不能直接使用 throw_exception，需要在协程回复的上下文中构建异常
 			generator_.async_exception(ex.prop("message"), ex.prop("code"));
 			run();
 		}else if(yields_.empty()) {
-			generator_.send(rv);
 			// 清理当前引用
 			ref_ = nullptr;
+			generator_.send(rv);
 			run();
 		}else{
 			stack_t st = yields_.front();

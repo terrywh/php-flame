@@ -21,7 +21,7 @@ namespace net {
 	} connect_request_t;
 	php::value tcp_socket::connect(php::parameters& params) {
 		php::string addr = params[0];
-		int         port = params[1], err;
+		int         port = params[1].to_long(), err;
 		struct sockaddr_storage address;
 		err = sock_addrfrom(&address, addr.c_str(), port);
 		if(err != 0) {

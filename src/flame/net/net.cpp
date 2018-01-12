@@ -41,7 +41,7 @@ namespace net {
 		class_tcp_socket.add<&tcp_socket::read>("read");
 		class_tcp_socket.add<&tcp_socket::read_all>("read_all");
 		class_tcp_socket.add<&tcp_socket::write>("write");
-		class_tcp_socket.add<&tcp_socket::write>("close");
+		class_tcp_socket.add<&tcp_socket::close>("close");
 		ext.add(std::move(class_tcp_socket));
 		// class_tcp_server
 		// ------------------------------------
