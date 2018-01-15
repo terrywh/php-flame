@@ -84,6 +84,7 @@ namespace http {
 			if(ctx->co) ctx->co->next(php::BOOL_NO);
 			log::default_logger->write(fmt::format("(WARN) write failed: ({0}) {1}", status, uv_strerror(status)));
 		}
+		delete ctx;
 	}
 	void server_connection_base::close_cb(uv_handle_t* handle) {
 		server_connection_base* self = reinterpret_cast<server_connection_base*>(handle->data);
