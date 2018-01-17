@@ -67,12 +67,12 @@ namespace http {
 		if(nread == UV_EOF) {
 			self->close_ex();
 		}else if(nread < 0) {
-			log::default_logger->write(fmt::format("(WARN) read failed: ({0}) {1}", nread, uv_strerror(nread)));
+			log::default_logger->write(fmt::format("(WARN) http read failed: ({0}) {1}", nread, uv_strerror(nread)));
 			self->close_ex();
 		}else if(self->parse(buf->base, nread) == nread) {
 			// continue
 		}else{
-			log::default_logger->write("(WARN) read failed: illegal data");
+			log::default_logger->write("(WARN) http parse failed: illegal data");
 			self->close_ex();
 		}
 	}
@@ -82,7 +82,7 @@ namespace http {
 			if(ctx->co) ctx->co->next(php::BOOL_YES);
 		}else{
 			if(ctx->co) ctx->co->next(php::BOOL_NO);
-			log::default_logger->write(fmt::format("(WARN) write failed: ({0}) {1}", status, uv_strerror(status)));
+			log::default_logger->write(fmt::format("(WARN) http write failed: ({0}) {1}", status, uv_strerror(status)));
 		}
 		delete ctx;
 	}

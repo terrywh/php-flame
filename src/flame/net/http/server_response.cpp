@@ -20,7 +20,7 @@ void server_response::buffer_header() {
 	int          status_code = prop("status");
 	std::string& status_text = flame::net::http::status_mapper[status_code];
 	sprintf(
-		buffer_.put(14 + status_text.length()),
+		buffer_.put(15 + status_text.length()),
 		"HTTP/1.1 %03d %.*s\r\n",
 		status_code, status_text.length(), status_text.c_str());
 
@@ -51,9 +51,7 @@ void server_response::buffer_header() {
 void server_response::buffer_body(const char* data, unsigned short size) {
 	if(is_chunked) { // 默认状态（参见 server_connection 中创建过程）
 		// * length
-		fmt::ArrayWriter aw(buffer_.rev(16), 16);
-		aw.write("{0:x}\r\n", size);
-		buffer_.adv(aw.size());
+		buffer_.adv(sprintf(buffer_.rev(16), "%x\r\n", size));
 		// * data
 		if(size > 0 && data != nullptr) {
 			std::memcpy(buffer_.put(size), data, size);
