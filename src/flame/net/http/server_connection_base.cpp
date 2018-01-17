@@ -6,7 +6,7 @@ namespace flame {
 namespace net {
 namespace http {
 	server_connection_base::server_connection_base(void* ptr)
-	: on_request(nullptr)
+	: on_session(nullptr)
 	, data(ptr)
 	, refer_(0)
 	, is_closing(false) {

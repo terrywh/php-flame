@@ -63,7 +63,7 @@ namespace flame {
 		// 非错误引发的问题（因异常引发时，进程已经提前结束，不会到达这里）
 		if(!quit_cb.empty()) {
 			do {
-				coroutine::start(quit_cb.back());
+				coroutine::create(quit_cb.back())->start();
 				quit_cb.pop_back();
 			}while(!quit_cb.empty());
 			// 最多 10s 时间必须结束

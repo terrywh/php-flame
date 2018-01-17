@@ -17,7 +17,7 @@ namespace http {
 		void start();
 		virtual ssize_t parse(const char* data, ssize_t size);
 		// 回调 server 函数（避免循环模板引用）
-		void (*on_request)(php::object req, php::object res, void* data);
+		void (*on_session)(server_connection_base* conn);
 		// void (*on_close)(server_connection_base* conn, void* data);
 		void * data;
 		void refer() {
@@ -25,8 +25,10 @@ namespace http {
 		}
 		virtual void close();
 		bool is_closing;
+		php::object req;
+		php::object res;
 	protected:
-		int  refer_;
+		int       refer_;
 		void close_ex();
 	private:
 		

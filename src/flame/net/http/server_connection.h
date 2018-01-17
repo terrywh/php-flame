@@ -37,10 +37,7 @@ namespace http {
 
 		php::buffer key_;
 		php::buffer val_;
-
-		php::object req_;
-		php::object res_;
-
+		
 		php::array  query_;
 		php::array  header_;
 		php::array  cookie_;

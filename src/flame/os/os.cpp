@@ -44,7 +44,7 @@ namespace os {
 		// net::unix_socket* err2 = proc2->stderr_.native<net::unix_socket>();
 		out2->rdr.read_all();
 		// read_all 异步，在下面 exec_cb 中接收其返回值
-		coroutine::current->yield(exec_cb, nullptr);
+		coroutine::current->async(exec_cb, nullptr);
 		// !!! 若需要 stderr 应在 exec_cb 中启动 err2->rdr.read_all()
 		// 并再加入一个 yield 回调函数
 		return flame::async(proc2);

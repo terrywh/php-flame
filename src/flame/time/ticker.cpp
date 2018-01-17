@@ -26,7 +26,7 @@ namespace time {
 	}
 	void ticker::tick_cb(uv_timer_t* handle) {
 		ticker* self = static_cast<ticker*>(handle->data);
-		coroutine::start(self->cb_, self);
+		coroutine::create(self->cb_, self)->start();
 		if(!self->prop("repeat").is_true()) {
 			// 非重复定时器立即清理引用
 			self->ref_ = nullptr;

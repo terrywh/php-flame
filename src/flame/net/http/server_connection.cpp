@@ -38,14 +38,14 @@ namespace http {
 	}
 	int server_connection::hp_url_cb(http_parser* parser, const char* at, size_t size) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
-		self->req_ = php::object::create<http::server_request>();
-		self->req_.prop("method", 6) = php::string(http_method_str((enum http_method)parser->method));
+		self->req = php::object::create<http::server_request>();
+		self->req.prop("method", 6) = php::string(http_method_str((enum http_method)parser->method));
 		struct http_parser_url u;
 		http_parser_parse_url(at, size, 0, &u);
 		if(u.field_set & (1 << UF_PATH)) {
-			self->req_.prop("uri",3) = php::string(at + u.field_data[UF_PATH].off, u.field_data[UF_PATH].len);
+			self->req.prop("uri",3) = php::string(at + u.field_data[UF_PATH].off, u.field_data[UF_PATH].len);
 		}else{
-			self->req_.prop("uri",3) = php::string("/", 1);
+			self->req.prop("uri",3) = php::string("/", 1);
 		}
 		if(u.field_set & (1 << UF_QUERY)) {
 			self->query_ = php::array(0);
@@ -63,11 +63,11 @@ namespace http {
 			// 解析
 			kv_parser_execute(&kvparser, &settings, at + u.field_data[UF_QUERY].off, u.field_data[UF_QUERY].len);
 		}
-		self->req_.prop("query", 5) = std::move(self->query_);
+		self->req.prop("query", 5) = std::move(self->query_);
 		self->header_ = php::array(0);
 
-		self->res_ = php::object::create<server_response>();
-		server_response* res = self->res_.native<server_response>();
+		self->res = php::object::create<server_response>();
+		server_response* res = self->res.native<server_response>();
 		res->init(self);
 		return 0;
 	}
@@ -112,8 +112,8 @@ namespace http {
 			kvparser.data = self;
 			kv_parser_execute(&kvparser, &settings, cookie.c_str(), cookie.length());
 		}
-		self->req_.prop("cookie") = std::move(self->cookie_);
-		self->req_.prop("header") = std::move(self->header_);
+		self->req.prop("cookie") = std::move(self->cookie_);
+		self->req.prop("header") = std::move(self->header_);
 		return 0;
 	}
 	int server_connection::hp_body_cb(http_parser* parser, const char* at, size_t size) {
@@ -127,7 +127,7 @@ namespace http {
 			self->body_ = php::value(nullptr);
 		}else{
 			php::string raw = std::move(self->val_);
-			self->req_.prop("rawBody") = raw;
+			self->req.prop("rawBody") = raw;
 
 			// 头部信息均为小写，下划线
 			php::string ctype = self->header_.at("content-type", 12);
@@ -172,10 +172,10 @@ namespace http {
 			}else{ // unknown
 				self->body_ = std::move(raw); // 实际 self->body_ 和 prop("rawBody") 引用同一份数据
 			}
-			self->req_.prop("body", 4) = std::move(self->body_);
+			self->req.prop("body", 4) = std::move(self->body_);
 		}
 		// 交由 PHP 处理请求
-		self->on_request(std::move(self->req_), std::move(self->res_), self->data);
+		self->on_session(self);
 		return 0;
 	}
 	int server_connection::mp_key_cb(multipart_parser* parser, const char *at, size_t length) {

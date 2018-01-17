@@ -43,10 +43,10 @@ namespace fastcgi {
 	}
 	int server_connection::fp_begin_request_cb(fastcgi_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
-		self->req_ = php::object::create<http::server_request>();
+		self->req = php::object::create<http::server_request>();
 		self->header_ = php::array(0);
-		self->res_ = php::object::create<fastcgi::server_response>();
-		fastcgi::server_response* res = self->res_.native<fastcgi::server_response>();
+		self->res = php::object::create<fastcgi::server_response>();
+		fastcgi::server_response* res = self->res.native<fastcgi::server_response>();
 		res->init(self);
 		return 0;
 	}
@@ -72,9 +72,9 @@ namespace fastcgi {
 
 		if(strncmp(kdata, "REQUEST_METHOD", 14) == 0) {
 			php::strtoupper_inplace(vdata, vsize);
-			self->req_.prop("method") = php::string(vdata, vsize);
+			self->req.prop("method") = php::string(vdata, vsize);
 		}else if(strncmp(kdata, "REQUEST_URI", 11) == 0) {
-			self->req_.prop("uri") = php::string(vdata, vsize);
+			self->req.prop("uri") = php::string(vdata, vsize);
 		}else if(strncmp(kdata, "QUERY_STRING", 12) == 0) {
 			self->query_ = php::array(0);
 			// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
@@ -108,7 +108,7 @@ namespace fastcgi {
 	int server_connection::fp_end_data_cb(fastcgi_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		php::string raw = std::move(self->val_);
-		self->req_.prop("rawBody") = raw;
+		self->req.prop("rawBody") = raw;
 		// 头部信息均为小写，下划线
 		php::string ctype = self->header_.at("content-type", 12);
 		if(!ctype.is_string()) { // 除非 content-type 不存在，否则一定是字符串
@@ -178,12 +178,12 @@ namespace fastcgi {
 			parser.data = self;
 			kv_parser_execute(&parser, &settings, cookie.c_str(), cookie.length());
 		}
-		self->req_.prop("query")  = std::move(self->query_);
-		self->req_.prop("header") = std::move(self->header_);
-		self->req_.prop("cookie") = std::move(self->cookie_);
-		self->req_.prop("body")   = std::move(self->body_);
+		self->req.prop("query")  = std::move(self->query_);
+		self->req.prop("header") = std::move(self->header_);
+		self->req.prop("cookie") = std::move(self->cookie_);
+		self->req.prop("body")   = std::move(self->body_);
 
-		self->on_request(std::move(self->req_), std::move(self->res_), self->data);
+		self->on_session(self);
 		return 0;
 	}
 	int server_connection::mp_key_cb(multipart_parser* parser, const char *at, size_t length) {

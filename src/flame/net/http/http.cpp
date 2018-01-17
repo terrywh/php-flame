@@ -83,6 +83,7 @@ namespace http {
 		class_server_request.add(php::property_entry("cookie", nullptr));
 		class_server_request.add(php::property_entry("body", nullptr));
 		class_server_request.add(php::property_entry("rawBody", std::string("")));
+		class_server_request.add(php::property_entry("context", nullptr));
 		class_server_request.add<&server_request::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		ext.add(std::move(class_server_request));
 		// class server_request

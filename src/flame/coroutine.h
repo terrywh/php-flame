@@ -5,22 +5,20 @@ namespace flame {
 	// 包裹一个 generator function 以构建“协程”
 	class coroutine {
 	private:
-		coroutine(coroutine* parent);
-
-		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
+		coroutine(coroutine* parent, php::generator&& g);
 		int                    status_;
-		php::generator         generator_;
 		coroutine*             parent_;
-		typedef void (*callback_t)(php::value& rv, coroutine* co, void* data);
+		php::generator         gen_;
+		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
+		
+		
+		typedef void (*async_cb_t)(php::value& rv, coroutine* co, void* data);
 		typedef struct stack_t {
-			callback_t cb;
+			async_cb_t func;
 			void*      data;
 		} stack_t;
-		std::deque<stack_t> yields_; // 用于伪装 yield 指令，实现异步动作的包裹
-		template <class K, void (K::*method)(php::value& rv, coroutine* co)>
-		static void method_wrapper(php::value& rv, coroutine* co, void* data) {
-			(static_cast<K*>(data)->*method)(rv, co);
-		}
+		std::deque<stack_t> stack_; // 用于伪装 yield 指令，实现异步动作的包裹
+		stack_t             after_; // 用于串联
 		void run();
 		
 		php::object          ref_;
@@ -28,32 +26,32 @@ namespace flame {
 		static coroutine* current;
 
 		template <typename ...Args>
-		static bool start(php::callable& cb, const Args&... argv) {
-			php::value gen = cb(argv...);
+		static coroutine* create(php::callable& cb, const Args&... argv) {
+			php::generator gen = cb(argv...);
 			if(gen.is_generator()) {
-				start(nullptr, std::move(gen));
-				return true;
+				return new coroutine(nullptr, std::move(gen));
 			}else{
-				return false;
+				return nullptr;
 			}
 		}
-		static void start(coroutine* parent, php::value&& gen) {
+		void start() {
 			coroutine* old = current;
-			current = new coroutine(parent);
-			current->generator_ = std::move(gen);
-			current->run();
+			current = this;
+			this->run();
 			current = old;
 		}
+		static void close_cb(uv_handle_t* handle);
 		void close();
-		inline void yield(callback_t cb, void* data = nullptr) {
-			yields_.push_back(stack_t {.cb = cb, .data = data});
+		inline void async(async_cb_t cb, void* data = nullptr) {
+			stack_.push_back(stack_t {cb, data});
 		}
-		template <class K, void (K::*method)(php::value& rv, coroutine* co)>
-		void yield(K* k) {
-			yields_.push_back(stack_t {.cb = method_wrapper<K, method>, .data = k});
+		inline coroutine* after(async_cb_t cb, void* data = nullptr) {
+			after_.func = cb;
+			after_.data = data;
+			return this;
 		}
 		inline void empty() {
-			yields_.clear();
+			stack_.clear();
 		}
 		void next(php::value& rv);
 		inline void next(php::value&& rv) {
