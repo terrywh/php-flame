@@ -12,7 +12,7 @@ SEND_ANOTHER_10000:
 	$begin = microtime(true);
 	$i = 0;
 	while(!$exit) {
-		yield $producer->produce("".$i, "flame-test");
+		yield $producer->produce("".$i, "flame-test", ["headers"=>["aaa"=>"bbb"],"app_id"=>"ccc"]);
 		break;
 		if(++$i % 10000 == 0) {
 			yield $producer->flush();

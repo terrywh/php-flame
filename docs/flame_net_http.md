@@ -211,6 +211,9 @@ HTTP 响应体，方便直接将对象作为文本使用；
 **注意**：
 * 文件上传请求的请求体类型为 `multipart/form-data` ，提取 `name` 作为 KEY 文件内容数据作为 VAL，**不会** 生成 `PHP` 中类似 `$_FILES` 的结构；
 
+#### `server_request::$data`
+默认为 null，可用于在 before / handle / after 之间传递数据；
+
 ### `class flame\net\http\handler`
 HTTP/1 协议处理器，用于 tcp_server / unix_server 解析 `HTTP/1` 协议，并提供 HTTP 服务；
 
@@ -237,10 +240,25 @@ $handler->get("/hello", function($req, $res) {
 ```
 
 **注意**：
-* `handler` 会为每次回调启用新的协程，故 `$cb` 必须为 `Generator Function` ，即 函数定义中包含 `yield` 表达式；
+* `handler` 会为每次回调启用新的协程；
+
+#### `handler::before(callable $cb)`
+设置一个在每次请求处理过程开始前被执行的回调，可以用于处理诸如登录判定、权限控制等；
+
+**注意**：
+* `handler` 会为每次回调启用新的协程；
+
+#### `handler::after(callable $cb)`
+设置一个在每次请求处理过程接手后（请求、响应对象还未被销毁前）被执行的回调，可以用于处理诸如日志记录、格式输出等；
+
+**注意**：
+* `handler` 会为每次回调启用新的协程；
 
 ### `class flame\net\http\server_response`
 由上述 `handler` 生成，并回调传递给处理函数使用，用于返回响应数据给 Web 服务器；
+
+**注意**：
+* 默认情况下，服务端输出响应将自动按照 `Transfer-Encoding: chunked` 描述的方式进行；可自行设置 `Content-Length` 头信息使用标准方式输出；
 
 #### `array server_response::$header`
 响应头部 KEY/VAL 数组，默认包含 `Content-Type: text/plain`（）；其他响应头请酌情考虑添加、覆盖；
@@ -252,7 +270,11 @@ $res->header["Content-Type"] = "text/html";
 $res->header["X-Server"] = "Flame/0.7.0";
 ```
 
+**注意**：
 * 所有输出的 HEADER 数据 **区分大小写**；
+
+#### `server_response::$data`
+默认为 null，可用于在 before / handle / after 之间传递数据；（参考 http_server2.php 示例）；
 
 #### `server_response::set_cookie(string $name [, string $value = "" [, int $expire = 0 [, string $path = "" [, string $domain = "" [, bool $secure = false [, bool $httponly = false ]]]]]])`
 

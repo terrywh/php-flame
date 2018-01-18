@@ -35,7 +35,8 @@ namespace flame {
 	coroutine::coroutine(coroutine* parent, php::generator&& g)
 	: status_(0)
 	, parent_(parent)
-	, gen_(std::move(g)) {
+	, gen_(std::move(g))
+	, after_(after_t {nullptr, nullptr}) {
 		// 用于防止“协程”未结束时提前结束
 		uv_async_init(flame::loop, &async_, nullptr);
 		async_.data = this;
@@ -44,6 +45,9 @@ namespace flame {
 		coroutine* self = reinterpret_cast<coroutine*>(handle->data);
 		if(self->parent_ != nullptr) {
 			self->parent_->next(self->gen_.get_return());
+		}
+		if(self->after_.func != nullptr) {
+			self->after_.func(self->after_.data);
 		}
 		delete self;
 	}

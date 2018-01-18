@@ -68,7 +68,7 @@ private:
 				return;
 			}
 			cpp->after_init();
-			coroutine::create(self->cb_, cli)->start();
+			coroutine::start(self->cb_, cli);
 		}
 	}
 };

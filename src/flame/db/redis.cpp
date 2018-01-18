@@ -259,7 +259,7 @@ namespace db {
 			if(std::strncmp(type.c_str(), "subscribe", 9) == 0) {
 				//
 			}else if(std::strncmp(type.c_str(), "message", 7) == 0) {
-				coroutine::create(ctx->cb, rv[1], rv[2])->start();
+				coroutine::start(ctx->cb, rv[1], rv[2]);
 			}else if(self->current_ != nullptr && std::strncmp(type.c_str(), "unsubscribe", 7) == 0) {
 				self->current_ = nullptr;
 				ctx->co->next();

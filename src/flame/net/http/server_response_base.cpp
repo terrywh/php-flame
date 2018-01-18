@@ -108,7 +108,9 @@ php::value server_response_base::write_buffer(php::parameters& params) {
 void server_response_base::init(server_connection_base* conn) {
 	conn_ = conn;
 	conn_->refer();
-	prop("header",6) = php::array(0);
+	php::array header(1);
+	header.at("Content-Type") = php::string("text/plain", 10);
+	prop("header",6) = std::move(header);
 }
 void server_response_base::buffer_ending() {
 	// 默认状态无填充结束数据

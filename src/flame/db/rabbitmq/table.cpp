@@ -25,6 +25,7 @@ namespace rabbitmq {
 	}
 	void table::reset() {
 		int index = 0;
+		entry_.resize(sdata_.length());
 		for(auto i=sdata_.begin(); i!=sdata_.end(); ++i) {
 			php::string  key = i->first.to_string();
 			php::value   val = i->second;

@@ -11,14 +11,18 @@ namespace flame {
 		php::generator         gen_;
 		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
 		
-		
 		typedef void (*async_cb_t)(php::value& rv, coroutine* co, void* data);
 		typedef struct stack_t {
 			async_cb_t func;
 			void*      data;
 		} stack_t;
 		std::deque<stack_t> stack_; // 用于伪装 yield 指令，实现异步动作的包裹
-		stack_t             after_; // 用于串联
+		typedef void (*after_cb_t)(void* data);
+		typedef struct after_t {
+			after_cb_t func;
+			void*      data;
+		} after_t;
+		after_t          after_; // 用于串联
 		void run();
 		
 		php::object          ref_;
@@ -34,6 +38,13 @@ namespace flame {
 				return nullptr;
 			}
 		}
+		template <typename ...Args>
+		static void start(php::callable& cb, const Args&... argv) {
+			php::generator gen = cb(argv...);
+			if(gen.is_generator()) {
+				(new coroutine(nullptr, std::move(gen)))->start();
+			}
+		}
 		void start() {
 			coroutine* old = current;
 			current = this;
@@ -45,7 +56,7 @@ namespace flame {
 		inline void async(async_cb_t cb, void* data = nullptr) {
 			stack_.push_back(stack_t {cb, data});
 		}
-		inline coroutine* after(async_cb_t cb, void* data = nullptr) {
+		inline coroutine* after(after_cb_t cb, void* data = nullptr) {
 			after_.func = cb;
 			after_.data = data;
 			return this;

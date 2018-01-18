@@ -44,10 +44,10 @@ namespace fastcgi {
 	int server_connection::fp_begin_request_cb(fastcgi_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
 		self->req = php::object::create<http::server_request>();
-		self->header_ = php::array(0);
+		self->req.native<http::server_request>()->init(self);
 		self->res = php::object::create<fastcgi::server_response>();
-		fastcgi::server_response* res = self->res.native<fastcgi::server_response>();
-		res->init(self);
+		self->res.native<fastcgi::server_response>()->init(self);
+		self->header_ = php::array(0);
 		return 0;
 	}
 	int server_connection::fp_param_key_cb(fastcgi_parser* parser, const char* data, size_t size) {

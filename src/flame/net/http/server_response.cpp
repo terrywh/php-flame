@@ -9,9 +9,9 @@
 namespace flame {
 namespace net {
 namespace http {
-server_response::server_response() {
+// server_response::server_response() {
 
-}
+// }
 server_response::~server_response() {
 	conn_->close();
 }
@@ -26,16 +26,13 @@ void server_response::buffer_header() {
 
 	// KEY: VALUE\r\n
 	php::array &header = prop("header");
+	if(header.has("Content-Length", 14)) {
+		is_chunked = false;
+		header.erase("Transfer-Encoding", 17);
+	}
 	for(auto i=header.begin(); i!=header.end(); ++i) {
 		php::string& key = i->first;
 		php::string  val = i->second.to_string();
-		if(key.length() == 17
-			&& strncasecmp(key.c_str(), "Transfer-Encoding", 17) == 0
-			&& val.length() == 7
-			&& strncasecmp(val.c_str(), "chunked", 7) == 0) {
-			
-			is_chunked = true;
-		}
 		sprintf(buffer_.put(key.length() + val.length() + 4),
 			"%.*s: %.*s\r\n", key.length(), key.data(),
 			val.length(), val.data());
@@ -67,6 +64,7 @@ void server_response::init(server_connection_base* conn) {
 	php::array& header = prop("header",6);
 	// 默认使用 chunked encoding 进行输出
 	header.at("Transfer-Encoding", 17) = php::string("chunked",7);
+	is_chunked = true;
 }
 
 }

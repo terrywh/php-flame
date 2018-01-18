@@ -13,7 +13,7 @@
 namespace flame {
 namespace net {
 namespace http {
-	typedef server_handler<server_connection> handler_t;
+	typedef server_handler<server_connection> http_server_handler;
 
 	void init(php::extension_entry& ext) {
 		curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -65,14 +65,16 @@ namespace http {
 		class_client.add<&client::exec1>("exec");
 		ext.add(std::move(class_client));
 		// class handler
-		php::class_entry<handler_t> class_handler("flame\\net\\http\\handler");
+		php::class_entry<http_server_handler> class_handler("flame\\net\\http\\handler");
 		class_handler.add(php::property_entry("__CONNECTION_HANDLER__", (zend_bool)true));
-		class_handler.add<&handler_t::put>("put");
-		class_handler.add<&handler_t::remove>("delete");
-		class_handler.add<&handler_t::post>("post");
-		class_handler.add<&handler_t::get>("get");
-		class_handler.add<&handler_t::handle>("handle");
-		class_handler.add<&handler_t::__invoke>("__invoke");
+		class_handler.add<&http_server_handler::put>("put");
+		class_handler.add<&http_server_handler::remove>("delete");
+		class_handler.add<&http_server_handler::post>("post");
+		class_handler.add<&http_server_handler::get>("get");
+		class_handler.add<&http_server_handler::handle>("handle");
+		class_handler.add<&http_server_handler::before>("before");
+		class_handler.add<&http_server_handler::after>("after");
+		class_handler.add<&http_server_handler::__invoke>("__invoke");
 		ext.add(std::move(class_handler));
 		// class server_request
 		php::class_entry<server_request> class_server_request("flame\\net\\http\\server_request");
@@ -83,13 +85,14 @@ namespace http {
 		class_server_request.add(php::property_entry("cookie", nullptr));
 		class_server_request.add(php::property_entry("body", nullptr));
 		class_server_request.add(php::property_entry("rawBody", std::string("")));
-		class_server_request.add(php::property_entry("context", nullptr));
+		class_server_request.add(php::property_entry("data", nullptr));
 		class_server_request.add<&server_request::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		ext.add(std::move(class_server_request));
 		// class server_request
 		php::class_entry<server_response> class_server_response("flame\\net\\http\\server_response");
 		class_server_response.add(php::property_entry("status", 200));
 		class_server_response.add(php::property_entry("header", nullptr));
+		class_server_response.add(php::property_entry("data", nullptr));
 		class_server_response.add<&server_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		class_server_response.add<&server_response::set_cookie>("set_cookie");
 		class_server_response.add<&server_response::write_header>("write_header");

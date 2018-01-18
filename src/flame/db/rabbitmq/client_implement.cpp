@@ -142,7 +142,7 @@ namespace rabbitmq {
 				abp_properties.expiration.len   = str.length();
 				abp_properties.expiration.bytes = str.data();
 			}
-			opt = options.at("timestamp",8);
+			opt = options.at("timestamp",9);
 			abp_properties._flags |= AMQP_BASIC_TIMESTAMP_FLAG;
 			if(opt.is_long()) {
 				abp_properties.timestamp = static_cast<int64_t>(opt);
@@ -156,21 +156,21 @@ namespace rabbitmq {
 				abp_properties.message_id.len   = str.length();
 				abp_properties.message_id.bytes = str.data();
 			}
-			opt = options.at("type",10);
+			opt = options.at("type",4);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_TYPE_FLAG;
 				php::string& str = opt;
 				abp_properties.type.len   = str.length();
 				abp_properties.type.bytes = str.data();
 			}
-			opt = options.at("user_id",10);
+			opt = options.at("user_id",7);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_USER_ID_FLAG;
 				php::string& str = opt;
 				abp_properties.user_id.len   = str.length();
 				abp_properties.user_id.bytes = str.data();
 			}
-			opt = options.at("app_id",10);
+			opt = options.at("app_id",6);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_APP_ID_FLAG;
 				php::string& str = opt;

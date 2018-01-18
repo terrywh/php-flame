@@ -38,7 +38,8 @@ namespace http {
 	}
 	int server_connection::hp_url_cb(http_parser* parser, const char* at, size_t size) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
-		self->req = php::object::create<http::server_request>();
+		self->req = php::object::create<server_request>();
+		self->req.native<server_request>()->init(self);
 		self->req.prop("method", 6) = php::string(http_method_str((enum http_method)parser->method));
 		struct http_parser_url u;
 		http_parser_parse_url(at, size, 0, &u);
@@ -67,8 +68,7 @@ namespace http {
 		self->header_ = php::array(0);
 
 		self->res = php::object::create<server_response>();
-		server_response* res = self->res.native<server_response>();
-		res->init(self);
+		self->res.native<server_response>()->init(self);
 		return 0;
 	}
 	int server_connection::hp_header_field_cb(http_parser* parser, const char* at, size_t size) {

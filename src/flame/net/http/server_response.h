@@ -7,7 +7,7 @@ namespace http {
 	// class server_connection;
 	class server_response: public server_response_base {
 	public:
-		server_response();
+		// server_response();
 		virtual ~server_response();
 		// 声明 ZEND_ACC_PRIVATE 禁止手动创建
 	 	php::value __construct(php::parameters& params) {

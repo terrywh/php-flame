@@ -27,7 +27,7 @@
 **注意**：
 * 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
 * 调用包含 `yield` 关键字的函数，也需要添加 `yield` 支持 “异步” 调用；
-* 嵌套异步 `Generator` 可使用 `yield` 关键字直接调用，也可以使用 `PHP` 的嵌套语法 `yield from`；具体可参考 PHP 文档： [Gernerator Syntax](http://php.net/manual/en/language.generators.syntax.php) 的相关说明；
+* `Generator` 使用支持 `PHP` 的嵌套语法 `yield from` 方式进行嵌套，同时框架也支持直接使用 `yield` 关键字；
 * 由于 PHP 构造、析构函数的特殊性，不支持在其中使用异步函数；
 
 **示例**：
