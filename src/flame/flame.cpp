@@ -36,7 +36,8 @@ namespace flame {
 	static php::value go(php::parameters& params) {
 		if((status & 0x01) < 0x01) throw php::exception("flame not yet initialized");
 		status |= 0x02;
-		coroutine::start(static_cast<php::callable&>(params[0]));
+		if(params[0].is_callable()) coroutine::start(static_cast<php::callable&>(params[0]));
+		else throw php::exception("only Generator Function can be start as a coroutine");
 		return nullptr;
 	}
 	static php::value run(php::parameters& params) {
@@ -60,6 +61,23 @@ namespace flame {
 		}
 		return nullptr;
 	}
+	static void do_exception_cb(uv_timer_t* handle) {
+		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
+		co->fail("this is a async exception", -1);
+		uv_close((uv_handle_t*)handle, flame::free_handle_cb);
+	}
+	static php::value do_exception(php::parameters& params) {
+		if(params[0].is_true()) {
+			throw php::exception("this is a sync exception", -2);
+		}else{
+			uv_timer_t* req = (uv_timer_t*)malloc(sizeof(uv_timer_t));
+			req->data = coroutine::current;
+			uv_timer_init(flame::loop, req);
+			uv_timer_start(req, do_exception_cb, 1, 0);
+			// 标记异步任务的特殊返回值
+			return flame::async();
+		}
+	}
 	void init(php::extension_entry& ext) {
 		coroutine::prepare();
 		// 进程控制
@@ -70,6 +88,7 @@ namespace flame {
 		ext.add<flame::run>("flame\\run");
 		ext.add<flame::quit>("flame\\quit");
 		ext.add<flame::output_test>("flame\\output_test");
+		ext.add<do_exception>("flame\\do_exception");
 	}
 
 }

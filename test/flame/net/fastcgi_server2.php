@@ -8,7 +8,7 @@ flame\go(function() {
 		yield $res->write(mt_rand());
 	})->before(function($req, $res) { // 每个请求处理前被调用
 		// 数组 $req->data 可用于携带和传递数据给 handler / after
-		$req->data = ["begin" => flame\time\now()];
+		$req->data["begin"] = flame\time\now();
 		yield $res->write("[[[[[[");
 	})->after(function($req, $res) { // 请求处理结束后（销毁前）调用
 		yield $res->end("]]]]]]");

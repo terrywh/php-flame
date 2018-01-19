@@ -99,9 +99,7 @@ namespace flame {
 			}
 			// 清理当前引用
 			ref_ = nullptr;
-			php::object& ex = rv;
-			// 由于异步问题，这里不能直接使用 throw_exception，需要在协程回复的上下文中构建异常
-			gen_.async_exception(ex.prop("message"), ex.prop("code"));
+			gen_.throw_exception(rv);
 			run();
 		}else if(stack_.empty()) {
 			// 清理当前引用
@@ -123,7 +121,20 @@ namespace flame {
 		while(!stack_.empty()) {
 			stack_.pop_front();
 		}
-		gen_.async_exception(message, code);
+		gen_.throw_exception(message, code);
+		run();
+
+		current = old;
+	}
+	void coroutine::fail(php::value ex) {
+		if(status_ < 0) return;
+		coroutine* old = current;
+		current = this;
+
+		while(!stack_.empty()) {
+			stack_.pop_front();
+		}
+		gen_.throw_exception(ex);
 		run();
 
 		current = old;

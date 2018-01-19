@@ -74,6 +74,7 @@ namespace flame {
 			next(val);
 		}
 		void fail(const std::string& message, int code = 0);
+		void fail(php::value ex);
 		static void prepare();
 
 		friend php::value async();

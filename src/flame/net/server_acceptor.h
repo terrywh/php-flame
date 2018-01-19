@@ -27,7 +27,7 @@ public:
 	}
 	void run() {
 		if(coroutine::current == nullptr) {
-			throw php::exception("failed to start: start is only allow in a coroutine");
+			throw php::exception("cannot run server (not in a coroutine?)");
 		}
 		int error = uv_listen((uv_stream_t*)svr_, 1024, connection_cb);
 		if(error < 0) {

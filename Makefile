@@ -11,7 +11,7 @@ PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 # 编译参数
 # ---------------------------------------------------------------------
 CXX?=/usr/local/gcc/bin/g++
-CXXFLAGS?= -O0 -g
+CXXFLAGS?= -O2
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc/lib64/
 
 CXXFLAGS_CORE= -std=c++11 -fPIC

@@ -19,19 +19,6 @@ namespace time {
 		// 标记异步任务的特殊返回值
 		return flame::async();
 	}
-	static void async_exception_cb(uv_timer_t* handle) {
-		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
-		co->fail("test async exception");
-		uv_close((uv_handle_t*)handle, flame::free_handle_cb);
-	}
-	static php::value async_exception(php::parameters& params) {
-		uv_timer_t* req = (uv_timer_t*)malloc(sizeof(uv_timer_t));
-		req->data = coroutine::current;
-		uv_timer_init(flame::loop, req);
-		uv_timer_start(req, async_exception_cb, 1, 0);
-		// 标记异步任务的特殊返回值
-		return flame::async();
-	}
 	// 示例：包裹 sleep 异步函数
 	// -------------------------------------------------------------------------
 	static void sleep2_timer_cb(php::value& rv, coroutine* co, void* data) {
@@ -53,7 +40,6 @@ namespace time {
 				std::chrono::system_clock::now().time_since_epoch()).count();
 		real_time_diff = uv_now(flame::loop) - rtime;
 
-		ext.add<async_exception>("flame\\async_exception");
 		ext.add<sleep>("flame\\time\\sleep");
 		ext.add<now>("flame\\time\\now");
 		php::class_entry<ticker> class_ticker("flame\\time\\ticker");

@@ -5,9 +5,9 @@ flame\init("coroutine_test");
 
 	flame\go(function() {
 		for($i=0;$i<10000;++$i) {
-			yield flame\time\sleep(1);
-			flame\go(function() {
-				yield flame\time\sleep(2);
+			yield flame\time\sleep(50);
+			flame\go(function() use($i) {
+				yield flame\time\sleep(50);
 				echo $i, "\n";
 			});
 		}
