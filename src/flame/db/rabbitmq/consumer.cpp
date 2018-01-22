@@ -106,7 +106,7 @@ namespace rabbitmq {
 			coroutine::current, impl
 		};
 		ctx->msg = obj;
-		if(params.length() > 0 && params[0].is_true()) {
+		if(params.length() > 1 && params[1].is_true()) {
 			ctx->key = php::BOOL_YES;
 		}else{
 			ctx->key = php::BOOL_NO;

@@ -233,12 +233,25 @@ namespace rabbitmq {
 			reply = amqp_consume_message(ctx->self->conn_, envelope, nullptr, 0);
 		}
 		if(reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
-			if(reply.library_error == AMQP_STATUS_TIMEOUT) {
-				ctx->rv = nullptr;
-			}else{
-				ctx->self->destroy();
-				ctx->rv = reply.library_error;
-			}
+			// 不是很理解 driver 示例代码中对异常情况读取 frame 的处理流程是为了解决什么问题
+			// if(reply.library_error == AMQP_STATUS_UNEXPECTED_STATE) {
+			// 	amqp_frame_t frame;
+			// 	if(amqp_simple_wait_frame(ctx->self->conn_, &frame) == AMQP_STATUS_OK && AMQP_FRAME_METHOD == frame.frame_type) {
+			// 		std::printf("frame.method.id: 0x%08x\n", frame.payload.method.id);
+
+			// 		// switch(frame.payload.method.id) {
+			// 		// 	case AMQP_BASIC_RETURN_METHOD:
+			// 		// 	break;
+			// 		// 	case AMQP_BASIC_ACK_METHOD:
+			// 		// 	break;
+			// 		// 	case AMQP_CHANNEL_CLOSE_METHOD:
+			// 		// 	case AMQP_CONNECTION_CLOSE_METHOD:
+			// 		// 	break;
+			// 		// }
+			// 	}
+			// }
+			ctx->self->destroy();
+			ctx->rv = reply.library_error;
 			return;
 		}else if(reply.reply_type == AMQP_RESPONSE_SERVER_EXCEPTION) {
 			ctx->self->destroy();
