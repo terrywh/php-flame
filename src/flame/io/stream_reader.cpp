@@ -135,10 +135,13 @@ namespace io {
 		case 1: // 读取一定大小
 			if(buf_.size() >= d_size) {
 				rv_ = std::move(buf_);
-				php::string& data = rv_;
-				if(data.length() > d_size) {
-					std::memcpy(buf_.put(data.length() - d_size), data.data() + d_size, data.length() - d_size);
-					data.length() = d_size;
+				php::string& str = rv_;
+				if(str.length() > d_size) {
+					std::memcpy(buf_.put(str.length() - d_size), str.c_str() + d_size, str.length() - d_size);
+					// 1. 直接使用当前的内存空间，可能导致 json_decode 等操作失败（本字符串没有以 \0 结束）
+					// str.length() = d_size;
+					// 2. resize 调整长度后在长度位置后添加 '\0' 结束
+					str.resize(d_size);
 				}
 				return true;
 			}
@@ -152,10 +155,13 @@ namespace io {
 				d_size = ff - buf_.data();
 
 				rv_ = std::move(buf_);
-				php::string& data = rv_;
-				if(data.length() > d_size) {
-					std::memcpy(buf_.put(data.length() - d_size), data.data() + d_size, data.length() - d_size);
-					data.length() = d_size;
+				php::string& str = rv_;
+				if(str.length() > d_size) {
+					std::memcpy(buf_.put(str.length() - d_size), str.c_str() + d_size, str.length() - d_size);
+					// 1. 直接使用当前的内存空间，可能导致 json_decode 等操作失败（本字符串没有以 \0 结束）
+					// str.length() = d_size;
+					// 2. resize 调整长度后在长度位置后添加 '\0' 结束
+					str.resize(d_size);
 				}
 				return true;
 			}

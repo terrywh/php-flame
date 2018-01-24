@@ -8,7 +8,9 @@ namespace flame {
 namespace os {
 	static php::value executable(php::parameters& params) {
 		php::string str(256);
-		uv_exepath(str.data(), &str.length());
+		std::size_t len = 256;
+		uv_exepath(str.data(), &len);
+		str.resize(len);
 		return std::move(str);
 	}
 	static php::value spawn(php::parameters& params) {

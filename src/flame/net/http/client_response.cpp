@@ -12,9 +12,9 @@ namespace http {
 		header_parser_conf.on_key = header_key_cb;
 		header_parser_conf.on_val = header_val_cb;
 		header_parser_conf.s1 = ':';
-		header_parser_conf.s2 = '\n';
-		header_parser_conf.w1 = '\r';
-		header_parser_conf.w2 = '\r';
+		header_parser_conf.s2 = '\r';
+		header_parser_conf.w1 = '\n';
+		header_parser_conf.w2 = '\0';
 
 		cookie_parser_conf.on_key = cookie_key_cb;
 		cookie_parser_conf.on_val = cookie_val_cb;
