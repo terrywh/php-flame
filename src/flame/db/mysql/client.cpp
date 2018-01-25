@@ -25,7 +25,7 @@ namespace mysql {
 			buf.add('\'');
 		}else if(val.is_long()) {
 			long   x = val;
-			size_t n = sprintf(buf.rev(10), "%ld", x);
+			size_t n = sprintf(buf.rev(16), "%ld", x);
 			buf.adv(n);
 		}else if(val.is_array()) {
 			php::array& row = val;
@@ -117,6 +117,10 @@ namespace mysql {
 		}else if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQLND>() == ctx->self->mysql_) {
 			ctx->co->fail(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
 		}else{
+			ctx->self->ping_context = new client_request_t {
+				coroutine::current, ctx->self
+			};
+			ctx->self->ping_context->req.data = ctx->self->ping_context;
 			uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->client_->ping_interval, 0);
 			ctx->co->next(ctx->rv);
 		}
@@ -124,11 +128,7 @@ namespace mysql {
 	}
 	void client::ping_cb(uv_timer_t* handle) {
 		client_implement* impl = reinterpret_cast<client_implement*>(handle->data);
-		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl, nullptr
-		};
-		ctx->req.data = ctx;
-		impl->worker_.queue_work(&ctx->req, client_implement::ping_wk, ping_cb);
+		impl->worker_.queue_work(&impl->ping_context->req, client_implement::ping_wk, ping_cb);
 	}
 	void client::ping_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -237,7 +237,7 @@ namespace mysql {
 		php::buffer  sql;
 		std::memcpy(sql.put(8), "UPDATE `", 8);
 		std::memcpy(sql.put(table.length()), table.c_str(), table.length());
-		std::memcpy(sql.put(7), "` SET", 5);
+		std::memcpy(sql.put(5), "` SET", 5);
 		int j = -1;
 		for(auto i=data.begin(); i!=data.end(); ++i) {
 			php::string& key = i->first;
@@ -324,7 +324,7 @@ namespace mysql {
 		client_request_t* ctx = new client_request_t {
 			coroutine::current, impl, nullptr
 		};
-		ctx->sql = php::string("SELECT FOUND_ROWS()");
+		ctx->sql = php::string("SELECT FOUND_ROWS()", 19);
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req, client_implement::found_rows_wk, default_cb);
 		return flame::async(this);

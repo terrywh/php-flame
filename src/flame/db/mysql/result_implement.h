@@ -27,7 +27,7 @@ namespace mysql {
 		php::value          rv;
 		int               type;
 		uv_work_t          req;
-	} implement_request_t;
+	} result_request_t;
 }
 }
 }

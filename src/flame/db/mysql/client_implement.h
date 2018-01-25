@@ -5,6 +5,7 @@ namespace flame {
 namespace db {
 namespace mysql {
 	class client;
+	struct client_request_t;
 	class client_implement {
 	private:
 		client_implement(client* cli);
@@ -14,6 +15,7 @@ namespace mysql {
 		bool                   debug_;
 		bool               connected_;
 		uv_timer_t              ping_;
+		client_request_t*       ping_context;
 		// sql -> connection_uri
 		static void    connect_wk(uv_work_t* req);
 		static void       ping_wk(uv_work_t* req);

@@ -26,7 +26,7 @@ namespace log {
 			uv_close((uv_handle_t*)pipe_, free_handle_cb);
 			pipe_ = nullptr;
 		}
-		if(file_ < 0) { // 排除 file_ = 1 / file_ = 2 标准输出的情况
+		if(file_ > 0) { // 排除 file_ = 1 / file_ = 2 标准输出的情况
 			uv_fs_t req;
 			uv_fs_close(flame::loop, &req, file_, nullptr);
 			file_ = 0;

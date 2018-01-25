@@ -11,7 +11,8 @@ namespace mysql {
 	: client_(cli)
 	, mysql_(mysqlnd_init(MYSQLND_CLIENT_KNOWS_RSET_COPY_DATA, true))
 	, debug_(false)
-	, connected_(false) {
+	, connected_(false)
+	, ping_context(nullptr) {
 		uv_timer_init(flame::loop, &ping_);
 		ping_.data = this;
 	}
@@ -101,7 +102,9 @@ namespace mysql {
 			return;
 		}
 		// 直接取出结果
-		mysqlnd_fetch_into(rs, MYSQLND_FETCH_ASSOC, (zval*)&ctx->rv, MYSQLND_MYSQLI);
+		zval rv;
+		mysqlnd_fetch_into(rs, MYSQLND_FETCH_ASSOC, &rv, MYSQLND_MYSQLI);
+		ctx->rv = php::value(rv);
 		mysqlnd_free_result(rs, false);
 	}
 	void client_implement::found_rows_wk(uv_work_t* req) {
@@ -128,7 +131,9 @@ namespace mysql {
 			return;
 		}
 		// 直接取出结果
-		mysqlnd_fetch_into(rs, MYSQLND_FETCH_NUM, (zval*)&ctx->rv, MYSQLND_MYSQLI);
+		zval rv;
+		mysqlnd_fetch_into(rs, MYSQLND_FETCH_NUM, &rv, MYSQLND_MYSQLI);
+		ctx->rv = php::value(rv);
 		mysqlnd_free_result(rs, false);
 		php::array& row = ctx->rv;
 		ctx->rv = row[0].to_long();
@@ -148,6 +153,10 @@ namespace mysql {
 		if(self->mysql_ != nullptr) {
 			mysqlnd_close(self->mysql_, MYSQLND_CLOSE_EXPLICIT);
 			self->mysql_ = nullptr;
+		}
+		if(self->ping_context != nullptr) {
+			delete self->ping_context;
+			self->ping_context = nullptr;
 		}
 	}
 	void client_implement::destroy_cb(uv_work_t* req, int status) {
