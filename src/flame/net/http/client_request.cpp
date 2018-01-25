@@ -16,7 +16,7 @@ php::value client_request::__construct(php::parameters& params) {
 	if (params.length() >= 3) {
 		prop("timeout") = static_cast<int>(params[2]);
 	}else{
-		prop("timeout") = 2500;
+		prop("timeout") = 3000;
 	}
 	if (params.length() >= 2) {
 		prop("body")   = params[1];
@@ -134,8 +134,8 @@ void client_request::build_cookie() {
 	php::buffer cookie;
 	php::array& cookie_all = prop("cookie");
 	for(auto i=cookie_all.begin(); i!= cookie_all.end(); ++i) {
-		php::string& key = i->first.to_string();
-		php::string& val = i->second.to_string();
+		php::string key = i->first.to_string();
+		php::string val = i->second.to_string();
 		std::memcpy(cookie.put(key.length()), key.c_str(), key.length());
 		cookie.add('=');
 		std::memcpy(cookie.put(val.length()), val.c_str(), val.length());

@@ -17,7 +17,6 @@ namespace mysql {
 		static void fetch_row_wk(uv_work_t* req);
 		static void fetch_all_wk(uv_work_t* req);
 		static void close_wk(uv_work_t* req);
-		static void close_cb(uv_handle_t* req);
 	
 		friend class result_set;
 	};

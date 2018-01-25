@@ -62,17 +62,17 @@ void client::curl_multi_info_check(client* self) {
 		if(message->msg == CURLMSG_DONE) {
 			exec_context_t* ctx;
 			curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &ctx);
+			long status;
+			curl_easy_getinfo(message->easy_handle, CURLINFO_RESPONSE_CODE, &status);
+			assert(message->easy_handle == ctx->req->easy_);
+			curl_multi_remove_handle(ctx->self->multi_, ctx->req->easy_);
 			if (message->data.result != CURLE_OK) {
 				ctx->co->fail(curl_easy_strerror(message->data.result), message->data.result);
 			} else {
-				long status;
-				curl_easy_getinfo(message->easy_handle, CURLINFO_RESPONSE_CODE, &status);
 				ctx->res->done_cb(status);
-				// 因为 req 的 done_cb 将关闭 easy_handle（导致所有 msg 数据无法访问）
-				ctx->req->done_cb(message); 
+				ctx->req->done_cb(message);  // 因为 req 的 done_cb 将关闭 easy_handle（导致所有 msg 数据无法访问）
 				ctx->co->next(std::move(ctx->res));
 			}
-			curl_multi_remove_handle(ctx->self->multi_, ctx->req->easy_);
 			delete ctx;
 		}else{
 			std::fprintf(stderr, "[%s] (flame\\net\\http\\client): error: message not done\n", time::datetime(time::now()));
@@ -225,7 +225,7 @@ php::value get(php::parameters& params) {
 	if(params.length() > 1) {
 		req->prop("timeout") = params[1].to_long();
 	}else{
-		req->prop("timeout") = 2500;
+		req->prop("timeout") = 3000;
 	}
 	return default_client->exec2(obj);
 }
@@ -240,7 +240,7 @@ php::value post(php::parameters& params) {
 	if(params.length() > 2) {
 		obj.prop("timeout") = params[2].to_long();
 	}else{
-		obj.prop("timeout") = 2500;
+		obj.prop("timeout") = 3000;
 	}
 	return default_client->exec2(obj);
 }
@@ -255,7 +255,7 @@ php::value put(php::parameters& params) {
 	if(params.length() > 2) {
 		obj.prop("timeout") = params[2].to_long();
 	}else{
-		obj.prop("timeout") = 2500;
+		obj.prop("timeout") = 3000;
 	}
 	return default_client->exec2(obj);
 }
@@ -270,7 +270,7 @@ php::value remove(php::parameters& params) {
 	if(params.length() > 1) {
 		obj.prop("timeout") = params[1].to_long();
 	}else{
-		obj.prop("timeout") = 2500;
+		obj.prop("timeout") = 3000;
 	}
 	return default_client->exec2(obj);
 }

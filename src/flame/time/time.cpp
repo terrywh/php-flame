@@ -31,6 +31,9 @@ namespace time {
 	}
 	// -------------------------------------------------------------------------
 	static php::value now(php::parameters& params) {
+		if(params.length() > 0 && params[0].is_true()) {
+			uv_update_time(flame::loop);
+		}
 		return now();
 	}
 	static int64_t real_time_diff;

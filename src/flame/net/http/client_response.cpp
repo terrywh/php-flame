@@ -55,6 +55,7 @@ namespace http {
 			self->cookie_item = nullptr;
 			kv_parser_reset(&self->cookie_parser);
 			kv_parser_execute(&self->cookie_parser, &self->cookie_parser_conf, data, size);
+			self->cookie_item = nullptr;
 		}else if(self->key_size > 0) {
 			self->header_.at(self->key_data, self->key_size) = php::string(data, size);
 		}

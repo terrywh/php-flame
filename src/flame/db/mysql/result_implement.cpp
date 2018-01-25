@@ -20,14 +20,18 @@ namespace mysql {
 	}
 	void result_implement::fetch_all_wk(uv_work_t* req) {
 		result_request_t* ctx = reinterpret_cast<result_request_t*>(req->data);
-		
 		php::array rv(0);
 		php::value rs;
-		mysqlnd_fetch_into(ctx->self->rs_, ctx->type == MYSQLND_FETCH_NUM ? MYSQLND_FETCH_NUM : MYSQLND_FETCH_ASSOC, (zval*)&rs, MYSQLND_MYSQLI);
-		for(int i=0; rs.is_array(); ++i) {
-			rv[i] = std::move(rs);
+		int i = 0;
+		do {
 			mysqlnd_fetch_into(ctx->self->rs_, ctx->type == MYSQLND_FETCH_NUM ? MYSQLND_FETCH_NUM : MYSQLND_FETCH_ASSOC, (zval*)&rs, MYSQLND_MYSQLI);
-		}
+			if(!rs.is_array()) {
+				rs = nullptr; // 参考 mysqlnd_result.c:1797
+				break;
+			}
+			rv[i++] = std::move(rs);
+		}while(1);
+
 		ctx->rv = std::move(rv);
 	}
 	

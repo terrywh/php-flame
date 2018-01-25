@@ -210,8 +210,8 @@ namespace mysql {
 		return flame::async(this);
 	}
 	php::value client::remove(php::parameters& params) {
-		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
-			throw php::exception("table name and filter array is required");
+		if(params.length() < 2 || !params[0].is_string()) {
+			throw php::exception("table name is required");
 		}
 		php::string& table = params[0];
 		php::buffer sql;
@@ -229,8 +229,8 @@ namespace mysql {
 		return flame::async(this);
 	}
 	php::value client::update(php::parameters& params) {
-		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array() || !params[2].is_array()) {
-			throw php::exception("table name, filter array and update array is required");
+		if(params.length() < 2 || !params[0].is_string() || !params[2].is_array()) {
+			throw php::exception("table name and update array is required");
 		}
 		php::string& table = params[0];
 		php::array&  data  = params[2];
@@ -260,8 +260,8 @@ namespace mysql {
 		return flame::async(this);
 	}
 	php::value client::one(php::parameters& params) {
-		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
-			throw php::exception("table name and query array is required");
+		if(params.length() < 2 || !params[0].is_string()) {
+			throw php::exception("table name is required");
 		}
 		php::string& table = params[0];
 		php::buffer  sql;

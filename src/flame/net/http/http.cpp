@@ -46,7 +46,7 @@ namespace http {
 		class_client_request.add(php::property_entry("header", nullptr));
 		class_client_request.add(php::property_entry("cookie", nullptr));
 		class_client_request.add(php::property_entry("body", nullptr));
-		class_client_request.add(php::property_entry("timeout", 2500));
+		class_client_request.add(php::property_entry("timeout", 3000));
 		class_client_request.add<&client_request::__construct>("__construct");
 		class_client_request.add<&client_request::ssl>("ssl");
 		ext.add(std::move(class_client_request));
