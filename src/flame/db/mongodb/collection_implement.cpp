@@ -51,10 +51,14 @@ namespace mongodb {
 	}
 	void collection_implement::insert_many_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		bson_t opts;
+		bson_init(&opts);
+		fill_with(&opts, ctx->doc2);
 		// 构建 批量操作
-		mongoc_bulk_operation_t* bulk = mongoc_collection_create_bulk_operation(
-			ctx->self->col_, ctx->flags, nullptr);
-			
+		mongoc_bulk_operation_t* bulk = mongoc_collection_create_bulk_operation_with_opts(
+			ctx->self->col_, &opts);
+		bson_destroy(&opts);
+
 		bson_t* reply,* doc;
 		php::array& docs = ctx->doc1;
 		for(auto i=docs.begin(); i!= docs.end(); ++i) {

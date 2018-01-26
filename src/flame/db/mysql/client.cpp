@@ -117,11 +117,11 @@ namespace mysql {
 		}else if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQLND>() == ctx->self->mysql_) {
 			ctx->co->fail(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
 		}else{
-			ctx->self->ping_context = new client_request_t {
-				coroutine::current, ctx->self
-			};
-			ctx->self->ping_context->req.data = ctx->self->ping_context;
-			uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->client_->ping_interval, 0);
+			// ctx->self->ping_context = new client_request_t {
+			// 	coroutine::current, ctx->self
+			// };
+			// ctx->self->ping_context->req.data = ctx->self->ping_context;
+			// uv_timer_start(&ctx->self->ping_, ping_cb, ctx->self->client_->ping_interval, 0);
 			ctx->co->next(ctx->rv);
 		}
 		delete ctx;
@@ -160,14 +160,18 @@ namespace mysql {
 	}
 	void client::queue_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(ctx->rv.is_pointer()) {
+		if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQLND>() == ctx->self->mysql_) {
+			ctx->co->fail(mysqlnd_error(ctx->self->mysql_), mysqlnd_errno(ctx->self->mysql_));
+		}else if(ctx->rv.is_pointer()) {
 			MYSQLND_RES* rs = ctx->rv.ptr<MYSQLND_RES>();
 			php::object obj = php::object::create<result_set>();
 			result_set* cpp = obj.native<result_set>();
 			ctx->rv = std::move(obj);
 			cpp->init(&ctx->self->worker_, ctx->self->client_, rs);
+			ctx->co->next(ctx->rv);
+		}else{
+			assert(0);
 		}
-		ctx->co->next(ctx->rv);
 		delete ctx;
 	}
 	php::value client::query(php::parameters& params) {

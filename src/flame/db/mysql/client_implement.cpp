@@ -102,9 +102,7 @@ namespace mysql {
 			return;
 		}
 		// 直接取出结果
-		zval rv;
-		mysqlnd_fetch_into(rs, MYSQLND_FETCH_ASSOC, &rv, MYSQLND_MYSQLI);
-		ctx->rv = php::value(rv);
+		mysqlnd_fetch_into(rs, MYSQLND_FETCH_ASSOC, ctx->rv, MYSQLND_MYSQLI);
 		mysqlnd_free_result(rs, false);
 	}
 	void client_implement::found_rows_wk(uv_work_t* req) {
@@ -131,12 +129,10 @@ namespace mysql {
 			return;
 		}
 		// 直接取出结果
-		zval rv;
-		mysqlnd_fetch_into(rs, MYSQLND_FETCH_NUM, &rv, MYSQLND_MYSQLI);
-		ctx->rv = php::value(rv);
+		php::array rv;
+		mysqlnd_fetch_into(rs, MYSQLND_FETCH_NUM, rv, MYSQLND_MYSQLI);
 		mysqlnd_free_result(rs, false);
-		php::array& row = ctx->rv;
-		ctx->rv = row[0].to_long();
+		ctx->rv = rv[0].to_long();
 	}
 	void client_implement::ping_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);

@@ -69,13 +69,11 @@ namespace mongodb {
 			throw php::exception("illegal document, document array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, docs
+			coroutine::current, impl, nullptr, docs, php::array(nullptr)
 		};
 		ctx->req.data = ctx;
-		if(params.length() > 1 && params[1].is_true()) {
-			ctx->flags = true;
-		}else{
-			ctx->flags = false;
+		if(params.length() > 1 && params[1].is_array()) {
+			ctx->doc2 = params[1];
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::insert_many_wk, insert_many_cb);
 		return flame::async(this);

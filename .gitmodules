@@ -50,3 +50,6 @@
 	path = deps/http-parser
 	url = https://github.com/nodejs/http-parser
 	ignore = dirty
+[submodule "deps/rabbitmq-c"]
+	path = deps/rabbitmq-c
+	url = https://github.com/alanxz/rabbitmq-c
