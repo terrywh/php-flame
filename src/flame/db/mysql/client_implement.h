@@ -11,11 +11,17 @@ namespace mysql {
 		client_implement(client* cli);
 		thread_worker         worker_;
 		client*               client_;
-		MYSQLND*               mysql_;
+		MYSQL                  mysql_;
 		bool                   debug_;
 		bool               connected_;
 		uv_timer_t              ping_;
 		client_request_t*       ping_context;
+
+		void start();
+		static void ping_cb(uv_timer_t* req);
+		static void ping_cb(uv_work_t* req, int status);
+		void destroy();
+		static void destroy_cb(uv_handle_t* handle);
 		// sql -> connection_uri
 		static void    connect_wk(uv_work_t* req);
 		static void       ping_wk(uv_work_t* req);

@@ -11,7 +11,7 @@ namespace mysql {
 		result_set();
 		~result_set();
 		
-		void init(thread_worker* worker, client* cli, MYSQLND_RES* rs);
+		void init(thread_worker* worker, client* cli, MYSQL_RES* rs);
 		
 		php::value fetch_row(php::parameters& params);
 		php::value fetch_all(php::parameters& params);

@@ -38,7 +38,4 @@
 #include "http-parser/http_parser.h"
 #include "rabbitmq-c/librabbitmq/amqp.h"
 #include "rabbitmq-c/librabbitmq/amqp_tcp_socket.h"
-
-extern "C" {
-#include "ext/mysqlnd/mysqlnd.h"
-}
+#include "mysql.h"

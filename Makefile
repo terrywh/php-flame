@@ -16,7 +16,7 @@ LDFLAGS?=-Wl,-rpath=/usr/local/gcc/lib64/
 
 CXXFLAGS_CORE= -std=c++11 -fPIC
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
-INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0 -I./deps/rabbitmq-c/librabbitmq
+INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0 -I./deps/rabbitmq-c/librabbitmq -I./deps/mysql-connector-c/include
 # 依赖库
 # ---------------------------------------------------------------------
 LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
@@ -33,7 +33,8 @@ LIBRARY=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/mongo-c-driver/bin/lib/libbson-1.0.a \
  ./deps/librdkafka/src/librdkafka.a \
  ./deps/http-parser/libhttp_parser.a \
- ./deps/rabbitmq-c/build/librabbitmq/librabbitmq.a
+ ./deps/rabbitmq-c/build/librabbitmq/librabbitmq.a \
+ ./deps/mysql-connector-c/lib/libmysqlclient.a
 # 代码和预编译头文件
 # ---------------------------------------------------------------------
 SOURCES=$(shell find ./src -name "*.cpp")

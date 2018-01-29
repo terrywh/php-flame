@@ -6,8 +6,16 @@ namespace flame {
 namespace db {
 namespace mysql {
 	void init(php::extension_entry& ext) {
-		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ASSOC", MYSQLND_FETCH_ASSOC));
-		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ENUMS", MYSQLND_FETCH_NUM));
+		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
+			mysql_library_init(0, nullptr, nullptr);
+			return true;
+		});
+		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
+			mysql_library_end();
+			return true;
+		});
+		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ASSOC", 0));
+		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ENUMS", 1));
 		// ---------------------------------------------------------------------
 		php::class_entry<client> class_client("flame\\db\\mysql\\client");
 		class_client.add(php::property_entry("affected_rows", 0));
@@ -182,6 +190,53 @@ namespace mysql {
 			}
 		}else{
 			throw php::exception("illegal sql limit");
+		}
+	}
+	void sql_fetch_row(MYSQL_RES* rs, php::array& rv, int flag) {
+		if(!rv.is_array()) rv = php::array(4);
+
+		unsigned int   num = mysql_num_fields(rs);
+		if(flag == MYSQL_FETCH_NUM) {
+			MYSQL_ROW      row = mysql_fetch_row(rs);
+			if(!(row)) return;
+			unsigned long* len = mysql_fetch_lengths(rs);
+			for(int i=0; i<num; ++i) {	
+				rv.at(i) = php::string(row[i], len[i]);
+			}
+		}else/* MYSQL_FETCH_ASSOC */{
+			MYSQL_FIELD*   fld = mysql_fetch_fields(rs);
+			MYSQL_ROW      row = mysql_fetch_row(rs);
+			if(!(row)) return;
+			unsigned long* len = mysql_fetch_lengths(rs);
+			for(int i=0; i<num; ++i) {	
+				rv.at(fld[i].name) = php::string(row[i], len[i]);
+			}
+		}
+	}
+	void sql_fetch_all(MYSQL_RES* rs, php::array& rv, int flag) {
+		if(!rv.is_array()) rv = php::array(4);
+		unsigned int num = mysql_num_fields(rs), idx = -1;
+		if(flag == MYSQL_FETCH_NUM) {
+			MYSQL_ROW      row;
+			while((row = mysql_fetch_row(rs))) {
+				unsigned long* len = mysql_fetch_lengths(rs);
+				php::array     rrr(4);
+				for(int i=0; i<num; ++i) {
+					rrr.at(i) = php::string(row[i], len[i]);
+				}
+				rv.at(++idx) = std::move(rrr);
+			}
+		}else/* MYSQL_FETCH_ASSOC */{
+			MYSQL_FIELD* fld = mysql_fetch_fields(rs);
+			MYSQL_ROW    row;
+			while((row = mysql_fetch_row(rs))) {
+				unsigned long* len = mysql_fetch_lengths(rs);
+				php::array     rrr(4);
+				for(int i=0; i<num; ++i) {	
+					rrr.at(fld[i].name) = php::string(row[i], len[i]);
+				}
+				rv.at(++idx) = std::move(rrr);
+			}
 		}
 	}
 }

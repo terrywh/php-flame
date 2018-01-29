@@ -36,9 +36,12 @@ namespace rabbitmq {
 
 			switch(val.type()) {
 			case IS_TRUE:
-			case IS_FALSE:
 				entry.value.kind = AMQP_FIELD_KIND_BOOLEAN;
 				entry.value.value.boolean = val.is_true();
+				break;
+			case IS_FALSE:
+				entry.value.kind = AMQP_FIELD_KIND_BOOLEAN;
+				entry.value.value.boolean = !val.is_false();
 				break;
 			case IS_LONG:
 				entry.value.kind = AMQP_FIELD_KIND_I64;

@@ -12,7 +12,7 @@ namespace mysql {
 	:impl(nullptr) {
 		
 	}
-	void result_set::init(thread_worker* worker, client* cli, MYSQLND_RES* rs) {
+	void result_set::init(thread_worker* worker, client* cli, MYSQL_RES* rs) {
 		impl = new result_implement(worker, rs);
 		ref_ = cli;
 	}
@@ -28,22 +28,22 @@ namespace mysql {
 	}
 	php::value result_set::fetch_row(php::parameters& params) {
 		result_request_t* ctx = new result_request_t {
-			coroutine::current, impl, nullptr, MYSQLND_FETCH_ASSOC
+			coroutine::current, impl, nullptr, MYSQL_FETCH_ASSOC
 		};
 		ctx->req.data = ctx;
-		if(params.length() > 0 && params[0].to_long() == MYSQLND_FETCH_NUM) {
-			ctx->type = MYSQLND_FETCH_NUM;
+		if(params.length() > 0 && params[0].to_long() == MYSQL_FETCH_NUM) {
+			ctx->type = MYSQL_FETCH_NUM;
 		}
 		impl->worker_->queue_work(&ctx->req, result_implement::fetch_row_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value result_set::fetch_all(php::parameters& params) {
 		result_request_t* ctx = new result_request_t {
-			coroutine::current, impl, nullptr, MYSQLND_FETCH_ASSOC
+			coroutine::current, impl, nullptr, MYSQL_FETCH_ASSOC
 		};
 		ctx->req.data = ctx;
-		if(params.length() > 0 && params[0].to_long() == MYSQLND_FETCH_NUM) {
-			ctx->type = MYSQLND_FETCH_NUM;
+		if(params.length() > 0 && params[0].to_long() == MYSQL_FETCH_NUM) {
+			ctx->type = MYSQL_FETCH_NUM;
 		}
 		impl->worker_->queue_work(&ctx->req, result_implement::fetch_all_wk, default_cb);
 		return flame::async(this);
