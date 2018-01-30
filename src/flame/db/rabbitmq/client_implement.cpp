@@ -298,6 +298,7 @@ namespace rabbitmq {
 		}else{
 			ctx->co->fail(amqp_error_string2(error), error);
 		}
+		delete ctx;
 	}
 }
 }

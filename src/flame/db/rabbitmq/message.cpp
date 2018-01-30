@@ -57,10 +57,6 @@ namespace rabbitmq {
 			client_implement::destroy_envelope_wk, destroy_envelope_cb);
 		return nullptr;
 	}
-	void message::default_cb(uv_work_t* req, int status) {
-		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		
-	}
 	void message::destroy_envelope_cb(uv_work_t* req, int status) {
 		delete reinterpret_cast<client_request_t*>(req->data);
 	}

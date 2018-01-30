@@ -15,7 +15,7 @@ namespace rabbitmq {
 	private:
 
 		php::string    php_exchange;
-		amqp_bytes_t   opt_exchange;
+		amqp_bytes_t   opt_exchange; // 引用上述 php_exchange 字符串内存
 		amqp_boolean_t opt_mandatory;
 		amqp_boolean_t opt_immediate;
 

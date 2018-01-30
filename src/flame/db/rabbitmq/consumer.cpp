@@ -84,6 +84,7 @@ namespace rabbitmq {
 		}else{
 			assert(0);
 		}
+		delete ctx;
 	}
 	php::value consumer::confirm(php::parameters& params) {
 		php::object& obj = params[0];

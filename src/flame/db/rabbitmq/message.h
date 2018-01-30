@@ -22,10 +22,8 @@ namespace rabbitmq {
 		consumer*           consumer_;
 		int64_t             ts_;
 
-		static void default_cb(uv_work_t* req, int status);
 		static void destroy_envelope_cb(uv_work_t* req, int status);
 		
-
 		friend class client_implement;
 	};
 }
