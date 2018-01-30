@@ -1,3 +1,6 @@
+#include "deps.h"
+#include "../../flame.h"
+#include "../../coroutine.h"
 #include "mysql.h"
 #include "client.h"
 #include "result_set.h"

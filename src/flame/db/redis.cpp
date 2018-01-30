@@ -1,3 +1,4 @@
+#include "deps.h"
 #include "../flame.h"
 #include "../coroutine.h"
 #include "redis.h"

@@ -1,3 +1,5 @@
+#include "deps.h"
+#include "flame.h"
 #include "coroutine.h"
 #include "process.h"
 #include "log/log.h"

@@ -1,7 +1,9 @@
+#include "deps.h"
+#include "../../flame.h"
+#include "../../coroutine.h"
+#include "kafka.h"
 #include "consumer.h"
 #include "consumer_implement.h"
-#include "kafka.h"
-#include "../../coroutine.h"
 #include "message.h"
 
 namespace flame {

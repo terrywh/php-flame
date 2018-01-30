@@ -1,3 +1,6 @@
+#include "deps.h"
+#include "../../flame.h"
+#include "../../coroutine.h"
 #include "table.h"
 
 namespace flame {

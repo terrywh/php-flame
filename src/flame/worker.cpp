@@ -1,7 +1,9 @@
-#include "log/log.h"
+#include "deps.h"
+#include "flame.h"
 #include "coroutine.h"
 #include "worker.h"
 #include "process.h"
+#include "log/log.h"
 
 namespace flame {
 	worker::worker(process* m)

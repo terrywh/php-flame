@@ -2,14 +2,6 @@
 
 namespace flame {
 	class worker;
-	extern std::deque<php::callable> quit_cb;
-	extern enum process_type_t {
-		PROCESS_MASTER,
-		PROCESS_WORKER,
-	} process_type;
-	extern std::string    process_name;
-	extern uint8_t        process_count;
-
 	class process {
 	public:
 		static process* prepare();
@@ -25,6 +17,13 @@ namespace flame {
 		uv_signal_t       sigterm_;
 		uv_signal_t       sigusr2_;
 	};
+	extern std::deque<php::callable> quit_cb;
+	extern enum process_type_t {
+		PROCESS_MASTER,
+		PROCESS_WORKER,
+	} process_type;
+	extern std::string    process_name;
+	extern std::uint8_t   process_count;
 	// 当前进程
 	extern process* process_self;
 }

@@ -51,9 +51,9 @@ ${EXTENSION}: ${LIBRARY} ${OBJECTS}
 ${HEADERX}: deps/deps.h
 	${CXX} -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
 src/extension.o: src/extension.cpp
-	${CXX} ${CXXFLAGS_CORE} -include ./deps/deps.h -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
+	${CXX} ${CXXFLAGS_CORE} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
 %.o: %.cpp ${HEADERX}
-	${CXX} ${CXXFLAGS_CORE} -include ./deps/deps.h ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
+	${CXX} ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
 # 清理安装
 # ----------------------------------------------------------------------
 clean:

@@ -1,3 +1,6 @@
+#include "deps.h"
+#include "../flame.h"
+#include "../coroutine.h"
 #include "db.h"
 #include "redis.h"
 #include "mongodb/mongodb.h"

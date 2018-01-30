@@ -1,3 +1,5 @@
+#include "deps.h"
+#include "../flame.h"
 #include "../coroutine.h"
 #include "log.h"
 #include "logger.h"
@@ -11,7 +13,7 @@ namespace log {
 	static php::value warn(php::parameters& params) {
 		return default_logger->warn(params);
 	}
-	static php::value info(php::parameters& params) {
+	static php::value info(php::parameters& params) {		
 		return default_logger->info(params);
 	}
 	static php::value write(php::parameters& params) {

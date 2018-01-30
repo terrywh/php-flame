@@ -1,6 +1,8 @@
+#include "deps.h"
+#include "flame.h"
+#include "coroutine.h"
 #include "process.h"
 #include "worker.h"
-#include "coroutine.h"
 
 namespace flame {
 	std::deque<php::callable> quit_cb;

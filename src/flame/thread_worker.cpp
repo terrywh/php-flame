@@ -1,5 +1,7 @@
-#include "thread_worker.h"
+#include "deps.h"
+#include "flame.h"
 #include "coroutine.h"
+#include "thread_worker.h"
 
 namespace flame {
 	thread_worker::thread_worker() {

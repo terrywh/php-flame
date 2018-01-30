@@ -1,3 +1,6 @@
+#include "deps.h"
+#include "../../flame.h"
+#include "../../coroutine.h"
 #include "message.h"
 #include "consumer_implement.h"
 #include "consumer.h"

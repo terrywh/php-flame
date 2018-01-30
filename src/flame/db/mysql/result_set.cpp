@@ -1,3 +1,5 @@
+#include "deps.h"
+#include "../../flame.h"
 #include "../../coroutine.h"
 #include "../../thread_worker.h"
 #include "mysql.h"

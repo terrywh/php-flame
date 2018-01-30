@@ -1,3 +1,6 @@
+#include "deps.h"
+#include "../../flame.h"
+#include "../../coroutine.h"
 #include "rabbitmq.h"
 #include "table.h"
 #include "producer.h"
