@@ -124,12 +124,12 @@ $req->body = ["a"=> "b", "c"=> "d"];
 ``` PHP
 <?php
 $cli = new flame\net\http\client([
-	"conn_share" => "pipe", // null/"" => 不进行排队或并行
+	"conn_share" => "pipe", // "none" => 不进行排队或并行
 	                 // "pipe" => 管道传输 HTTP/1.1 请求（同一连接）
 	                 // "plex" => 并行传输 HTTP/2 请求（STREAM）
-					 // "both"  => PIPE + PLEX
-	"conn_per_host" => 4,  // 默认 2，同 HOST:PORT 请求建立的最大连接数
-	"pipe_per_conn" => 2,  // 默认 4，单连接 HTTP/1.1 管道排队数量
+					 // "both"  => 默认，PIPE + PLEX 
+	"conn_per_host" => 4,  // 默认 2，同 HOST:PORT 请求建立的最大连接数 必须 <= 512
+	"pipe_per_conn" => 2,  // 默认 4，单连接 HTTP/1.1 管道排队数量 必须 <= 256
 ]);
 ```
 

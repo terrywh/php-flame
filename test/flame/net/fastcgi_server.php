@@ -52,7 +52,6 @@ HTMLCODE;
 	})
 	// 默认处理程序（即：不匹配上述路径形式时调用）
 	->handle(function($req, $res) {
-		yield flame\time\sleep(2000);
 		var_dump($req);
 		$data = json_encode($req);
 		yield $res->end($data);

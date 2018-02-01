@@ -66,7 +66,7 @@ install: ${EXTENSION}
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:
 	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix `pwd`/bin
-	make -C ./deps/nghttp2 -j2
+	make -C ./deps/nghttp2
 	make -C ./deps/nghttp2 install
 	cd ./deps/nghttp2; find -type l | xargs rm
 ./deps/libphpext/libphpext.a:
@@ -94,7 +94,7 @@ install: ${EXTENSION}
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --disable-shm-counters --enable-static=yes --enable-shared=no
-	make -C ./deps/mongo-c-driver -j2
+	make -C ./deps/mongo-c-driver
 	make -C ./deps/mongo-c-driver install
 	cd ./deps/mongo-c-driver; find -type l | xargs rm; 
 ./deps/fmt/fmt/libfmt.a:

@@ -17,8 +17,16 @@ php::value client::__construct(php::parameters& params) {
 		return nullptr;
 	}
 	php::array&  opts = params[0];
+	int host = opts.at("conn_per_host");
+	if(host > 0 && host < 512) {
+		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, host);
+	}else{
+		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 2);
+	}
 	php::string& conn = opts.at("conn_share");
 	if(conn.is_empty()) {
+		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_HTTP1 | CURLPIPE_MULTIPLEX); // 默认需要 pipeline
+	}else if(conn.length() == 4 && std::strncmp(conn.c_str(), "none", 4) == 0) {
 		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_NOTHING);
 	}else if(conn.length() == 4 && std::strncmp(conn.c_str(), "pipe", 4) == 0) {
 		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_HTTP1);
@@ -29,24 +37,17 @@ php::value client::__construct(php::parameters& params) {
 	}
 	int pipe = opts.at("pipe_per_conn");
 	if(pipe > 0 && pipe < 256) {
-		curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, conn);
+		curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, pipe);
 	}else{
 		curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
-	}
-	int host = opts.at("conn_per_host");
-	if(host > 0 && host < 512) {
-		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, conn);
-	}else{
-		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 2);
 	}
 	return nullptr;
 }
 void client::default_options() {
 	curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_HTTP1 | CURLPIPE_MULTIPLEX);
-	curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
-	curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 2);
+    curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
+    curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 2);
 }
-
 typedef struct exec_context_t {
 	coroutine*       co;
 	client*          self;

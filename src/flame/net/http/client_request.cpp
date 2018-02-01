@@ -50,7 +50,7 @@ php::value client_request::ssl(php::parameters& params) {
 			curl_easy_setopt(easy_, CURLOPT_SSL_VERIFYPEER, 0);
 		}
 	}
-	CURLcode r = CURLE_UNKNOWN_OPTION;
+	CURLcode r = CURLE_OK;
 	php::string crt = opt.at("cert",4);
 	if(crt.is_string()) {
 		if(std::strncmp(crt.c_str() + crt.length() - 4, ".pem", 4) == 0) {

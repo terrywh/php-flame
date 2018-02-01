@@ -180,10 +180,10 @@ namespace fastcgi {
 			parser.data = self;
 			kv_parser_execute(&parser, &settings, cookie.c_str(), cookie.length());
 		}
-		self->req.prop("query")  = std::move(self->query_);
-		self->req.prop("header") = std::move(self->header_);
-		self->req.prop("cookie") = std::move(self->cookie_);
-		self->req.prop("body")   = std::move(self->body_);
+		self->req.prop("query",5)  = std::move(self->query_);
+		self->req.prop("header",6) = std::move(self->header_);
+		self->req.prop("cookie",6) = std::move(self->cookie_);
+		self->req.prop("body",4)   = std::move(self->body_);
 
 		self->on_session(self);
 		return 0;
