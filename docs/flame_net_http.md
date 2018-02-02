@@ -1,33 +1,6 @@
 ### `namespace flame\net`
 提供基本的 HTTP/1 协议服务器封装，协程式客户端封装（底层使用 curl 并内置使用 nghttp2 提供了 HTTP/2 支持）；
 
-#### `yield flame\net\http\get(string $url, integer $timeout = 2500)`
-简单的 `GET` 请求方法。
-
-#### `yield flame\net\http\post(string $url, mixed $post, integer $timeout = 2500)`
-简单的 `POST` 请求方法；
-* 当 `$post` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
-* 当 `$post` 为文本时直接进行发送；
-
-**示例**：
-``` PHP
-<?php
-$ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
-var_dump($ret);
-```
-
-#### `yield flame\net\http\put(string $url, mixed $put, integer $timeout = 2500)`
-简单的 `PUT` 请求方法。
-* 当 `$put` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
-* 当 `$put` 为文本时直接进行发送；
-
-#### `yield flame\net\http\remove(string $url, integer $timeout = 2500)`
-简单的 `DELETE` 请求方法。
-
-#### `yield flame\net\http\exec(client_request $request)`
-执行指定的请求（使用默认的客户端）；
-
-
 ### `class flame\net\http\client_request`
 封装 HTTP 协议的客户端请求请求
 
@@ -36,7 +9,7 @@ var_dump($ret);
 
 * `$url` ：请求的地址；
 * `$data`：可选，请求体，若存在，将自动设置当前请求 `$req->method='POST'`，可以为 `null`；
-* `$timeout`：可选，请求超时，单位 `ms`（毫秒），默认为 2500ms；
+* `$timeout`：可选，请求超时，单位 `ms`（毫秒），默认为 3000ms；
 
 **示例**：
 ``` PHP
@@ -151,6 +124,45 @@ var_dump($res2);
 **注意**：
 * 执行请求失败可能抛出异常（例如：超时，无法连接等）；
 * 下述简化请求方法，实际也相当于调用 `exec` 故可能抛出异常；
+
+
+#### `yield client::get(string $url, integer $timeout = 3000)`
+简单的 `GET` 请求方法（自动生成 `client_request` 对象并调用上述 exec 方法）；
+
+#### `yield client::post(string $url, mixed $post, integer $timeout = 3000)`
+简单的 `POST` 请求方法（自动生成 `client_request` 对象并调用上述 exec 方法）；
+* 当 `$post` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
+* 当 `$post` 为文本时直接进行发送；
+
+**示例**：
+``` PHP
+<?php
+$ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
+var_dump($ret);
+```
+
+#### `yield client::put(string $url, mixed $put, integer $timeout = 3000)`
+简单的 `PUT` 请求方法（自动生成 `client_request` 对象并调用上述 exec 方法）；
+* 当 `$put` 为数组时自动拼装为 `K1=V1&K2=V2` 形式进行发送；
+* 当 `$put` 为文本时直接进行发送；
+
+#### `yield client::delete(string $url, integer $timeout = 3000)`
+简单的 `DELETE` 请求方法（自动生成 `client_request` 对象并调用上述 exec 方法）；
+
+#### `yield flame\net\http\get(string $url, integer $timeout = 3000)`
+简单的 `GET` 请求方法（使用内置默认客户端）；
+
+#### `yield flame\net\http\post(string $url, mixed $post, integer $timeout = 3000)`
+简单的 `POST` 请求方法（使用内置默认客户端）；
+
+#### `yield flame\net\http\put(string $url, mixed $put, integer $timeout = 3000)`
+简单的 `PUT` 请求方法（使用内置默认客户端）；
+
+#### `yield flame\net\http\delete(string $url, integer $timeout = 3000)`
+简单的 `DELETE` 请求方法（使用内置默认客户端）；
+
+#### `yield flame\net\http\exec(client_request $request)`
+执行指定的请求（使用内置默认客户端）；
 
 ### `class flame\net\http\client_response`
 客户端请求的响应，可自动转换为文本 (`toString()`)，也可以按属性访问对应数据；

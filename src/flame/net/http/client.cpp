@@ -41,6 +41,9 @@ php::value client::__construct(php::parameters& params) {
 	}else{
 		curl_multi_setopt(multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
 	}
+	if(opts.at("debug").is_true()) {
+		debug_ = true;
+	}
 	return nullptr;
 }
 void client::default_options() {
@@ -215,8 +218,8 @@ client::~client() {
 		uv_close((uv_handle_t*)timer_, free_handle_cb);
 	}
 }
-client* default_client = nullptr;
-php::value get(php::parameters& params) {
+
+php::value client::get(php::parameters& params) {
 	php::object     obj  = php::object::create<client_request>();
 	client_request* req  = obj.native<client_request>();
 	req->prop("method")  = php::string("GET");
@@ -229,9 +232,9 @@ php::value get(php::parameters& params) {
 	}else{
 		req->prop("timeout") = 3000;
 	}
-	return default_client->exec2(obj);
+	return this->exec2(obj);
 }
-php::value post(php::parameters& params) {
+php::value client::post(php::parameters& params) {
 	php::object     obj = php::object::create<client_request>();
 	// client_request* req = obj.native<client_request>();
 	obj.prop("method") = php::string("POST");
@@ -244,9 +247,9 @@ php::value post(php::parameters& params) {
 	}else{
 		obj.prop("timeout") = 3000;
 	}
-	return default_client->exec2(obj);
+	return this->exec2(obj);
 }
-php::value put(php::parameters& params) {
+php::value client::put(php::parameters& params) {
 	php::object     obj = php::object::create<client_request>();
 	client_request* req = obj.native<client_request>();
 	obj.prop("method") = php::string("PUT");
@@ -259,9 +262,9 @@ php::value put(php::parameters& params) {
 	}else{
 		obj.prop("timeout") = 3000;
 	}
-	return default_client->exec2(obj);
+	return this->exec2(obj);
 }
-php::value remove(php::parameters& params) {
+php::value client::remove(php::parameters& params) {
 	php::object     obj = php::object::create<client_request>();
 	client_request* req = obj.native<client_request>();
 	obj.prop("method") = php::string("DELETE");
@@ -275,6 +278,19 @@ php::value remove(php::parameters& params) {
 		obj.prop("timeout") = 3000;
 	}
 	return default_client->exec2(obj);
+}
+client* default_client = nullptr;
+php::value get(php::parameters& params) {
+	return default_client->get(params);
+}
+php::value post(php::parameters& params) {
+	return default_client->post(params);
+}
+php::value put(php::parameters& params) {
+	return default_client->put(params);
+}
+php::value remove(php::parameters& params) {
+	return default_client->remove(params);
 }
 php::value exec(php::parameters& params) {
 	php::object& obj = params[0];

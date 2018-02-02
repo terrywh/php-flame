@@ -3,7 +3,7 @@ flame\init("http_client_test");
 
 flame\go(function() {
 	$conn = 0;
-	$cli = new flame\net\http\client(["conn_per_host" => 4]);
+	$cli = new flame\net\http\client(["conn_per_host" => 4, "conn_share"=>"none"]);
 	
 	for($i=0;$i<1000000;++$i) {
 		echo $i, " conn: ", $conn, "\n";

@@ -65,6 +65,10 @@ namespace http {
 		php::class_entry<client> class_client("flame\\net\\http\\client");
 		class_client.add<&client::__construct>("__construct");
 		class_client.add<&client::exec1>("exec");
+		class_client.add<&client::get>("get");
+		class_client.add<&client::post>("post");
+		class_client.add<&client::put>("put");
+		class_client.add<&client::remove>("delete");
 		ext.add(std::move(class_client));
 		// class handler
 		php::class_entry<http_server_handler> class_handler("flame\\net\\http\\handler");
