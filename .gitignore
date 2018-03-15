@@ -1,3 +1,4 @@
-src/**/*.o
-deps/*.gch
-flame.so
+/.vscode
+/src/**/*.o
+/deps/*.gch
+/flame.so
