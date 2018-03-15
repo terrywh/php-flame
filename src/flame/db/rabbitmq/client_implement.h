@@ -6,14 +6,17 @@ namespace rabbitmq {
 	class consumer;
 	class producer;
 	class client_implement {
+	public:
+		client_implement();
 	private:
 		thread_worker         worker_;
 		amqp_connection_state_t conn_;
-
+		uv_timer_t             timer_;
 		std::shared_ptr<php_url> parse_url(const php::string& url);
 		void connect(std::shared_ptr<php_url> url);
 		void subscribe(const php::string& q);
 		void destroy(bool close_channel = true);
+		void reset_timer();
 
 		static void produce_wk(uv_work_t* req);
 		static void flush_wk(uv_work_t* req);
@@ -23,7 +26,7 @@ namespace rabbitmq {
 		static void destroy_envelope_wk(uv_work_t* req);
 		static void destroy_wk(uv_work_t* req);
 		static void destroy_cb(uv_work_t* req, int status);
-
+		static void timer_wk(uv_timer_t* tm);
 		static void error_cb(uv_work_t* req, int status);
 
 		union {

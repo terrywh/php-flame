@@ -43,17 +43,6 @@ $collection = $cli->collection("col_abc");
 #### `date_time::to_datetime()`
 转换为 PHP 内置 [`DateTime`](http://php.net/manual/en/class.datetime.php) 类型对象；
 
-### `class flame\db\mongodb\bulk_result`
-
-#### `boolean bulk_result::success()`
-检查批量操作的总体结果，`true` 全部成功，`false` 失败或部分失败；
-
-#### `integer bulk_result::$nInserted`
-#### `integer bulk_result::$nMatched`
-#### `integer bulk_result::$nModified`
-#### `integer bulk_result::$nRemoved`
-#### `integer bulk_result::$nUpserted`
-
 ### `class flame\db\mongodb\collection`
 封装访问 mongodb 数据集合的基础 API；
 
@@ -84,44 +73,69 @@ $count = yield $collection->count(['x'=>'y']);
 获取当前集合中（符合条件的）文档数量；
 
 #### `yield collection::insert_one(array $doc)`
-向当前集合插入一条新的 `$doc` 文档；请参考 [Insert Documents](https://docs.mongodb.com/manual/tutorial/insert-documents/)；
+向当前集合插入一条新的 `$doc` 文档，并返回 `write_result` 结果对象；
 
 **注意**：
 * 顶级 `$doc` 必须是关联数组，但其成员可以存在下标数组；
 * 可以自行为 `$doc` 创建 `_id` 字段（参考 `object_id` 类型）；
 
-#### `yield collection::insert_many(array $docs[, boolean $ordered = false])`
-向当前集合插入 `$docs` 若干文档；当 `$ordered` 为真时，进行有序批量操作（第一个错误时停止），否则进行无需批量操作（遇到错误不会停止）；当返回批量结果对象 `bulk_result`；
-请参考 [Insert Documents](https://docs.mongodb.com/manual/tutorial/insert-documents/)；
+#### `yield collection::insert_many(array $docs[, mixed $opts])`
+向当前集合插入 `$docs` 若干文档，并返回 `write_result` 结果对象；目前可用选项如下：
+* `"ordered" => false` 尝试写入所有文档（遇到错误时继续）；
 
 **注意**：
 * 顶级 `$docs` 为下标数组，每个元素为关联数组标识一个文档；
 
 #### `yield collection::remove_one(array $query)`
-从当前集合中删除第一个符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；请参考 [Delete Documents](https://docs.mongodb.com/manual/tutorial/remove-documents/)；
+从当前集合中删除第一个符合 `$query` 查询的文档，并返回 `write_result` 结果对象；
 
 #### `yield collection::delete_many(array $query)`
-从当前集合中删除所有符合 `$query` 查询的文档；删除成功返回 `true`，否则抛出发生的错误；请参考 [Delete Documents](https://docs.mongodb.com/manual/tutorial/remove-documents/)；
+从当前集合中删除所有符合 `$query` 查询的文档，并返回 `write_result` 结果对象；
 
-#### `yield collection::update_one(array $query, array $data)`
-从当前集合中查询第一个符合 `$query` 的文档，并使用 `$data` 更新它；请参考 [Update Documents](https://docs.mongodb.com/manual/tutorial/update-documents/)
+#### `yield collection::update_one(array $query, array $data[, mixed $options])`
+从当前集合中查询第一个符合 `$query` 的文档，使用 `$data` 更新它，并返回 `write_result` 结果对象；目前可用选项如下：
+* `"upsert" => true` 没有匹配的文档时，创建新的文档；
 
-#### `yield collection::update_many(array $query, array $data)`
-从当前集合中查询所有符合 `$query` 的文档，并使用 `$data` 更新它们；请参考 [Update Documents](https://docs.mongodb.com/manual/tutorial/update-documents/)
+**注意**：
+* `$options = true;` 时相当于设置 `$options = ["upsert"=>true]`;
+
+#### `yield collection::update_many(array $query, array $data[, mixed $options])`
+从当前集合中查询所有符合 `$query` 的文档，使用 `$data` 更新它们，并返回 `write_result` 结果对象；目前可用选项如下：
+* `"upsert" => true` 没有匹配的文档时，创建新的文档；
+
+**注意**：
+* `$options = true;` 时相当于设置 `$options = ["upsert"=>true]`;
 
 #### `yield collection::find_many(array $query[, array $options])`
-查询当前集合，返回结果集指针 `cursor` 对象；请参考 [Query Document](https://docs.mongodb.com/manual/tutorial/query-documents/) ；
+查询当前集合，返回结果集指针 `cursor` 对象；
 
-常见 $options 选项如下：
+可用 $options 选项如下：
 * `sort`       - 排序，例如 `["a"=>1,"b"=>-1]` 即 按照 `a` 字段正序后，再按照 `b` 字段逆序；
 * `skip`       - 结果集起始跳过；
 * `count`      - 限制结果集数量；
 * `projection` - 仅返回特定字段，例如 `["a"=>1, "b"=>1, "c"=>0]`  即 包含 `a` | `b` 字段，去除 `c` 字段；
 
 #### `yield collection::find_one(array $query[, array $options])`
-查询当前集合，返回单条文档记录（关联数组）；请参考 [Query Document](https://docs.mongodb.com/manual/tutorial/query-documents/) ；
+查询当前集合，返回单条文档记录（关联数组）；选项 $options 请参考 `find_many` 相关说明；
 
-选项 $options 请参考 `find_many` 相关说明；
+
+### `class flame\db\mongodb\reply`
+上述 `collection` 更新型成员函数的返回值；不同的动作结果属性会有不同的值，存在的属性如下：
+
+* `integer reply::$inserted_count` 新增数量；（插入）
+* `integer reply::$deleted_count` 删除数量；（删除）
+* `integer reply::$modified_count` 修改数量；（更新）
+* `integer reply::$matched_count` 匹配数量；（更新）
+* `object  reply::$upserted_id` 新文档ID；（更新插入）
+
+**注意**：
+* 如果需要在插入时获得新增文档的 ID 请直接在客户端生成 `object_id` 并传递 `_id` 字段；
+
+#### `array reply::$write_errors` 或 `array reply::$write_concern_errors`
+当服务端发生错误时，将返回上述数组描述错误信息；
+
+#### `boolean reply::has_error()`
+若存在 `writeErrors` 或 `writeConcernErrors` 时返回 true 否则返回 false；
 
 ### `class flame\db\mongodb\cursor`
 封装结果集指针类型，用于访问查询结果数据；

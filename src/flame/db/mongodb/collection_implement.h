@@ -19,7 +19,8 @@ namespace mongodb {
 		static void insert_many_wk(uv_work_t* w);
 		static void remove_one_wk(uv_work_t* w);
 		static void remove_many_wk(uv_work_t* w);
-		static void update_wk(uv_work_t* w);
+		static void update_one_wk(uv_work_t* w);
+		static void update_many_wk(uv_work_t* w);
 		static void find_one_wk(uv_work_t* w);
 		static void find_one_af(uv_work_t* w);
 		static void find_many_wk(uv_work_t* w);
@@ -33,9 +34,21 @@ namespace mongodb {
 		php::value    rv; // 异步启动时作为引用，返回时作为结果
 		php::array  doc1;
 		php::array  doc2;
-		int         flags;
+		php::array  doc3;
 		uv_work_t   req;
 	} collection_request_t;
+	typedef enum collection_response_type_t {
+			RETURN_VALUE_TYPE_REPLY,
+			RETURN_VALUE_TYPE_ERROR,
+	} collection_response_type_t;
+	typedef struct collection_response_t {
+		collection_response_type_t type;
+		bson_error_t error;
+		bson_t       reply;
+		~collection_response_t() {
+			bson_destroy(&reply);
+		}
+	} collection_response_t;
 }
 }
 }

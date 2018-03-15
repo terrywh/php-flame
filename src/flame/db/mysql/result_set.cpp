@@ -55,6 +55,10 @@ namespace mysql {
 		if(ctx->co != nullptr) ctx->co->next(ctx->rv);
 		delete ctx;
 	}
+	void result_info::init(int64_t affected_rows, int64_t last_insert_id) {
+		prop("affected_rows")  = affected_rows;
+		prop("insert_id") = last_insert_id;
+	}
 }
 }
 }

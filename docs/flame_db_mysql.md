@@ -11,6 +11,9 @@ $cli = new flame\db\mysql\client();
 yield $cli->connect(mysql://username:password@127.0.0.1:3306/database_name");
 ```
 
+**注意**：
+* 若在异步流程共享同一个 MySQL 客户端对象，请不要使用前后依赖的异步动作（如 先进行 SQL 查询，然后获取 FOUND_ROWS 全匹配行数量）；（由于异步调度机制，两个步骤中键可能穿插其他查询，导致第二个步骤获取的结果错乱）
+
 #### `client::__construct([array $options])`
 可用选项如下：
 * `debug` - 调试开关，输出实际执行的 SQL 语句，默认 `false`；
@@ -23,14 +26,8 @@ yield $cli->connect(mysql://username:password@127.0.0.1:3306/database_name");
 mysql://{username}:{password}@{host}:{port}/{database}
 ```
 
-#### `client::$affected_rows`
-更新型 SQL 语句影响到的行数
-
-#### `client::$insert_id`
-单条插入语句执行后 插入行生成的 自增 ID（若存在）
-
 #### `yield client::query(string $sql) | yield client::query(string $format[, mixed $arg1, mixed $arg2, ...])`
-进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_info` 执行结果；
+进行“查询”操作并返回对应的 `result_set` 结果集对象 或 “更新”操作返回 `result_set` 执行结果；
 
 后一种函数原型，允许进行“格式化”参数替换即：将 $arg1 / $arg2 等参数替换到 $format 定义的格式化字符串中，并自动进行转义和包裹；例如：
 
@@ -106,7 +103,7 @@ $rs = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa); // DELETE FROM `test` 
 <?php
 	// 1. 文本形式直接指定
 	$fields = '*';
-	$fields = 'SQL_CALC_FOUND_ROWS `a`, ABS(`b`), RAND()';
+	$fields = '`a`, ABS(`b`), RAND()';
 	// 2. 使用数组
 	$fields = ['a','b']; // 注意：不能填入 SQL 函数
 ```

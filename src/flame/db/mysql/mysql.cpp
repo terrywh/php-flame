@@ -21,8 +21,6 @@ namespace mysql {
 		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ENUMS", 1));
 		// ---------------------------------------------------------------------
 		php::class_entry<client> class_client("flame\\db\\mysql\\client");
-		class_client.add(php::property_entry("affected_rows", 0));
-		class_client.add(php::property_entry("insert_id", 0));
 		class_client.add<&client::__construct>("__construct");
 		class_client.add<&client::__destruct>("__destruct");
 		class_client.add<&client::connect>("connect");
@@ -33,7 +31,6 @@ namespace mysql {
 		class_client.add<&client::update>("update");
 		class_client.add<&client::select>("select");
 		class_client.add<&client::one>("one");
-		class_client.add<&client::found_rows>("found_rows");
 		// class_client.add<&client::begin_transaction>("begin_transaction");
 		// class_client.add<&client::commit>("commit");
 		// class_client.add<&client::rollback>("rollback");
@@ -43,6 +40,10 @@ namespace mysql {
 		class_result_set.add<&result_set::fetch_row>("fetch_row");
 		class_result_set.add<&result_set::fetch_all>("fetch_all");
 		ext.add(std::move(class_result_set));
+		php::class_entry<result_info> class_result_info("flame\\db\\mysql\\result_info");
+		class_result_info.add(php::property_entry("affected_rows", 0));
+		class_result_info.add(php::property_entry("insert_id", 0));
+		ext.add(std::move(class_result_info));
 	}
 	static void condition_item(client* cli, php::string& key, php::value& val, php::buffer& buf) {
 		buf.add(' ');

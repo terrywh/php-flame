@@ -28,8 +28,7 @@ namespace mysql {
 		static void      query_wk(uv_work_t* req);
 		static void     insert_wk(uv_work_t* req);
 		static void        one_wk(uv_work_t* req);
-		// sql -> SELECT FOUND_ROWS()
-		static void found_rows_wk(uv_work_t* req);
+		static void        two_wk(uv_work_t* req);
 		static void    destroy_wk(uv_work_t* req);
 		static void    destroy_cb(uv_work_t* req, int status);
 
@@ -45,6 +44,7 @@ namespace mysql {
 		client_implement* self;
 		php::value          rv;
 		php::string        sql;
+		int64_t           code;
 		uv_work_t          req;
 	} client_request_t;
 	

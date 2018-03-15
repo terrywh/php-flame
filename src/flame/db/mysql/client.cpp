@@ -106,11 +106,8 @@ namespace mysql {
 	void client::connect_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		// 使用 rv 可能带回错误信息
-		if(ctx->rv.is_string()) {
-			php::string& msg = ctx->rv;
-			ctx->co->fail(msg, 0);
-		}else if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQL>() == &ctx->self->mysql_) {
-			ctx->co->fail(mysql_error(&ctx->self->mysql_), mysql_errno(&ctx->self->mysql_));
+		if(ctx->code != 0) {
+			ctx->co->fail(ctx->sql, ctx->code);
 		}else{
 			ctx->self->start();
 			ctx->co->next(ctx->rv);
@@ -139,23 +136,7 @@ namespace mysql {
 			coroutine::current, impl, nullptr, sql
 		};
 		ctx->req.data = ctx;
-		impl->worker_.queue_work(&ctx->req, client_implement::query_wk, query_cb);
-	}
-	void client::query_cb(uv_work_t* req, int status) {
-		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQL>() == &ctx->self->mysql_) {
-			ctx->co->fail(mysql_error(&ctx->self->mysql_), mysql_errno(&ctx->self->mysql_));
-		}else if(ctx->rv.is_pointer()) {
-			MYSQL_RES* rs = ctx->rv.ptr<MYSQL_RES>();
-			php::object obj = php::object::create<result_set>();
-			result_set* cpp = obj.native<result_set>();
-			ctx->rv = std::move(obj);
-			cpp->init(&ctx->self->worker_, ctx->self->client_, rs);
-			ctx->co->next(ctx->rv);
-		}else if(ctx->rv.is_bool()) {
-			ctx->co->next(ctx->rv);
-		}
-		delete ctx;
+		impl->worker_.queue_work(&ctx->req, client_implement::query_wk, default_cb);
 	}
 	php::value client::query(php::parameters& params) {
 		if(params.length() < 1 || !params[0].is_string()) {
@@ -264,8 +245,27 @@ namespace mysql {
 			coroutine::current, impl, nullptr, std::move(sql)
 		};
 		ctx->req.data = ctx;
-		impl->worker_.queue_work(&ctx->req, client_implement::one_wk, default_cb);
+		impl->worker_.queue_work(&ctx->req, client_implement::one_wk, one_cb);
 		return flame::async(this);
+	}
+	void client::one_cb(uv_work_t* req, int status) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		if(ctx->code != 0) { // 错误信息
+			ctx->rv = php::object::create_exception(ctx->sql, ctx->code);
+			ctx->co->next(ctx->rv);
+			delete ctx;
+		}else if(ctx->rv.is_pointer()) { // ResultSet 且近返回一行
+			MYSQL_RES* rs = ctx->rv.ptr<MYSQL_RES>();
+			php::array rv(4);
+			sql_fetch_row(rs, rv, MYSQL_FETCH_ASSOC);
+			ctx->co->next(std::move(rv));
+			// MYSQL_RES* 指针需要清理
+			ctx->self->worker_.queue_work(&ctx->req, client_implement::two_wk, two_cb);
+		}
+	}
+	void client::two_cb(uv_work_t* req, int status) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		delete ctx;
 	}
 	php::value client::select(php::parameters& params) {
 		if(params.length() < 1 || !params[0].is_string()) {
@@ -307,27 +307,24 @@ namespace mysql {
 		query_(std::move(sql));
 		return flame::async(this);
 	}
-	php::value client::found_rows(php::parameters& params) {
-		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl, nullptr
-		};
-		ctx->sql = php::string("SELECT FOUND_ROWS()", 19);
-		ctx->req.data = ctx;
-		impl->worker_.queue_work(&ctx->req, client_implement::found_rows_wk, default_cb);
-		return flame::async(this);
-	}
 	void client::default_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(ctx->co != nullptr) {
-			// 使用 rv 可能带回错误信息
-			if(ctx->rv.is_string()) {
-				php::string& msg = ctx->rv;
-				ctx->co->fail(msg, 0);
-			}else if(ctx->rv.is_pointer() && ctx->rv.ptr<MYSQL>() == &ctx->self->mysql_) {
-				ctx->co->fail(mysql_error(&ctx->self->mysql_), mysql_errno(&ctx->self->mysql_));
-			}else{
-				ctx->co->next(ctx->rv);
-			}
+		if(ctx->code != 0) { // 错误信息
+			ctx->rv = php::object::create_exception(ctx->sql, ctx->code);
+		}else if(ctx->rv.is_pointer()) { // ResultSet
+			MYSQL_RES* rs = ctx->rv.ptr<MYSQL_RES>();
+			php::object obj = php::object::create<result_set>();
+			result_set* cpp = obj.native<result_set>();
+			cpp->init(&ctx->self->worker_, ctx->self->client_, rs);
+			ctx->rv = std::move(obj);
+		}else{ // ResultInfo
+			php::object obj = php::object::create<result_info>();
+			result_info* cpp = obj.native<result_info>();
+			cpp->init(ctx->rv, ctx->sql);
+			ctx->rv = std::move(obj);
+		}
+		if(ctx->co) {
+			ctx->co->next(ctx->rv);
 		}
 		delete ctx;
 	}

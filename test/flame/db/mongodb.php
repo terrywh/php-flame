@@ -12,7 +12,7 @@ flame\go(function() {
 	yield $test1->remove_many(["a"=>"aaaaa"]);
 	yield $test1->insert_many([["a"=>"aaaaa"],["a"=>"aaaaa"],["a"=>"aaaaa"],["a"=>"aaaaa"],["a"=>"aaaaa"]]);
 	yield $test1->remove_one(["a"=>"aaaaa"]);
-	yield $test1->update_one(["a"=>"aaaaa"], ["\$set"=>["a"=>"bbbbb","c"=>"ddddd"]]);
+	yield $test1->update_one(["a"=>"aaaaa"], ["\$set"=>["a"=>"bbbbb","c"=>"ddddd"]], true);
 	yield $test1->update_many(["a"=>"aaaaa"], ["\$set"=>["a"=>"xxxxx","c"=>"yyyyy"]]);
 	// 更新型操作，由于存在同步延迟；为保证演示数据正常，执行完成后进行暂停
 	yield flame\time\sleep(1000);

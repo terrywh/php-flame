@@ -8,7 +8,6 @@ namespace mongodb {
 	class cursor_implement;
 	class cursor: public php::class_base {
 	public:
-		cursor();
 		void init(thread_worker* worker, collection* col, mongoc_cursor_t* cs);
 		php::value __construct(php::parameters& params) {
 			return nullptr;

@@ -73,18 +73,19 @@ namespace mysql {
 			ctx->self->client_->url_->path+1, ctx->self->client_->url_->port,
 			nullptr, 0) == nullptr) {
 			// 连接失败，错误在主线程获取生成
-			ctx->rv.ptr(&ctx->self->mysql_);
+			ctx->code = mysql_errno(&ctx->self->mysql_);
+			ctx->sql  = std::string(mysql_error(&ctx->self->mysql_));
 			return;
 		}
 		// 连接成功
 		ctx->self->connected_ = true;
 		mysql_autocommit(&ctx->self->mysql_, true);
-		ctx->rv = php::BOOL_YES;
 	}
 	void client_implement::query_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		if(!ctx->self->connected_) { // 若还未连接成功
-			ctx->rv = nullptr;
+			ctx->code = -1;
+			ctx->sql  = std::string("mysql not connected");
 			return;
 		}
 		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
@@ -92,7 +93,8 @@ namespace mysql {
 		}
 		if(mysql_query(&ctx->self->mysql_, ctx->sql.c_str()) != 0) {
 			// 查询失败
-			ctx->rv.ptr(&ctx->self->mysql_);
+			ctx->code = mysql_errno(&ctx->self->mysql_);
+			ctx->sql  = std::string(mysql_error(&ctx->self->mysql_));
 			return;
 		}
 		// 由于在协程运行期间可能存在多次 QUERY 故
@@ -101,14 +103,14 @@ namespace mysql {
 		MYSQL_RES* rs = mysql_store_result(&ctx->self->mysql_);
 		// INSERT / UPDATE / DELETE “更新”型 SQL 执行结果
 		if(rs == nullptr && mysql_field_count(&ctx->self->mysql_) == 0) {
-			ctx->self->client_->prop("affected_rows") = (int64_t) mysql_affected_rows(&ctx->self->mysql_);
-			ctx->self->client_->prop("insert_id")     = (int64_t) mysql_insert_id(&ctx->self->mysql_);
-			ctx->rv = php::BOOL_YES;
+			ctx->rv  = (int64_t) mysql_affected_rows(&ctx->self->mysql_);
+			ctx->sql = (int64_t) mysql_insert_id(&ctx->self->mysql_);
 			return;
 		}
 		// SELECT 查询型 SQL 执行失败
 		if(rs == nullptr) {
-			ctx->rv.ptr(&ctx->self->mysql_);
+			ctx->code = mysql_errno(&ctx->self->mysql_);
+			ctx->sql  = std::string(mysql_error(&ctx->self->mysql_));
 			return;
 		}
 		// 生成结果集对象须在主线程进行
@@ -117,7 +119,8 @@ namespace mysql {
 	void client_implement::one_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		if(!ctx->self->connected_) { // 若还未连接成功
-			ctx->rv = nullptr;
+			ctx->code = -1;
+			ctx->sql  = std::string("mysql not connected");
 			return;
 		}
 		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
@@ -125,50 +128,25 @@ namespace mysql {
 		}
 		if(mysql_query(&ctx->self->mysql_, ctx->sql.c_str()) != 0) {
 			// 查询失败
-			ctx->rv.ptr(&ctx->self->mysql_);
+			ctx->code = mysql_errno(&ctx->self->mysql_);
+			ctx->sql  = std::string(mysql_error(&ctx->self->mysql_));
 			return;
 		}
 		// 由于在协程运行期间可能存在多次 QUERY 故
 		// 这里不能使用 mysql_use_result 而目前用法，
 		// 直接使用 store_result 将所有结果集取回，会一定程度上加重内存占用
 		MYSQL_RES* rs = mysql_store_result(&ctx->self->mysql_);
-		// INSERT / UPDATE / DELETE “更新”型 SQL 执行结果
 		if(rs == nullptr) {
-			ctx->rv.ptr(&ctx->self->mysql_);
+			ctx->code = mysql_errno(&ctx->self->mysql_);
+			ctx->sql  = std::string(mysql_error(&ctx->self->mysql_));
 			return;
 		}
-		// 直接取出结果
-		sql_fetch_row(rs, ctx->rv, MYSQL_FETCH_ASSOC);
-		mysql_free_result(rs);
+		ctx->rv.ptr(rs);
 	}
-	void client_implement::found_rows_wk(uv_work_t* req) {
+	void client_implement::two_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(!ctx->self->connected_) { // 若还未连接成功
-			ctx->rv = nullptr;
-			return;
-		}
-		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
-			std::fprintf(stderr, "[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
-		}
-		if(mysql_query(&ctx->self->mysql_, ctx->sql.c_str()) != 0) {
-			// 查询失败
-			ctx->rv.ptr(&ctx->self->mysql_);
-			return;
-		}
-		// 由于在协程运行期间可能存在多次 QUERY 故
-		// 这里不能使用 mysql_use_result 而目前用法，
-		// 直接使用 store_result 将所有结果集取回，会一定程度上加重内存占用
-		MYSQL_RES* rs = mysql_store_result(&ctx->self->mysql_);
-		// INSERT / UPDATE / DELETE “更新”型 SQL 执行结果
-		if(rs == nullptr) {
-			ctx->rv.ptr(&ctx->self->mysql_);
-			return;
-		}
-		// 直接取出结果
-		php::array rv;
-		sql_fetch_row(rs, rv, MYSQL_FETCH_NUM);
+		MYSQL_RES* rs = ctx->rv.ptr<MYSQL_RES>();
 		mysql_free_result(rs);
-		ctx->rv = rv[0].to_long();
 	}
 	void client_implement::destroy_wk(uv_work_t* req) {
 		client_implement* self = reinterpret_cast<client_implement*>(req->data);

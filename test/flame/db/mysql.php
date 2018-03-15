@@ -20,7 +20,6 @@ flame\go(function() {
 	debug_zval_dump( $rs );
 	debug_zval_dump( $rw );
 	var_dump( yield $cli->one("test_0", ["id"=>['$gt'=>10000]], ["id"=>1], 1) );
-	var_dump( yield $cli->found_rows() );
 	yield $cli->delete("test_0", "true");
 });
 flame\run();

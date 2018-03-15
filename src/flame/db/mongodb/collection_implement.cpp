@@ -18,161 +18,133 @@ namespace mongodb {
 	}
 	void collection_implement::count_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
+		stack_bson_t filter(ctx->doc1);
 		
-		// 由于错误对象可能被传递到主线程使用，故需要在堆进行分配
-		bson_error_t* error = new bson_error_t;
-		int64_t c = mongoc_collection_count(
-			ctx->self->col_, MONGOC_QUERY_SLAVE_OK, &filter, 0, 0, nullptr, error);
-		bson_destroy(&filter);
+		collection_response_t* res = new collection_response_t {
+			RETURN_VALUE_TYPE_ERROR,
+		};
+		int64_t c = mongoc_collection_count(ctx->self->col_, MONGOC_QUERY_SLAVE_OK, filter, 0, 0, nullptr, &res->error);
+
 		if(c == -1) {
-			ctx->rv.ptr(error);
+			ctx->rv.ptr(res);	
 		}else{
-			delete error;
+			delete res;
 			ctx->rv = c;
 		}
 	}
+// #define EXECUTE_AND_RETURN_VALUE(stm) if(stm) { \
+// 	res->type = RETURN_VALUE_TYPE_REPLY;        \
+// } else {                                        \
+// 	res->type = RETURN_VALUE_TYPE_ERROR;        \
+// }                                               \
+// ctx->rv.ptr(res);
 	void collection_implement::insert_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
-		
-		bson_error_t* error = new bson_error_t;
-		bool r = mongoc_collection_insert(
-			ctx->self->col_, MONGOC_INSERT_NONE, &filter, nullptr, error);
-		bson_destroy(&filter);
-		if(r) {
-			ctx->rv = php::BOOL_YES;
-			delete error;
+		stack_bson_t document(ctx->doc1), option(ctx->doc2);
+
+		collection_response_t* res = new collection_response_t;
+		if(mongoc_collection_insert_one(ctx->self->col_, document, option, &res->reply, &res->error)) {
+			res->type = RETURN_VALUE_TYPE_REPLY;
 		}else{
-			ctx->rv.ptr(error);
+			res->type = RETURN_VALUE_TYPE_ERROR;
 		}
+		ctx->rv.ptr(res);
 	}
 	void collection_implement::insert_many_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		bson_t opts;
-		bson_init(&opts);
-		fill_with(&opts, ctx->doc2);
-		// 构建 批量操作
-		mongoc_bulk_operation_t* bulk = mongoc_collection_create_bulk_operation_with_opts(
-			ctx->self->col_, &opts);
-		bson_destroy(&opts);
-
-		bson_t* reply,* doc;
-		php::array& docs = ctx->doc1;
-		for(auto i=docs.begin(); i!= docs.end(); ++i) {
+		php::array& doc1 = ctx->doc1;
+		bson_t* docs[doc1.length()];
+		int docn = 0;
+		for(auto i=doc1.begin(); i!=doc1.end(); ++i) {
 			php::array& item = i->second;
 			if(!item.is_array() || !item.is_a_map()) {
 				continue;
 			}
-			doc = bson_new();
-			fill_with(doc, item);
-			mongoc_bulk_operation_insert(bulk, doc);
-			bson_destroy(doc);
+			docs[docn] = bson_new();
+			fill_with(docs[docn], item);
+			++docn;
 		}
-		// 执行批量操作
-		bson_error_t error;
-		reply = bson_new();
-		ctx->flags = mongoc_bulk_operation_execute(bulk, reply, &error);
-		ctx->rv.ptr(reply); // 需要清理
-		mongoc_bulk_operation_destroy(bulk);
+		stack_bson_t opts(ctx->doc2);
+		collection_response_t* res = new collection_response_t;
+		if(mongoc_collection_insert_many(ctx->self->col_, (const bson_t**)docs, docn, opts, &res->reply, &res->error)) {
+			res->type = RETURN_VALUE_TYPE_REPLY;
+		}else{
+			res->type = RETURN_VALUE_TYPE_ERROR;
+		}
+		ctx->rv.ptr(res);
+		for(auto i=0; i<docn; ++i) {
+			bson_destroy(docs[i]);
+		}
 	}
 	void collection_implement::remove_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
-		// 由于错误对象可能被传递到主线程使用，故需要在堆进行分配
-		bson_error_t* error = new bson_error_t;
-		bool r = mongoc_collection_remove(
-			ctx->self->col_, MONGOC_REMOVE_SINGLE_REMOVE, &filter, nullptr, error);
-		bson_destroy(&filter);
-		if(r) {
-			delete error;
-			ctx->rv = php::BOOL_YES;
+		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
+
+		collection_response_t* res = new collection_response_t;
+		if(mongoc_collection_delete_one(ctx->self->col_, filter, option, &res->reply, &res->error)) {
+			res->type = RETURN_VALUE_TYPE_REPLY;
 		}else{
-			ctx->rv.ptr(error);
+			res->type = RETURN_VALUE_TYPE_ERROR;
 		}
+		ctx->rv.ptr(res);
 	}
 	void collection_implement::remove_many_wk(uv_work_t* w) {
-		collection_request_t* ctx =
-			reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
-		
-		bson_error_t* error = new bson_error_t;
-		bool r = mongoc_collection_remove(
-			ctx->self->col_, MONGOC_REMOVE_NONE, &filter, nullptr, error);
-		bson_destroy(&filter);
-		if(r) {
-			delete error;
-			ctx->rv = php::BOOL_YES;
-		}else{
-			ctx->rv.ptr(error);
-		}
-	}
-	void collection_implement::update_wk(uv_work_t* w) {
-		collection_request_t* ctx =
-			reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter, update;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
-		bson_init(&update);
-		fill_with(&update, ctx->doc2);
-		
-		bson_error_t* error = new bson_error_t;
-		bool r = mongoc_collection_update(
-			ctx->self->col_, (mongoc_update_flags_t)ctx->flags, &filter, &update,
-			nullptr, error);
-		bson_destroy(&filter);
-		bson_destroy(&update);
-		if(r) {
-			delete error;
-			ctx->rv = php::BOOL_YES;
-		}else{
-			ctx->rv.ptr(error);
-		}
-	}
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
 
+		collection_response_t* res = new collection_response_t;
+		if(mongoc_collection_delete_many(ctx->self->col_, filter, option, &res->reply, &res->error)) {
+			res->type = RETURN_VALUE_TYPE_REPLY;
+		}else{
+			res->type = RETURN_VALUE_TYPE_ERROR;
+		}
+		ctx->rv.ptr(res);
+	}
+	void collection_implement::update_one_wk(uv_work_t* w) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		stack_bson_t filter(ctx->doc1), update(ctx->doc2), option(ctx->doc3);
+
+		collection_response_t* res = new collection_response_t;
+		if(mongoc_collection_update_one(ctx->self->col_, filter, update, option, &res->reply, &res->error)) {
+			res->type = RETURN_VALUE_TYPE_REPLY;
+		}else{
+			res->type = RETURN_VALUE_TYPE_ERROR;
+		}
+		ctx->rv.ptr(res);
+	}
+	void collection_implement::update_many_wk(uv_work_t* w) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		stack_bson_t filter(ctx->doc1), update(ctx->doc2), option(ctx->doc3);
+
+		collection_response_t* res = new collection_response_t;
+		if(mongoc_collection_update_many(ctx->self->col_, filter, update, option, &res->reply, &res->error)) {
+			res->type = RETURN_VALUE_TYPE_REPLY;
+		}else{
+			res->type = RETURN_VALUE_TYPE_ERROR;
+		}
+		ctx->rv.ptr(res);
+	}
 	void collection_implement::find_many_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter, option;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
-		bson_init(&option);
-		fill_with(&option, ctx->doc2);
-		
-		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(
-			ctx->self->col_, &filter, &option, nullptr);
-		bson_destroy(&filter);
-		bson_destroy(&option);
+		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
+
+		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(ctx->self->col_, filter, option, nullptr);
 		
 		// cursor 对象创建需要在主线程进行
 		ctx->doc1.ptr(cs);
 	}
 	void collection_implement::find_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		bson_t filter, option;
-		bson_init(&filter);
-		fill_with(&filter, ctx->doc1);
-		bson_init(&option);
-		fill_with(&option, ctx->doc2);
+		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
 		
-		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(
-			ctx->self->col_, &filter, &option, nullptr);
-		bson_destroy(&filter);
-		bson_destroy(&option);
+		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(ctx->self->col_, filter, option, nullptr);
 		
 		const bson_t *doc;
 		if(mongoc_cursor_next(cs, &doc)) {
 			ctx->doc1.ptr((void*)doc);
 			ctx->doc2.ptr(cs);
 		}
-		// 需要传递 find_one_af 进行销毁
+		// 由于实际文档 doc 引用指针 cs 中相关数据，故需要回到子线程进行销毁：find_one_af
 		// mongoc_cursor_destroy(cs);
 	}
 	void collection_implement::find_one_af(uv_work_t* w) {

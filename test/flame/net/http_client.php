@@ -2,15 +2,17 @@
 flame\init("http_client_test");
 
 flame\go(function() {
-	$req = new flame\net\http\client_request("http://ip.cn/");
+	$req = new flame\net\http\client_request("http://ip.cn/", null);
 	$req->header["User-Agent"] = "curl/7.52.1";
 	$res = yield flame\net\http\exec($req); // 用默认客户端执行请求
-	var_dump($res->status);
+	var_dump($res->body);
 	// 自行构建客户端
 	$cli = new flame\net\http\client([
 		"conn_share" => "plex",
 		"conn_per_host" => 4,
 	]);
+	$res = yield $cli->get("http://ip.cn/");
+	var_dump($res->status);
 	for($i = 0;$i<50; ++$i) {
 		// 创建请求
 		flame\go(function() use($cli, $i) {
@@ -29,9 +31,9 @@ flame\go(function() {
 			// 	"pass" => "123456",
 			// ]);
 			$res = yield $cli->exec($req);
-			echo $i,"\n";
+			echo $i," -> ", $res->status, "\n";
 		});
-		yield flame\time\sleep(1000);
+		yield flame\time\sleep(200);
 	}
 	var_dump($res->status);
 	// 简化函数

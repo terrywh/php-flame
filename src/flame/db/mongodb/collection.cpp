@@ -8,7 +8,7 @@
 #include "mongodb.h"
 #include "cursor_implement.h"
 #include "cursor.h"
-#include "bulk_result.h"
+#include "write_result.h"
 
 
 namespace flame {
@@ -29,18 +29,16 @@ namespace mongodb {
 	}
 	void collection::default_cb(uv_work_t* w, int status) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		if(ctx->co) ctx->co->next(ctx->rv);
-		delete ctx;
-	}
-	void collection::boolean_cb(uv_work_t* w, int status) {
-		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
 		if(ctx->rv.is_pointer()) {
-			bson_error_t* error = ctx->rv.ptr<bson_error_t>();
-			ctx->co->fail(error->message, error->code);
-			delete error;
-		}else{
-			ctx->co->next(ctx->rv);
+			collection_response_t* res = ctx->rv.ptr<collection_response_t>();
+			if(res->type == RETURN_VALUE_TYPE_ERROR) {
+				ctx->rv = php::object::create_exception(res->error.message, res->error.code);
+			}else if(res->type == RETURN_VALUE_TYPE_REPLY) {
+				ctx->rv = write_result::create_from(&res->reply);
+			}
+			delete res;
 		}
+		if(ctx->co) ctx->co->next(ctx->rv);
 		delete ctx;
 	}
 	php::value collection::count(php::parameters& params) {
@@ -48,10 +46,13 @@ namespace mongodb {
 			coroutine::current, impl, nullptr
 		};
 		ctx->req.data = ctx;
-		if(params.length() > 0 && params[0].is_array()) {
-			ctx->doc1 = params[0];
+		if(params.length() > 0) {
+			php::array& filter = params[0];
+			if(filter.is_array() && filter.is_a_map()) {
+				ctx->doc1 = params[0];
+			}
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::count_wk, boolean_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::count_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value collection::insert_one(php::parameters& params) {
@@ -60,9 +61,10 @@ namespace mongodb {
 			throw php::exception("illegal document, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, doc};
+			coroutine::current, impl, nullptr, doc
+		};
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::insert_one_wk, boolean_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::insert_one_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value collection::insert_many(php::parameters& params) {
@@ -74,44 +76,49 @@ namespace mongodb {
 			coroutine::current, impl, nullptr, docs, php::array(nullptr)
 		};
 		ctx->req.data = ctx;
-		if(params.length() > 1 && params[1].is_array()) {
-			ctx->doc2 = params[1];
+		if(params.length() > 1) {
+			php::array& opts = params[1];
+			if(opts.is_array() && opts.is_a_map()) {
+				ctx->doc2 = params[1];
+			}
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::insert_many_wk, insert_many_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::insert_many_wk, default_cb);
 		return flame::async(this);
-	}
-	void collection::insert_many_cb(uv_work_t* w, int status) {
-		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		if(ctx->rv.is_pointer()) {
-			bson_t* reply = ctx->rv.ptr<bson_t>();
-			ctx->rv = bulk_result::create_from(ctx->flags == 0, reply);
-			bson_destroy(reply);
-		}
-		ctx->co->next(ctx->rv);
-		delete ctx;
 	}
 	php::value collection::remove_one(php::parameters& params) {
 		php::array& filter = params[0];
-		if(!filter.is_array()) {
+		if(!filter.is_array() || !filter.is_a_map()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, filter
+			coroutine::current, impl, nullptr, filter, php::array(nullptr)
 		};
+		if(params.length() > 1) {
+			php::array& option = params[1];
+			if(option.is_array() && option.is_a_map()) {
+				ctx->doc2 = params[1];
+			}
+		}
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::remove_one_wk, boolean_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::remove_one_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value collection::remove_many(php::parameters& params) {
 		php::array& filter = params[0];
-		if(!filter.is_array()) {
+		if(!filter.is_array() || !filter.is_a_map()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, filter
+			coroutine::current, impl, nullptr, filter, php::array(nullptr),
 		};
+		if(params.length() > 1) {
+			php::array& option = params[1];
+			if(option.is_array() && option.is_a_map()) {
+				ctx->doc2 = params[1];
+			}
+		}
 		ctx->req.data = ctx;
-		impl->worker_->queue_work(&ctx->req, collection_implement::remove_many_wk, boolean_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::remove_many_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value collection::update_one(php::parameters& params) {
@@ -123,13 +130,18 @@ namespace mongodb {
 		}
 
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, filter, update, MONGOC_UPDATE_NONE
+			coroutine::current, impl, nullptr, filter, update, php::array(nullptr),
 		};
 		ctx->req.data = ctx;
-		if(params.length() > 2 && params[2].is_true()) {
-			ctx->flags |= MONGOC_UPDATE_UPSERT;
+		if(params.length() > 2) {
+			if(params[2].is_true()) {
+				ctx->doc3 = php::array(1);	
+				ctx->doc3.at("upsert",6) = php::BOOL_YES;
+			}else if(params[2].is_array()) {
+				ctx->doc3 = params[2];
+			}
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, boolean_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::update_one_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value collection::update_many(php::parameters& params) {
@@ -141,13 +153,18 @@ namespace mongodb {
 		}
 
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, filter, update, MONGOC_UPDATE_MULTI_UPDATE
+			coroutine::current, impl, nullptr, filter, update, php::array(nullptr),
 		};
 		ctx->req.data = ctx;
-		if(params.length() > 2 && params[2].is_true()) {
-			ctx->flags |= MONGOC_UPDATE_UPSERT;
+		if(params.length() > 2) {
+			if(params[2].is_true()) {
+				ctx->doc3 = php::array(1);	
+				ctx->doc3.at("upsert",6) = php::BOOL_YES;
+			}else if(params[2].is_array()) {
+				ctx->doc3 = params[2];
+			}
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::update_wk, boolean_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::update_many_wk, default_cb);
 		return flame::async(this);
 	}
 	php::value collection::find_one(php::parameters& params) {
@@ -155,15 +172,16 @@ namespace mongodb {
 		if(!filter.is_array() || !filter.is_a_map()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
-		if(params.length() > 1 && params[1].is_array()) {
-			option = params[1];
-		}else{
-			option = php::array(0);
-		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, filter, option
+			coroutine::current, impl, nullptr, filter, php::array(nullptr)
 		};
 		ctx->req.data = ctx;
+		if(params.length() > 1) {
+			php::array& option = params[1];
+			if(option.is_array() && option.is_a_map()) {
+				ctx->doc2 = option;
+			}
+		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::find_one_wk, find_one_cb);
 		return flame::async(this);
 	}
@@ -174,7 +192,7 @@ namespace mongodb {
 			php::array rv(0);
 			fill_with(rv, doc);
 			ctx->rv = std::move(rv);
-			// 销毁 doc2 中保存的 cursor
+			// doc 关联的指针需要销毁
 			ctx->self->worker_->queue_work(&ctx->req, collection_implement::find_one_af, default_cb);
 		}else{
 			ctx->co->next();
@@ -182,19 +200,20 @@ namespace mongodb {
 		}
 	}
 	php::value collection::find_many(php::parameters& params) {
-		if(params.length() < 1 && !params[0].is_array()) {
+		php::array& filter = params[0];
+		if(!filter.is_array() || !filter.is_a_map()) {
 			throw php::exception("illegal selector, associate array is required");
 		}
-		php::array& filter = params[0], option;
-		if(params.length() > 1 && params[1].is_array()) {
-			option = params[1];
-		}else{
-			option = php::array(0);
-		}
 		collection_request_t* ctx = new collection_request_t {
-			coroutine::current, impl, nullptr, filter, option
+			coroutine::current, impl, nullptr, filter, php::array(nullptr)
 		};
 		ctx->req.data = ctx;
+		if(params.length() > 1) {
+			php::array& option = params[1];
+			if(option.is_array() && option.is_a_map()) {
+				ctx->doc2 = option;
+			}
+		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::find_many_wk, find_many_cb);
 		return flame::async(this);
 	}

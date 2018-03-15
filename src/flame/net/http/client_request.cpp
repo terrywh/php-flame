@@ -19,7 +19,7 @@ php::value client_request::__construct(php::parameters& params) {
 	}else{
 		prop("timeout") = 3000;
 	}
-	if (params.length() >= 2) {
+	if (params.length() >= 2 && !params[1].is_null()) {
 		prop("body")   = params[1];
 		prop("method") = php::string("POST");
 	}else{
@@ -30,6 +30,9 @@ php::value client_request::__construct(php::parameters& params) {
 	}
 	prop("header") = php::array(0);
 	prop("cookie") = php::array(0);
+	// 默认的基础设置
+	curl_easy_setopt(easy_, CURLOPT_NOPROGRESS, 1L);
+	curl_easy_setopt(easy_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
 	return nullptr;
 }
 php::value client_request::ssl(php::parameters& params) {
@@ -127,7 +130,7 @@ void client_request::build_header() {
 		header_ = curl_slist_append(header_, "Content-Type: application/json");
 	}
 	if(!agent) {
-		header_ = curl_slist_append(header_, "User-Agent: Flame");
+		header_ = curl_slist_append(header_, "User-Agent: php-flame");
 	}
 	curl_easy_setopt(easy_, CURLOPT_HTTPHEADER, header_);
 }
@@ -176,6 +179,8 @@ void client_request::build_option() {
 		curl_easy_setopt(easy_, CURLOPT_POST, 1L);
 		if(size_ > 0) {
 			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, xbody.c_str());
+		}else{
+			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, "");
 		}
 	}else if(std::strncmp(method.c_str(), "PUT", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_UPLOAD, 1L);
@@ -187,9 +192,6 @@ void client_request::build_option() {
 		}
 	}
 	curl_easy_setopt(easy_, CURLOPT_TIMEOUT_MS, static_cast<long>(prop("timeout")));
-	curl_easy_setopt(easy_, CURLOPT_NOPROGRESS, 1L);
-	// 默认仅在 HTTPS 下尝试 HTTP2 协议
-	curl_easy_setopt(easy_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
 }
 php::value client_request::version(php::parameters& params) {
 	if(params.length() < 1 || !params[0].is_long()) {

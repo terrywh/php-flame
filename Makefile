@@ -92,7 +92,7 @@ install: ${EXTENSION}
 	cd ./deps/mongo-c-driver/src/libbson; rm -f README; ln -s README.rst README;
 	cd ./deps/mongo-c-driver; chmod +x ./autogen.sh; chmod +x ./src/libbson/autogen.sh;
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
-	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh;
+	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh; chmod +x ./configure;
 	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=`pwd`/bin --disable-automatic-init-and-cleanup --disable-shm-counters --enable-static=yes --enable-shared=no
 	make -C ./deps/mongo-c-driver
 	make -C ./deps/mongo-c-driver install
@@ -119,21 +119,21 @@ install: ${EXTENSION}
 # 依赖清理
 # ---------------------------------------------------------------------
 clean-deps:
-	rm -f ${HEADERX}
-	make -C ./deps/nghttp2 clean
-	rm -rf ./deps/nghttp2/bin
-	make -C ./deps/libphpext clean
-	make -C ./deps/libuv clean
-	make -C ./deps/curl clean
-	make -C ./deps/hiredis clean
-	make -C ./deps/multipart-parser-c clean
-	make -C ./deps/kv-parser clean
-	make -C ./deps/fastcgi-parser clean
-	make -C ./deps/mongo-c-driver clean
-	rm -rf ./deps/mongo-c-driver/bin
-	make -C ./deps/fmt clean
-	make -C ./deps/c-ares clean
-	rm -rf ./deps/c-ares/bin
-	make -C ./deps/librdkafka clean
-	make -C ./deps/http-parser clean
-	rm -rf ./deps/rabbitmq-c/build
+	rm -f ${HEADERX};
+	make -C ./deps/nghttp2 clean;
+	rm -rf ./deps/nghttp2/bin;
+	make -C ./deps/libphpext clean;
+	make -C ./deps/libuv clean;
+	make -C ./deps/curl clean;
+	make -C ./deps/hiredis clean;
+	make -C ./deps/multipart-parser-c clean;
+	make -C ./deps/kv-parser clean;
+	make -C ./deps/fastcgi-parser clean;
+	make -C ./deps/mongo-c-driver clean;
+	rm -rf ./deps/mongo-c-driver/bin;
+	make -C ./deps/fmt clean;
+	make -C ./deps/c-ares clean;
+	rm -rf ./deps/c-ares/bin;
+	make -C ./deps/librdkafka clean;
+	make -C ./deps/http-parser clean;
+	rm -rf ./deps/rabbitmq-c/build;

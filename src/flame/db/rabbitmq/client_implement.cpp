@@ -12,6 +12,13 @@
 namespace flame {
 namespace db {
 namespace rabbitmq {
+
+#define HEARTBEAT_INTERVAL 5000
+
+	client_implement::client_implement() {
+		uv_timer_init(&worker_.loop, &timer_);
+		timer_.data = this;
+	}
 	std::shared_ptr<php_url> client_implement::parse_url(const php::string& url) {
 		std::shared_ptr<php_url> url_ = php::parse_url(url.c_str(), url.length());
 		if(strncasecmp(url_->scheme, "amqp", 4) != 0) {
@@ -20,6 +27,10 @@ namespace rabbitmq {
 				AMQP_STATUS_BAD_URL);
 		}
 		return url_;
+	}
+	void client_implement::reset_timer() {
+		uv_timer_stop(&timer_);
+		uv_timer_start(&timer_, timer_wk, HEARTBEAT_INTERVAL, 0);
 	}
 	void client_implement::connect(std::shared_ptr<php_url> url_) {
 		conn_               = amqp_new_connection();
@@ -51,6 +62,7 @@ namespace rabbitmq {
 			destroy(false);
 			throw php::exception("rabbitmq server failed");
 		}
+		reset_timer();
 	}
 	void client_implement::destroy(bool close_channel) {
 		if(conn_ == nullptr) return;
@@ -67,6 +79,7 @@ namespace rabbitmq {
 			consumer_->opt_no_ack,
 			consumer_->opt_exclusive,
 			consumer_->opt_arguments);
+		reset_timer();
 	}
 	void client_implement::produce_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -198,6 +211,7 @@ namespace rabbitmq {
 				ctx->self->producer_->opt_mandatory,
 				ctx->self->producer_->opt_immediate, &abp_properties, abp_body);
 		}
+		ctx->self->reset_timer();
 	}
 	void client_implement::flush_wk(uv_work_t* req) {
 		// 通过 close_channel 模拟实现 flush 功能
@@ -216,6 +230,7 @@ namespace rabbitmq {
 			ctx->self->destroy();
 			ctx->rv = -1;
 		}
+		ctx->self->reset_timer();
 	}
 	void client_implement::consume_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -262,18 +277,21 @@ namespace rabbitmq {
 		}
 		
 		ctx->rv.ptr(envelope);
+		ctx->self->reset_timer();
 	}
 	void client_implement::confirm_envelope_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		php::object& obj = ctx->msg;
 		message* msg = obj.native<message>();
 		ctx->rv = amqp_basic_ack(ctx->self->conn_, 1, msg->envelope_->delivery_tag, 0);
+		ctx->self->reset_timer();
 	}
 	void client_implement::reject_envelope_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		php::object& obj = ctx->msg;
 		message* msg = obj.native<message>();
 		ctx->rv = amqp_basic_reject(ctx->self->conn_, 1, msg->envelope_->delivery_tag, ctx->key.is_true());
+		ctx->self->reset_timer();
 	}
 	void client_implement::destroy_envelope_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -285,6 +303,18 @@ namespace rabbitmq {
 	}
 	void client_implement::destroy_cb(uv_work_t* req, int status) {
 		delete reinterpret_cast<client_implement*>(req->data);
+	}
+	void client_implement::timer_wk(uv_timer_t* tm) {
+		client_implement* self = (client_implement*)tm->data;
+		amqp_frame_t beat;
+    	beat.channel = 0;
+		beat.frame_type = AMQP_FRAME_HEARTBEAT;
+		if (amqp_send_frame(self->conn_, &beat) != AMQP_STATUS_OK 
+			|| amqp_simple_wait_frame(self->conn_, &beat) != AMQP_STATUS_OK) {
+			self->destroy();
+		}else{
+			self->reset_timer();
+		}
 	}
 	void client_implement::error_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);

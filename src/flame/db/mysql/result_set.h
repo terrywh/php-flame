@@ -21,6 +21,10 @@ namespace mysql {
 		php::object ref_;
 		static void default_cb(uv_work_t* req, int status);
 	};
+	class result_info: public php::class_base {
+	public:
+		void init(int64_t affected_rows, int64_t insert_id);
+	};
 }
 }
 }
