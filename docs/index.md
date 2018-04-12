@@ -24,12 +24,11 @@
 **示例**：
 [https://github.com/terrywh/php-flame/tree/master/test/flame](https://github.com/terrywh/php-flame/tree/master/test/flame)
 
-**注意**：
-* 文档中带 `yield` 前缀的函数为“异步”、“协程式”函数，请在调用时也保持 `yield` 关键字；
-* 调用包含 `yield` 关键字的函数，也需要添加 `yield` 支持 “异步” 调用；
-* `Generator` 使用支持 `PHP` 的嵌套语法 `yield from` 方式进行嵌套，同时框架也支持直接使用 `yield` 关键字；
-* 由于 PHP 构造、析构函数的特殊性，不支持在其中使用异步函数；
-* 由于异步函数是由 `flame\run()` 触发框架内部执行的，故当异步函数发生异常时其异常堆栈信息不能完成的表达执行流程；
+**使用**：
+* 调用异步函数（Flame 提供）需要使用 yield 关键字；
+* 调用异步函数的函数也是异步函数；
+* 入口异步函数需要使用 flame\go() 包裹调用；
+* 构造、析构函数等特殊函数无法定义为异步函数（不能调用异步函数或使用 yield 关键字）；
 
 **示例**：
 ``` PHP
