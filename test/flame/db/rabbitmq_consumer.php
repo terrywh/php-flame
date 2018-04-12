@@ -2,7 +2,7 @@
 flame\init("rabbitmq_consumer");
 flame\go(function() {
 	$consumer = new flame\db\rabbitmq\consumer(
-		"amqp://wuhao:RpNSqYcT5EQNo7V3@10.20.6.71:5672/wuhao?heartbeat=15",
+		"amqp://wuhao:123456@11.22.33.44:5672/wuhao?heartbeat=15",
 		// ["no_ack"=>true], // 选项可选
 		"flame-test"); // 或 ["flame-test"] 允许消费多个队列
 	$count = 0;

@@ -1,7 +1,7 @@
 <?php
 flame\init("kafka_producer");
 flame\go(function() {
-	$producer = new flame\db\rabbitmq\producer("amqp://wuhao:RpNSqYcT5EQNo7V3@10.20.6.71:5672/wuhao?heartbeat=15");
+	$producer = new flame\db\rabbitmq\producer("amqp://wuhao:123456@11.22.33.44:5672/wuhao?heartbeat=15");
 	
 	$exit = false;
 	$tick = flame\time\after(600000, function() use(&$exit) {

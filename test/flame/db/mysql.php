@@ -3,7 +3,7 @@ flame\init("mysql_test");
 
 flame\go(function() {
 	$cli = new flame\db\mysql\client();
-	yield $cli->connect("mysql://bullet:titcNmgt9if8gshkfKrz@10.20.6.69:3336/bullet_room_user_alpha");
+	yield $cli->connect("mysql://wuhao:123456@11.22.33.44:3336/mysql_test");
 	var_dump( $cli->format("SELECT * FROM `test_0` WHERE `id`=?", true) );
 	for($i=0;$i<1000;++$i) {
 		yield $cli->insert("test_0", ["id"=>NULL, "text"=>rand()]);

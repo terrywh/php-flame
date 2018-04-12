@@ -2,7 +2,7 @@
 flame\init("kafka_producer");
 flame\go(function() {
 	$producer = new flame\db\kafka\producer([
-		"bootstrap.servers" => "10.20.6.59:9092",
+		"bootstrap.servers" => "11.22.33.44:9092",
 	], [], "wuhao-test");
 	
 	$exit = false;

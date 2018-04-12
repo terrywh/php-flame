@@ -2,8 +2,8 @@
 flame\init("redis_init");
 flame\go(function() {
 	$obj = new flame\db\redis();
-	yield $obj->connect("10.20.6.73",6380);
-	yield $obj->auth("1zqI9WmUdwXRl2suaSAy");
+	yield $obj->connect("11.22.33.44", 6379);
+	yield $obj->auth("123456");
 	echo "HMSET hash key1 11111 key2 22222: ";
 	$res = yield $obj->hmset("hash", "key1", "11111", "key2", "22222");
 	echo "HMGET hash key1 key2: ";
