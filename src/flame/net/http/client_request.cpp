@@ -147,7 +147,7 @@ void client_request::build_cookie() {
 		cookie.add(' ');
 	}
 	php::string cookie_str = std::move(cookie); // 这里会添加 '\0' 结束符
-	curl_easy_setopt(easy_, CURLOPT_READDATA, cookie_str.c_str());
+	curl_easy_setopt(easy_, CURLOPT_COOKIE, cookie_str.c_str());
 }
 void client_request::build_option() {
 	php::string& url = prop("url");
@@ -216,10 +216,6 @@ void client_request::close() {
 		curl_slist_free_all(header_);
 		header_ = nullptr;
 	}
-}
-
-void client_request::done_cb(CURLMsg* msg) {
-	close();
 }
 
 

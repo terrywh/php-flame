@@ -22,7 +22,6 @@ namespace http {
 		void build_cookie();
 		void build_option();
 		void close();
-		void done_cb(CURLMsg* msg);
 
 		static size_t body_read_cb(void *ptr, size_t size, size_t nmemb, void *userdata);
 
