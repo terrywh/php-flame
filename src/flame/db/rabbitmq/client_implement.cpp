@@ -13,9 +13,8 @@ namespace flame {
 namespace db {
 namespace rabbitmq {
 
-#define HEARTBEAT_INTERVAL 5000
-
-	client_implement::client_implement() {
+	client_implement::client_implement(bool is)
+	:is_producer(is) {
 		uv_timer_init(&worker_.loop, &timer_);
 		timer_.data = this;
 	}
@@ -30,7 +29,7 @@ namespace rabbitmq {
 	}
 	void client_implement::reset_timer() {
 		uv_timer_stop(&timer_);
-		uv_timer_start(&timer_, timer_wk, HEARTBEAT_INTERVAL, 0);
+		uv_timer_start(&timer_, timer_wk, 5000, 0);
 	}
 	void client_implement::connect(std::shared_ptr<php_url> url_) {
 		conn_               = amqp_new_connection();
@@ -42,7 +41,7 @@ namespace rabbitmq {
 			throw php::exception(amqp_error_string2(error), error);
 		}
 		amqp_rpc_reply_t reply = amqp_login(conn_, url_->path + 1,
-			AMQP_DEFAULT_MAX_CHANNELS, AMQP_DEFAULT_FRAME_SIZE, 60,
+			AMQP_DEFAULT_MAX_CHANNELS, AMQP_DEFAULT_FRAME_SIZE, 30,
 			AMQP_SASL_METHOD_PLAIN, url_->user, url_->pass);
 		if(reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
 			destroy(false);
@@ -69,6 +68,7 @@ namespace rabbitmq {
 		if(close_channel) amqp_channel_close(conn_, 1, AMQP_REPLY_SUCCESS);
 		amqp_connection_close(conn_, AMQP_REPLY_SUCCESS);
 		amqp_destroy_connection(conn_);
+		uv_close((uv_handle_t*)&timer_, nullptr);
 		conn_ = nullptr;
 	}
 	void client_implement::subscribe(const php::string& q) {
@@ -243,6 +243,7 @@ namespace rabbitmq {
 		amqp_maybe_release_buffers(ctx->self->conn_);
 
 		int64_t timeout = ctx->rv;
+RECEIVE_NEXT:
 		if(timeout > 0) {
 			struct timeval to { timeout / 1000, (timeout % 1000) * 1000};
 			reply = amqp_consume_message(ctx->self->conn_, envelope, &to, 0);
@@ -253,9 +254,11 @@ namespace rabbitmq {
 			// 不是很理解 driver 示例代码中对异常情况读取 frame 的处理流程是为了解决什么问题
 			// if(reply.library_error == AMQP_STATUS_UNEXPECTED_STATE) {
 			// 	amqp_frame_t frame;
-			// 	if(amqp_simple_wait_frame(ctx->self->conn_, &frame) == AMQP_STATUS_OK && AMQP_FRAME_METHOD == frame.frame_type) {
-			// 		std::printf("frame.method.id: 0x%08x\n", frame.payload.method.id);
-
+			// 	if(amqp_simple_wait_frame(ctx->self->conn_, &frame) == AMQP_STATUS_OK) {
+			// 		std::printf("heart beat: %d %d %d\n", frame.frame_type, frame.payload.method.id);
+			// 	}
+			// 	goto RECEIVE_NEXT;
+			// }
 			// 		// switch(frame.payload.method.id) {
 			// 		// 	case AMQP_BASIC_RETURN_METHOD:
 			// 		// 	break;
@@ -309,11 +312,21 @@ namespace rabbitmq {
 		amqp_frame_t beat;
     	beat.channel = 0;
 		beat.frame_type = AMQP_FRAME_HEARTBEAT;
-		if (amqp_send_frame(self->conn_, &beat) != AMQP_STATUS_OK 
-			|| amqp_simple_wait_frame(self->conn_, &beat) != AMQP_STATUS_OK) {
-			self->destroy();
-		}else{
+		if (amqp_send_frame(self->conn_, &beat) == AMQP_STATUS_OK) {
+			// if(self->is_producer && 
+			// 	(amqp_simple_wait_frame(self->conn_, &beat) != AMQP_STATUS_OK
+			// 	|| beat.frame_type != AMQP_FRAME_HEARTBEAT)) {
+			// 		self->destroy();
+			// }else{
+			// 	self->reset_timer();
+			// }
+			if(self->is_producer) {
+				struct timeval to {0, 0};
+				amqp_simple_wait_frame_noblock(self->conn_, &beat, &to);
+			}
 			self->reset_timer();
+		}else{
+			self->destroy();
 		}
 	}
 	void client_implement::error_cb(uv_work_t* req, int status) {

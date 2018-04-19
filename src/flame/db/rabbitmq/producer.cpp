@@ -14,7 +14,7 @@ namespace rabbitmq {
 	, opt_mandatory(0)
 	, opt_immediate(0) {}
 	php::value producer::__construct(php::parameters& params) {
-		impl = new client_implement();
+		impl = new client_implement(true);
 		impl->producer_ = this;
 		auto url_ = impl->parse_url(params[0]);
 		impl->connect(url_);

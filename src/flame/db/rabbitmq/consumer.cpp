@@ -18,7 +18,7 @@ namespace rabbitmq {
 
 	}
 	php::value consumer::__construct(php::parameters& params) {
-		impl = new client_implement();
+		impl = new client_implement(false);
 		impl->consumer_ = this;
 		auto url_ = impl->parse_url(params[0]);
 		impl->connect(url_);

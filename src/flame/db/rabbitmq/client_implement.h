@@ -7,7 +7,7 @@ namespace rabbitmq {
 	class producer;
 	class client_implement {
 	public:
-		client_implement();
+		client_implement(bool is_producer);
 	private:
 		thread_worker         worker_;
 		amqp_connection_state_t conn_;
@@ -33,6 +33,7 @@ namespace rabbitmq {
 			consumer* consumer_;
 			producer* producer_;
 		};
+		bool is_producer;
 		friend class consumer;
 		friend class producer;
 		friend class message;
