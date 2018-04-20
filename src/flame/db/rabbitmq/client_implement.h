@@ -14,7 +14,7 @@ namespace rabbitmq {
 		uv_timer_t             timer_;
 		std::shared_ptr<php_url> parse_url(const php::string& url);
 		void connect(std::shared_ptr<php_url> url);
-		void subscribe(const php::string& q);
+		void subscribe(const php::string& q, uint16_t prefetch);
 		void destroy(bool close_channel = true);
 		void reset_timer();
 

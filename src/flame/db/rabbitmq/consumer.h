@@ -21,6 +21,7 @@ namespace rabbitmq {
 		amqp_boolean_t opt_no_local;
 		amqp_boolean_t opt_no_ack;
 		amqp_boolean_t opt_exclusive;
+		uint16_t       opt_prefetch;
 		table          php_arguments;
 		amqp_table_t   opt_arguments;
 

@@ -14,6 +14,7 @@ namespace rabbitmq {
 	: opt_no_local(0)
 	, opt_no_ack(0) 
 	, opt_exclusive(0)
+	, opt_prefetch(1)
 	, opt_arguments(amqp_empty_table) {
 
 	}
@@ -28,6 +29,8 @@ namespace rabbitmq {
 				opt_no_local  = !options.at("no_local",8).is_empty();
 				opt_no_ack    = !options.at("no_ack",6).is_empty();
 				opt_exclusive = !options.at("exclusive",9).is_empty();
+				php::array_item_assoc prefetch = options.at("prefetch");
+				opt_prefetch  = prefetch.is_undefined() ? 1 : static_cast<int>(prefetch);
 				php::array& args = options.at("arguments",9);
 				if(args.is_array() && args.is_a_map()) {
 					php_arguments.assign(args);
@@ -35,20 +38,20 @@ namespace rabbitmq {
 				}
 			}else if(options.is_a_list()) {
 				for(auto i=options.begin(); i!=options.end(); ++i) {
-					impl->subscribe(i->second.to_string());
+					impl->subscribe(i->second.to_string(), opt_prefetch);
 				}
 			}
 		}else if(params.length() > 1 && params[1].is_string()) {
-			impl->subscribe(params[1]);
+			impl->subscribe(params[1], opt_prefetch);
 		}
 		if(params.length() > 2) {
 			if(params[2].is_array()) {
 				php::array& qs = params[2];
 				for(auto i=qs.begin(); i!=qs.end(); ++i) {
-					impl->subscribe(i->second.to_string());
+					impl->subscribe(i->second.to_string(), opt_prefetch);
 				}
 			}else if(params[2].is_string()) {
-				impl->subscribe(params[2]);
+				impl->subscribe(params[2], opt_prefetch);
 			}
 		}
 		return nullptr;

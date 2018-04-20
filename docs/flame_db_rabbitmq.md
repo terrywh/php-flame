@@ -87,6 +87,7 @@ amqp://{USER}:{PASS}@{HOST}:{PORT}/{VHOST}
 * `no_local` - boolean
 * `no_ack`   - boolean
 * `exclusive` - boolean
+* `prefetch` - integer
 * `arguments` - array - ASSOC
 
 **注意**：
