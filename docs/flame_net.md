@@ -1,6 +1,7 @@
 ### `namespace flame\net`
-1. 提供基本的TCP UDP 协议网络协程式客户端、服务器封装；
-2. 提供以下协议的支持内部包：
+1. 网络相关辅助函数；
+2. 提供基本的TCP UDP 协议网络协程式客户端、服务器封装；
+3. 提供以下协议的支持内部包：
 	* [HTTP](/php-flame/flame_net_http)
 	HTTP 协议支持（目前仅提供了客户端支持）；
 	* [FastCGI](/php-flame/flame_net_fastcgi)

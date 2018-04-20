@@ -83,7 +83,7 @@ namespace flame {
 	}
 	void process::worker_start() {
 		for(int i=0;i<process_count;++i) {// 创建子进程
-			worker* w = new worker(this);
+			worker* w = new worker(this, i+1);
 			w->start();
 			workers_.insert(w);
 		}

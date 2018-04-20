@@ -5,12 +5,13 @@
 	2. [时间协程函数](/php-flame/flame_time) - 调度休眠、定时器；
 	3. [操作系统函数](/php-flame/flame_os) - 异步进程、PHP 路径；
 	4. [日志输出](/php-flame/flame_log)；
-2. [协程式网络](/php-flame/flame_net)；
-	1. [HTTP 客户端](/php-flame/flame_net_http) - 支持 HTTP/2 协议；
-	2. [Unix Socket 客户端、服务端](/php-flame/flame_net)；
-	3. [TCP 客户端、服务端](/php-flame/flame_net)；
-	4. [UDP 客户端、服务端](/php-flame/flame_net)；
-	5. [FastCGI 处理器](/php-flame/flame_net_fastcgi) - 挂接 Nginx 等实现 HTTP 服务；
+2. [协程式网络](/php-flame/flame_net) ；
+	1. [辅助函数](/php-flame/flame_net)；
+	2. [HTTP 客户端](/php-flame/flame_net_http) - 支持 HTTP/2 协议；
+	3. [Unix Socket 客户端、服务端](/php-flame/flame_net)；
+	4. [TCP 客户端、服务端](/php-flame/flame_net)；
+	5. [UDP 客户端、服务端](/php-flame/flame_net)；
+	6. [FastCGI 处理器](/php-flame/flame_net_fastcgi) - 挂接 Nginx 等实现 HTTP 服务；
 3. [协程式数据库驱动](/php-flame/flame_db)：
 	1. [Redis 客户端](/php-flame/flame_db) - 简单封装；
 	2. [Mongodb 客户端](/php-flame/flame_db_mongodb) - 简单封装；
@@ -59,7 +60,7 @@ flame\run();
 最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
 
 #### `flame\init(string $app_name, array $options)`
-可选，设置并初始化框架；设置 `$app_name` 应用名称将被用于重置进程名称；
+可选，设置并初始化框架；设置 `$app_name` 应用名称将被用于重置进程名称；子进程启动时将获得额外的环境变量 `FLAME_CLUSTER_WORKER` 其值为进程编号（从 1 开始）；
 
 **示例**：
 ``` php

@@ -4,13 +4,14 @@ namespace flame {
 	class process;
 	class worker {
 	public:
-		worker(process* master);
+		worker(process* master, uint8_t index);
 		void start();
 		void kill(int sig);
 	private:
 		process*         master_;
 		uv_process_t     proc_;
 		uv_timer_t       timer_;
+		uint8_t          index_;
 		static void on_worker_exit(uv_process_t* proc, int64_t exit_status, int term_signal);
 		static void on_worker_restart(uv_timer_t* tm);
 	};

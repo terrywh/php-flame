@@ -6,8 +6,9 @@
 #include "log/log.h"
 
 namespace flame {
-	worker::worker(process* m)
-	: master_(m) {
+	worker::worker(process* m, uint8_t index)
+	: master_(m)
+	, index_(index) {
 		proc_.data = this;
 		uv_timer_init(flame::loop, &timer_);
 		timer_.data = this;
@@ -21,7 +22,7 @@ namespace flame {
 		size_t cache_size = 256;
 		char working_dir[256], executable[256];
 		opts.exit_cb = on_worker_exit;
-		uv_os_setenv("FLAME_CLUSTER_WORKER", "1");
+		uv_os_setenv("FLAME_CLUSTER_WORKER", std::to_string(index_).c_str());
 		cache_size = 256;
 		uv_cwd(working_dir, &cache_size);
 		opts.cwd = working_dir;
