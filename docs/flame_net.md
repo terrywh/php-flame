@@ -6,6 +6,75 @@
 	* [FastCGI](/php-flame/flame_net_fastcgi)
 	精简版本的应用服务支持，可以挂接 Nginx 等 Web 服务器使用；
 
+#### `array flame\net\interfaces()`
+获取当前机器网卡相关信息，返回数组示例如下：
+``` PHP
+array(2) {
+  ["lo"]=>
+  array(2) {
+    [0]=>
+    array(5) {
+      ["mac"]=>
+      string(17) "00:00:00:00:00:00"
+      ["internal"]=>
+      bool(true)
+      ["address"]=>
+      string(9) "127.0.0.1"
+      ["netmask"]=>
+      string(9) "255.0.0.0"
+      ["family"]=>
+      string(4) "IPv4"
+    }
+    [1]=>
+    array(6) {
+      ["mac"]=>
+      string(17) "00:00:00:00:00:00"
+      ["internal"]=>
+      bool(true)
+      ["address"]=>
+      string(3) "::1"
+      ["netmask"]=>
+      string(3) "::1"
+      ["family"]=>
+      string(4) "IPv6"
+      ["scopeid"]=>
+      int(0)
+    }
+  }
+  ["eth0"]=>
+  array(2) {
+    [0]=>
+    array(5) {
+      ["mac"]=>
+      string(17) "44:44:44:44:44:44"
+      ["internal"]=>
+      bool(false)
+      ["address"]=>
+      string(10) "11.22.33.44"
+      ["netmask"]=>
+      string(13) "255.255.255.0"
+      ["family"]=>
+      string(4) "IPv4"
+    }
+    [1]=>
+    array(6) {
+      ["mac"]=>
+      string(17) "44:44:44:44:44:44"
+      ["internal"]=>
+      bool(false)
+      ["address"]=>
+      string(25) "fefe:fefe:fefe:fefe:fefe:fefe"
+      ["netmask"]=>
+      string(21) "ffff:ffff:ffff:ffff::"
+      ["family"]=>
+      string(4) "IPv6"
+      ["scopeid"]=>
+      int(2)
+    }
+  }
+}
+```
+
 ### `class flame\net\udp_packet`
 封装通过 `udp_socket` 进行数据接收获得的数据包及对应来源；能够自动转换为文本数据；
 

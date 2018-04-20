@@ -9,5 +9,6 @@ namespace net {
 	uint16_t    sock_addrport(const struct sockaddr_storage* addr);
 	int         sock_addrfrom(struct sockaddr_storage* addr, const char* str, uint16_t port);
 	void        sock_reuseport(uv_handle_t* h);
+	php::value  interfaces(php::parameters& params);
 }
 }

@@ -15,6 +15,7 @@
 namespace flame {
 namespace net {
 	void init(php::extension_entry& ext) {
+		ext.add<interfaces>("flame\\net\\interfaces");
 		// class_udp_socket
 		// ------------------------------------
 		php::class_entry<udp_socket> class_udp_socket("flame\\net\\udp_socket");
@@ -116,6 +117,51 @@ namespace net {
 		}
 	#endif
 	}
-
+	
+	php::value interfaces(php::parameters& params) {
+		uv_interface_address_t* addrs;
+		int count;		
+		php::array ifaces(2);
+		char addr[32];
+		uv_interface_addresses(&addrs, &count);
+		for(int i=0;i<count;++i) {
+			php::array_item_assoc face = ifaces.at(addrs[i].name);
+			if(face.is_undefined()) {
+				face = php::array(4);
+			}
+			php::array  iaddr(2);
+			snprintf(addr, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
+				static_cast<unsigned char>(addrs[i].phys_addr[0]),
+				static_cast<unsigned char>(addrs[i].phys_addr[1]),
+				static_cast<unsigned char>(addrs[i].phys_addr[2]),
+				static_cast<unsigned char>(addrs[i].phys_addr[3]),
+				static_cast<unsigned char>(addrs[i].phys_addr[4]),
+				static_cast<unsigned char>(addrs[i].phys_addr[5]));
+			iaddr.at("mac",3) = php::string(addr);
+			iaddr.at("internal",8) = addrs[i].is_internal ? php::BOOL_YES : php::BOOL_NO;
+			if(addrs[i].address.address4.sin_family == AF_INET) {
+				uv_ip4_name(&addrs[i].address.address4, addr, sizeof(addr));
+				iaddr.at("address",7) = php::string(addr);
+				uv_ip4_name(&addrs[i].netmask.netmask4, addr, sizeof(addr));
+				iaddr.at("netmask",7) = php::string(addr);
+				iaddr.at("family",6) = php::string("IPv4",4);
+			}else if(addrs[i].address.address4.sin_family == AF_INET6) {
+				uv_ip6_name(&addrs[i].address.address6, addr, sizeof(addr));
+				iaddr.at("address",7) = php::string(addr);
+				uv_ip6_name(&addrs[i].netmask.netmask6, addr, sizeof(addr));
+				iaddr.at("netmask",7) = php::string(addr);
+				iaddr.at("family",6) = php::string("IPv6",4);
+				iaddr.at("scopeid",7) = addrs[i].address.address6.sin6_scope_id;
+			}else{
+				php::string unknown("<unknown>",9);
+				iaddr.at("address",7) = unknown;
+				iaddr.at("family",6) = unknown;
+			}
+			php::array& iface = face;
+			iface.at(iface.length()) = iaddr;
+		}
+		uv_free_interface_addresses(addrs, count);
+		return std::move(ifaces);
+	}
 }
 }

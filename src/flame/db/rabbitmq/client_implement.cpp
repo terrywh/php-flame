@@ -251,25 +251,7 @@ RECEIVE_NEXT:
 			reply = amqp_consume_message(ctx->self->conn_, envelope, nullptr, 0);
 		}
 		if(reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
-			// 不是很理解 driver 示例代码中对异常情况读取 frame 的处理流程是为了解决什么问题
-			// if(reply.library_error == AMQP_STATUS_UNEXPECTED_STATE) {
-			// 	amqp_frame_t frame;
-			// 	if(amqp_simple_wait_frame(ctx->self->conn_, &frame) == AMQP_STATUS_OK) {
-			// 		std::printf("heart beat: %d %d %d\n", frame.frame_type, frame.payload.method.id);
-			// 	}
-			// 	goto RECEIVE_NEXT;
-			// }
-			// 		// switch(frame.payload.method.id) {
-			// 		// 	case AMQP_BASIC_RETURN_METHOD:
-			// 		// 	break;
-			// 		// 	case AMQP_BASIC_ACK_METHOD:
-			// 		// 	break;
-			// 		// 	case AMQP_CHANNEL_CLOSE_METHOD:
-			// 		// 	case AMQP_CONNECTION_CLOSE_METHOD:
-			// 		// 	break;
-			// 		// }
-			// 	}
-			// }
+			// 不是很理解 driver 示例 consumer 中对异常情况读取 frame 的处理流程是为了解决什么问题
 			ctx->self->destroy();
 			ctx->rv = reply.library_error;
 			return;
@@ -313,13 +295,6 @@ RECEIVE_NEXT:
     	beat.channel = 0;
 		beat.frame_type = AMQP_FRAME_HEARTBEAT;
 		if (amqp_send_frame(self->conn_, &beat) == AMQP_STATUS_OK) {
-			// if(self->is_producer && 
-			// 	(amqp_simple_wait_frame(self->conn_, &beat) != AMQP_STATUS_OK
-			// 	|| beat.frame_type != AMQP_FRAME_HEARTBEAT)) {
-			// 		self->destroy();
-			// }else{
-			// 	self->reset_timer();
-			// }
 			if(self->is_producer) {
 				struct timeval to {0, 0};
 				amqp_simple_wait_frame_noblock(self->conn_, &beat, &to);
