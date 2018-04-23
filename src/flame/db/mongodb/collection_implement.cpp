@@ -102,7 +102,9 @@ namespace mongodb {
 	}
 	void collection_implement::update_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		stack_bson_t filter(ctx->doc1), update(ctx->doc2), option(ctx->doc3);
+		stack_bson_t filter(ctx->doc1),
+					update(ctx->doc2),
+					option(ctx->doc3);
 
 		collection_response_t* res = new collection_response_t;
 		if(mongoc_collection_update_one(ctx->self->col_, filter, update, option, &res->reply, &res->error)) {
