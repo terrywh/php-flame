@@ -71,7 +71,8 @@ namespace rabbitmq {
 		uv_close((uv_handle_t*)&timer_, nullptr);
 		conn_ = nullptr;
 	}
-	void client_implement::subscribe(const php::string& q) {
+	void client_implement::subscribe(const php::string& q, uint16_t prefetch) {
+		amqp_basic_qos(conn_, 1, 0, prefetch, false);
 		amqp_bytes_t queue {q.length(), (void*)q.c_str()};
 		
 		amqp_basic_consume(conn_, 1, queue, amqp_empty_bytes,
