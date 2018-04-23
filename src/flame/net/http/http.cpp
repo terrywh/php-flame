@@ -99,6 +99,7 @@ namespace http {
 		class_server_response.add(php::property_entry("status", 200));
 		class_server_response.add(php::property_entry("header", nullptr));
 		class_server_response.add(php::property_entry("data", nullptr));
+		class_server_response.add(php::property_entry("ended", zend_bool(false)));
 		class_server_response.add<&server_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		class_server_response.add<&server_response::set_cookie>("set_cookie");
 		class_server_response.add<&server_response::write_header>("write_header");

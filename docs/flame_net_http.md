@@ -237,7 +237,7 @@ HTTP/1 协议处理器，用于 tcp_server / unix_server 解析 `HTTP/1` 协议�
 #### `handler::handle(callable $cb)`
 设置默认处理回调（未匹配路径回调），或设置指定路径的请求处理回调（`$path` 参数可选）；回调函数接收两个参数：
 * `$request` - 类型 `class flame\net\http\server_request` 的实例，请参考 `flame\net\http` 命名空间中的相关说明；
-* `$response` - 类型 `class flame\net\fastcgi\server_response` 的实例，请参考下文；
+* `$response` - 类型 `class flame\net\http\server_response` 的实例，请参考下文；
 
 **示例**：
 ``` PHP

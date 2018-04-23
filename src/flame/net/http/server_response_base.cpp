@@ -89,6 +89,7 @@ php::value server_response_base::end(php::parameters& params) {
 		buffer_header();
 		is_head_sent = true;
 	}
+	prop("ended", 5) = php::BOOL_YES;
 	if(params.length() > 0) {
 		php::string data = params[0].to_string();
 		buffer_body(data.data(), data.length());
