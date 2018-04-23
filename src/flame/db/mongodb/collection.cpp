@@ -35,7 +35,6 @@ namespace mongodb {
 				ctx->rv = php::object::create_exception(res->error.message, res->error.code);
 			}else if(res->type == RETURN_VALUE_TYPE_REPLY) {
 				ctx->rv = write_result::create_from(&res->reply);
-				bson_destroy(&res->reply);
 			}
 			delete res;
 		}
