@@ -156,6 +156,14 @@ namespace mongodb {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
 		mongoc_collection_destroy(ctx->self->col_);
 	}
+	void collection_implement::aggregate_wk(uv_work_t* w) {
+		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
+		stack_bson_t pipe(ctx->doc1), opts(ctx->doc2);
+		mongoc_cursor_t* cs = mongoc_collection_aggregate(ctx->self->col_, MONGOC_QUERY_SLAVE_OK, pipe, opts, nullptr);
+		
+		// cursor 对象创建需要在主线程进行
+		ctx->doc1.ptr(cs);
+	}
 }
 }
 }

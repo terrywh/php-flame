@@ -214,10 +214,10 @@ namespace mongodb {
 				ctx->doc2 = option;
 			}
 		}
-		impl->worker_->queue_work(&ctx->req, collection_implement::find_many_wk, find_many_cb);
+		impl->worker_->queue_work(&ctx->req, collection_implement::find_many_wk, cursor_cb);
 		return flame::async(this);
 	}
-	void collection::find_many_cb(uv_work_t* w, int status) {
+	void collection::cursor_cb(uv_work_t* w, int status) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
 		if(ctx->doc1.is_pointer()) {
 			mongoc_cursor_t* cs = ctx->doc1.ptr<mongoc_cursor_t>();
@@ -228,6 +228,24 @@ namespace mongodb {
 		}
 		ctx->co->next(ctx->rv);
 		delete ctx;
+	}
+	php::value collection::aggregate(php::parameters& params) {
+		php::array& pipe = params[0];
+		if(!pipe.is_array() || !pipe.is_a_list()) {
+			throw php::exception("illegal pipeline, index array is required");
+		}
+		collection_request_t* ctx = new collection_request_t {
+			coroutine::current, impl, nullptr, pipe, php::array(nullptr)
+		};
+		ctx->req.data = ctx;
+		if(params.length() > 1) {
+			php::array& opts = params[1];
+			if(opts.is_array() && opts.is_a_map()) {
+				ctx->doc2 = opts;
+			}
+		}
+		impl->worker_->queue_work(&ctx->req, collection_implement::aggregate_wk, cursor_cb);
+		return flame::async(this);
 	}
 }
 }

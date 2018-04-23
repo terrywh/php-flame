@@ -25,6 +25,7 @@ namespace mongodb {
 		static void find_one_af(uv_work_t* w);
 		static void find_many_wk(uv_work_t* w);
 		static void close_wk(uv_work_t* w);
+		static void aggregate_wk(uv_work_t* w);
 		friend class collection;
 	};
 	

@@ -78,6 +78,7 @@ namespace mongodb {
 		class_collection.add<&collection::update_many>("update_many");
 		class_collection.add<&collection::find_one>("find_one");
 		class_collection.add<&collection::find_many>("find_many");
+		class_collection.add<&collection::aggregate>("aggregate");
 		ext.add(std::move(class_collection));
 
 		php::class_entry<cursor> class_cursor("flame\\db\\mongodb\\cursor");

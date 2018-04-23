@@ -118,6 +118,8 @@ $count = yield $collection->count(['x'=>'y']);
 #### `yield collection::find_one(array $query[, array $options])`
 查询当前集合，返回单条文档记录（关联数组）；选项 $options 请参考 `find_many` 相关说明；
 
+#### `yield collection::aggregate(array $pipeline[, array $options])`
+在当前集合上进行聚合操作并返回数据结果游标指针（同 find_many）；
 
 ### `class flame\db\mongodb\reply`
 上述 `collection` 更新型成员函数的返回值；不同的动作结果属性会有不同的值，存在的属性如下：
