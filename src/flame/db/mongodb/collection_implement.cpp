@@ -21,7 +21,7 @@ namespace mongodb {
 		stack_bson_t filter(ctx->doc1);
 		
 		collection_response_t* res = new collection_response_t {
-			RETURN_VALUE_TYPE_ERROR,
+			RETURN_VALUE_TYPE_ERROR, {}, BSON_INITIALIZER
 		};
 		int64_t c = mongoc_collection_count(ctx->self->col_, MONGOC_QUERY_SLAVE_OK, filter, 0, 0, nullptr, &res->error);
 
