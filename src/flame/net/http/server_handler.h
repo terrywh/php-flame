@@ -109,11 +109,13 @@ namespace http {
 			std::string    method = ctx->req.prop("method");
 			php::callable& handle = ctx->self->default_;
 			auto fi = ctx->self->handle_.find(method + path);
-			if(fi == ctx->self->handle_.end()) {
+			if(fi != ctx->self->handle_.end()) {
+				handle = fi->second;
+			}else if(ctx->self->default_.is_callable()) {
+				handle = ctx->self->default_;
+			}else{
 				on_session_after(ctx);
 				return;
-			}else{
-				handle = fi->second;
 			}
 			coroutine* co = coroutine::create(handle, ctx->req, ctx->res);
 			if(co == nullptr) {
