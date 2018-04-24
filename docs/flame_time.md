@@ -13,13 +13,13 @@
 当前协程休眠 `$ms` 毫秒；
 
 #### `$tick = flame\time\after(integer $ms, callable $cb)`
-在 `$ms` 毫秒后，执行 `$cb` 回调（仅执行一次）；返回 `class ticker` 的实例，请参考后续说明；
+在 `$ms` 毫秒后，在独立的协程中执行 `$cb` 回调（仅执行一次）；返回 `class ticker` 的实例，请参考后续说明；
 
 **注意**：
 * 当 `$cb` 指定的回调函数为 `Generator Function` 时将启用单独的协程运行，否则仅作为普通回调；
 
 #### `$tick = flame\time\tick(integer $ms, callable $cb)`
-**每隔** `$ms` 毫秒后，执行 `$cb` 回调；返回 `class ticker` 的实例，请参考后续说明；
+**每隔** `$ms` 毫秒后，在独立的协程中执行 `$cb` 回调；返回 `class ticker` 的实例，请参考后续说明；
 
 **示例**：
 ``` PHP

@@ -11,7 +11,7 @@ namespace time {
 		}
 		prop("interval", 8) = static_cast<int>(params[0]);
 		if(params.length() > 1) {
-			prop("repeat", 6) = params[1].is_true();
+			prop("repeat", 6) = params[1].is_true() ? php::BOOL_YES : php::BOOL_NO;
 		}else{
 			prop("repeat", 6) = php::BOOL_YES;
 		}
@@ -51,7 +51,6 @@ namespace time {
 		ref_ = nullptr;
 		return nullptr;
 	}
-
 	php::value after(php::parameters& params) {
 		php::object tick = php::object::create<ticker>();
 		tick.call("__construct", params[0], php::BOOL_NO);
