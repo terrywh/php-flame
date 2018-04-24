@@ -136,7 +136,7 @@ namespace http {
 			if(!ctype.is_string()) { // 除非 content-type 不存在，否则一定是字符串
 				self->body_ = std::move(raw);
 			}else if(ctype.length() >= 33 && strncmp(ctype.c_str(), "application/x-www-form-urlencoded", 33) == 0) {
-				self->body_ = php::array(1);
+				self->body_ = php::array(4);
 				// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
 				// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
 				kv_parser          kvparser;
@@ -152,7 +152,7 @@ namespace http {
 				kv_parser_execute(&kvparser, &settings, raw.c_str(), raw.length());
 			}else if(ctype.length() > 32 && strncmp(ctype.c_str(), "multipart/form-data", 19) == 0) {
 				// multipart/form-data; boundary=---------xxxxxx
-				self->body_ = php::array(1);
+				self->body_ = php::array(4);
 				// !!! 由于数据集已经完整，故仅需要对应的数据函数回调即可 !!!
 				// !!! 且待解析数据在解析过程始终存在于内存中，可直接引用 !!!
 				multipart_parser          mpparser;
@@ -168,7 +168,6 @@ namespace http {
 				mpparser.data = self;
 				// 解析
 				multipart_parser_execute(&mpparser, &settings, raw.c_str(), raw.length());
-				return 0;
 			}else if(ctype.length() >= 16 && strncmp(ctype.c_str(), "application/json", 16) == 0) {
 				self->body_ = php::json_decode(raw.c_str(), raw.length());
 			}else{ // unknown

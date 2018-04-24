@@ -153,7 +153,6 @@ namespace fastcgi {
 			mpparser.data = self;
 			// 解析
 			multipart_parser_execute(&mpparser, &settings, raw.c_str(), raw.length());
-			return 0;
 		}else if(ctype.length() >= 16 && strncmp(ctype.c_str(), "application/json", 16) == 0) {
 			self->body_ = php::json_decode(raw.c_str(), raw.length());
 		}else{ // unknown
