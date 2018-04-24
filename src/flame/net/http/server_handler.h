@@ -107,7 +107,7 @@ namespace http {
 			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
 			std::string      path = ctx->req.prop("uri");
 			std::string    method = ctx->req.prop("method");
-			php::callable& handle = ctx->self->default_;
+			php::callable  handle;
 			auto fi = ctx->self->handle_.find(method + path);
 			if(fi != ctx->self->handle_.end()) {
 				handle = fi->second;
