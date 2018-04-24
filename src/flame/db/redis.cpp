@@ -7,7 +7,7 @@ namespace flame {
 namespace db {
 
 	static php::value convert_redis_reply(redisReply* reply) {
-		php::value rv(nullptr);
+		php::value rv;
 
 		switch(reply->type) {
 		case REDIS_REPLY_INTEGER:
@@ -17,16 +17,16 @@ namespace db {
 		case REDIS_REPLY_STATUS:
 			rv = php::string(reply->str);
 		break;
-		
 		case REDIS_REPLY_ARRAY: {
-			php::array arr(reply->elements);
+			php::array arr(reply->elements + 4);
 			for(int i = 0; i < reply->elements; ++i) {
 				arr[i] = convert_redis_reply(reply->element[i]);
 			}
-			rv = arr;
+			rv = std::move(arr);
 		}
 		break;
 		case REDIS_REPLY_NIL:
+			rv = nullptr;
 		break;
 		case REDIS_REPLY_ERROR:
 		default:
@@ -129,6 +129,7 @@ namespace db {
 		if(connect_interval) {
 			uv_timer_stop(connect_interval);
 			uv_close((uv_handle_t*)connect_interval, free_handle_cb);
+			connect_interval = nullptr;
 		}
 	}
 	void redis::cb_default(redisAsyncContext *c, void *r, void *privdata) {

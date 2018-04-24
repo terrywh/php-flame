@@ -52,7 +52,9 @@ namespace log {
 		}else{
 			uv_fs_t req;
 			file_ = uv_fs_open(flame::loop, &req, path_.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0777, nullptr);
-			if(!file_) throw php::exception("failed to open output file");
+			if(file_ < 0) {
+				throw php::exception("cannot open logger output file");
+			}
 			pipe_ = (uv_pipe_t*)malloc(sizeof(uv_pipe_t));
 			uv_pipe_init(flame::loop, pipe_, 0);
 			pipe_->data = this;

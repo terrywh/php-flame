@@ -39,7 +39,18 @@ flame\go(function() {
 	// 简化函数
 	$res = yield flame\net\http\get("http://www.baidu.com/"); // 构造请求并用默认客户端执行
 	var_dump($res->status);
-	
+	$res = yield flame\net\http\post("http://www.baidu.com/", ["a"=>"b"]);
+	var_dump($res->status);
+	$res = yield flame\net\http\post("http://www.baidu.com/", json_encode(["a"=>"b"]));
+	var_dump($res->status);
+	$res = yield flame\net\http\post("http://www.baidu.com/", []);
+	var_dump($res->status);
+	$res = yield flame\net\http\post("http://www.baidu.com/", null);
+	var_dump($res->status);
+	$res = yield flame\net\http\post("http://www.baidu.com/", "");
+	var_dump($res->status);
+	$res = yield flame\net\http\post("http://www.baidu.com/", "aaaaa");
+	var_dump($res->status);
 	echo "done\n";
 });
 
