@@ -5,9 +5,10 @@ namespace flame {
 	// 包裹一个 generator function 以构建“协程”
 	class coroutine {
 	private:
-		coroutine(coroutine* parent, php::generator&& g);
+		coroutine(coroutine* parent);
 		int                    status_;
 		coroutine*             parent_;
+		php::value             cb_;
 		php::generator         gen_;
 		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
 		
@@ -26,32 +27,36 @@ namespace flame {
 		void run();
 		
 		php::object          ref_;
+		static void start_cb(uv_async_t* async);
+		static void close_cb(uv_handle_t* handle);
 	public:
 		static coroutine* current;
 
 		template <typename ...Args>
 		static coroutine* create(php::callable& cb, const Args&... argv) {
-			php::generator gen = cb(argv...);
-			if(gen.is_generator()) {
-				return new coroutine(nullptr, std::move(gen));
-			}else{
-				return nullptr;
-			}
+			coroutine* co = new coroutine(nullptr);
+			co->cb_ = php::value([&, co, cb] (php::parameters& params) mutable -> php::value {
+				co->gen_ = cb(argv...);
+			});
+			return co;
+			// ;
+			//  {
+			// 	return new coroutine(nullptr, std::move(gen));
+			// }else{
+			// 	return nullptr;
+			// }
 		}
 		template <typename ...Args>
 		static void start(php::callable& cb, const Args&... argv) {
-			php::generator gen = cb(argv...);
-			if(gen.is_generator()) {
-				(new coroutine(nullptr, std::move(gen)))->start();
-			}
+			create(cb, argv...)->start();
 		}
 		void start() {
-			coroutine* old = current;
-			current = this;
-			this->run();
-			current = old;
+			// 用于防止“协程”未结束时提前结束
+			uv_async_init(flame::loop, &async_, start_cb);
+			async_.data = this;
+			
+			uv_async_send(&async_);
 		}
-		static void close_cb(uv_handle_t* handle);
 		void close();
 		inline void async(async_cb_t cb, void* data = nullptr) {
 			stack_.push_back(stack_t {cb, data});

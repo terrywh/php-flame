@@ -33,24 +33,33 @@ namespace flame {
 		coroutine::current->ref_ = cpp; // 在协程中保存当前对象的引用（防止异步流程丢失当前对象）
 		return php::value((void*)cpp);
 	}
-	coroutine::coroutine(coroutine* parent, php::generator&& g)
+	coroutine::coroutine(coroutine* parent)
 	: status_(0)
 	, parent_(parent)
-	, gen_(std::move(g))
 	, after_(after_t {nullptr, nullptr}) {
-		// 用于防止“协程”未结束时提前结束
-		uv_async_init(flame::loop, &async_, nullptr);
-		async_.data = this;
+		
 	}
 	void coroutine::close_cb(uv_handle_t* handle) {
 		coroutine* self = reinterpret_cast<coroutine*>(handle->data);
-		if(self->parent_ != nullptr) {
-			self->parent_->next(self->gen_.get_return());
-		}
 		if(self->after_.func != nullptr) {
 			self->after_.func(self->after_.data);
 		}
+		// 存在异常
+		if(EG(exception)) {
+			if(self->parent_ != nullptr) {
+				php::object ex(EG(exception));
+				zend_clear_exception();
+				self->parent_->fail(ex);
+			}else{
+				uv_stop(flame::loop);
+				log::default_logger->panic();
+			}
+		// 不存在异常
+		}else if(self->parent_) { // 有上层协程
+			self->parent_->next(self->gen_.get_return());
+		}
 		delete self;
+		
 	}
 	void coroutine::close() {
 		if(status_ != 0) {
@@ -64,13 +73,7 @@ namespace flame {
 	void coroutine::run() {
 		while(status_ >= 0) {
 			if(EG(exception) || !gen_.valid()) {
-				// 可能由于 valid() 调用，引发新的异常（故需要二次捕获）
-				if(EG(exception)) {
-					uv_stop(flame::loop);
-					log::default_logger->panic();
-				}else{
-					close();
-				}
+				close();
 				break;
 			}
 			php::generator g = gen_.current();
@@ -83,7 +86,9 @@ namespace flame {
 				}
 				break;
 			}else if(g.is_generator()) { // 简化 yield from 调用方式可直接 yield
-				(new coroutine(this, std::move(g)))->start();
+				coroutine* co = new coroutine(this);
+				co->gen_ = g;
+				co->start();
 				break;
 			}else{
 				gen_.send(std::move(g));
@@ -139,5 +144,19 @@ namespace flame {
 		run();
 
 		current = old;
+	}
+	
+	void coroutine::start_cb(uv_async_t* async) {
+		coroutine* co = (coroutine*)async->data;
+		if(co->cb_.is_callable()) {
+			php::callable& cb = co->cb_;
+			cb();
+		}
+		if(co->gen_.is_generator()){
+			coroutine* old = current;
+			current = co;
+			co->run();
+			current = old;
+		}
 	}
 }
