@@ -59,7 +59,6 @@ namespace flame {
 			self->parent_->next(self->gen_.get_return());
 		}
 		delete self;
-		
 	}
 	void coroutine::close() {
 		if(status_ != 0) {
@@ -157,6 +156,8 @@ namespace flame {
 			current = co;
 			co->run();
 			current = old;
+		}else{
+			co->close();
 		}
 	}
 }
