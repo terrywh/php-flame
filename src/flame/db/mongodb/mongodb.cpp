@@ -199,7 +199,7 @@ namespace mongodb {
 		case BSON_TYPE_ARRAY: {
 			bson_iter_t j;
 			if(!bson_iter_recurse(i, &j)) return php::value();
-			php::array  a;
+			php::array  a(4);
 			int         x = 0;
 			while(bson_iter_next(&j)) {
 				a[x++] = from(&j);
@@ -209,7 +209,7 @@ namespace mongodb {
 		case BSON_TYPE_DOCUMENT: {
 			bson_iter_t j;
 			if(!bson_iter_recurse(i, &j)) return php::value();
-			php::array  a;
+			php::array  a(4);
 			while(bson_iter_next(&j)) {
 				a[bson_iter_key(&j)] = from(&j);
 			}

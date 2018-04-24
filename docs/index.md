@@ -7,7 +7,7 @@
 	4. [日志输出](/php-flame/flame_log)；
 2. [协程式网络](/php-flame/flame_net) ；
 	1. [辅助函数](/php-flame/flame_net)；
-	2. [HTTP 客户端](/php-flame/flame_net_http) - 支持 HTTP/2 协议；
+	2. [HTTP 客户端、处理器](/php-flame/flame_net_http)；
 	3. [Unix Socket 客户端、服务端](/php-flame/flame_net)；
 	4. [TCP 客户端、服务端](/php-flame/flame_net)；
 	5. [UDP 客户端、服务端](/php-flame/flame_net)；
@@ -94,6 +94,9 @@ flame\go(function() {
 
 });
 ```
+
+**注意**：
+* 协程函数不会立即执行（将会在 `run()` 中调度启动）；
 
 #### `flame\run()`
 框架入口，所有协程调度在此处开始执行，直到所有“协程”结束；
