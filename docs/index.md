@@ -36,8 +36,8 @@
 <?php
 flame\init("fastcgi-server");
 flame\go(function() {
-	// 创建 fastcgi 处理器
-	$handler = new flame\net\fastcgi\handler();
+	// 创建 http 处理器
+	$handler = new flame\net\http\handler();
 	// 设置默认处理程序
 	$handler->handle(function($req, $res) {
 		yield flame\time\sleep(2000);
@@ -53,7 +53,7 @@ flame\go(function() {
 flame\run();
 ```
 
-完整示例可参考 [/test/flame/net/fastcgi](https://github.com/terrywh/php-flame/tree/master/test/flame/net/fastcgi) 相关代码；
+完整示例可参考 [test/flame/net](https://github.com/terrywh/php-flame/tree/master/test/flame/net) 下相关代码；
 
 ## `namespace flame`
 
