@@ -24,7 +24,7 @@ namespace net {
 	php::value unix_socket::connect(php::parameters& params) {
 		if(!(flags & CAN_WRITE)) throw php::exception("connect failed: current unix_socket is read only");
 		
-		php::string path = params[0];
+		php::string path = params[0].to_string();
 		connect_request_t* ctx = new connect_request_t { coroutine::current };
 		ctx->req.data = ctx;
 		uv_pipe_connect(&ctx->req, sck, path.c_str(), connect_cb);
@@ -77,7 +77,7 @@ namespace net {
 	}
 	// property local_address ""
 	// property remote_address ""
-	void unix_socket::close(int err) {
+	void unix_socket::close() {
 		if(sck) {
 			rdr.close();
 			wtr.close();

@@ -12,7 +12,7 @@ namespace db {
 namespace mongodb {
 	void cursor::init(thread_worker* worker, collection* col, mongoc_cursor_t* css) {
 		impl = new cursor_implement(worker, this, css);
-		ref_ = col;
+		ref_ = php::object(col);
 	}
 	php::value cursor::__destruct(php::parameters& params) {
 		if(impl) {

@@ -22,15 +22,10 @@ namespace io {
 			// 由于 co->next() 本身可能引起下一次的读取动作，
 			// 故 self->co_ = nullptr 必须置于 co->next() 之前
 			// 否则可能导致将下次的 co_ 被清理
-			if(err == 0) co->next();
-			else co->fail(uv_strerror(err), err);
-		}
-		if(tm_) {
+			err == 0 ? co->next() : co->fail(uv_strerror(err), err);
 			uv_timer_stop(tm_);
 			uv_close((uv_handle_t*)tm_, flame::free_handle_cb);
 			tm_ = nullptr;
-		}
-		if(cli_) {
 			uv_read_stop(cli_);
 			cli_ = nullptr;
 		}

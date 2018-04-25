@@ -30,8 +30,22 @@ namespace flame {
 			return nullptr;
 		}
 		++ coroutine::current->status_;
-		coroutine::current->ref_ = cpp; // 在协程中保存当前对象的引用（防止异步流程丢失当前对象）
+		coroutine::current->ref_ = php::object(cpp); // 在协程中保存当前对象的引用（防止异步流程丢失当前对象）
 		return php::value((void*)cpp);
+	}
+	coroutine* coroutine::create(php::callable& cb) {
+		coroutine* co = new coroutine(nullptr);
+		co->cb_ = php::value([&, cb, co] (php::parameters& params) mutable -> php::value {
+			co->gen_ = php::callable::__invoke(cb, 0, nullptr, true);
+		});
+		return co;
+	}
+	coroutine* coroutine::create(php::callable& cb, std::vector<php::value> argv) {
+		coroutine* co = new coroutine(nullptr);
+		co->cb_ = php::value([&, cb, argv, co] (php::parameters& params) mutable -> php::value {
+			co->gen_ = php::callable::__invoke(cb, std::move(argv), true);
+		});
+		return co;
 	}
 	coroutine::coroutine(coroutine* parent)
 	: status_(0)

@@ -38,7 +38,7 @@ namespace mongodb {
 		ln = sprintf(sf, "%ld.%d", milliseconds_ / 1000, (milliseconds_ * 1000) % 1000000);
 		php::string format("U.u", 3);
 		php::string format_time(sf, ln);
-		return php::callable("date_create_from_format").invoke(format, format_time);
+		return php::callable("date_create_from_format").invoke({format, format_time});
 	}
 }
 }

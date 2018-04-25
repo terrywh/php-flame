@@ -16,7 +16,7 @@ namespace mysql {
 	}
 	void result_set::init(thread_worker* worker, client* cli, MYSQL_RES* rs) {
 		impl = new result_implement(worker, rs);
-		ref_ = cli;
+		ref_ = php::object(cli);
 	}
 	result_set::~result_set() {
 		if(impl) {

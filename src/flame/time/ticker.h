@@ -18,6 +18,7 @@ namespace time {
 		php::value   ref_;
 
 		static void tick_cb(uv_timer_t* handle);
+		static void after_cb(void* data);
 	};
 	// 简化使用的函数
 	php::value after(php::parameters& params);

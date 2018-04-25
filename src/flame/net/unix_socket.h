@@ -15,7 +15,7 @@ namespace net {
 		php::value close(php::parameters& params);
 		// property local_address ""
 		// property remote_address ""
-		void close(int err = 0);
+		void close();
 		void after_init();
 		uv_pipe_t*        sck;
 		io::stream_reader rdr;

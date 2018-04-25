@@ -27,10 +27,13 @@ namespace time {
 	}
 	void ticker::tick_cb(uv_timer_t* handle) {
 		ticker* self = static_cast<ticker*>(handle->data);
-		coroutine::start(self->cb_, self);
+		coroutine::create(self->cb_, {php::value(self)})->after(after_cb, self)->start();
+	}
+	void ticker::after_cb(void* data) {
+		ticker* self = static_cast<ticker*>(data);
 		if(!self->prop("repeat").is_true()) {
-			// 非重复定时器立即清理引用
-			self->ref_ = nullptr;
+			std::printf("clear ref\n");
+			self->ref_ = nullptr; // 非重复定时器立即清理引用
 		}
 	}
 	php::value ticker::start(php::parameters& params) {
@@ -43,7 +46,7 @@ namespace time {
 			uv_timer_start(tm_, tick_cb, iv, 0);
 		}
 		// 异步引用
-		ref_ = this;
+		ref_ = php::object(this);
 		return nullptr;
 	}
 	php::value ticker::stop(php::parameters& params) {

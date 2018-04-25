@@ -39,40 +39,40 @@ namespace http {
 		}
 		php::value put(php::parameters& params) {
 			set_handler("PUT", params[0], params[1]);
-			return this;
+			return php::object(this);
 		}
 		php::value remove(php::parameters& params) {
 			set_handler("DELETE", params[0], params[1]);
-			return this;
+			return php::object(this);
 		}
 		php::value post(php::parameters& params) {
 			set_handler("POST", params[0], params[1]);
-			return this;
+			return php::object(this);
 		}
 		php::value get(php::parameters& params) {
 			set_handler("GET", params[0], params[1]);
-			return this;
+			return php::object(this);
 		}
 		php::value handle(php::parameters& params) {
 			if(!params[0].is_callable()) {
 				throw php::exception("only callable can be used as handler");
 			}
 			default_ = params[0];
-			return this;
+			return php::object(this);
 		}
 		php::value before(php::parameters& params) {
 			if(!params[0].is_callable()) {
 				throw php::exception("only callable can be used as handler");
 			}
 			before_ = params[0];
-			return this;
+			return php::object(this);
 		}
 		php::value after(php::parameters& params) {
 			if(!params[0].is_callable()) {
 				throw php::exception("only callable can be used as handler");
 			}
 			after_ = params[0];
-			return this;
+			return php::object(this);
 		}
 	private:
 		void set_handler(const std::string& method, const std::string& path, const php::callable& cb) {
@@ -95,7 +95,7 @@ namespace http {
 		static void on_session_before(void* data) {
 			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
 			if(ctx->self->before_.is_callable()) {
-				coroutine* co = coroutine::create(ctx->self->before_, ctx->req, ctx->res);
+				coroutine* co = coroutine::create(ctx->self->before_, {ctx->req, ctx->res});
 				if(co != nullptr) {
 					co->after(on_session_handle, ctx)->start();
 					return;
@@ -117,17 +117,14 @@ namespace http {
 				on_session_after(ctx);
 				return;
 			}
-			coroutine* co = coroutine::create(handle, ctx->req, ctx->res);
-			if(co == nullptr) {
-				on_session_after(ctx);
-			}else{
-				co->after(on_session_after, ctx)->start();
-			}
+			coroutine::create(handle, {ctx->req, ctx->res})
+				->after(on_session_after, ctx)
+				->start();
 		}
 		static void on_session_after(void* data) {
 			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
 			if(ctx->self->after_.is_callable()) {
-				coroutine::start(ctx->self->after_, ctx->req, ctx->res);
+				coroutine::create(ctx->self->after_, {ctx->req, ctx->res})->start();
 			}
 			delete ctx;
 		}

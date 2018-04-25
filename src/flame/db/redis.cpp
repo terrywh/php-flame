@@ -168,7 +168,7 @@ namespace db {
 	}
 	php::value redis::__call(php::parameters& params) {
 		php::string& name = params[0];
-		php::strtoupper_inplace(name.data(), name.length());
+		php::strtoupper_inplace(name.data(), name.length()); // TODO Q1
 		php::array&  data = params[1];
 		std::vector<const char*> argv;
 		std::vector<size_t>      argl;
@@ -261,7 +261,7 @@ namespace db {
 			if(std::strncmp(type.c_str(), "subscribe", 9) == 0) {
 				//
 			}else if(std::strncmp(type.c_str(), "message", 7) == 0) {
-				coroutine::start(ctx->cb, rv[1], rv[2]);
+				coroutine::create(ctx->cb, {rv[1], rv[2]})->start();
 			}else if(self->current_ != nullptr && std::strncmp(type.c_str(), "unsubscribe", 11) == 0) {
 				self->current_ = nullptr;
 				ctx->co->next();

@@ -38,8 +38,12 @@ public:
 	}
 	void close(int err = 0) {
 		if(co_) {
-			if(err) co_->fail(uv_strerror(err), err);
-			else co_->next();
+			coroutine* co = co_;
+			co_ = nullptr;
+			// 由于 co->next() 本身可能引起下一次的读取动作，
+			// 故 self->co_ = nullptr 必须置于 co->next() 之前
+			// 否则可能导致将下次的 co_ 被清理
+			err == 0 ? co->next() : co->fail(uv_strerror(err), err);
 		}
 	}
 private:
@@ -55,20 +59,20 @@ private:
 			self->close(err);
 		}else if(self->cb_type == 2) { // 允许使用内部对象接管客户端对象
 			php::value svr(handle);  // 将服务器对象指针放入，用于 accept 连接
-			err = self->cb_(svr, handle->type);
+			err = self->cb_.invoke({svr, handle->type});
 			if(err < 0) {
 				self->close(err);
 			}
 		}else/* if(self->cb_type == 1) */{
-			php::object  cli = php::object::create<SOCKET_TYPE>();
-			SOCKET_TYPE* cpp = cli.native<SOCKET_TYPE>();
+			php::object  obj = php::object::create<SOCKET_TYPE>();
+			SOCKET_TYPE* cpp = obj.native<SOCKET_TYPE>();
 			err = uv_accept(handle, (uv_stream_t*)cpp->sck);
 			if(err < 0) {
 				self->close(err);
 				return;
 			}
 			cpp->after_init();
-			coroutine::start(self->cb_, cli);
+			coroutine::create(self->cb_, {obj})->start();
 		}
 	}
 };

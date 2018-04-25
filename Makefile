@@ -14,7 +14,7 @@ CXX?=/usr/local/gcc/bin/g++
 CXXFLAGS?= -O2
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc/lib64/
 
-CXXFLAGS_CORE= -std=c++11 -fPIC
+CXXFLAGS_CORE= -std=c++14 -fPIC
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0 -I./deps/rabbitmq-c/librabbitmq -I./deps/mysql-connector-c/include
 # 依赖库

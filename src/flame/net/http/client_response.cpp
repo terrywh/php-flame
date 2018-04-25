@@ -75,7 +75,7 @@ namespace http {
 		client_response* self = reinterpret_cast<client_response*>(parser->data);
 		if(self->key_size > 0) {
 			if(self->cookie_item.is_null()) {
-				self->cookie_item = php::array(0);
+				self->cookie_item = php::array(4);
 				self->cookie_.at(self->key_data, self->key_size) = self->cookie_item;
 			}else{
 				self->cookie_item.at(self->key_data, self->key_size) = php::string(data, size);

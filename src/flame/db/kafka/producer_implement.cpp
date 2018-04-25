@@ -60,7 +60,7 @@ namespace kafka {
 
 		producer_implement* self = reinterpret_cast<producer_implement*>(msg_opaque);
 		php::string key((const char*)keydata, keylen);
-		return self->partitioner_fn.invoke(key, partition_cnt);
+		return self->partitioner_fn.invoke({key, partition_cnt});
 	}
 	void producer_implement::partitioner_cb(rd_kafka_topic_conf_t* tconf_, php::value& cb) {
 		if(cb.is_string()) {

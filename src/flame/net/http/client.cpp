@@ -76,7 +76,7 @@ void client::curl_multi_info_check(client* self) {
 			} else {
 				ctx->res->done_cb(status);
 				// ctx->req->done_cb(message);  // 因为 req 的 done_cb 将关闭 easy_handle（导致所有 msg 数据无法访问）
-				ctx->co->next(std::move(ctx->res));
+				ctx->co->next(php::object(ctx->res));
 			}
 			curl_multi_remove_handle(ctx->self->multi_, message->easy_handle);
 			ctx->req->close();

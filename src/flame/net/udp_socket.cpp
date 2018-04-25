@@ -134,15 +134,17 @@ namespace net {
 	void udp_socket::close(int err) {
 		if(co_) {
 			coroutine* co = co_;
-			if(err == 0) co->next();
-			else co->fail(uv_strerror(err), err);
-		}
-		if(sck) {
+			co_ = nullptr;
+			// 由于 co->next() 本身可能引起下一次的读取动作，
+			// 故 self->co_ = nullptr 必须置于 co->next() 之前
+			// 否则可能导致将下次的 co_ 被清理
+			err == 0 ? co->next() : co->fail(uv_strerror(err), err);
 			if(init_) {
 				uv_udp_recv_stop(sck);
 				uv_close((uv_handle_t*)sck, free_handle_cb);
+			}else{
+				free(sck); // 未初始化，直接释放即可
 			}
-			else free(sck); // 未初始化，直接释放即可
 			sck = nullptr;
 		}
 	}

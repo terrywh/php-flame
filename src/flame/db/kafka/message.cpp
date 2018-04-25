@@ -14,7 +14,7 @@ namespace kafka {
 		prop("val", 3) = php::string((const char*)m->payload, m->len);
 		// prop("time", 4) = rd_kafka_message_timestamp(m, NULL);
 		ts_       = rd_kafka_message_timestamp(m, NULL);
-		ref_      = c;
+		ref_      = php::object(c);
 		consumer_ = c;
 	}
 	php::value message::to_string(php::parameters& params) {

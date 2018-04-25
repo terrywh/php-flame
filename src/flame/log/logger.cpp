@@ -89,15 +89,23 @@ namespace log {
 	}
 	void logger::panic() {
 		php::object ex1(EG(exception), true);
-		EG(exception) = nullptr;
+		zend_clear_exception();
 		
+		panic_to_cerr(ex1);
 		if(file_ >= 0) {
 			// 若设置了文件输出，额外向文件进行一次输出
 			panic_to_file(ex1);
 		}
-		// 保持默认的输出
-		zend_exception_error(ex1, E_ERROR);
 		::exit(-1);
+	}
+	void logger::panic_to_cerr(php::object& ex) {
+		php::string data = ex.prop("message", 7);
+		php::string file = ex.prop("file", 4);
+		zend_long   line = ex.prop("line", 4);
+		// 保持默认的输出
+		std::fprintf(stderr, "[%s] (PANIC) %.*s in %.*s:%d\n",
+			time::datetime(time::now()), data.length(), data.c_str(),
+			file.length(), file.c_str(), line);
 	}
 	void logger::panic_to_file(php::object& ex) {
 		// 以下相关代码参考 zend_exception.c 中 zend_exception_error 函数相关代码

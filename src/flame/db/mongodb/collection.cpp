@@ -16,7 +16,7 @@ namespace db {
 namespace mongodb {
 	void collection::init(thread_worker* worker, client* cli, mongoc_collection_t* col) {
 		impl = new collection_implement(worker, this, col);
-		ref_ = cli;
+		ref_ = php::object(cli);
 	}
 	php::value collection::__destruct(php::parameters& params) {
 		collection_request_t* ctx = new collection_request_t {

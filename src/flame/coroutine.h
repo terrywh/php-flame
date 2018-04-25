@@ -31,25 +31,8 @@ namespace flame {
 		static void close_cb(uv_handle_t* handle);
 	public:
 		static coroutine* current;
-
-		template <typename ...Args>
-		static coroutine* create(php::callable& cb, const Args&... argv) {
-			coroutine* co = new coroutine(nullptr);
-			co->cb_ = php::value([&, co, cb] (php::parameters& params) mutable -> php::value {
-				co->gen_ = cb(argv...);
-			});
-			return co;
-			// ;
-			//  {
-			// 	return new coroutine(nullptr, std::move(gen));
-			// }else{
-			// 	return nullptr;
-			// }
-		}
-		template <typename ...Args>
-		static void start(php::callable& cb, const Args&... argv) {
-			create(cb, argv...)->start();
-		}
+		static coroutine* create(php::callable& cb);
+		static coroutine* create(php::callable& cb, std::vector<php::value> argv);
 		void start() {
 			// 用于防止“协程”未结束时提前结束
 			uv_async_init(flame::loop, &async_, start_cb);

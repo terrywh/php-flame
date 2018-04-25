@@ -18,7 +18,7 @@ namespace rabbitmq {
 		prop("key", 3) = php::string((const char*)e->routing_key.bytes, e->routing_key.len);
 		prop("val", 3) = php::string((const char*)e->message.body.bytes, e->message.body.len);
 		init_property(&e->message.properties);
-		ref_      = c;
+		ref_      = php::object(c);
 		consumer_ = c;
 	}
 	void message::init_property(amqp_basic_properties_t *p) {
