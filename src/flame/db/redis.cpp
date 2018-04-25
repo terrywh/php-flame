@@ -157,7 +157,7 @@ namespace db {
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
 			ctx->co->fail("ILLEGAL illegal reply", -2);
 		} else {
-			php::array rv(reply->elements/2);
+			php::array rv(reply->elements/2 + 4);
 			for(int i = 0; i < reply->elements; i=i+2) { // i 是 key，i+1 就是value
 				redisReply* key = reply->element[i];
 				rv.at(key->str, key->len) = convert_redis_reply(reply->element[i+1]);
@@ -210,7 +210,7 @@ namespace db {
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
 			ctx->co->fail("ILLEGAL illegal reply", -2);
 		} else {
-			php::array rv(reply->elements);
+			php::array rv(reply->elements + 4);
 			for(int i = 0; i < reply->elements; ++i) {
 				rv[ctx->key[i]] = convert_redis_reply(reply->element[i]);
 			}

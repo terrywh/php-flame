@@ -147,17 +147,17 @@ namespace flame {
 	
 	void coroutine::start_cb(uv_async_t* async) {
 		coroutine* co = (coroutine*)async->data;
+		coroutine* old = current;
+		current = co;
 		if(co->cb_.is_callable()) {
 			php::callable& cb = co->cb_;
 			cb();
 		}
 		if(co->gen_.is_generator()){
-			coroutine* old = current;
-			current = co;
 			co->run();
-			current = old;
 		}else{
 			co->close();
 		}
+		current = old;
 	}
 }
