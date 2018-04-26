@@ -17,8 +17,8 @@ flame\go(function() {
 			}
 		}
 	});
-	@unlink("/data/sockets/flame.xingyan.panda.tv.sock");
-	$server->bind("/data/sockets/flame.xingyan.panda.tv.sock");
+	@unlink("/data/sockets/flame.sock");
+	$server->bind("/data/sockets/flame.sock");
 	// 在 $server->close() 之前，会“阻塞”在此处
 	yield $server->run();
 	echo "======\n";

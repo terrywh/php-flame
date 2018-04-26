@@ -2,7 +2,7 @@
 flame\init("unix_socket_test");
 flame\go(function() {
 	$sock = new flame\net\unix_socket();
-	yield $sock->connect("/data/sockets/flame.xingyan.panda.tv.sock");
+	yield $sock->connect("/data/sockets/flame.sock");
 	var_dump($sock);
 	while(true) {
 		$data = yield $sock->read(2);

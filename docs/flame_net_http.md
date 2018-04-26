@@ -113,7 +113,7 @@ $cli = new flame\net\http\client([
 ``` PHP
 <?php
 $cli = new flame\net\http\client();
-$req1 = new flame\net\http\client_request("http://www.panda.tv");
+$req1 = new flame\net\http\client_request("http://www.google.com");
 $req2 = new flame\net\http\client_request("http://www.baidu.tv");
 $res1 = yield $cli->exec($req1);
 var_dump($res1);
@@ -137,7 +137,7 @@ var_dump($res2);
 **示例**：
 ``` PHP
 <?php
-$ret = yield flame\net\http\post("http://www.panda.tv", ["arg1"=>"val1","arg2"=>"val2"]);
+$ret = yield flame\net\http\post("http://www.baidu.tv", ["arg1"=>"val1","arg2"=>"val2"]);
 var_dump($ret);
 ```
 
