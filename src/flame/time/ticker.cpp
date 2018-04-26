@@ -32,7 +32,6 @@ namespace time {
 	void ticker::after_cb(void* data) {
 		ticker* self = static_cast<ticker*>(data);
 		if(!self->prop("repeat").is_true()) {
-			std::printf("clear ref\n");
 			self->ref_ = nullptr; // 非重复定时器立即清理引用
 		}
 	}

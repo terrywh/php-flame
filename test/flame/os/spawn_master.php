@@ -30,7 +30,7 @@ flame\go(function() {
 	yield flame\time\sleep(2000);
 	echo "before sending (2)...\n";
 	$sock = new flame\net\tcp_socket();
-	yield $sock->connect("10.20.6.75", 80);
+	yield $sock->connect("11.22.33.44", 80);
 	yield $proc->send($sock); // send to child process
 	yield flame\time\sleep(5000);
 	echo "kill worker ...\n";

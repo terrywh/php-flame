@@ -23,9 +23,3 @@ flame\go(function() {
 	yield $cli->delete("test_0", "true");
 });
 flame\run();
-
-
-// $mysqli = new mysqli("10.20.6.69", "bullet", "titcNmgt9if8gshkfKrz", "bullet_room_user_alpha", 3336);
-// $rs = $mysqli->query("SELECT * FROM `test_0` WHERE `id` IS NOT NULL ORDER BY `id` DESC LIMIT 30");
-// $rw = $rs->fetch_all(MYSQLI_ASSOC);
-// debug_zval_dump($rw);
