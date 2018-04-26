@@ -5,15 +5,16 @@ flame\go(function() {
 	$handler = new flame\net\http\handler();
 	// 设置处理程序
 	$handler->handle(function($req, $res) { // 默认 Handler
-		yield $res->write(mt_rand());
-	})->before(function($req, $res) { // 每个请求处理前被调用
-		// 数组 $req->data 可用于携带和传递数据给 handler / after
+		yield $res->write_header(404);
+	})->get("/hello", function($req, $res) {
+		yield $res->write("hello world");
+	})->before(function($req, $res, $match) { // 每个请求处理前被调用
+		// 用 $req->data 存储流程数据
 		$req->data["begin"] = flame\time\now();
-		yield $res->write("[[[[[[");
-	})->after(function($req, $res) { // 请求处理结束后（销毁前）调用
-		yield $res->end("]]]]]]");
+		yield $res->end("2");
+	})->after(function($req, $res, $match) { // 请求处理结束后（销毁前）调用
 		$elapse = flame\time\now() - $req->data["begin"];
-		echo "request for '{$req->uri}' complete in {$elapse}ms\n";
+		yield $res->end(strval($elapse)."ms");
 	});
 	// 创建网络服务器
 	$server = new flame\net\tcp_server();

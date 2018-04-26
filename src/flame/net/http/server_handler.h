@@ -8,7 +8,7 @@ namespace http {
 	public:
 		php::value __construct() {
 			// 默认的 HANDLER 必须存在，但什么都不做
-			default_ = php::value([] (php::parameters& params) -> php::value {
+			handle_default = php::value([] (php::parameters& params) -> php::value {
 				return nullptr;
 			});
 		}
@@ -57,21 +57,21 @@ namespace http {
 			if(!params[0].is_callable()) {
 				throw php::exception("only callable can be used as handler");
 			}
-			default_ = params[0];
+			handle_default = params[0];
 			return php::object(this);
 		}
 		php::value before(php::parameters& params) {
 			if(!params[0].is_callable()) {
 				throw php::exception("only callable can be used as handler");
 			}
-			before_ = params[0];
+			handle_before = params[0];
 			return php::object(this);
 		}
 		php::value after(php::parameters& params) {
 			if(!params[0].is_callable()) {
 				throw php::exception("only callable can be used as handler");
 			}
-			after_ = params[0];
+			handle_after = params[0];
 			return php::object(this);
 		}
 	private:
@@ -83,57 +83,66 @@ namespace http {
 		}
 
 		std::map<std::string, php::callable> handle_;
-		php::callable                        before_;
-		php::callable                         after_;
-		php::callable                       default_;
+		php::callable                        handle_before;
+		php::callable                        handle_after;
+		php::callable                        handle_default;
 		typedef struct session_context_t {
-			php::object req;
-			php::object res;
+			php::object  req;
+			php::object  res;
+			php::callable cb;
 			server_handler<connection_t>* self;
 		} session_context_t;
 
 		static void on_session_before(void* data) {
 			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
-			if(ctx->self->before_.is_callable()) {
-				coroutine* co = coroutine::create(ctx->self->before_, {ctx->req, ctx->res});
-				if(co != nullptr) {
-					co->after(on_session_handle, ctx)->start();
-					return;
-				}
-			}
-			on_session_handle(ctx);
-		}
-		static void on_session_handle(void* data) {
-			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
-			std::string      path = ctx->req.prop("uri");
-			std::string    method = ctx->req.prop("method");
-			php::callable  handle;
-			auto fi = ctx->self->handle_.find(method + path);
-			if(fi != ctx->self->handle_.end()) {
-				handle = fi->second;
-			}else if(ctx->self->default_.is_callable()) {
-				handle = ctx->self->default_;
+			if(ctx->self->handle_before.is_callable()) {
+				coroutine::create(ctx->self->handle_before, {
+					ctx->req, ctx->res,
+					(ctx->cb == ctx->self->handle_default) ? php::BOOL_NO : php::BOOL_YES,
+				})
+				->after(on_session_middle, ctx)
+				->start();
 			}else{
-				on_session_after(ctx);
-				return;
+				on_session_middle(ctx);
 			}
-			coroutine::create(handle, {ctx->req, ctx->res})
+		}
+		static void on_session_middle(void* data) {
+			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
+			coroutine::create(ctx->cb, {ctx->req, ctx->res})
 				->after(on_session_after, ctx)
 				->start();
 		}
 		static void on_session_after(void* data) {
 			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
-			if(ctx->self->after_.is_callable()) {
-				coroutine::create(ctx->self->after_, {ctx->req, ctx->res})->start();
+			if(ctx->self->handle_after.is_callable()) {
+				coroutine::create(ctx->self->handle_after, {
+					ctx->req, ctx->res,
+					(ctx->cb == ctx->self->handle_default) ? php::BOOL_NO : php::BOOL_YES,
+				})
+				->after(on_session_finish, ctx)
+				->start();
+			}else{
+				on_session_finish(ctx);
 			}
+		}
+		static void on_session_finish(void* data) {
+			session_context_t* ctx = reinterpret_cast<session_context_t*>(data);
 			delete ctx;
 		}
 		inline static void on_session(server_connection_base* conn) {
+			server_handler<connection_t>* self = reinterpret_cast<server_handler<connection_t>*>(conn->data);
+
+			std::string   path = conn->req.prop("uri");
+			std::string method = conn->req.prop("method");
 			session_context_t* ctx = new session_context_t {
-				std::move(conn->req), // 使用 move 形式对象构造解除 conn 内部的引用
-				std::move(conn->res),
-				reinterpret_cast<server_handler<connection_t>*>(conn->data)
+				// 使用 move 形式对象构造解除 conn 内部对 req / res 的引用
+				std::move(conn->req), std::move(conn->res), self->handle_default, self,
 			};
+			auto fi = self->handle_.find(method + path);
+			if(fi != self->handle_.end()) {
+				ctx->cb = fi->second;
+			}
+			
 			on_session_before(ctx);
 		}
 	};

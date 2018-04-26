@@ -11,6 +11,7 @@ namespace flame {
 		php::value             cb_;
 		php::generator         gen_;
 		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
+		uv_timer_t             timer_;
 		
 		typedef void (*async_cb_t)(php::value& rv, coroutine* co, void* data);
 		typedef struct stack_t {
@@ -27,19 +28,14 @@ namespace flame {
 		void run();
 		
 		php::object          ref_;
-		static void start_cb(uv_async_t* async);
+		// static void start_cb(uv_async_t* async);
+		static void start_cb(uv_timer_t* timer);
 		static void close_cb(uv_handle_t* handle);
 	public:
 		static coroutine* current;
 		static coroutine* create(php::callable& cb);
 		static coroutine* create(php::callable& cb, std::vector<php::value> argv);
-		void start() {
-			// 用于防止“协程”未结束时提前结束
-			uv_async_init(flame::loop, &async_, start_cb);
-			async_.data = this;
-			
-			uv_async_send(&async_);
-		}
+		void start();
 		void close();
 		inline void async(async_cb_t cb, void* data = nullptr) {
 			stack_.push_back(stack_t {cb, data});
