@@ -7,12 +7,15 @@ FastCGI 处理器，用于 tcp_server / unix_server 解析 `fastcgi/1.1` 协议�
 **注意**：
 * 如非必要请不要使用 `Transfer-Encoding` / `Content-Length` 等对传输过程够长影响的 HTTP 头，FastCGI 协议内部已经能够实现对应的功能；
 
-#### `server::get/post/put/remove(string $path, callable $cb)`
-分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调；
+#### `handler::get(string $path, callable $cb)`
+#### `handler::post(string $path, callable $cb)`
+#### `handler::put(string $path, callable $cb)`
+#### `handler::delete(string $path, callable $cb)`
+分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调协程；
 
-#### `server::handle(callable $cb)`
+#### `handler::handle(callable $cb)`
 设置默认处理回调（未匹配路径回调），或设置指定路径的请求处理回调（`$path` 参数可选）；回调函数接收两个参数：
-* `$request` - 类型 `class flame\net\http\server_request` 的实例，请参考 `flame\net\http` 命名空间中的相关说明；
+* `$request` - 类型 `class flame\net\http\server_request` 的实例，请参考 `flame\net\http` 命名空间中的[相关说明](/php-flame/flame_net_http#class-flamenethttpserver_request)；
 * `$response` - 类型 `class flame\net\fastcgi\server_response` 的实例，请参考下文；
 
 **示例**：
@@ -65,9 +68,6 @@ $res->header["X-Server"] = "Flame/0.7.0";
 
 **注意**：
 * 所有输出的 HEADER 数据 **区分大小写**；
-
-#### `server_response::$data`
-默认为 null，可用于在 before / handle / after 之间传递数据；（参考 fastcgi_server2.php 示例）；
 
 #### `server_response::set_cookie(string $name [, string $value = "" [, int $expire = 0 [, string $path = "" [, string $domain = "" [, bool $secure = false [, bool $httponly = false ]]]]]])`
 

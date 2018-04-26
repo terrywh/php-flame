@@ -231,8 +231,11 @@ HTTP/1 协议处理器，用于 tcp_server / unix_server 解析 `HTTP/1` 协议�
 
 参考：`test/flame/net/http_server.php`
 
-#### `handler::get/post/put/remove(string $path, callable $cb)`
-分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调；
+#### `handler::get(string $path, callable $cb)`
+#### `handler::post(string $path, callable $cb)`
+#### `handler::put(string $path, callable $cb)`
+#### `handler::delete(string $path, callable $cb)`
+分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调协程；
 
 #### `handler::handle(callable $cb)`
 设置默认处理回调（未匹配路径回调），或设置指定路径的请求处理回调（`$path` 参数可选）；回调函数接收两个参数：
@@ -292,9 +295,6 @@ $res->header["X-Server"] = "Flame/0.7.0";
 
 **注意**：
 * 所有输出的 HEADER 数据 **区分大小写**；
-
-#### `server_response::$data`
-默认为 null，可用于在 before / handle / after 之间传递数据；（参考 http_server2.php 示例）；
 
 #### `server_response::set_cookie(string $name [, string $value = "" [, int $expire = 0 [, string $path = "" [, string $domain = "" [, bool $secure = false [, bool $httponly = false ]]]]]])`
 
