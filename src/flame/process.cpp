@@ -57,9 +57,9 @@ namespace flame {
 	}
 	void process::run() {
 		if(process_type == PROCESS_MASTER) {
-			php::callable("cli_set_process_title").invoke({process_name + " (fm)"});
+			php::callable("cli_set_process_title").invoke({process_name + " (flame master)"});
 		}else{
-			php::callable("cli_set_process_title").invoke({process_name + " (fw)"});
+			php::callable("cli_set_process_title").invoke({process_name + " (flame worker)"});
 		}
 		uv_run(flame::loop, UV_RUN_DEFAULT);
 		// 非错误引发的问题（因异常引发时，进程已经提前结束，不会到达这里）
