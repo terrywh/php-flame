@@ -11,7 +11,13 @@ FastCGI 处理器，用于 tcp_server / unix_server 解析 `fastcgi/1.1` 协议�
 #### `handler::post(string $path, callable $cb)`
 #### `handler::put(string $path, callable $cb)`
 #### `handler::delete(string $path, callable $cb)`
-分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调协程；
+分别用于设置 GET / POST / PUT / DELETE 请求方法对应路径的处理回调协程；`$cb` 原型如下：
+
+``` PHP
+// $req - 请求对象
+// $res - 响应对象
+function callback($req, $res) {}
+```
 
 #### `handler::handle(callable $cb)`
 设置默认处理回调（未匹配路径回调），或设置指定路径的请求处理回调（`$path` 参数可选）；回调函数接收两个参数：
