@@ -3,6 +3,7 @@
 #include "../../coroutine.h"
 #include "../../thread_worker.h"
 #include "../../time/time.h"
+#include "../../log/log.h"
 #include "mysql.h"
 #include "client.h"
 #include "client_implement.h"
@@ -89,7 +90,9 @@ namespace mysql {
 			return;
 		}
 		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
-			std::fprintf(stderr, "[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
+			log::default_logger->write(
+				fmt::format("(DEBUG) MYSQL QUERY: {0}", ctx->sql.c_str())
+			);
 		}
 		if(mysql_query(&ctx->self->mysql_, ctx->sql.c_str()) != 0) {
 			// 查询失败
@@ -124,7 +127,9 @@ namespace mysql {
 			return;
 		}
 		if(ctx->self->debug_) { // 调试输出实际执行的 SQL
-			std::fprintf(stderr, "[%s] (flame\\db\\mysql): %.*s\n", time::datetime(time::now()), ctx->sql.length(), ctx->sql.c_str());
+			log::default_logger->write(
+				fmt::format("(DEBUG) MYSQL QUERY: {0}", ctx->sql.c_str())
+			);
 		}
 		if(mysql_query(&ctx->self->mysql_, ctx->sql.c_str()) != 0) {
 			// 查询失败

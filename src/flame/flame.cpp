@@ -60,12 +60,6 @@ namespace flame {
 			return quit_cb.size();
 		}
 	}
-	static php::value output_test(php::parameters& params) {
-		for(int i=0;i<1000;++i) {
-			std::fprintf(stderr, "==================================================\n");
-		}
-		return nullptr;
-	}
 	static void do_exception_cb(uv_timer_t* handle) {
 		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
 		co->fail("this is a async exception", -1);
@@ -92,7 +86,6 @@ namespace flame {
 		ext.add<flame::go>("flame\\go");
 		ext.add<flame::run>("flame\\run");
 		ext.add<flame::quit>("flame\\quit");
-		ext.add<flame::output_test>("flame\\output_test");
 		ext.add<do_exception>("flame\\do_exception");
 	}
 

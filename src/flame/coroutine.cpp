@@ -31,14 +31,14 @@ namespace flame {
 		}
 		++ coroutine::current->status_;
 		coroutine::current->ref_ = php::object(cpp); // 在协程中保存当前对象的引用（防止异步流程丢失当前对象）
-		return php::value((void*)cpp);
+		return php::value(coroutine::current);
 	}
 	coroutine* coroutine::create(php::callable& cb) {
 		coroutine* co = new coroutine(nullptr);
 		co->cb_ = php::value([cb, co] (php::parameters& params) mutable -> php::value {
 			coroutine* orig = coroutine::current;
 			coroutine::current = co;
-			co->gen_ = php::callable::__invoke(cb, 0, nullptr, true);
+			co->gen_ = cb.invoke();
 			co->gen_.is_generator() ? co->run() : co->close(); // 非 Generator 型函数调用完成后立即结束
 			coroutine::current = orig;
 		});
@@ -49,7 +49,7 @@ namespace flame {
 		co->cb_ = php::value([cb, argv, co] (php::parameters& params) mutable -> php::value {
 			coroutine* orig = coroutine::current;
 			coroutine::current = co;
-			co->gen_ = php::callable::__invoke(cb, std::move(argv), true);
+			co->gen_ = cb.invoke(std::move(argv));
 			co->gen_.is_generator() ? co->run() : co->close(); // 非 Generator 型函数调用完成后立即结束
 			coroutine::current = orig;
 		});
@@ -104,7 +104,7 @@ namespace flame {
 				break;
 			}
 			php::generator g = gen_.current();
-			if(g.is_pointer()) { // 使用内置 IS_PTR 类型标识异步操作
+			if(g.is_pointer() && g.ptr<coroutine>() == this) { // 使用内置 IS_PTR 类型标识异步操作
 				if(--status_ != 0) {
 					php::fail("keyword 'yield' missing before async function");
 					status_ = 0;
@@ -145,7 +145,7 @@ namespace flame {
 		}else{
 			stack_t st = stack_.front();
 			stack_.pop_front();
-			st.func(rv, current, st.data);
+			st.func(rv, st.data);
 		}
 		current = old;
 	}

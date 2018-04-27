@@ -21,8 +21,9 @@ namespace os {
 		cpp->__construct(params);
 		return std::move(obj);
 	}
-	static void exec_cb(php::value& rv, coroutine* co, void* data) {
-		co->next(rv);
+	static void exec_cb(php::value& rv, void* data) {
+		assert(coroutine::current == data);
+		coroutine::current->next(rv);
 	}
 	php::value exec(php::parameters& params) {
 		php::object proc1 = php::object::create<process>();
@@ -48,7 +49,7 @@ namespace os {
 		// net::unix_socket* err2 = proc2->stderr_.native<net::unix_socket>();
 		out2->rdr.read_all();
 		// read_all 异步，在下面 exec_cb 中接收其返回值
-		coroutine::current->async(exec_cb, nullptr);
+		coroutine::current->async(exec_cb, coroutine::current);
 		// !!! 若需要 stderr 应在 exec_cb 中启动 err2->rdr.read_all()
 		// 并再加入一个 yield 回调函数
 		return flame::async(proc2);

@@ -21,16 +21,6 @@ namespace time {
 		// 标记异步任务的特殊返回值
 		return flame::async();
 	}
-	// 示例：包裹 sleep 异步函数
-	// -------------------------------------------------------------------------
-	static void sleep2_timer_cb(php::value& rv, coroutine* co, void* data) {
-		// std::fprintf(stderr, "sleep2\n");
-	}
-	static php::value sleep_wrapper(php::parameters& params) {
-		sleep(params);
-		coroutine::current->async(sleep2_timer_cb);
-		return flame::async();
-	}
 	// -------------------------------------------------------------------------
 	static php::value now(php::parameters& params) {
 		if(params.length() > 0 && params[0].is_true()) {

@@ -13,7 +13,7 @@ namespace flame {
 		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
 		uv_timer_t             timer_;
 		
-		typedef void (*async_cb_t)(php::value& rv, coroutine* co, void* data);
+		typedef void (*async_cb_t)(php::value& rv, void* data);
 		typedef struct stack_t {
 			async_cb_t func;
 			void*      data;

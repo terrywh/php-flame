@@ -2,6 +2,7 @@
 #include "../../flame.h"
 #include "../../coroutine.h"
 #include "../../time/time.h"
+#include "../../log/log.h"
 #include "client.h"
 #include "client_request.h"
 #include "client_response.h"
@@ -82,7 +83,7 @@ void client::curl_multi_info_check(client* self) {
 			ctx->req->close();
 			delete ctx;
 		}else{
-			std::fprintf(stderr, "[%s] (flame\\net\\http\\client): error: message not done\n", time::datetime(time::now()));
+			log::default_logger->write("(FAIL) http request failed: message not done");
 		}
 	}
 }

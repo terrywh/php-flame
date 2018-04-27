@@ -13,11 +13,11 @@
 ``` PHP
 <?php
 // ...
-$cli = new flame\db\redis();
-yield $cli->connect("127.0.0.1",6379);
-// 可选
-yield $cli->auth("123456");
-yield $cli->select(31);
+yield $obj->connect("redis://auth:123456@11.22.33.44:6379/30");
+// 与下述三行实现功能相同
+// yield $obj->connect("11.22.33.44", 6379);
+// yield $obj->auth("123456");
+// yield $obj->select(30);
 yield $cli->set("key","val");
 $val = yield $cli->get("key");
 ```
@@ -31,8 +31,19 @@ $val = yield $cli->get("key");
 **注意**：
 * 所有命令函数均需前置 `yield` 关键字进行调用；
 
+#### `yield redis::connect(string $uri)`
+使用连接字符串连接 redis 服务器，形式如下：
+
+``` STRING
+redis://{host}:{port=2379}/
+redis://{host}:{port=2379}/{database}
+redis://auth:{password}@{host}:{port=2379}/{database}
+```
+
+当 `password` 字段存在时将自动进行 `auth` 认证；当 `database` 字段存在时将自动进行 `select` 数据库切换；
+
 #### `yield redis::connect(string $host, integer $port)`
-连接 `redis` 服务器；
+使用目标地址、端口连接 `redis` 服务器，相当于使用连接字符串形式 `redis://{$host}:{$port}` 进行调用；
 
 #### `redis::close()`
 立刻主动关闭和 `redis` 的连接；

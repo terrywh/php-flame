@@ -2,9 +2,11 @@
 flame\init("redis_init");
 flame\go(function() {
 	$obj = new flame\db\redis();
-	yield $obj->connect("11.22.33.44", 6379);
-	yield $obj->auth("123456");
-	yield $obj->select(30);
+	yield $obj->connect("redis://auth:123456@11.22.33.44:6379/30");
+	// 与下述三行实现功能相同
+	// yield $obj->connect("11.22.33.44", 6379);
+	// yield $obj->auth("123456");
+	// yield $obj->select(30);
 	for($i=0;$i<1000;++$i) {
 		if($i == 0) echo "HMSET hash key1 11111 key2 22222: ";
 		$res = yield $obj->hmset("hash", "key1", "11111", "key2", "22222");

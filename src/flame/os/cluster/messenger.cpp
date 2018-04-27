@@ -1,6 +1,7 @@
 #include "deps.h"
 #include "../../flame.h"
 #include "../../coroutine.h"
+#include "../../log/log.h"
 #include "../../net/tcp_socket.h"
 #include "../../net/unix_socket.h"
 #include "messenger.h"
@@ -41,8 +42,8 @@ namespace cluster {
 			
 		}else if(nread == 0) {
 
-		}else if(nread != self->parse(buf->base, nread)){
-			std::fprintf(stderr, "error: failed to read ipc, wrong format\n");
+		}else if(nread != self->parse(buf->base, nread)) {
+			log::default_logger->write("(FAIL) failed to read ipc: wrong format");
 		}
 	}
 	size_t messenger::parse(char* data, size_t size) {
@@ -92,8 +93,11 @@ namespace cluster {
 		if(type == UV_TCP) {
 			php::object obj = php::object::create<net::tcp_socket>();
 			net::tcp_socket* cpp = obj.native<net::tcp_socket>();
-			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)cpp->sck) < 0) {
-				std::fprintf(stderr, "error: failed to accept socket from parent\n");
+			int err = uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)cpp->sck);
+			if(err < 0) {
+				log::default_logger->write(
+					fmt::format("(FAIL) failed to accept socket: ({0}) {1}", err, uv_strerror(err))
+				);
 				return;
 			}
 			cpp->after_init();
@@ -102,8 +106,11 @@ namespace cluster {
 			
 			php::object obj = php::object::create<net::unix_socket>();
 			net::unix_socket* cpp = obj.native<net::unix_socket>();
-			if(uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)cpp->sck) < 0) {
-				std::fprintf(stderr, "error: failed to accept socket from parent\n");
+			int err = uv_accept((uv_stream_t*)&pipe_, (uv_stream_t*)cpp->sck);
+			if(err < 0) {
+				log::default_logger->write(
+					fmt::format("(FAIL) failed to accept socket: ({0}) {1}", err, uv_strerror(err))
+				);
 				return;
 			}
 			cpp->after_init();

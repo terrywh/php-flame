@@ -1,6 +1,7 @@
 #include "deps.h"
 #include "../flame.h"
 #include "../coroutine.h"
+#include "../log/log.h"
 #include "redis.h"
 
 namespace flame {
@@ -52,9 +53,11 @@ namespace db {
 	void redis::cb_disconnect(const redisAsyncContext *c, int status) {
 		redis* self = reinterpret_cast<redis*>(c->data);
 		if (status != REDIS_OK) { // TODO 错误处理？
-			std::fprintf(stderr, "error: redis failed with '%s'\n", c->errstr);
-			return;
+			log::default_logger->write(
+				fmt::format("(FAIL) redis connection dropped: ({0}) {1}", status, c->errstr)
+			);
 		}
+		// 非主动关闭流程，需要尝试重连
 		if(self->context_ != nullptr) {
 			// 自动重连
 			uv_timer_stop(self->connect_interval);
@@ -62,22 +65,51 @@ namespace db {
 		}
 	}
 	void redis::cb_connect(const redisAsyncContext *c, int status) {
-		if (status != REDIS_OK) { // TODO 错误处理？
-			std::fprintf(stderr, "error: redis failed with '%s'\n", c->errstr);
-			return;
-		}
 		redis* self = static_cast<redis*>(c->data);
 		// 连接建立的过程
-		if(self->connect_ != nullptr) {
-			self->connect_->co->next();
-			delete self->connect_;
-			self->connect_ = nullptr;
+		coroutine* co = self->connect_;
+		self->connect_ = nullptr;
+		if(co != nullptr && status == REDIS_OK) {
+			co->next();
+		}else if(co != nullptr && status != REDIS_OK) {
+			co->fail(c->errstr, status);
+		}else if(status == REDIS_OK){
+			
+		}else{
+			log::default_logger->write(
+				fmt::format("(FAIL) cannot establish redis connection: ({0}) {1}", status, c->errstr)
+			);
 		}
 	}
+	void redis::cb_connect_auth(php::value&rv, void* data) {
+		redis* self = reinterpret_cast<redis*>(data);
+		
+		if(self->url_->user == nullptr || self->url_->pass == nullptr) {
+			coroutine::current->next();
+			return;
+		}
+		php::string method("auth",4);
+		php::array  params(4);
+		params[0] = php::string(self->url_->pass);
+		self->__call(method, params);
+	}
+	void redis::cb_connect_select(php::value&rv, void* data) {
+		redis* self = reinterpret_cast<redis*>(data);
+		
+		if(self->url_->path == nullptr || strlen(self->url_->path) <= 1) {
+			coroutine::current->next();
+		}
+		php::string method("select",6);
+		php::array  params(4);
+		params[0] = php::string(self->url_->path + 1); // 去除首部 / 斜线
+		self->__call(method, params);
+	}
 	void redis::connect() {
-		context_ = redisAsyncConnect(host_.c_str(), port_);
+		context_ = redisAsyncConnect(url_->host, url_->port);
 		if (context_->err) {
-			std::fprintf(stderr, "error: redis failed with '%s'\n", context_->errstr);
+			log::default_logger->write(
+				fmt::format("(FAIL) cannot establish redis connection: ({0}) {1}", context_->err, context_->errstr)
+			);
 			// 自动重连
 			uv_timer_stop(connect_interval);
 			uv_timer_start(connect_interval, cb_connect_interval, std::rand() % 3000 + 2000, 0);
@@ -85,6 +117,9 @@ namespace db {
 		}
 		context_->data = this;
 		redisLibuvAttach(context_, flame::loop);
+		connect_ = coroutine::current;
+		connect_->async(cb_connect_auth, this);
+		connect_->async(cb_connect_select, this);
 		redisAsyncSetConnectCallback(context_, cb_connect);
 		redisAsyncSetDisconnectCallback(context_, cb_disconnect);
 	}
@@ -94,32 +129,40 @@ namespace db {
 			redisAsyncDisconnect(self->context_);
 			self->context_ = nullptr;
 
-			self->connect_->co->fail("redis connect timeout", 0);
+			self->connect_->fail("redis connect timeout", ETIMEDOUT);
 			self->connect_ = nullptr;
 		}
 	}
 	php::value redis::connect(php::parameters& params) {
-		host_ = params[0];
-		port_ = params[1];
+		if(params.length() == 2) {
+			char cache[256];
+			php::string host = params[0];
+			int port = params[1];
+			int size = sprintf(cache, "redis://%s:%d/", host.c_str(), port);
+			url_ = php::parse_url(cache, size);
+		}else{
+			php::string url = params[0];
+			url_ = php::parse_url(url.c_str(), url.length());
+		}
+		if(strncasecmp("redis", url_->scheme, 5) != 0) {
+			throw php::exception("illegal connection uri");
+		}
+		if(!url_->port) url_->port = 6379;
+		
 		int timeout = 2500;
 		if(params.length() > 2) {
 			timeout = params[2];
 		}
 		connect();
-		connect_ = new redis_request_t {
-			coroutine::current, nullptr
-		};
 		uv_timer_stop(connect_interval);
 		uv_timer_start(connect_interval, cb_connect_timeout, timeout, 0);
 
 		return flame::async(this);
 	}
-
 	php::value redis::close(php::parameters& params) {
 		close();
 		return nullptr;
 	}
-
 	void redis::close() {
 		if (context_) {
 			redisAsyncContext* ctx = context_;
@@ -168,8 +211,12 @@ namespace db {
 	}
 	php::value redis::__call(php::parameters& params) {
 		php::string& name = params[0];
-		php::strtoupper_inplace(name.data(), name.length()); // TODO Q1
 		php::array&  data = params[1];
+		__call(name, data);
+		return flame::async(this);
+	}
+	void redis::__call(php::string& name, php::array& data) {
+		php::strtoupper_inplace(name.data(), name.length());
 		std::vector<const char*> argv;
 		std::vector<size_t>      argl;
 		redisCallbackFn*           cb;
@@ -196,7 +243,6 @@ namespace db {
 			argl.push_back(str.length());
 		}
 		exec(argv.data(), argl.data(), argv.size(), ctx, cb);
-		return flame::async(this);
 	}
 	void redis::cb_assoc_keys(redisAsyncContext *c, void *r, void *privdata) {
 		redis*       self = reinterpret_cast<redis*>(c->data);

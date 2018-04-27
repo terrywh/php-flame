@@ -19,6 +19,7 @@ public:
 	php::value close(php::parameters& params);
 
 	php::value __call(php::parameters& params);
+	void __call(php::string& name, php::array& data);
 	php::value hmget(php::parameters& params);
 	php::value subscribe(php::parameters& params);
 	php::value psubscribe(php::parameters& params);
@@ -26,10 +27,9 @@ public:
 	php::value quit(php::parameters& params);
 private:
 	redisAsyncContext* context_;
-	redis_request_t*   connect_; // 连接回调
+	coroutine*         connect_; // 连接回调
 	redis_request_t*   current_; // 用于记录 subscribe / psubscribe 状态
-	php::string host_;
-	int         port_;
+	std::shared_ptr<php_url> url_;
 	// 生命周期需与 PHP 对象不符，故使用动态分配
 	uv_timer_t* connect_interval;
 	void connect();
@@ -38,6 +38,8 @@ private:
 	void exec(const char** argv, const size_t* lens, size_t count, redis_request_t* req, redisCallbackFn* fn);
 	static void cb_connect_timeout(uv_timer_t* tm);
 	static void cb_connect(const redisAsyncContext *c, int status);
+	static void cb_connect_auth(php::value& rv, void* data);
+	static void cb_connect_select(php::value& rv, void* data);
 	static void cb_disconnect(const redisAsyncContext *c, int status);
 	// 默认回调，按照redis返回的type格式化返回
 	static void cb_default(redisAsyncContext *c, void *r, void *privdata);
