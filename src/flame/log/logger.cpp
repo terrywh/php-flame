@@ -88,61 +88,21 @@ namespace log {
 		return write(std::move(out));
 	}
 	void logger::panic() {
-		char errstr[4096];
 		size_t errlen = 0;
-		zend_class_entry *ce_exception;
-		php::object exception(EG(exception), false);
+		char* errstr = php::exception_string(&errlen);
 		
-		ce_exception = static_cast<zend_class_entry*>(exception);
-		EG(exception) = nullptr;
-		if (ce_exception == zend_ce_parse_error) {
-			php::string message = exception.prop("message");
-			php::string file = exception.prop("file");
-			zend_long line = exception.prop("line");
-			// 
-			errlen = sprintf(errstr, "[%s] (PANIC) %s:%d %s\n", time::datetime(time::now()), file.c_str(), line, message.c_str());
-		} else if (instanceof_function(ce_exception, zend_ce_throwable)) {
-			php::string file, tmp, str;
-			zend_long line = 0;
-
-			zend_call_method_with_0_params(exception, ce_exception, NULL, "__tostring", tmp);
-			if (!EG(exception)) {
-				if (!tmp.is_string()) {
-					errlen = sprintf(errstr, "[%s] (PANIC) %s::__toString() must return a string\n", 
-						time::datetime(time::now()), ZSTR_VAL(ce_exception->name));
-				} else {
-					exception.prop("string") = std::move(tmp);
-				}
-			}else{
-				php::object zv(EG(exception), false);
-				/* do the best we can to inform about the inner exception */
-				if (instanceof_function(ce_exception, zend_ce_exception) || instanceof_function(ce_exception, zend_ce_error)) {
-					file = zv.prop("file");
-					line = zv.prop("line");
-				}
-				errlen = sprintf(errstr, "[%s] (PANIC) %s:%d Uncaught %s in exception handling during call to %s::__tostring()\n",
-					time::datetime(time::now()), file.is_string() && file.length() > 0 ? file.c_str() : nullptr,
-					line, ZSTR_VAL(static_cast<zend_class_entry*>(zv)->name), ZSTR_VAL(ce_exception->name));
-			}
-			
-			str = exception.prop("string");
-			file = exception.prop("file");
-			line = exception.prop("line");
-			// 
-			errlen += sprintf(errstr + errlen, "[%s] (PANIC) %s:%d Uncaught %s\n", 
-				time::datetime(time::now()), file.is_string() && file.length() > 0 ? file.c_str() : nullptr, line, str.c_str());
-		} else {
-			errlen = sprintf(errstr, "[%s] (PANIC) Uncaught exception '%s'\n",
-				time::datetime(time::now()), ZSTR_VAL(ce_exception->name));
-		}
-		std::fprintf(stderr, "%.*s", errlen, errstr);
+		std::fprintf(stderr, "[%s] %.*s", time::datetime(time::now()), errlen, errstr);
 		if(file_ > 0) {
 			::lseek(file_, SEEK_END, 0);
+			char cache[64];
+			::write(file_, cache, sprintf(cache, "[%s] (PANIC) ", time::datetime(time::now())));
 			::write(file_, errstr, errlen);
 			uv_fs_t req;
 			uv_fs_close(flame::loop, &req, file_, nullptr);
 			file_ = 0;
 		}
+		::exit(-1);
+		// 不做 exit 时，有时会发生 class_closure 释放问题，暂时还清楚什么原因
 	}
 	void logger::signal_cb(uv_signal_t* handle, int signal) {
 		logger* self = reinterpret_cast<logger*>(handle->data);
