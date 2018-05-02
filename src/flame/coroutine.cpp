@@ -178,8 +178,8 @@ namespace flame {
 	void coroutine::start_cb(uv_timer_t* handle) {
 		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
 		if(co->cb_.is_callable()) {
-			static_cast<php::callable&>(co->cb_).invoke();
-			co->cb_ = nullptr;
+			php::callable cb = std::move(co->cb_);
+			cb.invoke();
 		}
 	}
 	void coroutine::start() {

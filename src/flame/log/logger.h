@@ -30,8 +30,6 @@ namespace log {
 		static void write_cb(uv_write_t* req, int status);
 		static void signal_cb(uv_signal_t* handle, int signal);
 		php::string make_buffer(const std::string& level, php::parameters& params);
-		void panic_to_file(php::object& ex);
-		void panic_to_cerr(php::object& ex);
 	};
 }
 }
