@@ -99,8 +99,8 @@ namespace log {
 			php::string message = exception.prop("message");
 			php::string file = exception.prop("file");
 			zend_long line = exception.prop("line");
-			// file.c_str(), line, 
-			errlen = sprintf(errstr, "[%s] (PANIC) %s\n", time::datetime(time::now()), message.c_str());
+			// 
+			errlen = sprintf(errstr, "[%s] (PANIC) %s:%d %s\n", time::datetime(time::now()), file.c_str(), line, message.c_str());
 		} else if (instanceof_function(ce_exception, zend_ce_throwable)) {
 			php::string file, tmp, str;
 			zend_long line = 0;
@@ -120,7 +120,7 @@ namespace log {
 					file = zv.prop("file");
 					line = zv.prop("line");
 				}
-				errlen = sprintf(errstr, "[%s] (PANIC) in %s:%d\nUncaught %s in exception handling during call to %s::__tostring()\n",
+				errlen = sprintf(errstr, "[%s] (PANIC) %s:%d Uncaught %s in exception handling during call to %s::__tostring()\n",
 					time::datetime(time::now()), file.is_string() && file.length() > 0 ? file.c_str() : nullptr,
 					line, ZSTR_VAL(static_cast<zend_class_entry*>(zv)->name), ZSTR_VAL(ce_exception->name));
 			}
@@ -128,9 +128,9 @@ namespace log {
 			str = exception.prop("string");
 			file = exception.prop("file");
 			line = exception.prop("line");
-			// file.is_string() && file.length() > 0 ? file.c_str() : nullptr, line,
-			errlen += sprintf(errstr + errlen, "[%s] (PANIC) Uncaught %s\n", 
-				time::datetime(time::now()), str.c_str());
+			// 
+			errlen += sprintf(errstr + errlen, "[%s] (PANIC) %s:%d Uncaught %s\n", 
+				time::datetime(time::now()), file.is_string() && file.length() > 0 ? file.c_str() : nullptr, line, str.c_str());
 		} else {
 			errlen = sprintf(errstr, "[%s] (PANIC) Uncaught exception '%s'\n",
 				time::datetime(time::now()), ZSTR_VAL(ce_exception->name));
