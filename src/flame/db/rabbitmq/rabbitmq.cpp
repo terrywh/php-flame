@@ -27,24 +27,24 @@ namespace rabbitmq {
 		ext.add(std::move(class_consumer));
 
 		php::class_entry<message> class_message("flame\\db\\rabbitmq\\message");
-		class_message.add(php::property_entry("exchange", std::string("")));
-		class_message.add(php::property_entry("redelivered", zend_bool(false)));
-		class_message.add(php::property_entry("key", std::string("")));
-		class_message.add(php::property_entry("val", std::string("")));
+		class_message.prop({"exchange", std::string("")});
+		class_message.prop({"redelivered", zend_bool(false)});
+		class_message.prop({"key", std::string("")});
+		class_message.prop({"val", std::string("")});
 
-		class_message.add(php::property_entry("content_type", std::string("")));
-		class_message.add(php::property_entry("content_encoding", std::string("")));
-		class_message.add(php::property_entry("headers", nullptr));
-		class_message.add(php::property_entry("delivery_mode", 0));
-		class_message.add(php::property_entry("priority", 0));
-		class_message.add(php::property_entry("correlation_id", std::string("")));
-		class_message.add(php::property_entry("reply_to", std::string("")));
-		class_message.add(php::property_entry("expiration", std::string("")));
-		class_message.add(php::property_entry("message_id", std::string("")));
-		class_message.add(php::property_entry("type", std::string("")));
-		class_message.add(php::property_entry("user_id", std::string("")));
-		class_message.add(php::property_entry("app_id", std::string("")));
-		class_message.add(php::property_entry("cluster_id", std::string("")));
+		class_message.prop({"content_type", std::string("")});
+		class_message.prop({"content_encoding", std::string("")});
+		class_message.prop({"headers", nullptr});
+		class_message.prop({"delivery_mode", 0});
+		class_message.prop({"priority", 0});
+		class_message.prop({"correlation_id", std::string("")});
+		class_message.prop({"reply_to", std::string("")});
+		class_message.prop({"expiration", std::string("")});
+		class_message.prop({"message_id", std::string("")});
+		class_message.prop({"type", std::string("")});
+		class_message.prop({"user_id", std::string("")});
+		class_message.prop({"app_id", std::string("")});
+		class_message.prop({"cluster_id", std::string("")});
 
 		class_message.add<&message::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有
 		class_message.add<&message::__destruct>("__destruct");
@@ -56,4 +56,3 @@ namespace rabbitmq {
 }
 }
 }
-

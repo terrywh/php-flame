@@ -9,7 +9,7 @@ namespace mongodb {
 	php::value object_id::__construct(php::parameters& params) {
 		if(params.length() >= 1) {
 			if(params[0].is_string()) {
-				php::string& id = params[0];
+				php::string& id = static_cast<php::string&>(params[0]);
 				if(bson_oid_is_valid(id.c_str(), id.length())) {
 					bson_oid_init_from_string(&oid_, id.c_str());
 					return nullptr;

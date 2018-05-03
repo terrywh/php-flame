@@ -56,8 +56,8 @@ namespace mongodb {
 		bson_t* docs[doc1.length()];
 		int docn = 0;
 		for(auto i=doc1.begin(); i!=doc1.end(); ++i) {
-			php::array& item = i->second;
-			if(!item.is_array() || !item.is_a_map()) {
+			php::array& item = static_cast<php::array&>(i->second);
+			if(!item.is_array()) {
 				continue;
 			}
 			docs[docn] = bson_new();

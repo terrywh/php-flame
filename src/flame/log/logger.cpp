@@ -89,7 +89,7 @@ namespace log {
 	}
 	void logger::panic() {
 		size_t errlen = 0;
-		char* errstr = php::exception_string(&errlen);
+		char* errstr = php::exception_string(false, &errlen);
 		
 		std::fprintf(stderr, "[%s] %.*s", time::datetime(time::now()), errlen, errstr);
 		if(file_ > 0) {
@@ -101,8 +101,7 @@ namespace log {
 			uv_fs_close(flame::loop, &req, file_, nullptr);
 			file_ = 0;
 		}
-		::exit(-1);
-		// 不做 exit 时，有时会发生 class_closure 释放问题，暂时还清楚什么原因
+		// ::exit(-1);
 	}
 	void logger::signal_cb(uv_signal_t* handle, int signal) {
 		logger* self = reinterpret_cast<logger*>(handle->data);

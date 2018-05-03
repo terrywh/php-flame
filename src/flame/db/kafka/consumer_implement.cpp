@@ -21,7 +21,7 @@ namespace kafka {
 		char   errstr[1024];
 		size_t errlen = sizeof(errstr);
 		// 全局配置
-		rd_kafka_conf_t* gconf_ = global_conf(params[0]);
+		rd_kafka_conf_t* gconf_ = global_conf(static_cast<php::array&>(params[0]));
 		size_t len;
 		if(rd_kafka_conf_get(gconf_, "group.id", nullptr, &len) != RD_KAFKA_CONF_OK) {
 			rd_kafka_conf_destroy(gconf_);
@@ -32,10 +32,10 @@ namespace kafka {
 		rd_kafka_conf_set_opaque(gconf_, this);
 		// 话题配置
 		rd_kafka_topic_conf_t* tconf_ = rd_kafka_topic_conf_new();
-		php::array& tconf = params[1];
+		php::array& tconf = static_cast<php::array&>(params[1]);
 		for(auto i=tconf.begin();i!=tconf.end();++i) {
-			php::string& name = i->first.to_string();
-			php::string& data = i->second.to_string();
+			php::string name = i->first.to_string();
+			php::string data = i->second.to_string();
 			if(RD_KAFKA_CONF_OK != rd_kafka_topic_conf_set(tconf_, name.c_str(), data.c_str(), errstr, errlen)) {
 				rd_kafka_conf_destroy(gconf_);
 				rd_kafka_topic_conf_destroy(tconf_);
@@ -50,14 +50,14 @@ namespace kafka {
 			throw php::exception(errstr);
 		}
 		if(params[2].is_array()) {
-			php::array& topics = params[2];
+			php::array& topics = static_cast<php::array&>(params[2]);
 			topic_ = rd_kafka_topic_partition_list_new(topics.length());
 			for(auto i=topics.begin(); i!=topics.end(); ++i) {
-				php::string& topic = i->second.to_string();
+				php::string topic = i->second.to_string();
 				rd_kafka_topic_partition_list_add(topic_, topic.c_str(), RD_KAFKA_PARTITION_UA);
 			}
 		}else{
-			php::string topic = params[2].to_string();
+			php::string& topic = params[2].to_string();
 			topic_ = rd_kafka_topic_partition_list_new(1);
 			rd_kafka_topic_partition_list_add(topic_, topic.c_str(), RD_KAFKA_PARTITION_UA);
 		}

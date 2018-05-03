@@ -53,13 +53,13 @@ namespace mongodb {
 		ext.add(std::move(class_client));
 		// ---------------------------------------------------------------------
 		php::class_entry<write_result> class_write_result("flame\\db\\mongodb\\write_result");
-		class_write_result.add(php::property_entry("write_errors", nullptr));
-		class_write_result.add(php::property_entry("write_concern_errors", nullptr));
-		class_write_result.add(php::property_entry("inserted_count", -1));
-		class_write_result.add(php::property_entry("deleted_count", -1));
-		class_write_result.add(php::property_entry("modified_count", -1));
-		class_write_result.add(php::property_entry("matched_count", -1));
-		class_write_result.add(php::property_entry("upserted_id", nullptr));
+		class_write_result.prop({"write_errors", nullptr});
+		class_write_result.prop({"write_concern_errors", nullptr});
+		class_write_result.prop({"inserted_count", -1});
+		class_write_result.prop({"deleted_count", -1});
+		class_write_result.prop({"modified_count", -1});
+		class_write_result.prop({"matched_count", -1});
+		class_write_result.prop({"upserted_id", nullptr});
 		class_write_result.add<&write_result::__construct>("__construct", ZEND_ACC_PRIVATE);
 		class_write_result.add<&write_result::has_errors>("has_errors");
 		class_write_result.add<&write_result::has_write_errors>("has_write_errors");
@@ -94,8 +94,7 @@ namespace mongodb {
 		php::array& a = const_cast<php::array&>(arr);
 		for(auto i=a.begin(); i!=a.end(); ++i) {
 			php::string key = i->first.to_string();
-			php::value& val = i->second;
-			switch(val.type()) {
+			switch(i->second.type()) {
 			case IS_UNDEF:
 			case IS_NULL:
 			bson_append_null(doc, key.c_str(), key.length());
@@ -111,40 +110,38 @@ namespace mongodb {
 
 			case IS_LONG:
 			case IS_DOUBLE:
-			bson_append_int64(doc, key.c_str(), key.length(), val);
+			bson_append_int64(doc, key.c_str(), key.length(), i->second);
 			break;
 
-			case IS_STRING: {
-			php::string& str = val;
-			bson_append_utf8(doc, key.c_str(), key.length(), str.c_str(), str.length());
+			case IS_STRING: 
+			bson_append_utf8(doc, key.c_str(), key.length(), 
+				static_cast<php::string&>(i->second).c_str(),
+				static_cast<php::string&>(i->second).length());
 			break;
-			}
-
-			case IS_OBJECT:	{
-			php::object& obj = val;
-			if(obj.is_instance_of<object_id>()) {
-				object_id* oid = obj.native<object_id>();
+			
+			case IS_OBJECT:
+			if(static_cast<php::object&>(i->second).is_instance_of<object_id>()) {
+				object_id* oid = static_cast<php::object&>(i->second).native<object_id>();
 				bson_append_oid(doc, key.c_str(), key.length(), &oid->oid_);
-			}else if(obj.is_instance_of<date_time>()) {
-				date_time* dt = obj.native<date_time>();
+			}else if(static_cast<php::object&>(i->second).is_instance_of<date_time>()) {
+				date_time* dt = static_cast<php::object&>(i->second).native<date_time>();
 				bson_append_date_time(doc, key.c_str(), key.length(), dt->milliseconds_);
 			}else{
 				bson_append_utf8(doc, key.c_str(), key.length(), "<unknown object>", 16);
 			}
 			break;
-			}
 
 			case IS_ARRAY:{
-			php::array& arr = val;
+			php::array& item = static_cast<php::array&>(i->second);
 			bson_t* child = bson_new();
-			if(arr.length() > 0) {
-				if(arr.is_a_list()) {
+			if(item.length() > 0) {
+				if(item.has(0)) {
 					bson_append_array_begin(doc, key.c_str(), key.length(), child);
 				}else{
 					bson_append_document_begin(doc, key.c_str(), key.length(), child);
 				}
-				fill_with(child, arr);
-				if(arr.is_a_list()) {
+				fill_with(child, item);
+				if(item.has(0)) {
 					bson_append_array_end(doc, child);
 				}else{
 					bson_append_document_end(doc, child);

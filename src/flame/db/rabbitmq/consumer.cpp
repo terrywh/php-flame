@@ -24,21 +24,21 @@ namespace rabbitmq {
 		auto url_ = impl->parse_url(params[0]);
 		impl->connect(url_);
 		if(params.length() > 1 && params[1].is_array()) {
-			php::array& options = params[1];
-			if(options.is_a_map()) {
-				opt_no_local  = !options.at("no_local",8).is_empty();
-				opt_no_ack    = !options.at("no_ack",6).is_empty();
-				opt_exclusive = !options.at("exclusive",9).is_empty();
-				php::array_item_assoc prefetch = options.at("prefetch");
-				opt_prefetch  = prefetch.is_undefined() ? 1 : static_cast<int>(prefetch);
-				php::array& args = options.at("arguments",9);
-				if(args.is_array() && args.is_a_map()) {
-					php_arguments.assign(args);
-					php_arguments.fill(&opt_arguments);
-				}
-			}else if(options.is_a_list()) {
+			php::array& options = static_cast<php::array&>(params[1]);
+			if(options.has(0)) {
 				for(auto i=options.begin(); i!=options.end(); ++i) {
 					impl->subscribe(i->second.to_string(), opt_prefetch);
+				}
+			}else{
+				opt_no_local    = !options.at("no_local",8).is_empty();
+				opt_no_ack      = !options.at("no_ack",6).is_empty();
+				opt_exclusive   = !options.at("exclusive",9).is_empty();
+				php::array_item_assoc prefetch = options.at("prefetch");
+				opt_prefetch    = prefetch.is_undefined() ? 1 : static_cast<int>(prefetch);
+				php::array args = options.at("arguments",9);
+				if(args.is_array()) {
+					php_arguments.assign(args);
+					php_arguments.fill(&opt_arguments);
 				}
 			}
 		}else if(params.length() > 1 && params[1].is_string()) {
@@ -46,7 +46,7 @@ namespace rabbitmq {
 		}
 		if(params.length() > 2) {
 			if(params[2].is_array()) {
-				php::array& qs = params[2];
+				php::array& qs = static_cast<php::array&>(params[2]);
 				for(auto i=qs.begin(); i!=qs.end(); ++i) {
 					impl->subscribe(i->second.to_string(), opt_prefetch);
 				}
@@ -90,7 +90,7 @@ namespace rabbitmq {
 		delete ctx;
 	}
 	php::value consumer::confirm(php::parameters& params) {
-		php::object& obj = params[0];
+		php::object& obj = static_cast<php::object&>(params[0]);
 		if(!obj.is_object() || !obj.is_instance_of<message>()) {
 			throw php::exception("only rabbitmq message can be confirmed");
 		}
@@ -104,7 +104,7 @@ namespace rabbitmq {
 		return flame::async(this);
 	}
 	php::value consumer::reject(php::parameters& params) {
-		php::object& obj = params[0];
+		php::object& obj = static_cast<php::object&>(params[0]);
 		if(!obj.is_object() || !obj.is_instance_of<message>()) {
 			throw php::exception("only rabbitmq message can be rejected");
 		}

@@ -114,7 +114,7 @@ namespace flame {
 				break;
 			}else if(g.is_generator()) { // 简化 yield from 调用方式可直接 yield
 				coroutine* co = new coroutine(this);
-				co->gen_ = g;
+				co->gen_ = std::move(g);
 				coroutine* old = current;
 				current = co;
 				co->run();
@@ -178,7 +178,8 @@ namespace flame {
 	void coroutine::start_cb(uv_timer_t* handle) {
 		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
 		if(co->cb_.is_callable()) {
-			php::callable cb = std::move(co->cb_);
+			php::callable cb( std::move(co->cb_) );
+			// php::callable cb = std::move(co->cb_);
 			cb.invoke();
 		}
 	}

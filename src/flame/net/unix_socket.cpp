@@ -24,7 +24,7 @@ namespace net {
 	php::value unix_socket::connect(php::parameters& params) {
 		if(!(flags & CAN_WRITE)) throw php::exception("connect failed: current unix_socket is read only");
 		
-		php::string path = params[0].to_string();
+		php::string& path = params[0].to_string();
 		connect_request_t* ctx = new connect_request_t { coroutine::current };
 		ctx->req.data = ctx;
 		uv_pipe_connect(&ctx->req, sck, path.c_str(), connect_cb);
@@ -46,7 +46,7 @@ namespace net {
 				if(size <= 0) throw php::exception("failed to read: length must be >= 0");
 				rdr.read(size);
 			}else if(params[0].is_string()) {
-				php::string& endl = params[0];
+				php::string& endl = static_cast<php::string&>(params[0]);
 				if(endl.length() <= 0) throw php::exception("failed to read: endl must containe at least one character");
 				rdr.read(endl);
 			}else{
@@ -67,7 +67,7 @@ namespace net {
 		if(!(flags & CAN_WRITE)) throw php::exception("failed to write: current unix_socket is read only");
 		if(sck == nullptr) throw php::exception("failed to write: socket is already closed");
 		
-		php::string str = params[0].to_string();
+		php::string& str = params[0].to_string();
 		wtr.write(str);
 		return flame::async(this);
 	}

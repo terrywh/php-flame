@@ -22,7 +22,7 @@ namespace kafka {
 		char   errstr[1024];
 		size_t errlen = sizeof(errstr);
 
-		rd_kafka_conf_t* gconf_ = global_conf(params[0]);
+		rd_kafka_conf_t* gconf_ = global_conf(static_cast<php::array&>(params[0]));
 		rd_kafka_conf_set_error_cb(gconf_, error_cb);
 		// rd_kafka_conf_set_dr_msg_cb(gconf_, dr_msg_cb);
 		rd_kafka_conf_set_opaque(gconf_, this);
@@ -33,20 +33,20 @@ namespace kafka {
 		// gconf_ = nullptr;
 
 		rd_kafka_topic_conf_t* tconf_ = rd_kafka_topic_conf_new();
-		php::array& tconf = params[1];
+		php::array& tconf = static_cast<php::array&>(params[1]);
 		for(auto i=tconf.begin();i!=tconf.end();++i) {
 			php::string& name = i->first.to_string();
 			if(name.length() == 14 && std::strncmp(name.c_str(), "partitioner_cb", 14) == 0) {
 				partitioner_cb(tconf_, i->second);
 			}else {
-				php::string& data = i->second.to_string();
+				php::string data = i->second.to_string();
 				if(RD_KAFKA_CONF_OK != rd_kafka_topic_conf_set(tconf_, name.c_str(), data.c_str(), errstr, errlen)) {
 					throw php::exception("failed to set kafka conf");
 				}
 			}
 		}
 
-		php::string& name = params[2];
+		php::string& name = static_cast<php::string&>(params[2]);
 		topic_ =  rd_kafka_topic_new(kafka_, name.c_str(), tconf_);
 		if(topic_ == nullptr) {
 			rd_kafka_destroy(kafka_);
@@ -64,7 +64,7 @@ namespace kafka {
 	}
 	void producer_implement::partitioner_cb(rd_kafka_topic_conf_t* tconf_, php::value& cb) {
 		if(cb.is_string()) {
-			php::string& str = cb;
+			php::string& str = static_cast<php::string&>(cb);
 			if(str.length() == 10 && std::strncmp(str.c_str(), "consistent", 10) == 0) {
 				rd_kafka_topic_conf_set_partitioner_cb(tconf_, rd_kafka_msg_partitioner_consistent);
 			}else if(str.length() == 17 && std::strncmp(str.c_str(), "consistent_random", 17) == 0) {

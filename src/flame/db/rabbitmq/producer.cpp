@@ -21,7 +21,7 @@ namespace rabbitmq {
 
 		if(params.length() > 1) {
 			if(params[1].is_array()) {
-				php::array&  options = params[1];
+				php::array&  options = static_cast<php::array&>(params[1]);
 				opt_mandatory = !options.at("mandatory",9).is_empty();
 				opt_immediate = !options.at("immediate",9).is_empty();
 			}else if(params[1].is_string()) {

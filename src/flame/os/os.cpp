@@ -59,7 +59,7 @@ namespace os {
 		ext.add<spawn>("flame\\os\\spawn");
 		ext.add<exec>("flame\\os\\exec");
 		php::class_entry<process> class_process("flame\\os\\process");
-		class_process.add(php::property_entry("pid", int(0)));
+		class_process.prop({"pid", 0});
 		class_process.add<&process::__construct>("__construct");
 		class_process.add<&process::kill>("kill");
 		class_process.add<&process::wait>("wait");

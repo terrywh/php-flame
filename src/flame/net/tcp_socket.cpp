@@ -58,7 +58,7 @@ namespace net {
 				if(size <= 0) throw php::exception("failed to read: length must be >= 0");
 				rdr.read(size);
 			}else if(params[0].is_string()) {
-				php::string& endl = params[0];
+				php::string& endl = static_cast<php::string&>(params[0]);
 				if(endl.length() <= 0) throw php::exception("failed to read: endl must containe at least one character");
 				rdr.read(endl);
 			}else{
@@ -78,7 +78,7 @@ namespace net {
 	php::value tcp_socket::write(php::parameters& params) {
 		if(sck == nullptr) throw php::exception("failed to write: socket is already closed");
 		
-		php::string str = params[0].to_string();
+		php::string& str = params[0].to_string();
 		wtr.write(str);
 		return flame::async(this);
 	}

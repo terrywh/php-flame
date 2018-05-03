@@ -25,9 +25,8 @@ namespace kafka {
 		ext.add(std::move(class_consumer));
 
 		php::class_entry<message> class_message("flame\\db\\kafka\\message");
-		class_message.add(php::property_entry("key", std::string("")));
-		class_message.add(php::property_entry("val", std::string("")));
-		// class_message.add(php::property_entry("time", std::int64_t(0)));
+		class_message.prop({"key", std::string("")});
+		class_message.prop({"val", std::string("")});
 		class_message.add<&message::to_string>("__toString");
 		class_message.add<&message::timestamp>("timestamp");
 		class_message.add<&message::timestamp_ms>("timestamp_ms");
@@ -40,8 +39,8 @@ namespace kafka {
 		size_t errlen = sizeof(errstr);
 		rd_kafka_conf_t* conf = rd_kafka_conf_new();
 		for(auto i=gconf.begin();i!=gconf.end();++i) {
-			php::string& name = i->first.to_string();
-			php::string& data = i->second.to_string();
+			php::string name = i->first.to_string();
+			php::string data = i->second.to_string();
 			if(RD_KAFKA_CONF_OK != rd_kafka_conf_set(conf, name.c_str(), data.c_str(), errstr, errlen)) {
 				throw php::exception("failed to set kafka global conf");
 			}

@@ -14,7 +14,7 @@ CXX?=/usr/local/gcc/bin/g++
 CXXFLAGS?= -O2
 LDFLAGS?=-Wl,-rpath=/usr/local/gcc/lib64/
 
-CXXFLAGS_CORE= -std=c++14 -fPIC
+CXXFLAGS_CORE= -std=c++11 -fPIC
 LDFLAGS_CORE= -u get_module -Wl,-rpath='$$ORIGIN/'
 INCLUDES_CORE= `${PHP_CONFIG} --includes` -I./deps -I./deps/libuv/include -I./deps/mongo-c-driver/bin/include/libbson-1.0 -I./deps/rabbitmq-c/librabbitmq -I./deps/mysql-connector-c/include
 # 依赖库
@@ -47,13 +47,13 @@ all: ${EXTENSION}
 update-deps:
 	git submodule update --init
 ${EXTENSION}: ${LIBRARY} ${OBJECTS}
-	${CXX} -shared ${OBJECTS} ${LIBRARY} ${LDFLAGS_CORE} ${LDFLAGS} -o $@
+	${CXX} -shared -o $@ ${LDFLAGS_CORE} ${LDFLAGS} ${OBJECTS} ${LIBRARY} 
 ${HEADERX}: deps/deps.h
-	${CXX} -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
+	${CXX} -o $@ -x c++ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $^
 src/extension.o: src/extension.cpp
-	${CXX} ${CXXFLAGS_CORE} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^ -o $@
+	${CXX} -o $@ ${CXXFLAGS_CORE} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES_CORE} -c $^
 %.o: %.cpp ${HEADERX}
-	${CXX} ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $< -o $@
+	${CXX} -o $@ ${CXXFLAGS_CORE} ${CXXFLAGS} ${INCLUDES_CORE} -c $<
 # 清理安装
 # ----------------------------------------------------------------------
 clean:

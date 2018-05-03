@@ -19,8 +19,8 @@ namespace net {
 		// class_udp_socket
 		// ------------------------------------
 		php::class_entry<udp_socket> class_udp_socket("flame\\net\\udp_socket");
-		class_udp_socket.add(php::property_entry("local_address", std::string("")));
-		class_udp_socket.add(php::property_entry("local_port", 0));
+		class_udp_socket.prop({"local_address", std::string("")});
+		class_udp_socket.prop({"local_port", 0});
 		class_udp_socket.add<&udp_socket::bind>("bind");
 		class_udp_socket.add<&udp_socket::recv>("recv");
 		class_udp_socket.add<&udp_socket::send>("send");
@@ -28,18 +28,18 @@ namespace net {
 		ext.add(std::move(class_udp_socket));
 		
 		php::class_entry<udp_packet> class_udp_packet("flame\\net\\udp_packet");
-		class_udp_packet.add(php::property_entry("payload", nullptr));
-		class_udp_packet.add(php::property_entry("remote_address", std::string("")));
-		class_udp_packet.add(php::property_entry("remote_port", 0));
+		class_udp_packet.prop({"payload", nullptr});
+		class_udp_packet.prop({"remote_address", std::string("")});
+		class_udp_packet.prop({"remote_port", 0});
 		class_udp_packet.add<&udp_packet::to_string>("__toString");
 		ext.add(std::move(class_udp_packet));
 		// class_tcp_socket
 		// ------------------------------------
 		php::class_entry<tcp_socket> class_tcp_socket("flame\\net\\tcp_socket");
-		class_tcp_socket.add(php::property_entry("local_address", std::string("")));
-		class_tcp_socket.add(php::property_entry("local_port", std::string("")));
-		class_tcp_socket.add(php::property_entry("remote_address", std::string("")));
-		class_tcp_socket.add(php::property_entry("remote_port", 0));
+		class_tcp_socket.prop({"local_address", std::string("")});
+		class_tcp_socket.prop({"local_port", std::string("")});
+		class_tcp_socket.prop({"remote_address", std::string("")});
+		class_tcp_socket.prop({"remote_port", 0});
 		class_tcp_socket.add<&tcp_socket::connect>("connect");
 		class_tcp_socket.add<&tcp_socket::read>("read");
 		class_tcp_socket.add<&tcp_socket::read_all>("read_all");
@@ -49,8 +49,8 @@ namespace net {
 		// class_tcp_server
 		// ------------------------------------
 		php::class_entry<tcp_server> class_tcp_server("flame\\net\\tcp_server");
-		class_tcp_server.add(php::property_entry("local_address", std::string("")));
-		class_tcp_server.add(php::property_entry("local_port", std::string("")));
+		class_tcp_server.prop({"local_address", std::string("")});
+		class_tcp_server.prop({"local_port", std::string("")});
 		class_tcp_server.add<&tcp_server::bind>("bind");
 		class_tcp_server.add<&tcp_server::handle>("handle");
 		class_tcp_server.add<&tcp_server::run>("run");
@@ -157,7 +157,7 @@ namespace net {
 				iaddr.at("address",7) = unknown;
 				iaddr.at("family",6) = unknown;
 			}
-			php::array& iface = face;
+			php::array iface = face;
 			iface.at(iface.length()) = iaddr;
 		}
 		uv_free_interface_addresses(addrs, count);

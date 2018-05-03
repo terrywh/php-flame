@@ -31,10 +31,10 @@ void server_response::buffer_header() {
 		"Status: %03d %.*s\r\n", // fastcgi 返回方式与正常 HTTP 情况不同
 		status_code, status_text.length(), status_text.c_str());
 	// KEY: VALUE\r\n
-	php::array &header = prop("header");
+	php::array header = prop("header");
 	for(auto i=header.begin(); i!=header.end(); ++i) {
-		php::string& key = i->first;
-		php::string  val = i->second.to_string();
+		php::string key = i->first.to_string();
+		php::string val = i->second.to_string();
 		sprintf(buffer_.put(key.length() + val.length() + 4),
 			"%.*s: %.*s\r\n", key.length(), key.data(),
 			val.length(), val.data());

@@ -17,8 +17,8 @@ namespace mysql {
 			mysql_library_end();
 			return true;
 		});
-		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ASSOC", 0));
-		ext.add(php::constant_entry("flame\\db\\mysql\\FETCH_ENUMS", 1));
+		ext.define({"flame\\db\\mysql\\FETCH_ASSOC", 0});
+		ext.define({"flame\\db\\mysql\\FETCH_ENUMS", 1});
 		// ---------------------------------------------------------------------
 		php::class_entry<client> class_client("flame\\db\\mysql\\client");
 		class_client.add<&client::__construct>("__construct");
@@ -41,8 +41,8 @@ namespace mysql {
 		class_result_set.add<&result_set::fetch_all>("fetch_all");
 		ext.add(std::move(class_result_set));
 		php::class_entry<result_info> class_result_info("flame\\db\\mysql\\result_info");
-		class_result_info.add(php::property_entry("affected_rows", 0));
-		class_result_info.add(php::property_entry("insert_id", 0));
+		class_result_info.prop({"affected_rows", 0});
+		class_result_info.prop({"insert_id", 0});
 		ext.add(std::move(class_result_info));
 	}
 	static void condition_item(client* cli, php::string& key, php::value& val, php::buffer& buf) {
@@ -52,14 +52,14 @@ namespace mysql {
 			std::memcpy(buf.put(key.length()), key.c_str(), key.length());
 			buf.add('`');
 			if(val.is_array()) {
-				php::array& cond = val;
-				if(cond.is_a_map()) {
-					for(auto i=cond.begin();i!=cond.end();++i) {
-						condition_item(cli, i->first, i->second, buf);
-					}
-				}else{ // IN 描述
+				php::array& cond = static_cast<php::array&>(val);
+				if(cond.has(0)) {
 					std::memcpy(buf.put(4), " IN ", 4);
 					cli->val_to_buffer(val, buf);
+				}else{ // IN 描述
+					for(auto i=cond.begin();i!=cond.end();++i) {
+						condition_item(cli, i->first.to_string(), i->second, buf);
+					}
 				}
 			}else if(val.is_null()) {
 				std::memcpy(buf.put(7), "IS NULL", 7);
@@ -70,21 +70,21 @@ namespace mysql {
 			return;
 		}
 		if(std::strncmp(key.c_str(), "$and", 4) == 0 || std::strncmp(key.c_str(), "$AND", 4) == 0) {
-			php::array& sub = val;
+			php::array& sub = static_cast<php::array&>(val);
 			int j = -1;
 			buf.add('(');
 			for(auto i=sub.begin();i!=sub.end();++i) {
 				if(++j > 0) std::memcpy(buf.put(5), " AND", 5);
-				condition_item(cli, i->first, i->second, buf);
+				condition_item(cli, i->first.to_string(), i->second, buf);
 			}
 			buf.add(')');
 		}else if(std::strncmp(key.c_str(), "$or", 3) == 0 || std::strncmp(key.c_str(), "$OR", 3) == 0) {
-			php::array& sub = val;
+			php::array& sub = static_cast<php::array&>(val);
 			int j = -1;
 			buf.add('(');
 			for(auto i=sub.begin();i!=sub.end();++i) {
 				if(++j > 0) std::memcpy(buf.put(4), " OR", 4);
-				condition_item(cli, i->first, i->second, buf);
+				condition_item(cli, i->first.to_string(), i->second, buf);
 			}
 			buf.add(')');
 		}else if(std::strncmp(key.c_str(), "$gt", 3) == 0) {
@@ -120,11 +120,11 @@ namespace mysql {
 		if(data.is_string()) {
 			std::memcpy(buf.put(6), " WHERE", 6);
 			buf.add(' ');
-			php::string& str = data;
+			php::string& str = static_cast<php::string&>(data);
 			std::memcpy(buf.put(str.length()), str.data(), str.length());
 		}else if(data.is_array()) {
-			php::array& cond = data;
-			if(!cond.is_a_map()) {
+			php::array& cond = static_cast<php::array&>(data);
+			if(cond.has(0)) {
 				throw php::exception("illegal sql where");
 			}
 			std::memcpy(buf.put(6), " WHERE", 6);
@@ -133,7 +133,7 @@ namespace mysql {
 				if(++j > 0) {
 					std::memcpy(buf.put(4), " AND", 4);
 				}
-				condition_item(cli, i->first, i->second, buf);
+				condition_item(cli, i->first.to_string(), i->second, buf);
 			}
 		}else if(data.is_null()) {
 
@@ -144,14 +144,14 @@ namespace mysql {
 	void sql_orderby(client* cli, php::value& data, php::buffer& buf) {
 		if(data.is_string()) {
 			std::memcpy(buf.put(10), " ORDER BY ", 10);
-			php::string& str = data;
+			php::string& str = static_cast<php::string&>(data);
 			std::memcpy(buf.put(str.length()), str.c_str(), str.length());
 		}else if(data.is_array()) {
 			std::memcpy(buf.put(10), " ORDER BY ", 10);
-			php::array& sort = data;
+			php::array& sort = static_cast<php::array&>(data);
 			int j = -1;
 			for(auto i=sort.begin();i!=sort.end();++i) {
-				php::string& key = i->first;
+				php::string key = i->first.to_string();
 				int64_t dir = i->second.to_long();
 				if(++j > 0) buf.add(',');
 				if(dir > 0) {
@@ -173,14 +173,14 @@ namespace mysql {
 	void sql_limit(client* cli, php::value& data, php::buffer& buf) {
 		std::memcpy(buf.put(7), " LIMIT ", 7);
 		if(data.is_string()) {
-			php::string& str = data;
+			php::string& str = static_cast<php::string&>(data);
 			std::memcpy(buf.put(str.length()), str.data(), str.length());
 		}else if(data.is_long()) {
 			int64_t x = data;
 			size_t  n = sprintf(buf.rev(10), "%ld", x);
 			buf.adv(n);
 		}else if(data.is_array()) {
-			php::array& limit = data;
+			php::array& limit = static_cast<php::array&>(data);
 			int64_t x = limit[0], y = 0;
 			if(limit.length() > 1) {
 				y = limit[1];

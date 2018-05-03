@@ -30,34 +30,32 @@ namespace rabbitmq {
 		int index = 0;
 		entry_.resize(sdata_.length());
 		for(auto i=sdata_.begin(); i!=sdata_.end(); ++i) {
-			php::string  key = i->first.to_string();
-			php::value   val = i->second;
-			php::string& str = val;
+			php::string key = i->first.to_string();
 			amqp_table_entry_t& entry = entry_[index++];
 			entry.key.len    = key.length();
 			entry.key.bytes  = key.data();
 
-			switch(val.type()) {
+			switch(i->second.type()) {
 			case IS_TRUE:
 				entry.value.kind = AMQP_FIELD_KIND_BOOLEAN;
-				entry.value.value.boolean = val.is_true();
+				entry.value.value.boolean = i->second.is_true();
 				break;
 			case IS_FALSE:
 				entry.value.kind = AMQP_FIELD_KIND_BOOLEAN;
-				entry.value.value.boolean = !val.is_false();
+				entry.value.value.boolean = !i->second.is_false();
 				break;
 			case IS_LONG:
 				entry.value.kind = AMQP_FIELD_KIND_I64;
-				entry.value.value.i64 = static_cast<int64_t>(val);
+				entry.value.value.i64 = static_cast<int64_t>(i->second);
 			break;
 			case IS_DOUBLE:
 				entry.value.kind = AMQP_FIELD_KIND_F64;
-				entry.value.value.i64 = static_cast<double>(val);
+				entry.value.value.i64 = static_cast<double>(i->second);
 			break;
 			case IS_STRING:
 				entry.value.kind = AMQP_FIELD_KIND_BYTES;
-				entry.value.value.bytes.len   = str.length();
-				entry.value.value.bytes.bytes = str.data();
+				entry.value.value.bytes.len   = static_cast<php::string&>(i->second).length();
+				entry.value.value.bytes.bytes = static_cast<php::string&>(i->second).data();
 			break;
 			default:
 				entry.value.kind = AMQP_FIELD_KIND_VOID;

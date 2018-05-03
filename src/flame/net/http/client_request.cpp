@@ -36,7 +36,7 @@ php::value client_request::__construct(php::parameters& params) {
 	return nullptr;
 }
 php::value client_request::ssl(php::parameters& params) {
-	php::array& opt = params[0];
+	php::array& opt = static_cast<php::array&>(params[0]);
 	php::string vvf = opt.at("verify", 6);
 	if(vvf.is_string()) {
 		if(std::strncmp(vvf.c_str(), "host", 4) == 4) {
@@ -104,7 +104,7 @@ size_t client_request::body_read_cb(void *ptr, size_t size, size_t nmemb, void *
 }
 
 void client_request::build_header() {
-	php::array& opt = prop("header");
+	php::array opt = prop("header");
 	
 	bool expect = false,
 		content = false,
@@ -136,7 +136,7 @@ void client_request::build_header() {
 }
 void client_request::build_cookie() {
 	php::buffer cookie;
-	php::array& cookie_all = prop("cookie");
+	php::array cookie_all = prop("cookie");
 	for(auto i=cookie_all.begin(); i!= cookie_all.end(); ++i) {
 		php::string key = i->first.to_string();
 		php::string val = i->second.to_string();
@@ -150,7 +150,7 @@ void client_request::build_cookie() {
 	curl_easy_setopt(easy_, CURLOPT_COOKIE, cookie_str.c_str());
 }
 void client_request::build_option() {
-	php::string& url = prop("url");
+	php::string url = prop("url");
 	if (url.is_empty()) {
 		throw php::exception("client_request build failed: empty url", -1);
 	}

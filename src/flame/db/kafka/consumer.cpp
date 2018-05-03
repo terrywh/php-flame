@@ -52,8 +52,7 @@ namespace kafka {
 		delete ctx;
 	}
 	php::value consumer::commit(php::parameters& params) {
-		php::object& msg = params[0];
-		if(!msg.is_instance_of<message>()) {
+		if(!static_cast<php::object&>(params[0]).is_instance_of<message>()) {
 			throw php::exception("only instanceof flame\\db\\kafka\\message can be commited");
 		}
 		consumer_request_t* ctx = new consumer_request_t {

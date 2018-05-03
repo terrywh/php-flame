@@ -8,10 +8,10 @@ namespace flame {
 		coroutine(coroutine* parent);
 		int                    status_;
 		coroutine*             parent_;
-		php::value             cb_;
-		php::generator         gen_;
-		uv_async_t             async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
-		uv_timer_t             timer_;
+		php::callable              cb_;
+		php::generator            gen_;
+		uv_async_t              async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
+		uv_timer_t              timer_;
 		
 		typedef void (*async_cb_t)(php::value& rv, void* data);
 		typedef struct stack_t {

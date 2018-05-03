@@ -94,8 +94,8 @@ namespace rabbitmq {
 		// 在这里声明 headers 保证在执行 publish 时内存有效
 		table headers;
 		
-		abp_body.len   = ctx->msg.length();
-		abp_body.bytes = ctx->msg.data();
+		abp_body.len   = static_cast<php::string&>(ctx->msg).length();
+		abp_body.bytes = static_cast<php::string&>(ctx->msg).data();
 		
 		if(ctx->key.is_string()) {
 			abp_rkey.len   = ctx->key.length();
@@ -105,19 +105,19 @@ namespace rabbitmq {
 		}
 		amqp_basic_properties_t abp_properties;
 		std::memset(&abp_properties, 0, sizeof(amqp_basic_properties_t));
-		php::array& options = ctx->rv;
+		php::array& options = static_cast<php::array&>(ctx->rv);
 		if(options.is_array()) {
 			php::value opt = options.at("content_type",12);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_CONTENT_TYPE_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.content_type.len   = str.length();
 				abp_properties.content_type.bytes = str.data();
 			}
 			opt = options.at("content_encoding",12);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_CONTENT_ENCODING_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.content_encoding.len   = str.length();
 				abp_properties.content_encoding.bytes = str.data();
 			}
@@ -140,21 +140,21 @@ namespace rabbitmq {
 			opt = options.at("correlation_id",14);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_CORRELATION_ID_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.correlation_id.len   = str.length();
 				abp_properties.correlation_id.bytes = str.data();
 			}
 			opt = options.at("reply_to",8);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_REPLY_TO_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.reply_to.len   = str.length();
 				abp_properties.reply_to.bytes = str.data();
 			}
 			opt = options.at("expiration",10);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_EXPIRATION_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.expiration.len   = str.length();
 				abp_properties.expiration.bytes = str.data();
 			}
@@ -168,35 +168,35 @@ namespace rabbitmq {
 			opt = options.at("message_id",10);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_MESSAGE_ID_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.message_id.len   = str.length();
 				abp_properties.message_id.bytes = str.data();
 			}
 			opt = options.at("type",4);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_TYPE_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.type.len   = str.length();
 				abp_properties.type.bytes = str.data();
 			}
 			opt = options.at("user_id",7);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_USER_ID_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.user_id.len   = str.length();
 				abp_properties.user_id.bytes = str.data();
 			}
 			opt = options.at("app_id",6);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_APP_ID_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.app_id.len   = str.length();
 				abp_properties.app_id.bytes = str.data();
 			}
 			opt = options.at("cluster_id",10);
 			if(opt.is_string()) {
 				abp_properties._flags |= AMQP_BASIC_CLUSTER_ID_FLAG;
-				php::string& str = opt;
+				php::string& str = static_cast<php::string&>(opt);
 				abp_properties.cluster_id.len   = str.length();
 				abp_properties.cluster_id.bytes = str.data();
 			}
@@ -267,14 +267,14 @@ RECEIVE_NEXT:
 	}
 	void client_implement::confirm_envelope_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		php::object& obj = ctx->msg;
+		php::object& obj = static_cast<php::object&>(ctx->msg);
 		message* msg = obj.native<message>();
 		ctx->rv = amqp_basic_ack(ctx->self->conn_, 1, msg->envelope_->delivery_tag, 0);
 		ctx->self->reset_timer();
 	}
 	void client_implement::reject_envelope_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		php::object& obj = ctx->msg;
+		php::object& obj = static_cast<php::object&>(ctx->msg);
 		message* msg = obj.native<message>();
 		ctx->rv = amqp_basic_reject(ctx->self->conn_, 1, msg->envelope_->delivery_tag, ctx->key.is_true());
 		ctx->self->reset_timer();

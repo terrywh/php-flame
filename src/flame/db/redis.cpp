@@ -210,8 +210,8 @@ namespace db {
 		delete ctx;
 	}
 	php::value redis::__call(php::parameters& params) {
-		php::string& name = params[0];
-		php::array&  data = params[1];
+		php::string& name = static_cast<php::string&>(params[0]);
+		php::array&  data = static_cast<php::array&>(params[1]);
 		__call(name, data);
 		return flame::async(this);
 	}
@@ -233,7 +233,7 @@ namespace db {
 			coroutine::current, nullptr
 		};
 		for(int i=0; i<data.length(); ++i) {
-			php::string str = data[i].to_string();
+			php::string& str = data[i].to_string();
 			if(name.c_str()[0] == 'Z' && strncasecmp(str.c_str(), "WITHSCORES", 10) == 0) {
 				cb = cb_assoc_even;
 			}else{
@@ -265,7 +265,7 @@ namespace db {
 		delete ctx;
 	}
 	php::value redis::hmget(php::parameters& params) {
-		php::string& name = params[0];
+		php::string& name = static_cast<php::string&>(params[0]);
 		std::vector<const char*> argv;
 		std::vector<size_t>      argl;
 		argv.push_back("HMGET");
@@ -276,7 +276,7 @@ namespace db {
 			coroutine::current, nullptr
 		};
 		for(int i=1; i<params.length();++i) {
-			php::string str = params[i].to_string();
+			php::string& str = params[i].to_string();
 			argv.push_back(str.c_str());
 			argl.push_back(str.length());
 			ctx->key.push_back(str);
@@ -302,8 +302,8 @@ namespace db {
 			self->current_ = nullptr;
 			delete ctx;
 		}else{
-			php::array rv = convert_redis_reply(reply);
-			php::string& type = rv[0];
+			php::array    rv = convert_redis_reply(reply);
+			php::string type = rv[0];
 			if(std::strncmp(type.c_str(), "subscribe", 9) == 0) {
 				//
 			}else if(std::strncmp(type.c_str(), "message", 7) == 0) {
@@ -331,7 +331,7 @@ namespace db {
 		};
 		ctx->key.push_back(php::string("UNSUBSCRIBE", 11));
 		for(int i=0; i<params.length()-1;++i) {
-			php::string str = params[i].to_string();
+			php::string& str = params[i].to_string();
 			argv.push_back(str.c_str());
 			argl.push_back(str.length());
 		}
@@ -355,7 +355,7 @@ namespace db {
 		};
 		ctx->key.push_back(php::string("UNPSUBSCRIBE", 12));
 		for(int i=0; i<params.length()-1;++i) {
-			php::string str = params[i].to_string();
+			php::string& str = params[i].to_string();
 			argv.push_back(str.c_str());
 			argl.push_back(str.length());
 		}

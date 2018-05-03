@@ -19,7 +19,7 @@ namespace mysql {
 			std::memcpy(buf.put(5), "FALSE", 5);		
 		}else if(val.is_string()) {
 			buf.add('\'');
-			php::string& str = val;
+			php::string& str = static_cast<php::string&>(val);
 			char*        esp = buf.rev(str.length() * 2);
 			size_t       len = mysql_real_escape_string(&impl->mysql_, esp, str.data(), str.length());
 			buf.adv(len);
@@ -29,7 +29,7 @@ namespace mysql {
 			size_t n = sprintf(buf.rev(16), "%ld", x);
 			buf.adv(n);
 		}else if(val.is_array()) {
-			php::array& row = val;
+			php::array& row = static_cast<php::array&>(val);
 			int j = -1;
 			for(auto i=row.begin(); i!= row.end(); ++i) {
 				if(++j == 0) buf.add('(');
@@ -49,7 +49,7 @@ namespace mysql {
 	void client::key_to_buffer(php::array& map, php::buffer& buf) {
 		int j = -1;
 		for(auto i= map.begin(); i!= map.end(); ++i) {
-			php::string& key = i->first.to_string();
+			php::string key = i->first.to_string();
 			if(++j > 0) buf.add(',');
 			else buf.add('(');
 			buf.add('`');
@@ -61,7 +61,7 @@ namespace mysql {
 	php::value client::__construct(php::parameters& params) {
 		impl = new client_implement(this);
 		if(params.length() > 0 && params[0].is_array()) {
-			php::array& opts = params[0];
+			php::array& opts = static_cast<php::array&>(params[0]);
 			if(opts.at("debug", 5).is_true()) {
 				impl->debug_ = true;
 			}
@@ -86,7 +86,7 @@ namespace mysql {
 	php::value client::connect(php::parameters& params) {
 		// 指定参数时连接指定的服务器
 		if(params.length() > 0 && params[0].is_string()) {
-			php::string& url = params[0];
+			php::string& url = static_cast<php::string&>(params[0]);
 			url_ = php::parse_url(url.c_str(), url.length());
 			if(!url_ || !url_->scheme || !url_->path || ! url_->host
 				|| strncasecmp(url_->scheme, "mysql", 5) != 0 || std::strlen(url_->path) < 1) {
@@ -118,7 +118,7 @@ namespace mysql {
 		if(params.length() < 1 || !params[0].is_string()) {
 			throw php::exception("format string is required");
 		}
-		php::string sql = params[0];
+		php::string sql = static_cast<php::string&>(params[0]);
 		int         idx = 0;
 		php::buffer buf;
 		for(char* c = sql.data(); c != sql.data() + sql.length(); ++c) {
@@ -142,9 +142,11 @@ namespace mysql {
 		if(params.length() < 1 || !params[0].is_string()) {
 			throw php::exception("sql string is required");
 		}
-		php::string sql = params[0];
+		php::string sql;
 		if(params.length() > 1) {
 			sql = format(params);
+		}else{
+			sql = static_cast<php::string&>(params[0]);
 		}
 		query_(sql);
 		return flame::async(this);
@@ -153,26 +155,31 @@ namespace mysql {
 		if(params.length() < 2 || !params[0].is_string() || !params[1].is_array()) {
 			throw php::exception("table name and insert data array is required");
 		}
-		php::string& table = params[0];
-		php::array&  data  = params[1];
+		php::string& table = static_cast<php::string&>(params[0]);
+		php::array&  data  = static_cast<php::array&>(params[1]);
 
 		php::buffer sql;
 		std::memcpy(sql.put(13), "INSERT INTO `", 13);
 		std::memcpy(sql.put(table.length()), table.c_str(), table.length());
 		sql.add('`');
 		sql.add(' ');
-		if(data.is_a_map()) {
+		if(data.has(0)) {
+			php::array item = data[0];
+			int j = -1;
+			for(auto i= data.begin(); i!= data.end(); ++i) {
+				++j;
+				if(j == 0) {
+					key_to_buffer(static_cast<php::array&>(i->second), sql);
+					std::memcpy(sql.put(8), " VALUES ", 8);
+				}else{
+					sql.add(',');
+				}
+				val_to_buffer(i->second, sql);
+			}
+		}else{
 			key_to_buffer(data, sql);
 			std::memcpy(sql.put(8), " VALUES ", 8);
 			val_to_buffer(data, sql);
-		} else {
-			key_to_buffer(data[0], sql);
-			std::memcpy(sql.put(8), " VALUES ", 8);
-			int j = -1;
-			for(auto i= data.begin(); i!= data.end(); ++i) {
-				if(++j > 0) sql.add(',');
-				val_to_buffer(i->second, sql);
-			}
 		}
 		query_(std::move(sql));
 		return flame::async(this);
@@ -181,7 +188,7 @@ namespace mysql {
 		if(params.length() < 2 || !params[0].is_string()) {
 			throw php::exception("table name is required");
 		}
-		php::string& table = params[0];
+		php::string& table = static_cast<php::string&>(params[0]);
 		php::buffer sql;
 		std::memcpy(sql.put(13), "DELETE FROM `", 13);
 		std::memcpy(sql.put(table.length()), table.c_str(), table.length());
@@ -200,15 +207,15 @@ namespace mysql {
 		if(params.length() < 2 || !params[0].is_string() || !params[2].is_array()) {
 			throw php::exception("table name and update array is required");
 		}
-		php::string& table = params[0];
-		php::array&  data  = params[2];
+		php::string& table = static_cast<php::string&>(params[0]);
+		php::array&  data  = static_cast<php::array&>(params[2]);
 		php::buffer  sql;
 		std::memcpy(sql.put(8), "UPDATE `", 8);
 		std::memcpy(sql.put(table.length()), table.c_str(), table.length());
 		std::memcpy(sql.put(5), "` SET", 5);
 		int j = -1;
 		for(auto i=data.begin(); i!=data.end(); ++i) {
-			php::string& key = i->first;
+			php::string key = i->first.to_string();
 			if(++j == 0) sql.add(' ');
 			else sql.add(',');
 			sql.add('`');
@@ -231,7 +238,7 @@ namespace mysql {
 		if(params.length() < 2 || !params[0].is_string()) {
 			throw php::exception("table name is required");
 		}
-		php::string& table = params[0];
+		php::string& table = static_cast<php::string&>(params[0]);
 		php::buffer  sql;
 		std::memcpy(sql.put(15), "SELECT * FROM `", 15);
 		std::memcpy(sql.put(table.length()), table.c_str(), table.length());
@@ -271,15 +278,15 @@ namespace mysql {
 		if(params.length() < 1 || !params[0].is_string()) {
 			throw php::exception("table name is required");
 		}
-		php::string& table = params[0];
+		php::string& table = static_cast<php::string&>(params[0]);
 		php::buffer  sql;
 		std::memcpy(sql.put(7), "SELECT ", 7);
 		if(params.length() > 1) {
 			if(params[1].is_array()) {
-				php::array& col = params[1];
+				php::array& col = static_cast<php::array&>(params[1]);
 				int j = -1;
 				for(auto i=col.begin();i!=col.end();++i) {
-					php::string& str = i->second;
+					php::string str = i->second;
 					if(++j > 0) sql.add(',');
 					sql.add('`');
 					std::memcpy(sql.put(str.length()), str.c_str(), str.length());

@@ -28,7 +28,7 @@ namespace mongodb {
 		};
 		ctx->req.data = ctx;
 		if(params.length() > 0 && params[0].is_string()) {
-			ctx->name = params[0];
+			ctx->name = static_cast<php::string&>(params[0]);
 		}
 		impl->worker_.queue_work(&ctx->req,
 			client_implement::connect_wk,
@@ -38,8 +38,7 @@ namespace mongodb {
 	void client::connect_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		if(ctx->rv.is_string()) {
-			php::string& message = ctx->rv;
-			ctx->co->fail(message, 0);
+			ctx->co->fail(static_cast<php::string&>(ctx->rv), 0);
 		}else{
 			ctx->co->next(ctx->rv);
 		}

@@ -20,7 +20,7 @@ php::value server_response_base::set_cookie(php::parameters& params) {
 	std::string name = params[0];
 	std::memcpy(data.put(name.length()), name.c_str(), name.length());
 	if(params.length() > 1) {
-		php::string val = params[1].to_string();
+		php::string& val = params[1].to_string();
 		val = php::url_encode(val.c_str(), val.length());
 		data.add('=');
 		std::memcpy(data.put(val.length()), val.c_str(), val.length());
@@ -35,11 +35,11 @@ php::value server_response_base::set_cookie(php::parameters& params) {
 		}
 	}
 	if(params.length() > 3 && params[3].is_string()) {
-		php::string& path = params[3];
+		php::string& path = static_cast<php::string&>(params[3]);
 		sprintf(data.put(7+path.length()), "; Path=%.*s", path.length(), path.c_str());
 	}
 	if(params.length() > 4 && params[4].is_string()) {
-		php::string& domain = params[4];
+		php::string& domain = static_cast<php::string&>(params[4]);
 		sprintf(data.put(9+domain.length()), "; Domain=%.*s", domain.length(), domain.c_str());
 	}
 	if(params.length() > 5) {
@@ -75,7 +75,7 @@ php::value server_response_base::write(php::parameters& params) {
 		buffer_header();
 		is_head_sent = true;
 	}
-	php::string data = params[0].to_string();
+	php::string& data = params[0].to_string();
 	buffer_body(data.data(), data.length());
 
 	return write_buffer(params);
@@ -91,7 +91,7 @@ php::value server_response_base::end(php::parameters& params) {
 	}
 	prop("ended", 5) = php::BOOL_YES;
 	if(params.length() > 0) {
-		php::string data = params[0].to_string();
+		php::string& data = params[0].to_string();
 		buffer_body(data.data(), data.length());
 	}
 	buffer_body(nullptr, 0);

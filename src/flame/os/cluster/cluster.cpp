@@ -15,7 +15,7 @@ namespace cluster {
 		}
 		default_msg->cb_socket = params[0];
 		if(!default_msg->cb_socket.is_closure() && default_msg->cb_socket.is_object()
-			&& static_cast<php::object&>(default_msg->cb_socket).prop("__CONNECTION_HANDLER__", 22).is_true()) {
+			&& static_cast<php::object&>(static_cast<php::value&>(default_msg->cb_socket)).prop("__CONNECTION_HANDLER__", 22).is_true()) {
 
 			default_msg->cb_type |= 0x04;
 		}else if(default_msg->cb_socket.is_callable()) {

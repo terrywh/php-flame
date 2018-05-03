@@ -17,14 +17,14 @@ php::value client::__construct(php::parameters& params) {
 	if(params.length() == 0 || !params[0].is_array()) {
 		return nullptr;
 	}
-	php::array&  opts = params[0];
+	php::array&  opts = static_cast<php::array&>(params[0]);
 	int host = opts.at("conn_per_host");
 	if(host > 0 && host < 512) {
 		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, host);
 	}else{
 		curl_multi_setopt(multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 2);
 	}
-	php::string& conn = opts.at("conn_share");
+	php::string conn = opts.at("conn_share");
 	if(conn.is_empty()) {
 		curl_multi_setopt(multi_, CURLMOPT_PIPELINING, CURLPIPE_HTTP1 | CURLPIPE_MULTIPLEX); // 默认需要 pipeline
 	}else if(conn.length() == 4 && std::strncmp(conn.c_str(), "none", 4) == 0) {
@@ -205,7 +205,7 @@ php::value client::exec2(php::object& req_obj) {
 	return flame::async();
 }
 php::value client::exec1(php::parameters& params) {
-	php::object& obj = params[0];
+	php::object& obj = static_cast<php::object&>(params[0]);
 	if(!obj.is_instance_of<client_request>()) {
 		throw php::exception("object of type 'client_request' is required");
 	}
@@ -296,7 +296,7 @@ php::value remove(php::parameters& params) {
 	return default_client->remove(params);
 }
 php::value exec(php::parameters& params) {
-	php::object& obj = params[0];
+	php::object& obj = static_cast<php::object&>(params[0]);
 	if(!obj.is_instance_of<client_request>()) {
 		throw php::exception("object of type 'client_request' is required");
 	}

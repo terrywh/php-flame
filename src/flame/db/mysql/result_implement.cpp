@@ -16,14 +16,14 @@ namespace mysql {
 	void result_implement::fetch_row_wk(uv_work_t* req) {
 		result_request_t* ctx = reinterpret_cast<result_request_t*>(req->data);
 		if(ctx->type == MYSQL_FETCH_NUM) {
-			sql_fetch_row(ctx->self->rs_, ctx->rv, MYSQL_FETCH_NUM);
+			sql_fetch_row(ctx->self->rs_, static_cast<php::array&>(ctx->rv), MYSQL_FETCH_NUM);
 		}else/* if(ctx->type == MYSQL_FETCH_ASSOC) */{
-			sql_fetch_row(ctx->self->rs_, ctx->rv, MYSQL_FETCH_ASSOC);
+			sql_fetch_row(ctx->self->rs_, static_cast<php::array&>(ctx->rv), MYSQL_FETCH_ASSOC);
 		}
 	}
 	void result_implement::fetch_all_wk(uv_work_t* req) {
 		result_request_t* ctx = reinterpret_cast<result_request_t*>(req->data);
-		sql_fetch_all(ctx->self->rs_, ctx->rv, ctx->type == MYSQL_FETCH_NUM ? MYSQL_FETCH_NUM : MYSQL_FETCH_ASSOC);
+		sql_fetch_all(ctx->self->rs_, static_cast<php::array&>(ctx->rv), ctx->type == MYSQL_FETCH_NUM ? MYSQL_FETCH_NUM : MYSQL_FETCH_ASSOC);
 	}
 	
 	void result_implement::close_wk(uv_work_t* req) {

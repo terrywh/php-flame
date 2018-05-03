@@ -24,7 +24,7 @@ namespace os {
 	}
 	void process::options_flags(uv_process_options_t& options, php::array& flags) {
 		for(auto i=flags.begin();i!=flags.end();++i) {
-			php::string& key = i->first.to_string();
+			php::string key = i->first.to_string();
 			if(std::strncmp(key.c_str(), "cwd", 3) == 0) {
 				// 工作目录
 				php::string str = i->second.to_string();
@@ -102,13 +102,13 @@ namespace os {
 		std::memset(&options, 0, sizeof(uv_process_options_t));
 		options.exit_cb = process::exit_cb;
 		// 1. file
-		php::string& file = params[0];
+		php::string& file = static_cast<php::string&>(params[0]);
 		options.file = file.data();
 		// 2. args
 		std::vector<char*> args;
 		args.push_back(file.data());
 		if(params.length() > 1 && params[1].is_array()) {
-			php::array& argv = params[1];
+			php::array& argv = static_cast<php::array&>(params[1]);
 			for(auto i=argv.begin();i!=argv.end();++i) {
 				args.push_back( i->second.to_string().data() );
 			}
@@ -131,7 +131,7 @@ namespace os {
 		std::vector<char*> envs;
 		// 3. options
 		if(params.length() > 2 && params[2].is_array()) {
-			php::array& flags = params[2];
+			php::array& flags = static_cast<php::array&>(params[2]);
 			php::array env = flags.at("env", 3);
 			
 			if(env.is_array()) {

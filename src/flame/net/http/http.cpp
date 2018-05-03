@@ -29,12 +29,12 @@ namespace http {
 			curl_global_cleanup();
 			return true;
 		});
-		ext.add(php::constant_entry("flame\\net\\http\\HTTP_VERSION_AUTO", CURL_HTTP_VERSION_NONE));
-		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0));
-		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1));
-		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0));
-		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_2TLS", CURL_HTTP_VERSION_2TLS));
-		ext.add(php::constant_entry("flame\\db\\mysql\\HTTP_VERSION_2_PRIOR_KNOWLEDGE", CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE));
+		ext.define({"flame\\net\\http\\HTTP_VERSION_AUTO", CURL_HTTP_VERSION_NONE});
+		ext.define({"flame\\db\\mysql\\HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0});
+		ext.define({"flame\\db\\mysql\\HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1});
+		ext.define({"flame\\db\\mysql\\HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0});
+		ext.define({"flame\\db\\mysql\\HTTP_VERSION_2TLS", CURL_HTTP_VERSION_2TLS});
+		ext.define({"flame\\db\\mysql\\HTTP_VERSION_2_PRIOR_KNOWLEDGE", CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE});
 		// shortcut for class_client
 		ext.add<::flame::net::http::get>("flame\\net\\http\\get");
 		ext.add<::flame::net::http::post>("flame\\net\\http\\post");
@@ -43,21 +43,21 @@ namespace http {
 		ext.add<::flame::net::http::exec>("flame\\net\\http\\exec");
 		// class client_request
 		php::class_entry<client_request> class_client_request("flame\\net\\http\\client_request");
-		class_client_request.add(php::property_entry("method", std::string("")));
-		class_client_request.add(php::property_entry("url", std::string("")));
-		class_client_request.add(php::property_entry("header", nullptr));
-		class_client_request.add(php::property_entry("cookie", nullptr));
-		class_client_request.add(php::property_entry("body", nullptr));
-		class_client_request.add(php::property_entry("timeout", 3000));
+		class_client_request.prop({"method", std::string("")});
+		class_client_request.prop({"url", std::string("")});
+		class_client_request.prop({"header", nullptr});
+		class_client_request.prop({"cookie", nullptr});
+		class_client_request.prop({"body", nullptr});
+		class_client_request.prop({"timeout", 3000});
 		class_client_request.add<&client_request::__construct>("__construct");
 		class_client_request.add<&client_request::ssl>("ssl");
 		ext.add(std::move(class_client_request));
 		// class client_response
 		php::class_entry<client_response> class_client_response("flame\\net\\http\\client_response");
-		class_client_response.add(php::property_entry("status", 0));
-		class_client_response.add(php::property_entry("header", nullptr));
-		class_client_response.add(php::property_entry("cookie", nullptr));
-		class_client_response.add(php::property_entry("body", nullptr));
+		class_client_response.prop({"status", 0});
+		class_client_response.prop({"header", nullptr});
+		class_client_response.prop({"cookie", nullptr});
+		class_client_response.prop({"body", nullptr});
 		class_client_response.add<&client_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		class_client_response.add<&client_response::to_string>("__toString");
 		ext.add(std::move(class_client_response));
@@ -72,7 +72,7 @@ namespace http {
 		ext.add(std::move(class_client));
 		// class handler
 		php::class_entry<http_server_handler> class_handler("flame\\net\\http\\handler");
-		class_handler.add(php::property_entry("__CONNECTION_HANDLER__", (zend_bool)true));
+		class_handler.prop({"__CONNECTION_HANDLER__", zend_bool(true)});
 		class_handler.add<&http_server_handler::put>("put");
 		class_handler.add<&http_server_handler::remove>("delete");
 		class_handler.add<&http_server_handler::post>("post");
@@ -84,22 +84,22 @@ namespace http {
 		ext.add(std::move(class_handler));
 		// class server_request
 		php::class_entry<server_request> class_server_request("flame\\net\\http\\server_request");
-		class_server_request.add(php::property_entry("method", std::string("")));
-		class_server_request.add(php::property_entry("uri", std::string("")));
-		class_server_request.add(php::property_entry("query", nullptr));
-		class_server_request.add(php::property_entry("header", nullptr));
-		class_server_request.add(php::property_entry("cookie", nullptr));
-		class_server_request.add(php::property_entry("body", nullptr));
-		class_server_request.add(php::property_entry("rawBody", std::string("")));
-		class_server_request.add(php::property_entry("data", nullptr));
+		class_server_request.prop({"method", std::string("")});
+		class_server_request.prop({"uri", std::string("")});
+		class_server_request.prop({"query", nullptr});
+		class_server_request.prop({"header", nullptr});
+		class_server_request.prop({"cookie", nullptr});
+		class_server_request.prop({"body", nullptr});
+		class_server_request.prop({"rawBody", std::string("")});
+		class_server_request.prop({"data", nullptr});
 		class_server_request.add<&server_request::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		ext.add(std::move(class_server_request));
 		// class server_request
 		php::class_entry<server_response> class_server_response("flame\\net\\http\\server_response");
-		class_server_response.add(php::property_entry("status", 200));
-		class_server_response.add(php::property_entry("header", nullptr));
-		class_server_response.add(php::property_entry("data", nullptr));
-		class_server_response.add(php::property_entry("ended", zend_bool(false)));
+		class_server_response.prop({"status", 200});
+		class_server_response.prop({"header", nullptr});
+		class_server_response.prop({"data", nullptr});
+		class_server_response.prop({"ended", zend_bool(false)});
 		class_server_response.add<&server_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		class_server_response.add<&server_response::set_cookie>("set_cookie");
 		class_server_response.add<&server_response::write_header>("write_header");

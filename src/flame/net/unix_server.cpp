@@ -23,7 +23,7 @@ namespace net {
 	php::value unix_server::bind(php::parameters& params) {
 		if(bound_) throw php::exception("failed to bind: server is already bound");
 		
-		php::string path = params[0].to_string();
+		php::string& path = params[0].to_string();
 		if(path.c_str()[0] != '/') {
 			throw php::exception("failed to bind: only absolute path is allowed");
 		}

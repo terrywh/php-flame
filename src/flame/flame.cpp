@@ -27,7 +27,7 @@ namespace flame {
 		process_name = static_cast<std::string>(params[0]);
 		// 进程数量
 		if(params.length() > 1) {
-			init_opts(params[1]);
+			init_opts(static_cast<php::array&>(params[1]));
 		}
 		process_self->init();
 		// 直接在 module_startup 中进行 rotate 会改变无参时 PHP 命令的行为（直接退出）

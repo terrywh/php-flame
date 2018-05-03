@@ -41,7 +41,7 @@ namespace rabbitmq {
 	typedef struct client_request_t {
 		coroutine*            co;
 		client_implement*   self;
-		php::string          msg;
+		php::value           msg;
 		php::string          key;
 		php::value            rv;
 		uv_work_t            req;

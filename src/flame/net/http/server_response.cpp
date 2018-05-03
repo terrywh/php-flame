@@ -27,22 +27,23 @@ void server_response::buffer_header() {
 		status_code, status_text.length(), status_text.c_str());
 
 	// KEY: VALUE\r\n
-	php::array &header = prop("header");
+	php::array header = prop("header",6);
 	if(header.has("Content-Length", 14)) {
 		is_chunked = false;
 		header.erase("Transfer-Encoding", 17);
 	}
 	for(auto i=header.begin(); i!=header.end(); ++i) {
-		php::string& key = i->first;
-		php::string  val = i->second.to_string();
+		php::string key = i->first.to_string();
+		php::string val = i->second.to_string();
 		sprintf(buffer_.put(key.length() + val.length() + 4),
 			"%.*s: %.*s\r\n", key.length(), key.data(),
 			val.length(), val.data());
 	}
 	// Set-Cookie: .....
 	for(auto i=cookie_.begin(); i!=cookie_.end(); ++i) {
-		sprintf(buffer_.put(14 + i->second.length()),
-			"Set-Cookie: %.*s\r\n", i->second.length(), i->second.c_str());
+		php::string str = i->second.to_string();
+		sprintf(buffer_.put(14 + str.length()),
+			"Set-Cookie: %.*s\r\n", str.length(), str.c_str());
 	}
 	buffer_.add('\r');
 	buffer_.add('\n');
@@ -63,7 +64,7 @@ void server_response::buffer_body(const char* data, unsigned short size) {
 }
 void server_response::init(server_connection_base* conn) {
 	server_response_base::init(conn);
-	php::array& header = prop("header",6);
+	php::array header = prop("header",6);
 	// 默认使用 chunked encoding 进行输出
 	header.at("Transfer-Encoding", 17) = php::string("chunked",7);
 	is_chunked = true;
