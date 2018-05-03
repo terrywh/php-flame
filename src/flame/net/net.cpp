@@ -122,7 +122,8 @@ namespace net {
 		uv_interface_address_t* addrs;
 		int count;		
 		php::array ifaces(2);
-		char addr[32];
+		char   addr[32];
+		size_t size;
 		uv_interface_addresses(&addrs, &count);
 		for(int i=0;i<count;++i) {
 			php::array_item_assoc face = ifaces.at(addrs[i].name);
@@ -130,14 +131,14 @@ namespace net {
 				face = php::array(4);
 			}
 			php::array  iaddr(2);
-			snprintf(addr, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
+			size = snprintf(addr, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
 				static_cast<unsigned char>(addrs[i].phys_addr[0]),
 				static_cast<unsigned char>(addrs[i].phys_addr[1]),
 				static_cast<unsigned char>(addrs[i].phys_addr[2]),
 				static_cast<unsigned char>(addrs[i].phys_addr[3]),
 				static_cast<unsigned char>(addrs[i].phys_addr[4]),
 				static_cast<unsigned char>(addrs[i].phys_addr[5]));
-			iaddr.at("mac",3) = php::string(addr);
+			iaddr.at("mac",3) = php::string(addr, size);
 			iaddr.at("internal",8) = addrs[i].is_internal ? php::BOOL_YES : php::BOOL_NO;
 			if(addrs[i].address.address4.sin_family == AF_INET) {
 				uv_ip4_name(&addrs[i].address.address4, addr, sizeof(addr));

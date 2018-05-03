@@ -14,27 +14,22 @@ namespace rabbitmq {
 	, opt_mandatory(0)
 	, opt_immediate(0) {}
 	php::value producer::__construct(php::parameters& params) {
+		if(params.length() < 3 || !params[0].is_string() || !params[1].is_array()
+			|| !params[2].is_string()) {
+			throw php::exception("failed to create rabbitmq producer, wrong parameters");
+		}
 		impl = new client_implement(true);
 		impl->producer_ = this;
 		auto url_ = impl->parse_url(params[0]);
 		impl->connect(url_);
-
-		if(params.length() > 1) {
-			if(params[1].is_array()) {
-				php::array&  options = static_cast<php::array&>(params[1]);
-				opt_mandatory = !options.at("mandatory",9).is_empty();
-				opt_immediate = !options.at("immediate",9).is_empty();
-			}else if(params[1].is_string()) {
-				php_exchange       = params[1];
-				opt_exchange.len   = php_exchange.length();
-				opt_exchange.bytes = php_exchange.data();
-			}
-		}
-		if(params.length() > 2 && params[2].is_string()) {
-			php_exchange       = params[2];
-			opt_exchange.len   = php_exchange.length();
-			opt_exchange.bytes = php_exchange.data();
-		}
+		
+		php::array&  options = static_cast<php::array&>(params[1]);
+		opt_mandatory = !options.at("mandatory",9).is_empty();
+		opt_immediate = !options.at("immediate",9).is_empty();
+		
+		php_exchange       = params[2];
+		opt_exchange.len   = php_exchange.length();
+		opt_exchange.bytes = php_exchange.data();
 		return nullptr;
 	}
 	php::value producer::__destruct(php::parameters& params) {

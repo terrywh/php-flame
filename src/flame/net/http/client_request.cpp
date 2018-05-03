@@ -21,9 +21,9 @@ php::value client_request::__construct(php::parameters& params) {
 	}
 	if (params.length() >= 2 && !params[1].is_null()) {
 		prop("body")   = params[1];
-		prop("method") = php::string("POST");
+		prop("method") = php::string("POST",4);
 	}else{
-		prop("method") = php::string("GET");
+		prop("method") = php::string("GET",3);
 	}
 	if (params.length() >= 1) {
 		prop("url") = static_cast<php::string&>(params[0]);

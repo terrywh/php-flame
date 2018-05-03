@@ -19,40 +19,32 @@ namespace rabbitmq {
 
 	}
 	php::value consumer::__construct(php::parameters& params) {
+		if(params.length() < 3 || !params[0].is_string() || !params[1].is_array()
+			|| params[2].is_array() && !params[2].is_string()) {
+			throw php::exception("failed to create rabbitmq consumer, wrong parameters");
+		}
 		impl = new client_implement(false);
 		impl->consumer_ = this;
 		auto url_ = impl->parse_url(params[0]);
 		impl->connect(url_);
-		if(params.length() > 1 && params[1].is_array()) {
-			php::array& options = static_cast<php::array&>(params[1]);
-			if(options.has(0)) {
-				for(auto i=options.begin(); i!=options.end(); ++i) {
-					impl->subscribe(i->second.to_string(), opt_prefetch);
-				}
-			}else{
-				opt_no_local    = !options.at("no_local",8).is_empty();
-				opt_no_ack      = !options.at("no_ack",6).is_empty();
-				opt_exclusive   = !options.at("exclusive",9).is_empty();
-				php::array_item_assoc prefetch = options.at("prefetch");
-				opt_prefetch    = prefetch.is_undefined() ? 1 : static_cast<int>(prefetch);
-				php::array args = options.at("arguments",9);
-				if(args.is_array()) {
-					php_arguments.assign(args);
-					php_arguments.fill(&opt_arguments);
-				}
-			}
-		}else if(params.length() > 1 && params[1].is_string()) {
-			impl->subscribe(params[1], opt_prefetch);
+		php::array& options = static_cast<php::array&>(params[1]);
+			
+		opt_no_local    = !options.at("no_local",8).is_empty();
+		opt_no_ack      = !options.at("no_ack",6).is_empty();
+		opt_exclusive   = !options.at("exclusive",9).is_empty();
+		if(!options.has("prefetch", 8)) {
+			opt_prefetch = 1;
+		}else{
+			php::array_item_assoc prefetch = options.at("prefetch");
+		    opt_prefetch = static_cast<int>(prefetch);
 		}
-		if(params.length() > 2) {
-			if(params[2].is_array()) {
-				php::array& qs = static_cast<php::array&>(params[2]);
-				for(auto i=qs.begin(); i!=qs.end(); ++i) {
-					impl->subscribe(i->second.to_string(), opt_prefetch);
-				}
-			}else if(params[2].is_string()) {
-				impl->subscribe(params[2], opt_prefetch);
+		if(params[2].is_array()) {
+			php::array& qs = static_cast<php::array&>(params[2]);
+			for(auto i=qs.begin(); i!=qs.end(); ++i) {
+				impl->subscribe(i->second.to_string(), opt_prefetch);
 			}
+		}else if(params[2].is_string()) {
+			impl->subscribe(params[2], opt_prefetch);
 		}
 		return nullptr;
 	}

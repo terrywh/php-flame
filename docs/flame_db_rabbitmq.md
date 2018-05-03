@@ -34,19 +34,19 @@ flame\go(function() {
 #### `class flame\db\rabbitmq\producer`
 生产者
 
-##### `producer::__construct(string $url[, array $options][, string $exchange_name])`
-连接由 `$url` 指定的 RabbitMQ 服务器并使用对应配置 `$options`、Exchange 名称 `$exchange_name` 构建生产者;
+##### `producer::__construct(string $url, array $options, string $exchange)`
+连接由 `$url` 指定的 RabbitMQ 服务器并使用对应配置 `$options`、`$exchange` 名称创建生产者;
 
 连接 `$url` 形式如下：
 ```
 amqp://{USER}:{PASS}@{HOST}:{PORT}/{VHOST}
 ```
 
-配置 `$options` 可选，可用配置项如下：
-* `mandatory` - boolean -
-* `immediate` - boolean - 
+配置 `$options` 可用配置项如下：
+* `mandatory` - boolean
+* `immediate` - boolean 
 
-`$exchange_name` 可选，为空时使用内置的“无名称”的 `direct` 类型 Exchange；
+`$exchange` 名称，使用默认 Exchange 请指定 `""`；
 
 ##### `yield producer::produce(string $data[, string $routing_key[, array $properties]])`
 生产一条消息，可选的指定消息的 ROUTING_KEY ，其规则与使用的的 EXCHANGE 的类型相关；
@@ -72,11 +72,11 @@ amqp://{USER}:{PASS}@{HOST}:{PORT}/{VHOST}
 * `headers` 为关联数组，其 KEY 长度不能超过 128 字节，不支持潜逃数组；
 * `timestamp` 可以手动填写，按 AMQP-0-9-1 标注，应使用秒级时间戳；框架会自动填写当前时间戳；
 
-#### `class flame\db\kafka\consumer`
+#### `class flame\db\rabbitmq\consumer`
 消费者
 
-##### `consumer::__construct(string $url[, array $options][, string|array $queue_name])`
-连接 `$url` 指定的 RabbmitMQ 服务器，以指定配置 `$options` 创建消费者，订阅消费 `$queue_name` 指定的队列；
+##### `consumer::__construct(string $url, array $options, string|array $queue_name)`
+连接由 `$url` 指定的 RabbitMQ 服务器并使用对应配置 `$options`、`$queue` 队列名称创建消费者 ;
 
 连接 `$url` 形式如下：
 ```
@@ -85,14 +85,14 @@ amqp://{USER}:{PASS}@{HOST}:{PORT}/{VHOST}
 
 配置 `$options` 可用配置项如下：
 * `no_local` - boolean
-* `no_ack`   - boolean
+* `no_ack` - boolean 
 * `exclusive` - boolean
 * `prefetch` - integer
-* `arguments` - array - ASSOC
+
+`$queue` 队列名，可指定单个队列，例如：`"queue_1"`；也可指定多个队列同时消费，例如：`["queue_1", "queue_2"]`；
 
 **注意**：
-* 以数组形式指定 `queue_name` 时可以订阅消费多个队列，但实际数据并无法区分其来自那个队列，如需要，可在生产时添加属性或头部信息；
-
+* 指定 `no_ack` 选项后，请勿使用 `consumer::confirm` `consumer::reject` 函数；
 
 ##### `yield consumer::consume([integer $timeout = 0])`
 消费（等待 RabbitMQ 返回）一条消息；可选的指定 `$timeout` 超时（单位 `ms` 毫秒），`0` 不超时；当指定超时设置时，若在指定时间内未能获取消息（队列空），则返回 `null`；
@@ -106,16 +106,22 @@ $msg = yield $consumer->consume(5000);
 ```
 
 **注意**：
-* 多个协程进行消费同一个 consumer 会导致未知错误；
+* 多个协程对同一个 consumer 进行消费会导致未知错误；
 
-##### `yield consumer::commit(object $msg)`
-手动提交消息偏移；
+##### `yield consumer::confirm(object $msg)`
+确认消息处理完毕；
 
 **注意**：
-* 需要手动提交，请设置 `enable.auto.commit` 为 `"false"`
-* 相较之下，手动提交效率很低，请斟酌使用；
+* 建立消费者时指定 `no_ack` 选项后，无需对消息进行 `confirm` 确认操作；
 
-#### `class flame\db\kafka\message`
+##### `yield consumer::reject(object $msg, boolean $requeue = false)`
+拒绝处理消息，并可选的将消息放回原队列；
+
+**注意**：
+* 建立消费者时指定 `no_ack` 选项后，无需对消息进行 `reject` 确认操作；
+
+
+#### `class flame\db\rabbitmq\message`
 消费者消费过程返回的消息对象，用于包裹实际的消息内容和其相关数据
 
 ##### `string message::$key`
@@ -124,6 +130,21 @@ $msg = yield $consumer->consume(5000);
 ##### `string message::$val`
 消息体，内容；
 
+#### `string message::$exchange`
+#### `string message::$redelivered`
+#### `string message::$content_type`
+#### `string message::$content_encoding`
+#### `array message::$headers`
+#### `integer message::$delivery_mode`
+#### `integer message::$priority`
+#### `string message::$correlation_id`
+#### `string message::$reply_to`
+#### `string message::$message_id`
+#### `string message::$type`
+#### `string message::$user_id`
+#### `string message::$app_id`
+#### `string message::$cluster_id`
+
 ##### `message::__toString()`
 消息体，与 `$val` 一致；
 
@@ -131,11 +152,10 @@ $msg = yield $consumer->consume(5000);
 时间戳；
 
 **注意**：
-* 这里会直接返回消息属性 `timestamp` ，由于该数值可以自行指定，故此处返回单位不严格为 
-“秒”；
+* 这里会直接返回消息属性 `timestamp` ，由于该数值可以自行指定，故此处返回单位不一定是“秒”；
 
 ##### `message::timestamp_ms()`
 时间戳；
 
 **注意**：
-* 这里会直接放回消息属性 `timestamp * 1000` 的值，由于该数值可以自行指定，故自出返回单位不严格为“毫秒”；
+* 这里会直接放回消息属性 `timestamp * 1000` 的值，由于该数值可以自行指定，返回单位不一定是“毫秒”；
