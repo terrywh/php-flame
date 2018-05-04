@@ -204,25 +204,30 @@ namespace mysql {
 		return flame::async(this);
 	}
 	php::value client::update(php::parameters& params) {
-		if(params.length() < 2 || !params[0].is_string() || !params[2].is_array()) {
-			throw php::exception("table name and update array is required");
+		if(params.length() < 2 || !params[0].is_string() || (!params[2].is_array() && !params[2].is_string())) {
+			throw php::exception("table name and update is required");
 		}
 		php::string& table = static_cast<php::string&>(params[0]);
-		php::array&  data  = static_cast<php::array&>(params[2]);
+		
 		php::buffer  sql;
 		std::memcpy(sql.put(8), "UPDATE `", 8);
 		std::memcpy(sql.put(table.length()), table.c_str(), table.length());
-		std::memcpy(sql.put(5), "` SET", 5);
-		int j = -1;
-		for(auto i=data.begin(); i!=data.end(); ++i) {
-			php::string key = i->first.to_string();
-			if(++j == 0) sql.add(' ');
-			else sql.add(',');
-			sql.add('`');
-			std::memcpy(sql.put(key.length()), key.c_str(), key.length());
-			sql.add('`');
-			sql.add('=');
-			val_to_buffer(i->second, sql);
+		std::memcpy(sql.put(6), "` SET ", 6);
+		if(params[2].is_string()) {
+			php::string& update = static_cast<php::string&>(params[2]);
+			std::memcpy(sql.put(update.length()), update.c_str(), update.length());
+		}else{
+			php::array&  data  = static_cast<php::array&>(params[2]);
+			int j = -1;
+			for(auto i=data.begin(); i!=data.end(); ++i) {
+				php::string key = i->first.to_string();
+				if(++j > 0) sql.add(',');
+				sql.add('`');
+				std::memcpy(sql.put(key.length()), key.c_str(), key.length());
+				sql.add('`');
+				sql.add('=');
+				val_to_buffer(i->second, sql);
+			}
 		}
 		sql_where(this, params[1], sql);
 		if(params.length() > 3) {

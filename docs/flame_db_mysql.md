@@ -91,8 +91,11 @@ $rs = $cli->query("DELETE FROM `test` WHERE `a`=?", $aa); // DELETE FROM `test` 
 **注意**：
 * 当需要指定 `$limit` 但无 `$sort` 请在 `$sort` 字段填写 `NULL`；
 
-#### `yield client::update(string $table, array $conditions, array $modify[, mixed $sort[, mixed $limit]])`
-更新匹配条件的所有行，并应用由 `$modify` 描述的更改；
+#### `yield client::update(string $table, array $conditions, mixed $modify[, mixed $sort[, mixed $limit]])`
+更新匹配条件的所有行，并应用由 `$modify` 描述的更改：
+
+* 当 `$modify` 为字符串时，将拼接形如 `UPDATE ``{$table}`` SET {$modify}` 语句；
+* 当 `$modify` 为数组串时，将拼接形如 `UPDATE ``{$table}`` SET ``{$key}``='{$val}'` 语句 `foreach($modify as $key=>$val)`；
 
 **注意**：
 * 当需要指定 `$limit` 但无 `$sort` 请在 `$sort` 字段填写 `NULL`；
