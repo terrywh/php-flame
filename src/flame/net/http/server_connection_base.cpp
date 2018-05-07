@@ -74,7 +74,7 @@ namespace http {
 		}else if(self->parse(buf->base, nread) == nread) {
 			// continue
 		}else{
-			log::default_logger->write("(WARN) http parse failed: illegal data");
+			log::default_logger->write("(WARN) protocol parse failed: illegal data");
 			self->close_ex();
 		}
 	}

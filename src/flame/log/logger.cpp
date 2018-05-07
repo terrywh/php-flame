@@ -74,7 +74,7 @@ namespace log {
 	} write_request_t;
 	void logger::write_cb(uv_write_t* req, int status) {
 		write_request_t* ctx = reinterpret_cast<write_request_t*>(req->data);
-		ctx->co->next();
+		if(ctx->co != nullptr) ctx->co->next();
 		delete ctx;
 	}
 	bool logger::write(const std::string& data) {
