@@ -11,23 +11,19 @@ namespace flame {
 		
 	}
 	php::value async() {
-		if(!coroutine::current ||coroutine::current->status_ != 0) {
-			php::fail("keyword 'yield' missing before async function");
-			if(coroutine::current) coroutine::current->close();
-			uv_stop(flame::loop);
-			exit(-1);
-			return nullptr;
+		if(!coroutine::current) {
+			php::fail("'async' function cannot be used outside flame coroutine");
+		}else if(coroutine::current->status_ != 0) {
+			throw php::exception("keyword 'yield' missing before async function");
 		}
 		++ coroutine::current->status_;
 		return php::value(coroutine::current);
 	}
 	php::value async(php::class_base* cpp) {
-		if(!coroutine::current ||coroutine::current->status_ != 0) {
-			php::fail("keyword 'yield' missing before async function");
-			if(coroutine::current) coroutine::current->close();
-			uv_stop(flame::loop);
-			exit(-1);
-			return nullptr;
+		if(!coroutine::current) {
+			php::fail("'async' function cannot be used outside flame coroutine");
+		}else if(coroutine::current->status_ != 0) {
+			throw php::exception("keyword 'yield' missing before async function");
 		}
 		++ coroutine::current->status_;
 		coroutine::current->ref_ = php::object(cpp); // 在协程中保存当前对象的引用（防止异步流程丢失当前对象）
@@ -89,9 +85,11 @@ namespace flame {
 		delete self;
 	}
 	void coroutine::close() {
-		if(status_ != 0) {
+		assert(status_ != -1);
+		if(status_ > 0) {
+			// 缺陷：由于 coroutine 已经在结束过程，无法在原位置进行异常上报
+			// 下面错误会提示在 run() 函数位置
 			php::fail("keyword 'yield' missing before async function");
-			exit(-1);
 		}
 		status_ = -1;
 		uv_close((uv_handle_t*)&timer_, nullptr);
@@ -99,17 +97,22 @@ namespace flame {
 	}
 	void coroutine::run() {
 		while(status_ >= 0) {
-			if(EG(exception) || !gen_.valid()) {
+			if(EG(exception)) {
+				status_ = 0; // 已经发生异常，不再处理 status_ 问题
+				close();
+				break;
+			}else if(!gen_.valid()) {
+				// coroutine 结束，需要确认是否缺少 yield 关键字
 				close();
 				break;
 			}
 			php::generator g = gen_.current();
 			if(g.is_pointer() && g.ptr<coroutine>() == this) { // 使用内置 IS_PTR 类型标识异步操作
 				if(--status_ != 0) {
-					php::fail("keyword 'yield' missing before async function");
+					// 尽量在执行位置处引发异常以更更准确的提示错误位置
 					status_ = 0;
-					close();
-					uv_stop(flame::loop);
+					gen_.throw_exception("keyword 'yield' missing before async function");
+					run();
 				}
 				break;
 			}else if(g.is_generator()) { // 简化 yield from 调用方式可直接 yield
