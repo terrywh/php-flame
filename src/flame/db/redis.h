@@ -19,7 +19,7 @@ public:
 	php::value close(php::parameters& params);
 
 	php::value __call(php::parameters& params);
-	void __call(php::string& name, php::array& data);
+	void __call(php::string& name, php::array& data, redisCallbackFn* fn);
 	php::value hmget(php::parameters& params);
 	php::value subscribe(php::parameters& params);
 	php::value psubscribe(php::parameters& params);

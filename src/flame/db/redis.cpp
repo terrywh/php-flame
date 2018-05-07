@@ -81,7 +81,7 @@ namespace db {
 			);
 		}
 	}
-	void redis::cb_connect_auth(php::value&rv, void* data) {
+	void redis::cb_connect_auth(php::value& rv, void* data) {
 		redis* self = reinterpret_cast<redis*>(data);
 		
 		if(self->url_->user == nullptr || self->url_->pass == nullptr) {
@@ -91,18 +91,19 @@ namespace db {
 		php::string method("auth",4);
 		php::array  params(4);
 		params[0] = php::string(self->url_->pass);
-		self->__call(method, params);
+		self->__call(method, params, cb_default);
 	}
-	void redis::cb_connect_select(php::value&rv, void* data) {
+	void redis::cb_connect_select(php::value& rv, void* data) {
 		redis* self = reinterpret_cast<redis*>(data);
 		
 		if(self->url_->path == nullptr || strlen(self->url_->path) <= 1) {
 			coroutine::current->next();
+			return;
 		}
 		php::string method("select",6);
 		php::array  params(4);
 		params[0] = php::string(self->url_->path + 1); // 去除首部 / 斜线
-		self->__call(method, params);
+		self->__call(method, params, cb_default);
 	}
 	void redis::connect() {
 		context_ = redisAsyncConnect(url_->host, url_->port);
@@ -144,7 +145,7 @@ namespace db {
 			php::string url = params[0];
 			url_ = php::parse_url(url.c_str(), url.length());
 		}
-		if(strncasecmp("redis", url_->scheme, 5) != 0) {
+		if(!url_ || strncasecmp("redis", url_->scheme, 5) != 0) {
 			throw php::exception("illegal connection uri");
 		}
 		if(!url_->port) url_->port = 6379;
@@ -201,9 +202,9 @@ namespace db {
 			ctx->co->fail("ILLEGAL illegal reply", -2);
 		} else {
 			php::array rv(reply->elements/2 + 4);
-			for(int i = 0; i < reply->elements; i=i+2) { // i 是 key，i+1 就是value
-				redisReply* key = reply->element[i];
-				rv.at(key->str, key->len) = convert_redis_reply(reply->element[i+1]);
+			for(int i = 1; i < reply->elements; i=i+2) { // i+1 是 key，i 是val
+				redisReply* key = reply->element[i-1];
+				rv.at(key->str, key->len) = convert_redis_reply(reply->element[i]);
 			}
 			ctx->co->next(std::move(rv));
 		}
@@ -212,33 +213,37 @@ namespace db {
 	php::value redis::__call(php::parameters& params) {
 		php::string& name = static_cast<php::string&>(params[0]);
 		php::array&  data = static_cast<php::array&>(params[1]);
-		__call(name, data);
-		return flame::async(this);
-	}
-	void redis::__call(php::string& name, php::array& data) {
+		redisCallbackFn* cb;
 		php::strtoupper_inplace(name.data(), name.length());
-		std::vector<const char*> argv;
-		std::vector<size_t>      argl;
-		redisCallbackFn*           cb;
 		if(std::strncmp(name.c_str(), "MGET", 4) == 0) {
 			cb = cb_assoc_keys;
 		}else if(std::strncmp(name.c_str(), "HGETALL", 7) == 0) {
 			cb = cb_assoc_even;
+		}else if(name.c_str()[0] == 'Z' && data.length() > 1) {
+			php::string str = data[data.length()-1].to_string();
+			if(strncasecmp(str.c_str(), "WITHSCORES", 10) == 0) {
+				cb = cb_assoc_even;
+			}else{
+				cb = cb_default;
+			}
 		}else{
 			cb = cb_default;
 		}
+		__call(name, data, cb);
+		return flame::async(this);
+	}
+	void redis::__call(php::string& name, php::array& data, redisCallbackFn* cb) {
+		std::vector<const char*> argv;
+		std::vector<size_t>      argl;
+	
 		argv.push_back(name.c_str());
 		argl.push_back(name.length());
 		redis_request_t* ctx = new redis_request_t {
 			coroutine::current, nullptr
 		};
 		for(int i=0; i<data.length(); ++i) {
-			php::string& str = data[i].to_string();
-			if(name.c_str()[0] == 'Z' && strncasecmp(str.c_str(), "WITHSCORES", 10) == 0) {
-				cb = cb_assoc_even;
-			}else{
-				ctx->key.push_back(str);
-			}
+			php::string str = data[i].to_string();
+			ctx->key.push_back(str);
 			argv.push_back(str.c_str());
 			argl.push_back(str.length());
 		}
