@@ -16,8 +16,8 @@ namespace http {
 		header_parser_conf.on_val = header_val_cb;
 		header_parser_conf.s1 = ':';
 		header_parser_conf.s2 = '\r';
-		header_parser_conf.w1 = '\n';
-		header_parser_conf.w2 = '\0';
+		header_parser_conf.w1 = '\r';
+		header_parser_conf.w2 = '\n';
 
 		cookie_parser_conf.on_key = cookie_key_cb;
 		cookie_parser_conf.on_val = cookie_val_cb;
@@ -33,6 +33,7 @@ namespace http {
 	}
 	void client_response::head_cb(char* ptr, size_t size) {
 		// 由于 curl 回调的 header 行完整，不需要考虑数据段问题
+		if(ptr[4] == '/') return; // HTTP/1.1 200 OK
 		kv_parser_execute(&header_parser, &header_parser_conf, ptr, size);
 	}
 	void client_response::body_cb(char* ptr, size_t size) {
