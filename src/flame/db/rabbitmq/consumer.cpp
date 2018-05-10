@@ -54,12 +54,12 @@ namespace rabbitmq {
 	}
 	php::value consumer::consume(php::parameters& params) {
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl
+			coroutine::current, impl, php::object::create<message>()
 		};
 		if(params.length() > 0 && params[0].is_long()) {
-			ctx->rv = params[0];
+			ctx->key = params[0];
 		}else{
-			ctx->rv = int(0);
+			ctx->key = int(0);
 		}
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req, client_implement::consume_wk, consume_cb);
@@ -67,19 +67,22 @@ namespace rabbitmq {
 	}
 	void consumer::consume_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		if(ctx->rv.is_long()) {
-			client_implement::error_cb(req, status);
-		}else if(ctx->rv.is_null()){ // 超时消费情况
-			ctx->co->next();
-		}else if(ctx->rv.is_pointer()) {
-			php::object obj = php::object::create<message>();
-			message*    msg = obj.native<message>();
-			msg->init(ctx->rv.ptr<amqp_envelope_t>(), ctx->self->consumer_);
-			ctx->co->next(std::move(obj));
+		int error = static_cast<int>(ctx->rv);
+		if(error == AMQP_STATUS_TIMEOUT) {
+			ctx->co->next(); // 超时按 null 返回
+		}else if(error == 0) {
+			message*    msg = static_cast<php::object&>(ctx->msg).native<message>();
+			msg->init(ctx->self->consumer_); // 对象数据的生成需要在主线程
+			ctx->self->worker_.queue_work(&ctx->req,
+				client_implement::destroy_message_wk, client_implement::destroy_message_cb);
+			// 复用 ctx 进行 envelope 的销毁
+		}else if(error == -2) {
+			ctx->co->fail("rabbitmq client already closed");
+		}else if(error == -1) {
+			ctx->co->fail("rabbitmq server failed");
 		}else{
-			assert(0);
+			ctx->co->fail(amqp_error_string2(error), error);
 		}
-		delete ctx;
 	}
 	php::value consumer::confirm(php::parameters& params) {
 		php::object& obj = static_cast<php::object&>(params[0]);
@@ -87,12 +90,11 @@ namespace rabbitmq {
 			throw php::exception("only rabbitmq message can be confirmed");
 		}
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl
+			coroutine::current, impl, obj
 		};
-		ctx->msg = obj;
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req,
-			client_implement::confirm_envelope_wk, client_implement::error_cb);
+			client_implement::confirm_message_wk, client_implement::error_cb);
 		return flame::async(this);
 	}
 	php::value consumer::reject(php::parameters& params) {
@@ -101,9 +103,8 @@ namespace rabbitmq {
 			throw php::exception("only rabbitmq message can be rejected");
 		}
 		client_request_t* ctx = new client_request_t {
-			coroutine::current, impl
+			coroutine::current, impl, obj
 		};
-		ctx->msg = obj;
 		if(params.length() > 1 && params[1].is_true()) {
 			ctx->key = php::BOOL_YES;
 		}else{
@@ -111,7 +112,7 @@ namespace rabbitmq {
 		}
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req,
-			client_implement::reject_envelope_wk, client_implement::error_cb);
+			client_implement::reject_message_wk, client_implement::error_cb);
 		return flame::async(this);
 	}
 }

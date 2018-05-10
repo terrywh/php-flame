@@ -297,28 +297,26 @@ namespace db {
 		if (reply == nullptr) {
 			ctx->co->fail("ILLEGAL illegal reply", -2);
 			self->current_ = nullptr;
-			delete ctx;
 		}else if(reply->type == REDIS_REPLY_ERROR) {
 			ctx->co->fail(reply->str);
 			self->current_ = nullptr;
-			delete ctx;
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
 			ctx->co->fail("ILLEGAL illegal reply", -2);
 			self->current_ = nullptr;
-			delete ctx;
 		}else{
 			php::array    rv = convert_redis_reply(reply);
 			php::string type = rv[0];
 			if(std::strncmp(type.c_str(), "subscribe", 9) == 0) {
-				//
+				return; // ctx 继续保持 新增了其他订阅
 			}else if(std::strncmp(type.c_str(), "message", 7) == 0) {
 				coroutine::create(ctx->cb, {rv[1], rv[2]})->start();
+				return; // ctx 继续保持 受订阅消息到达
 			}else if(self->current_ != nullptr && std::strncmp(type.c_str(), "unsubscribe", 11) == 0) {
 				self->current_ = nullptr;
 				ctx->co->next();
-				delete ctx;
 			}
 		}
+		delete ctx;
 	}
 	php::value redis::subscribe(php::parameters& params) {
 		if(current_ != nullptr) {

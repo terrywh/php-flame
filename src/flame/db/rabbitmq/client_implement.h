@@ -21,9 +21,10 @@ namespace rabbitmq {
 		static void produce_wk(uv_work_t* req);
 		static void flush_wk(uv_work_t* req);
 		static void consume_wk(uv_work_t* req);
-		static void confirm_envelope_wk(uv_work_t* req);
-		static void reject_envelope_wk(uv_work_t* req);
-		static void destroy_envelope_wk(uv_work_t* req);
+		static void confirm_message_wk(uv_work_t* req);
+		static void reject_message_wk(uv_work_t* req);
+		static void destroy_message_wk(uv_work_t* req);
+		static void destroy_message_cb(uv_work_t* req, int status);
 		static void destroy_wk(uv_work_t* req);
 		static void destroy_cb(uv_work_t* req, int status);
 		static void timer_wk(uv_timer_t* tm);
@@ -42,7 +43,7 @@ namespace rabbitmq {
 		coroutine*            co;
 		client_implement*   self;
 		php::value           msg;
-		php::string          key;
+		php::value           key;
 		php::value            rv;
 		uv_work_t            req;
 	} client_request_t;

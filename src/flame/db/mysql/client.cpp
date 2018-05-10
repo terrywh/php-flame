@@ -271,7 +271,7 @@ namespace mysql {
 			php::array rv(4);
 			sql_fetch_row(rs, rv, MYSQL_FETCH_ASSOC);
 			ctx->co->next(std::move(rv));
-			// MYSQL_RES* 指针需要清理
+			// MYSQL_RES* 指针需要清理 且这里复用 ctx 上下文
 			ctx->self->worker_.queue_work(&ctx->req, client_implement::two_wk, two_cb);
 		}
 	}

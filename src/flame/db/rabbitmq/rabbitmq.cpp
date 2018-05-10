@@ -47,7 +47,6 @@ namespace rabbitmq {
 		class_message.prop({"cluster_id", std::string("")});
 
 		class_message.add<&message::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有
-		class_message.add<&message::__destruct>("__destruct");
 		class_message.add<&message::timestamp>("timestamp");
 		class_message.add<&message::timestamp_ms>("timestamp_ms");
 		class_message.add<&message::to_string>("__toString");

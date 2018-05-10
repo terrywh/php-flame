@@ -98,8 +98,8 @@ namespace rabbitmq {
 		abp_body.bytes = static_cast<php::string&>(ctx->msg).data();
 		
 		if(ctx->key.is_string()) {
-			abp_rkey.len   = ctx->key.length();
-			abp_rkey.bytes = ctx->key.data();
+			abp_rkey.len   = static_cast<php::string&>(ctx->key).length();
+			abp_rkey.bytes = static_cast<php::string&>(ctx->key).data();
 		}else{
 			abp_rkey = amqp_empty_bytes;
 		}
@@ -221,6 +221,7 @@ namespace rabbitmq {
 			ctx->rv = -2;
 			return;
 		}
+		amqp_maybe_release_buffers_on_channel(ctx->self->conn_, 1);
 		amqp_channel_close(ctx->self->conn_, 1, AMQP_REPLY_SUCCESS);
 		amqp_channel_open(ctx->self->conn_, 1);
 		amqp_rpc_reply_t reply = amqp_get_rpc_reply(ctx->self->conn_);
@@ -230,8 +231,10 @@ namespace rabbitmq {
 		}else if(reply.reply_type == AMQP_RESPONSE_SERVER_EXCEPTION) {
 			ctx->self->destroy();
 			ctx->rv = -1;
+		}else{
+			ctx->rv = 0;
+			ctx->self->reset_timer();
 		}
-		ctx->self->reset_timer();
 	}
 	void client_implement::consume_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
@@ -240,48 +243,53 @@ namespace rabbitmq {
 			return;
 		}
 		amqp_rpc_reply_t  reply;
-		amqp_envelope_t*  envelope = new amqp_envelope_t;
 		amqp_maybe_release_buffers(ctx->self->conn_);
-
-		int64_t timeout = ctx->rv;
+		message* msg = static_cast<php::object&>(ctx->msg).native<message>();
+		
+		int64_t timeout = static_cast<int64_t>(ctx->key);
 RECEIVE_NEXT:
 		if(timeout > 0) {
 			struct timeval to { timeout / 1000, (timeout % 1000) * 1000};
-			reply = amqp_consume_message(ctx->self->conn_, envelope, &to, 0);
+			reply = amqp_consume_message(ctx->self->conn_, &msg->envelope_, &to, 0);
 		}else{
-			reply = amqp_consume_message(ctx->self->conn_, envelope, nullptr, 0);
+			reply = amqp_consume_message(ctx->self->conn_, &msg->envelope_, nullptr, 0);
 		}
 		if(reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
-			// 不是很理解 driver 示例 consumer 中对异常情况读取 frame 的处理流程是为了解决什么问题
-			ctx->self->destroy();
+			if(reply.library_error != AMQP_STATUS_TIMEOUT) {
+				ctx->self->destroy();
+			}
 			ctx->rv = reply.library_error;
-			return;
+			// 不是很理解 driver 示例 consumer 中对异常情况读取 frame 的处理流程是为了解决什么问题
 		}else if(reply.reply_type == AMQP_RESPONSE_SERVER_EXCEPTION) {
 			ctx->self->destroy();
 			ctx->rv = -1;
-			return;
+		}else{
+			ctx->rv = 0;
+			ctx->self->reset_timer();
 		}
-		
-		ctx->rv.ptr(envelope);
+	}
+	void client_implement::confirm_message_wk(uv_work_t* req) {
+		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
+		message* msg = static_cast<php::object&>(ctx->msg).native<message>();
+		ctx->rv = amqp_basic_ack(ctx->self->conn_, 1, msg->envelope_.delivery_tag, 0);
 		ctx->self->reset_timer();
 	}
-	void client_implement::confirm_envelope_wk(uv_work_t* req) {
+	void client_implement::reject_message_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		php::object& obj = static_cast<php::object&>(ctx->msg);
-		message* msg = obj.native<message>();
-		ctx->rv = amqp_basic_ack(ctx->self->conn_, 1, msg->envelope_->delivery_tag, 0);
+		message* msg = static_cast<php::object&>(ctx->msg).native<message>();
+		ctx->rv = amqp_basic_reject(ctx->self->conn_, 1, msg->envelope_.delivery_tag, ctx->key.is_true());
 		ctx->self->reset_timer();
 	}
-	void client_implement::reject_envelope_wk(uv_work_t* req) {
+	void client_implement::destroy_message_wk(uv_work_t* req) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		php::object& obj = static_cast<php::object&>(ctx->msg);
-		message* msg = obj.native<message>();
-		ctx->rv = amqp_basic_reject(ctx->self->conn_, 1, msg->envelope_->delivery_tag, ctx->key.is_true());
-		ctx->self->reset_timer();
+		message* msg = static_cast<php::object&>(ctx->msg).native<message>();
+		amqp_destroy_envelope(&msg->envelope_);
 	}
-	void client_implement::destroy_envelope_wk(uv_work_t* req) {
+	void client_implement::destroy_message_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
-		amqp_destroy_envelope(ctx->msg.ptr<amqp_envelope_t>());
+		// destroy message 是 consume 的延续流程
+		ctx->co->next(std::move(ctx->msg));
+		delete ctx;
 	}
 	void client_implement::destroy_wk(uv_work_t* req) {
 		client_implement* self = reinterpret_cast<client_implement*>(req->data);
