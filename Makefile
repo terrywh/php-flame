@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=2.0.0
+EXT_VER=2.0.1
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php
@@ -45,7 +45,9 @@ HEADERX=deps/deps.h.gch
 .PHONY: all install clean clean-deps clean-lnks update-deps test
 all: ${EXTENSION}
 update-deps:
-	git submodule update --init
+	git submodule update --init; 
+	cd ./deps/mongo-c-driver; git submodule update --init; 
+	cd ./deps/nghttp2; git submodule update --init; 
 ${EXTENSION}: ${LIBRARY} ${OBJECTS}
 	${CXX} -shared -o $@ ${LDFLAGS_CORE} ${LDFLAGS} ${OBJECTS} ${LIBRARY} 
 ${HEADERX}: deps/deps.h
@@ -65,7 +67,7 @@ install: ${EXTENSION}
 # 依赖库的编译过程
 # ----------------------------------------------------------------------
 ./deps/nghttp2/bin/lib/libnghttp2.a:
-	cd ./deps/nghttp2; git submodule update --init; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix `pwd`/bin
+	cd ./deps/nghttp2; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix `pwd`/bin
 	make -C ./deps/nghttp2
 	make -C ./deps/nghttp2 install
 	cd ./deps/nghttp2; find -type l | xargs rm
@@ -88,7 +90,6 @@ install: ${EXTENSION}
 ./deps/fastcgi-parser/fastcgi_parser.o:
 	make -C ./deps/fastcgi-parser all
 ./deps/mongo-c-driver/bin/lib/libmongoc-1.0.a:
-	cd ./deps/mongo-c-driver; git submodule update --init;
 	cd ./deps/mongo-c-driver/src/libbson; rm -f README; ln -s README.rst README;
 	cd ./deps/mongo-c-driver; chmod +x ./autogen.sh; chmod +x ./src/libbson/autogen.sh;
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
