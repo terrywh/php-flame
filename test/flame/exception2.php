@@ -43,5 +43,6 @@ function test() {
 // run(test());
 
 flame\init("test");
-flame\go(test);
+flame\log\set_output("/tmp/exception.log");
+flame\go("test");
 flame\run();

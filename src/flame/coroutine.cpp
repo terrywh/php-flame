@@ -68,7 +68,7 @@ namespace flame {
 		if(self->parent_ == nullptr) {
 			if(EG(exception)) {
 				uv_stop(flame::loop);
-				log::default_logger->panic();
+				// log::default_logger->panic();
 			}else if(self->after_.func != nullptr) {
 				self->after_.func(self->after_.data);
 			}

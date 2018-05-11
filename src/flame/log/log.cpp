@@ -8,28 +8,32 @@ namespace flame {
 namespace log {
 	logger* default_logger = nullptr;
 	static php::value fail(php::parameters& params) {
+		if(!default_logger) throw php::exception("flame not yet initialized");
 		return default_logger->fail(params);
 	}
 	static php::value warn(php::parameters& params) {
+		if(!default_logger) throw php::exception("flame not yet initialized");
 		return default_logger->warn(params);
 	}
-	static php::value info(php::parameters& params) {		
+	static php::value info(php::parameters& params) {
+		if(!default_logger) throw php::exception("flame not yet initialized");
 		return default_logger->info(params);
 	}
 	static php::value write(php::parameters& params) {
+		if(!default_logger) throw php::exception("flame not yet initialized");
 		return default_logger->write(params);
 	}
 	static php::value set_output(php::parameters& params) {
+		if(!default_logger) throw php::exception("flame not yet initialized");
 		return default_logger->set_output(params);
 	}
 
 	void init(php::extension_entry& ext) {
-		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
-			default_logger = new logger();
-			return true;
-		});
 		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
-			delete default_logger;
+			// 确认经过了 flame\init() 的初始化
+			if(default_logger != nullptr) {
+				delete default_logger;
+			}
 			return true;
 		});
 		// ---------------------------------------------------------------------

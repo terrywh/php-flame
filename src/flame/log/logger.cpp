@@ -2,6 +2,7 @@
 #include "../flame.h"
 #include "../coroutine.h"
 #include "../time/time.h"
+#include "log.h"
 #include "logger.h"
 
 namespace flame {
@@ -40,6 +41,15 @@ namespace log {
 			throw php::exception("failed to set output: stderr / stdout / stdlog or filepath is required");
 		}
 		return nullptr;
+	}
+	void logger::init(bool def) {
+		if(def) {
+			php::register_shutdown_function(php::callable([] (php::parameters& params) -> php::value {
+				default_logger->panic();
+				return nullptr;
+			}));
+		}
+		rotate();
 	}
 	void logger::rotate() {
 		close();
@@ -88,14 +98,15 @@ namespace log {
 		return write(std::move(out));
 	}
 	void logger::panic() {
-		size_t errlen = 0;
-		char* errstr = php::exception_string(false, &errlen);
-		
-		std::fprintf(stderr, "[%s] %.*s", time::datetime(time::now()), errlen, errstr);
+		// std::fprintf(stderr, "[%s] %.*s", time::datetime(time::now()), errlen, errstr);
 		if(file_ > 0) {
+			size_t errlen = 0;
+			char* errstr = php::exception_string(&errlen);
+			if(errstr == nullptr) errstr = php::error_string(&errlen);
+			if(errstr == nullptr) return;
 			::lseek(file_, SEEK_END, 0);
 			char cache[64];
-			::write(file_, cache, sprintf(cache, "[%s] (PANIC) ", time::datetime(time::now())));
+			::write(file_, cache, sprintf(cache, "[%s] ", time::datetime(time::now())));
 			::write(file_, errstr, errlen);
 			uv_fs_t req;
 			uv_fs_close(flame::loop, &req, file_, nullptr);

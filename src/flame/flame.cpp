@@ -31,7 +31,8 @@ namespace flame {
 		}
 		process_self->init();
 		// 直接在 module_startup 中进行 rotate 会改变无参时 PHP 命令的行为（直接退出）
-		log::default_logger->init();
+		log::default_logger = new log::logger();
+		log::default_logger->init(true);
 		status |= 0x01;
 		return nullptr;
 	}

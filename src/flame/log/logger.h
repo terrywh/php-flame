@@ -9,9 +9,7 @@ namespace log {
 		php::value set_output(php::parameters& params);
 		void rotate(const php::string& path);
 		void rotate();
-		void init() {
-			rotate();
-		}
+		void init(bool def = false);
 		php::value fail(php::parameters& params);
 		php::value warn(php::parameters& params);
 		php::value info(php::parameters& params);
