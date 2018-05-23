@@ -40,14 +40,13 @@ namespace flame {
 	}
 	void process::init() {
 		if(process_type == PROCESS_MASTER) {
+			worker_start();
 			uv_signal_init(flame::loop, &sigterm_);
 			uv_signal_start_oneshot(&sigterm_, master_exit_cb, SIGTERM);
 			uv_signal_init(flame::loop, &sigusr2_);
 			uv_signal_start(&sigusr2_, master_usr2_cb, SIGUSR2);
 			uv_unref((uv_handle_t*)&sigusr2_);
 			sigusr2_.data = this;
-			
-			worker_start();
 		}else{
 			uv_signal_init(flame::loop, &sigterm_);
 			uv_signal_start_oneshot(&sigterm_, worker_exit_cb, SIGINT);
@@ -85,13 +84,15 @@ namespace flame {
 		for(int i=0;i<process_count;++i) {// 创建子进程
 			worker* w = new worker(this, i+1);
 			w->start();
-			workers_.insert(w);
 		}
 	}
 	void process::worker_kill(int sig) {
 		for(auto i=workers_.begin();i!=workers_.end();++i) {
 			(*i)->kill(sig);
 		}
+	}
+	void process::on_worker_start(worker* w) {
+		workers_.insert(w);
 	}
 	void process::on_worker_stop(worker* w) {
 		workers_.erase(w);

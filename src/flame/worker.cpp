@@ -47,6 +47,7 @@ namespace flame {
 			php::fail("failed to spawn worker process: (%d) %s", error, uv_strerror(error));
 			abort();
 		}
+		master_->on_worker_start(this);
 		// 需要监控子进程并等待其退出完毕
 		// uv_unref(reinterpret_cast<uv_handle_t*>(&proc_));
 	}
@@ -59,7 +60,7 @@ namespace flame {
 			w->master_->on_worker_stop(w);
 		}else{
 			int timeout = 2000 + (std::rand() % 3000);
-			log::default_logger->write(fmt::format("(WARN) worker exit prematurely ({0}), restart in {1}", term_signal, timeout/1000));
+			log::default_logger->write(fmt::format("(WARN) worker exit prematurely ({0}), restart in {1}s", term_signal, timeout/1000));
 			uv_timer_start(&w->timer_, on_worker_restart, timeout, 0);
 		}
 	}

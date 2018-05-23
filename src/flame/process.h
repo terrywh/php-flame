@@ -11,6 +11,7 @@ namespace flame {
 
 		void worker_start();
 		void worker_kill(int sig = SIGINT);
+		void on_worker_start(worker* w);
 		void on_worker_stop(worker* w);
 	private:
 		std::set<worker*> workers_;
