@@ -18,15 +18,11 @@ namespace http {
 	typedef server_handler<server_connection> http_server_handler;
 
 	void init(php::extension_entry& ext) {
-		curl_global_init(CURL_GLOBAL_DEFAULT);
-		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
-			default_client = new client();
-			default_client->default_options();
-			return true;
-		});
 		ext.on_module_shutdown([] (php::extension_entry& ext) -> bool {
-			delete default_client;
-			curl_global_cleanup();
+			if(default_client != nullptr) {
+				delete default_client;
+				curl_global_cleanup();
+			}
 			return true;
 		});
 		ext.define({"flame\\net\\http\\HTTP_VERSION_AUTO", CURL_HTTP_VERSION_NONE});

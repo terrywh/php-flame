@@ -3,6 +3,7 @@
 #include "coroutine.h"
 #include "process.h"
 #include "log/log.h"
+#include "net/http/client.h"
 
 namespace flame {
 	static int status = 0;
@@ -33,6 +34,9 @@ namespace flame {
 		// 直接在 module_startup 中进行 rotate 会改变无参时 PHP 命令的行为（直接退出）
 		log::default_logger = new log::logger();
 		log::default_logger->init(true);
+		curl_global_init(CURL_GLOBAL_ALL);
+		net::http::default_client = new net::http::client();
+		net::http::default_client->default_options();
 		status |= 0x01;
 		return nullptr;
 	}
