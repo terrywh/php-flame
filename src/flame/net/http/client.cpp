@@ -71,16 +71,14 @@ void client::curl_multi_info_check(client* self) {
 			long status;
 			curl_easy_getinfo(message->easy_handle, CURLINFO_RESPONSE_CODE, &status);
 			assert(message->easy_handle == ctx->req->easy_);
-			
+			curl_multi_remove_handle(ctx->self->multi_, message->easy_handle);
+			ctx->req->close();
 			if (message->data.result != CURLE_OK) {
 				ctx->co->fail(curl_easy_strerror(message->data.result), message->data.result);
 			} else {
 				ctx->res->done_cb(status);
-				// ctx->req->done_cb(message);  // 因为 req 的 done_cb 将关闭 easy_handle（导致所有 msg 数据无法访问）
-				ctx->co->next(php::object(ctx->res));
+				ctx->co->next(std::move(ctx->res_obj));
 			}
-			curl_multi_remove_handle(ctx->self->multi_, message->easy_handle);
-			ctx->req->close();
 			delete ctx;
 		}else{
 			log::default_logger->write("(FAIL) http request failed: message not done");

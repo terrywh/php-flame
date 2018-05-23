@@ -126,8 +126,12 @@ void client_request::build_header() {
 	if(!expect) {
 		header_ = curl_slist_append(header_, "Expect: ");
 	}
-	if(!content && body_ != nullptr && (body_[0] == '{' || body_[0] == '[')) {
-		header_ = curl_slist_append(header_, "Content-Type: application/json");
+	if(!content && body_ != nullptr) {
+		if(body_[0] == '{' || body_[0] == '[') {
+			header_ = curl_slist_append(header_, "Content-Type: application/json");
+		}else{ // 未设置时, 默认的类型
+			header_ = curl_slist_append(header_, "Content-Type: application/x-www-form-urlencoded");
+		}
 	}
 	if(!agent) {
 		header_ = curl_slist_append(header_, "User-Agent: php-flame");
@@ -135,19 +139,21 @@ void client_request::build_header() {
 	curl_easy_setopt(easy_, CURLOPT_HTTPHEADER, header_);
 }
 void client_request::build_cookie() {
-	php::buffer cookie;
 	php::array cookie_all = prop("cookie");
-	for(auto i=cookie_all.begin(); i!= cookie_all.end(); ++i) {
-		php::string key = i->first.to_string();
-		php::string val = i->second.to_string();
-		std::memcpy(cookie.put(key.length()), key.c_str(), key.length());
-		cookie.add('=');
-		std::memcpy(cookie.put(val.length()), val.c_str(), val.length());
-		cookie.add(';');
-		cookie.add(' ');
+	if(cookie_all.length() > 0) {
+		php::buffer cookie;
+		for(auto i=cookie_all.begin(); i!= cookie_all.end(); ++i) {
+			php::string key = i->first.to_string();
+			php::string val = i->second.to_string();
+			std::memcpy(cookie.put(key.length()), key.c_str(), key.length());
+			cookie.add('=');
+			std::memcpy(cookie.put(val.length()), val.c_str(), val.length());
+			cookie.add(';');
+			cookie.add(' ');
+		}
+		php::string cookie_str = std::move(cookie); // 这里会添加 '\0' 结束符
+		curl_easy_setopt(easy_, CURLOPT_COOKIE, cookie_str.c_str());
 	}
-	php::string cookie_str = std::move(cookie); // 这里会添加 '\0' 结束符
-	curl_easy_setopt(easy_, CURLOPT_COOKIE, cookie_str.c_str());
 }
 void client_request::build_option() {
 	php::string url = prop("url");
@@ -178,15 +184,16 @@ void client_request::build_option() {
 	if(std::strncmp(method.c_str(), "POST", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_POST, 1L);
 		if(size_ > 0) {
-			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, xbody.c_str());
-		}else{
-			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, "");
+			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, nullptr);
+			curl_easy_setopt(easy_, CURLOPT_POSTFIELDSIZE, size_);
+			curl_easy_setopt(easy_, CURLOPT_READDATA, this);
+			curl_easy_setopt(easy_, CURLOPT_READFUNCTION, body_read_cb);
 		}
 	}else if(std::strncmp(method.c_str(), "PUT", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_UPLOAD, 1L);
-		curl_easy_setopt(easy_, CURLOPT_PUT, 1L);
+		// curl_easy_setopt(easy_, CURLOPT_PUT, 1L);
 		if(size_ > 0) {
-			curl_easy_setopt(easy_, CURLOPT_INFILESIZE, xbody.length());
+			curl_easy_setopt(easy_, CURLOPT_INFILESIZE, size_);
 			curl_easy_setopt(easy_, CURLOPT_READDATA, this);
 			curl_easy_setopt(easy_, CURLOPT_READFUNCTION, body_read_cb);
 		}
