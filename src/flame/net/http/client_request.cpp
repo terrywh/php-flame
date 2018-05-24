@@ -183,9 +183,9 @@ void client_request::build_option() {
 	}
 	if(std::strncmp(method.c_str(), "POST", 4) == 0) {
 		curl_easy_setopt(easy_, CURLOPT_POST, 1L);
+		curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, nullptr);
+		curl_easy_setopt(easy_, CURLOPT_POSTFIELDSIZE, size_);
 		if(size_ > 0) {
-			curl_easy_setopt(easy_, CURLOPT_POSTFIELDS, nullptr);
-			curl_easy_setopt(easy_, CURLOPT_POSTFIELDSIZE, size_);
 			curl_easy_setopt(easy_, CURLOPT_READDATA, this);
 			curl_easy_setopt(easy_, CURLOPT_READFUNCTION, body_read_cb);
 		}

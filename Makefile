@@ -16,7 +16,7 @@ CXX?=/usr/local/gcc/bin/g++
 CXXFLAGS?= -O2
 CXXFLAGS+= -std=c++11 -fPIC
 LDFLAGS?=
-LDFLAGS+= -u get_module -Wl,-rpath='$$ORIGIN/' -lssl -lsasl2
+LDFLAGS+= -u get_module -Wl,-rpath='$$ORIGIN/' -lcurl -lnghttp2 -lcares -lssl -lsasl2
 INCLUDES= ${PHP_INCLUDES} -I./deps -I./deps/include -I./deps/include/libbson-1.0
 # 依赖库
 # ---------------------------------------------------------------------
@@ -24,9 +24,6 @@ LIBRARY= ./deps/libphpext/libphpext.a \
  ./deps/lib/libuv.a \
  ./deps/lib/libhttp_parser.a \
  ./deps/lib/libfmt.a \
- ./deps/lib/libcurl.a \
- ./deps/lib/libnghttp2.a \
- ./deps/lib/libcares.a \
  ./deps/lib/libhiredis.a \
  ./deps/lib/libmysqlclient.a \
  ./deps/lib/libmongoc-1.0.a \
@@ -48,7 +45,7 @@ HEADERX=deps/deps.h.gch
 all: ${EXTENSION}
 
 ${EXTENSION}: ${LIBRARY} ${EXTERNAL_OBJECTS} ${OBJECTS}
-	${CXX} -shared ${LDFLAGS} ${OBJECTS} ${EXTERNAL_OBJECTS} -Wl,--whole-archive ${LIBRARY} -Wl,--no-whole-archive -o $@
+	${CXX} -shared ${OBJECTS} ${EXTERNAL_OBJECTS} -Wl,--whole-archive ${LIBRARY} -Wl,--no-whole-archive ${LDFLAGS} -o $@
 ${HEADERX}: deps/deps.h
 	${CXX} -x c++-header ${CXXFLAGS} ${INCLUDES} -c $^ -o $@ 
 src/extension.o: src/extension.cpp
@@ -85,19 +82,6 @@ install: ${EXTENSION}
 	mkdir -p ./deps/fmt/build; cd ./deps/fmt/build; cmake -DCMAKE_INSTALL_PREFIX=${DEPS_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC ..
 	make -C ./deps/fmt/build -j2
 	make -C ./deps/fmt/build install
-./deps/lib/libcurl.a: ./deps/lib/libnghttp2.a ./deps/lib/libcares.a
-	cd ./deps/curl; /bin/sh ./buildconf; CFLAGS="-fPIC" ./configure --prefix=${DEPS_DIR} --with-nghttp2=${DEPS_DIR} --enable-ares=${DEPS_DIR} --disable-shared
-	make -C ./deps/curl -j2
-	make -C ./deps/curl install
-./deps/lib/libnghttp2.a:
-	cd ./deps/nghttp2; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix=${DEPS_DIR}
-	make -C ./deps/nghttp2
-	make -C ./deps/nghttp2 install
-./deps/lib/libcares.a:
-	cd ./deps/c-ares; chmod +x ./buildconf; ./buildconf;
-	cd ./deps/c-ares; CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=${DEPS_DIR}
-	make -C ./deps/c-ares -j2
-	make -C ./deps/c-ares install
 ./deps/lib/libhiredis.a:
 	make -C ./deps/hiredis -j2
 	PREFIX=${DEPS_DIR} make -C ./deps/hiredis install
