@@ -35,3 +35,42 @@ flame\go(function() {
 // 框架调度执行
 flame\run();
 ```
+
+## 额外依赖
+
+### 编译安装
+
+为了使用一些较新功能 (例如 HTTP2 协议支持), FLAME 内置了很躲依赖库较新的版本; 但为防止与一些系统库冲突, 部分库需要额外安装或更新:
+
+* 更新或安装系统库
+```
+yum install cyrus-sasl-devel openssl-devel 
+yum update
+```
+
+* https://github.com/c-ares/c-ares
+```
+./configure --prefix=/usr --libdir=/usr/lib64
+make
+make install
+```
+* https://github.com/nghttp2/nghttp2
+```
+autoreconf -i
+automake
+autoconf
+./configure --prefix=/usr --libdir=/usr/lib64
+make 
+make install
+```
+* https://github.com/curl/curl
+```
+./buildconf
+PKG_CONFIG_PATH=/usr/lib64/pkgconfig ./configure --prefix=/usr --libdir=/usr/lib64 --with-nghttp2 --enable-ares
+make
+make install
+```
+
+### 注意
+
+* 若复制使用上述库, 请注意在系统路径中上述软链有可能没有自动更改;

@@ -115,9 +115,6 @@ clean-deps:
 	-make -C ./deps/libuv clean
 	-make -C ./deps/http-parser clean
 	rm -rf ./deps/fmt/build
-	-make -C ./deps/curl clean
-	-make -C ./deps/nghttp2 clean
-	-make -C ./deps/c-ares clean
 	-make -C ./deps/hiredis clean
 	-make -C ./deps/mongo-c-driver clean
 	-make -C ./deps/librdkafka clean
@@ -127,7 +124,6 @@ clean-deps:
 update-deps:
 	git submodule update --init; 
 	cd ./deps/mongo-c-driver; git submodule update --init; 
-	cd ./deps/nghttp2; git submodule update --init; 
 	cd ./deps/rabbitmq-c; rm -rf build; 
 	mkdir -p ./deps/include
 	mkdir -p ./deps/lib
