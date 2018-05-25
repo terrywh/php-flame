@@ -4,9 +4,9 @@ namespace flame {
 	class worker;
 	class process {
 	public:
-		static process* prepare();
+		static void prepare();
 
-		void init();
+		process();
 		void run();
 
 		void worker_start();
@@ -18,7 +18,6 @@ namespace flame {
 		uv_signal_t       sigterm_;
 		uv_signal_t       sigusr2_;
 	};
-	extern std::deque<php::callable> quit_cb;
 	extern enum process_type_t {
 		PROCESS_MASTER,
 		PROCESS_WORKER,

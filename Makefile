@@ -55,7 +55,8 @@ src/extension.o: src/extension.cpp
 # 清理安装
 # ----------------------------------------------------------------------
 clean:
-	rm -f ${EXTENSION} ${OBJECTS} $(shell find ./src -name "*.o")
+	rm -f ${HEADERX} ${OBJECTS} $(shell find ./src -name "*.o")
+	rm -f ${EXTENSION}
 clean-lnks:
 	find -type l | xargs rm
 install: ${EXTENSION}

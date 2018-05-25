@@ -81,7 +81,7 @@ namespace db {
 			);
 		}
 	}
-	void redis::cb_connect_auth(php::value& rv, void* data) {
+	void redis::cb_connect_auth(php::value rv, void* data) {
 		redis* self = reinterpret_cast<redis*>(data);
 		
 		if(self->url_->user == nullptr || self->url_->pass == nullptr) {
@@ -93,7 +93,7 @@ namespace db {
 		params[0] = php::string(self->url_->pass);
 		self->__call(method, params, cb_default);
 	}
-	void redis::cb_connect_select(php::value& rv, void* data) {
+	void redis::cb_connect_select(php::value rv, void* data) {
 		redis* self = reinterpret_cast<redis*>(data);
 		
 		if(self->url_->path == nullptr || strlen(self->url_->path) <= 1) {

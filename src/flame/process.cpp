@@ -5,25 +5,20 @@
 #include "worker.h"
 
 namespace flame {
-	std::deque<php::callable> quit_cb;
 	process_type_t process_type;
 	std::string    process_name;
 	uint8_t        process_count;
 	process*       process_self;
 	uv_loop_t*     loop;
-	process* process::prepare() {
+	void process::prepare() {
 		// 确认当前是父进程还是子进程
 		char* worker = std::getenv("FLAME_CLUSTER_WORKER");
 		if(worker == nullptr) {
 			process_type = PROCESS_MASTER;
-			flame::loop = uv_default_loop();
 		}else{
 			process_type = PROCESS_WORKER;
-			flame::loop = new uv_loop_t;
-			uv_loop_init(flame::loop);
 		}
-		process_self = new process();
-		return process_self;
+		flame::loop = uv_default_loop();
 	}
 	static void master_exit_cb(uv_signal_t* handle, int signum) {
 		process* self = reinterpret_cast<process*>(handle->data);
@@ -38,7 +33,7 @@ namespace flame {
 		process* proc = reinterpret_cast<process*>(handle->data);
 		proc->worker_kill(SIGUSR2);
 	}
-	void process::init() {
+	process::process() {
 		if(process_type == PROCESS_MASTER) {
 			worker_start();
 			uv_signal_init(flame::loop, &sigterm_);
@@ -62,22 +57,10 @@ namespace flame {
 		}
 		uv_run(flame::loop, UV_RUN_DEFAULT);
 		// 非错误引发的问题（因异常引发时，进程已经提前结束，不会到达这里）
-		if(!quit_cb.empty()) {
-			do {
-				coroutine::create(quit_cb.back())->start();
-				quit_cb.pop_back();
-			}while(!quit_cb.empty());
-			// 最多 10s 时间必须结束
-			int count = 10000;
-			while(uv_run(flame::loop, UV_RUN_NOWAIT) != 0 || --count <= 0) {
-				usleep(1000);
-			}
-		}
+		usleep(10000);
 		
 		if(process_type == PROCESS_WORKER) {
-			delete flame::loop;
-			// 标记退出状态用于确认是否自动重启工作进程
-			exit(99);
+			exit(99); // 标记正常退出: 无需重启
 		}
 	}
 	void process::worker_start() {

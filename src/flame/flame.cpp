@@ -30,7 +30,7 @@ namespace flame {
 		if(params.length() > 1) {
 			init_opts(static_cast<php::array&>(params[1]));
 		}
-		process_self->init();
+		process_self = new process();
 		// 直接在 module_startup 中进行 rotate 会改变无参时 PHP 命令的行为（直接退出）
 		log::default_logger = new log::logger();
 		log::default_logger->init(true);
@@ -55,15 +55,6 @@ namespace flame {
 		status |= 0x04;
 		process_self->run();
 		return nullptr;
-	}
-	static php::value quit(php::parameters& params) {
-		if(params.length() > 0) {
-			quit_cb.push_back(params[0]);
-			return quit_cb.size();
-		}else{
-			uv_stop(flame::loop);
-			return quit_cb.size();
-		}
 	}
 	static void do_exception_cb(uv_timer_t* handle) {
 		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
@@ -90,7 +81,6 @@ namespace flame {
 		ext.add<flame::init>("flame\\init");
 		ext.add<flame::go>("flame\\go");
 		ext.add<flame::run>("flame\\run");
-		ext.add<flame::quit>("flame\\quit");
 		ext.add<do_exception>("flame\\do_exception");
 	}
 

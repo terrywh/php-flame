@@ -38,8 +38,8 @@ private:
 	void exec(const char** argv, const size_t* lens, size_t count, redis_request_t* req, redisCallbackFn* fn);
 	static void cb_connect_timeout(uv_timer_t* tm);
 	static void cb_connect(const redisAsyncContext *c, int status);
-	static void cb_connect_auth(php::value& rv, void* data);
-	static void cb_connect_select(php::value& rv, void* data);
+	static void cb_connect_auth(php::value rv, void* data);
+	static void cb_connect_select(php::value rv, void* data);
 	static void cb_disconnect(const redisAsyncContext *c, int status);
 	// 默认回调，按照redis返回的type格式化返回
 	static void cb_default(redisAsyncContext *c, void *r, void *privdata);

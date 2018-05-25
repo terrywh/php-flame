@@ -21,7 +21,7 @@ namespace os {
 		cpp->__construct(params);
 		return std::move(obj);
 	}
-	static void exec_cb(php::value& rv, void* data) {
+	static void exec_cb(php::value rv, void* data) {
 		assert(coroutine::current == data);
 		coroutine::current->next(rv);
 	}

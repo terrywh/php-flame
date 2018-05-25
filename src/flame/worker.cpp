@@ -9,7 +9,6 @@ namespace flame {
 	worker::worker(process* m, uint8_t index)
 	: master_(m)
 	, index_(index) {
-		proc_.data = this;
 		uv_timer_init(flame::loop, &timer_);
 		timer_.data = this;
 	}
@@ -43,6 +42,7 @@ namespace flame {
 		sios[2].data.fd = 2;
 
 		int error = uv_spawn(flame::loop, &proc_, &opts);
+		proc_.data = this;
 		if(error) {
 			php::fail("failed to spawn worker process: (%d) %s", error, uv_strerror(error));
 			abort();

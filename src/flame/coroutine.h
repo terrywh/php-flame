@@ -8,12 +8,11 @@ namespace flame {
 		coroutine(coroutine* parent);
 		int                    status_;
 		coroutine*             parent_;
-		php::callable              cb_;
-		php::generator            gen_;
-		uv_async_t              async_; // 保持引用，同步过程需要用这个 async_ 保持 loop 的活跃
+		php::value                gen_;
+		// 用于异步启动\结束协程
 		uv_timer_t              timer_;
 		
-		typedef void (*async_cb_t)(php::value& rv, void* data);
+		typedef void (*async_cb_t)(php::value rv, void* data);
 		typedef struct stack_t {
 			async_cb_t func;
 			void*      data;
@@ -48,22 +47,14 @@ namespace flame {
 		inline void empty() {
 			stack_.clear();
 		}
-		void next(php::value& rv);
-		inline void next(php::value&& rv) {
-			php::value val(std::move(rv));
-			next(val);
-		}
-		void next() {
-			php::value val(nullptr);
-			next(val);
-		}
+		void next(php::value rv);
+		void next();
 		void fail(const std::string& message, int code = 0);
 		void fail(php::value ex);
 		static void prepare();
 
 		friend php::value async();
 		friend php::value async(php::class_base* obj);
-		friend php::value async(void* context);
 	};
 	php::value async();
 	php::value async(php::class_base* cpp);
