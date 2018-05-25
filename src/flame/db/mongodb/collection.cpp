@@ -52,6 +52,12 @@ namespace mongodb {
 				ctx->doc1 = filter;
 			}
 		}
+		if(params.length() > 1) {
+			php::array& opts = static_cast<php::array&>(params[1]);
+			if(opts.is_array()) {
+				ctx->doc3 = opts;
+			}
+		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::count_wk, default_cb);
 		return flame::async(this);
 	}
@@ -79,7 +85,7 @@ namespace mongodb {
 		if(params.length() > 1) {
 			php::array& opts = static_cast<php::array&>(params[1]);
 			if(opts.is_array()) {
-				ctx->doc2 = opts;
+				ctx->doc3 = opts;
 			}
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::insert_many_wk, default_cb);
@@ -96,7 +102,7 @@ namespace mongodb {
 		if(params.length() > 1) {
 			php::array& opts = static_cast<php::array&>(params[1]);
 			if(opts.is_array()) {
-				ctx->doc2 = opts;
+				ctx->doc3 = opts;
 			}
 		}
 		ctx->req.data = ctx;
@@ -114,7 +120,7 @@ namespace mongodb {
 		if(params.length() > 1) {
 			php::array& opts = static_cast<php::array&>(params[1]);
 			if(opts.is_array()) {
-				ctx->doc2 = opts;
+				ctx->doc3 = opts;
 			}
 		}
 		ctx->req.data = ctx;
@@ -177,7 +183,7 @@ namespace mongodb {
 		if(params.length() > 1) {
 			php::array& opts = static_cast<php::array&>(params[1]);
 			if(opts.is_array()) {
-				ctx->doc2 = opts;
+				ctx->doc3 = opts;
 			}
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::find_one_wk, find_one_cb);
@@ -209,7 +215,7 @@ namespace mongodb {
 		if(params.length() > 1) {
 			php::array& opts = static_cast<php::array&>(params[1]);
 			if(opts.is_array()) {
-				ctx->doc2 = opts;
+				ctx->doc3 = opts;
 			}
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::find_many_wk, cursor_cb);
@@ -239,7 +245,7 @@ namespace mongodb {
 		if(params.length() > 1) {
 			php::array& opts = static_cast<php::array&>(params[1]);
 			if(opts.is_array()) {
-				ctx->doc2 = opts;
+				ctx->doc3 = opts;
 			}
 		}
 		impl->worker_->queue_work(&ctx->req, collection_implement::aggregate_wk, cursor_cb);

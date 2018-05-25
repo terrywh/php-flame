@@ -1,6 +1,19 @@
 ## `namespace flame\db\mongodb`
 提供基本的异步 mongodb 协程式客户端封装；
 
+#### `flame\db\mongodb\READ_PREFS_PRIMARY`
+#### `flame\db\mongodb\READ_PREFS_SECONDARY`
+#### `flame\db\mongodb\READ_PREFS_PRIMARY_PREFERRED`
+#### `flame\db\mongodb\READ_PREFS_SECONDARY_PREFERRED`
+#### `flame\db\mongodb\READ_PREFS_NEAREST`
+用于在特定的操作中指定读取倾向, 例如可以在查询请求中指定去主节点读取:
+``` PHP
+yield $collection->find_one([....], [
+	"readPreference" => flame\db\mongodb\READ_PREFS_PRIMARY,
+]);
+```
+一般当上述选项未指定时, 遵循 `client` 建立连接是的选项 (`?readPreference=....`); 若连接选项未指定, 默认为 `READ_PREFS_PRIMARY`;
+
 ### `class flame\db\mongodb\client`
 mongodb 客户端（连接）；
 **示例**：
@@ -13,8 +26,15 @@ $collection = $cli->col_abc;
 $collection = $cli->collection("col_abc");
 ```
 
-#### `client::collection(string $name) | clieng::$collection_name`
-获取指定名称的 collection 集合对象；`client` 类实现了魔术函数 `__get()` 可以直接用集合名称，通过属性形式访问对应的 collection 集合；
+#### `yield client::collection(string $name)`
+获取指定名称的 collection 集合对象；
+
+**注意**:
+* 由于异步过程获取 `collection` 对象, **不能**串联操作:
+``` php
+// !!! 错误的写法 !!!
+yield $cli->collection("test1")->find_one([.....]);
+```
 
 #### `client::close()`
 立刻关闭当前数据库连接；
@@ -69,8 +89,9 @@ $count = yield $collection->count(['x'=>'y']);
 * 其他字段对应相关 PHP 内置类型；
 * 在使用 operator 时，可考虑使用 `'` 单引号，防止功能符号被转义，例如 `$gt = "aaa"; $filter = ["a" => ['$gt'=>1234]]`；或使用转义符号；
 
-#### `yield collection::count([array $query])`
-获取当前集合中（符合条件的）文档数量；
+#### `yield collection::count([array $query[, array $options])`
+获取当前集合中（符合条件的）文档数量; 目前可用的选项如下:
+* `readPreference` - 读取倾向, 参见上面常量定义的说明;
 
 #### `yield collection::insert_one(array $doc)`
 向当前集合插入一条新的 `$doc` 文档，并返回 `write_result` 结果对象；
@@ -107,19 +128,21 @@ $count = yield $collection->count(['x'=>'y']);
 * `$options = true;` 时相当于设置 `$options = ["upsert"=>true]`;
 
 #### `yield collection::find_many(array $query[, array $options])`
-查询当前集合，返回结果集指针 `cursor` 对象；
-
-可用 $options 选项如下：
+查询当前集合，返回结果集指针 `cursor` 对象；目前可用 $options 选项如下：
+* `readPreference` - 读取倾向, 参见上面常量定义的说明;
 * `sort`       - 排序，例如 `["a"=>1,"b"=>-1]` 即 按照 `a` 字段正序后，再按照 `b` 字段逆序；
 * `skip`       - 结果集起始跳过；
 * `count`      - 限制结果集数量；
 * `projection` - 仅返回特定字段，例如 `["a"=>1, "b"=>1, "c"=>0]`  即 包含 `a` | `b` 字段，去除 `c` 字段；
+* `batchSize`  - 每次从服务端获取的数据量;
 
 #### `yield collection::find_one(array $query[, array $options])`
-查询当前集合，返回单条文档记录（关联数组）；选项 $options 请参考 `find_many` 相关说明；
+查询当前集合，返回单条文档记录（关联数组）；选项 $options 与 `find_many` 相同；
 
 #### `yield collection::aggregate(array $pipeline[, array $options])`
-在当前集合上进行聚合操作并返回数据结果游标指针（同 find_many）；
+在当前集合上进行聚合操作并返回数据结果游标指针（同 find_many）；目前 $options 选项可用值如下:
+* `readPreference` - 读取倾向, 参见上面常量定义的说明;
+* `batchSize` - 每次从服务端获取的数据量;
 
 ### `class flame\db\mongodb\reply`
 上述 `collection` 更新型成员函数的返回值；不同的动作结果属性会有不同的值，存在的属性如下：

@@ -13,6 +13,7 @@ namespace mongodb {
 		thread_worker*       worker_;
 		collection*             cpp_;
 		mongoc_collection_t*    col_;
+		const mongoc_read_prefs_t* get_read_prefs(php::array& opts);
 		
 		static void count_wk(uv_work_t* w);
 		static void insert_one_wk(uv_work_t* w);

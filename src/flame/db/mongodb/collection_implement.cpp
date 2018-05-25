@@ -16,6 +16,19 @@ namespace mongodb {
 	, col_(col) {
 	
 	}
+	const mongoc_read_prefs_t* collection_implement::get_read_prefs(php::array& opts) {
+		if(opts.is_array()) {
+			php::value prefs = opts.at("readPreference",14);
+			if(prefs.is_pointer()) {
+				mongoc_read_prefs_t* pref = prefs.ptr<mongoc_read_prefs_t>();
+				if(mongoc_read_prefs_is_valid(pref)) {
+					return pref;
+				}
+			}
+			opts.erase("readPreference",14);
+		}
+		return mongoc_collection_get_read_prefs(col_);
+	}
 	void collection_implement::count_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
 		stack_bson_t filter(ctx->doc1);
@@ -23,7 +36,7 @@ namespace mongodb {
 		collection_response_t* res = new collection_response_t {
 			RETURN_VALUE_TYPE_ERROR, {}, BSON_INITIALIZER
 		};
-		int64_t c = mongoc_collection_count(ctx->self->col_, MONGOC_QUERY_SLAVE_OK, filter, 0, 0, nullptr, &res->error);
+		int64_t c = mongoc_collection_count(ctx->self->col_, MONGOC_QUERY_SLAVE_OK, filter, 0, 0, ctx->self->get_read_prefs(ctx->doc3), &res->error);
 
 		if(c == -1) {
 			ctx->rv.ptr(res);	
@@ -40,7 +53,7 @@ namespace mongodb {
 // ctx->rv.ptr(res);
 	void collection_implement::insert_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		stack_bson_t document(ctx->doc1), option(ctx->doc2);
+		stack_bson_t document(ctx->doc1), option(ctx->doc3);
 
 		collection_response_t* res = new collection_response_t;
 		if(mongoc_collection_insert_one(ctx->self->col_, document, option, &res->reply, &res->error)) {
@@ -64,7 +77,7 @@ namespace mongodb {
 			fill_with(docs[docn], item);
 			++docn;
 		}
-		stack_bson_t opts(ctx->doc2);
+		stack_bson_t opts(ctx->doc3);
 		collection_response_t* res = new collection_response_t;
 		if(mongoc_collection_insert_many(ctx->self->col_, (const bson_t**)docs, docn, opts, &res->reply, &res->error)) {
 			res->type = RETURN_VALUE_TYPE_REPLY;
@@ -78,7 +91,7 @@ namespace mongodb {
 	}
 	void collection_implement::remove_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
+		stack_bson_t filter(ctx->doc1), option(ctx->doc3);
 
 		collection_response_t* res = new collection_response_t;
 		if(mongoc_collection_delete_one(ctx->self->col_, filter, option, &res->reply, &res->error)) {
@@ -90,7 +103,7 @@ namespace mongodb {
 	}
 	void collection_implement::remove_many_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
+		stack_bson_t filter(ctx->doc1), option(ctx->doc3);
 
 		collection_response_t* res = new collection_response_t;
 		if(mongoc_collection_delete_many(ctx->self->col_, filter, option, &res->reply, &res->error)) {
@@ -128,7 +141,7 @@ namespace mongodb {
 	}
 	void collection_implement::find_many_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
+		stack_bson_t filter(ctx->doc1), option(ctx->doc3);
 
 		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(ctx->self->col_, filter, option, nullptr);
 		
@@ -137,9 +150,10 @@ namespace mongodb {
 	}
 	void collection_implement::find_one_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		stack_bson_t filter(ctx->doc1), option(ctx->doc2);
+		auto read_pref = ctx->self->get_read_prefs(ctx->doc3);
+		stack_bson_t filter(ctx->doc1), option(ctx->doc3);
 		
-		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(ctx->self->col_, filter, option, nullptr);
+		mongoc_cursor_t* cs = mongoc_collection_find_with_opts(ctx->self->col_, filter, option, read_pref);
 		
 		const bson_t *doc;
 		if(mongoc_cursor_next(cs, &doc)) {
@@ -160,8 +174,9 @@ namespace mongodb {
 	}
 	void collection_implement::aggregate_wk(uv_work_t* w) {
 		collection_request_t* ctx = reinterpret_cast<collection_request_t*>(w->data);
-		stack_bson_t pipe(ctx->doc1), opts(ctx->doc2);
-		mongoc_cursor_t* cs = mongoc_collection_aggregate(ctx->self->col_, MONGOC_QUERY_SLAVE_OK, pipe, opts, nullptr);
+		auto read_pref = ctx->self->get_read_prefs(ctx->doc3);
+		stack_bson_t pipe(ctx->doc1), opts(ctx->doc3);
+		mongoc_cursor_t* cs = mongoc_collection_aggregate(ctx->self->col_, MONGOC_QUERY_SLAVE_OK, pipe, opts, read_pref);
 		
 		// cursor 对象创建需要在主线程进行
 		ctx->doc1.ptr(cs);
