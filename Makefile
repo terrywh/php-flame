@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------
 EXTENSION=${EXT_NAME}.so
 EXT_NAME=flame
-EXT_VER=2.0.2
+EXT_VER=2.1.0
 # PHP环境
 # ---------------------------------------------------------------------
 PHP_PREFIX?=/usr/local/php
@@ -24,6 +24,9 @@ LIBRARY= ./deps/libphpext/libphpext.a \
  ./deps/lib/libuv.a \
  ./deps/lib/libhttp_parser.a \
  ./deps/lib/libfmt.a \
+ ./deps/lib/libcurl.a \
+ ./deps/lib/libnghttp2.a \
+ ./deps/lib/libcares.a \
  ./deps/lib/libhiredis.a \
  ./deps/lib/libmysqlclient.a \
  ./deps/lib/libmongoc-1.0.a \
@@ -83,6 +86,19 @@ install: ${EXTENSION}
 	mkdir -p ./deps/fmt/build; cd ./deps/fmt/build; cmake -DCMAKE_INSTALL_PREFIX=${DEPS_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC ..
 	make -C ./deps/fmt/build -j2
 	make -C ./deps/fmt/build install
+./deps/lib/libcurl.a: ./deps/lib/libnghttp2.a ./deps/lib/libcares.a
+	cd ./deps/curl; /bin/sh ./buildconf; PKG_CONFIG_PATH=${DEPS_DIR}/lib/pkgconfig CFLAGS="-fPIC" ./configure --prefix=${DEPS_DIR} --with-nghttp2 --enable-ares --disable-shared
+	make -C ./deps/curl -j2
+	make -C ./deps/curl install
+./deps/lib/libnghttp2.a:
+	cd ./deps/nghttp2; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix=${DEPS_DIR}
+	make -C ./deps/nghttp2 -j2
+	make -C ./deps/nghttp2 install
+./deps/lib/libcares.a:
+	cd ./deps/c-ares; chmod +x ./buildconf; ./buildconf;
+	cd ./deps/c-ares; CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=${DEPS_DIR}
+	make -C ./deps/c-ares -j2
+	make -C ./deps/c-ares install
 ./deps/lib/libhiredis.a:
 	make -C ./deps/hiredis -j2
 	PREFIX=${DEPS_DIR} make -C ./deps/hiredis install
@@ -95,7 +111,7 @@ install: ${EXTENSION}
 	cd ./deps/mongo-c-driver/src/libbson; NOCONFIGURE=1 ./autogen.sh;
 	cd ./deps/mongo-c-driver; NOCONFIGURE=1 ./autogen.sh; chmod +x ./configure;
 	cd ./deps/mongo-c-driver; CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=${DEPS_DIR} --disable-automatic-init-and-cleanup --disable-shm-counters --enable-static=yes --enable-shared=no
-	make -C ./deps/mongo-c-driver
+	make -C ./deps/mongo-c-driver -j2
 	make -C ./deps/mongo-c-driver install
 ./deps/lib/librdkafka.a:
 	cd ./deps/librdkafka; chmod +x ./configure; chmod +x ./lds-gen.py; ./configure --prefix=${DEPS_DIR} --enable-static
@@ -116,17 +132,22 @@ clean-deps:
 	-make -C ./deps/libuv clean
 	-make -C ./deps/http-parser clean
 	rm -rf ./deps/fmt/build
+	-make -C ./deps/curl clean
+	-make -C ./deps/nghttp2 clean
+	-make -C ./deps/c-ares clean
 	-make -C ./deps/hiredis clean
 	-make -C ./deps/mongo-c-driver clean
 	-make -C ./deps/librdkafka clean
 	rm -rf ./deps/rabbitmq-c/build
 	rm -rf ./deps/include/*
 	rm -rf ./deps/lib/*
-update-deps:
+	rm -rf ./deps/bin
+init-deps:
 	git submodule update --init; 
 	cd ./deps/mongo-c-driver; git submodule update --init; 
 	cd ./deps/rabbitmq-c; rm -rf build; 
+	cd ./deps/fmt; rm -rf ./deps/fmt/build;
 	mkdir -p ./deps/include
 	mkdir -p ./deps/lib
-deps: ${LIBRARY}
+deps: ${EXTERNAL_OBJECTS} ${LIBRARY}
 	

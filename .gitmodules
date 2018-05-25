@@ -41,3 +41,12 @@
 [submodule "deps/rabbitmq-c"]
 	path = deps/rabbitmq-c
 	url = https://github.com/alanxz/rabbitmq-c
+[submodule "deps/curl"]
+	path = deps/curl
+	url = https://github.com/curl/curl.git
+[submodule "deps/c-ares"]
+	path = deps/c-ares
+	url = https://github.com/c-ares/c-ares.git
+[submodule "deps/nghttp2"]
+	path = deps/nghttp2
+	url = https://github.com/nghttp2/nghttp2.git
