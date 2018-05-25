@@ -16,7 +16,7 @@ CXX?=/usr/local/gcc/bin/g++
 CXXFLAGS?= -O2
 CXXFLAGS+= -std=c++11 -fPIC
 LDFLAGS?=
-LDFLAGS+= -u get_module -Wl,-rpath='$$ORIGIN/' -lcurl -lnghttp2 -lcares -lssl -lsasl2
+LDFLAGS+= -u get_module -Wl,-rpath='$$ORIGIN/' -lssl -lsasl2
 INCLUDES= ${PHP_INCLUDES} -I./deps -I./deps/include -I./deps/include/libbson-1.0
 # 依赖库
 # ---------------------------------------------------------------------
