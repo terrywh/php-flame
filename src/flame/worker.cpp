@@ -3,6 +3,7 @@
 #include "coroutine.h"
 #include "worker.h"
 #include "process.h"
+#include "environment.h"
 #include "log/log.h"
 
 namespace flame {
@@ -13,25 +14,32 @@ namespace flame {
 		timer_.data = this;
 	}
 	void worker::start() {
-		char* argv[3];
 		uv_process_options_t opts;
 		std::memset(&opts, 0, sizeof(uv_process_options_t));
-		opts.flags = UV_PROCESS_WINDOWS_HIDE;
-		uv_stdio_container_t sios[3];
-		size_t cache_size = 256;
-		char working_dir[256], executable[256];
+		opts.flags   = UV_PROCESS_WINDOWS_HIDE;
 		opts.exit_cb = on_worker_exit;
-		uv_os_setenv("FLAME_CLUSTER_WORKER", std::to_string(index_).c_str());
-		cache_size = 256;
+		
+		environment env(true);
+		env.add("FLAME_CLUSTER_WORKER", std::to_string(index_));
+		opts.env = env;
+		
+		char working_dir[256], executable[256], scriptfile[256];
+		size_t cache_size = 256;
 		uv_cwd(working_dir, &cache_size);
 		opts.cwd = working_dir;
 		cache_size = 256;
 		uv_exepath(executable, &cache_size);
+		php::string sfile = php::array::server()["SCRIPT_FILENAME"];
+		std::memcpy(scriptfile, sfile.c_str(), sfile.length() + 1);
 		opts.file = executable;
+		
+		char* argv[3];
 		opts.args = argv;
 		argv[0] = executable;
-		argv[1] = php::array::server()["SCRIPT_FILENAME"].to_string().data();
+		argv[1] = scriptfile;
 		argv[2] = nullptr;
+		
+		uv_stdio_container_t sios[3];
 		opts.stdio_count = 3;
 		opts.stdio = sios;
 		sios[0].flags = UV_INHERIT_FD;
