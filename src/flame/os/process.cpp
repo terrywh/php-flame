@@ -2,6 +2,7 @@
 #include "../flame.h"
 #include "../coroutine.h"
 #include "../net/unix_socket.h"
+#include "../environment.h"
 #include "process.h"
 #include "cluster/cluster.h"
 #include "cluster/messenger.h"
@@ -125,24 +126,18 @@ namespace os {
 		ios[2].data.fd = 2;
 		options.stdio = ios;
 		options.stdio_count = 3;
-		// 环境变量容器
-		static char envb[4096],
-			*envp = envb;
-		std::vector<char*> envs;
 		// 3. options
+		// 容器需要在 uv_spawn 有效
+		environment env(false);
 		if(params.length() > 2 && params[2].is_array()) {
 			php::array& flags = static_cast<php::array&>(params[2]);
-			php::array env = flags.at("env", 3);
-			
-			if(env.is_array()) {
-				for(auto i=env.begin();i!=env.end();++i) {
-					envs.push_back(envp);
-					envp += sprintf(envp, "%s=%s\0",
-						i->first.to_string().c_str(),
-						i->second.to_string().c_str());
+			php::array  flag_env = flags.at("env", 3);
+			// 环境变量
+			if(flag_env.is_array()) {
+				for(auto i=flag_env.begin();i!=flag_env.end();++i) {
+					env.add(i->first.to_string(), i->second.to_string());
 				}
-				envs.push_back(nullptr);
-				options.env = envs.data();
+				options.env = env;
 			}
 			options_flags(options, flags);
 		}
