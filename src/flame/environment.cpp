@@ -19,9 +19,6 @@ namespace flame {
 		if(envs_.back() != nullptr) {
 			envs_.push_back(nullptr);
 		}
-		for(auto i=envs_.begin(); i!=envs_.end(); ++i) {
-			std::printf("[[%s]]\n", *i);
-		}
 		return envs_.data();
 	}
 }
