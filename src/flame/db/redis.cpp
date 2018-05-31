@@ -295,14 +295,14 @@ namespace db {
 		redis_request_t* ctx = reinterpret_cast<redis_request_t*>(privdata);
 		
 		if (reply == nullptr) {
-			ctx->co->fail("ILLEGAL illegal reply", -2);
 			self->current_ = nullptr;
+			ctx->co->fail("ILLEGAL illegal reply", -2);
 		}else if(reply->type == REDIS_REPLY_ERROR) {
+			self->current_ = nullptr;
 			ctx->co->fail(reply->str);
-			self->current_ = nullptr;
 		}else if(reply->type != REDIS_REPLY_ARRAY) {
-			ctx->co->fail("ILLEGAL illegal reply", -2);
 			self->current_ = nullptr;
+			ctx->co->fail("ILLEGAL illegal reply", -2);
 		}else{
 			php::array    rv = convert_redis_reply(reply);
 			php::string type = rv[0];
@@ -312,8 +312,14 @@ namespace db {
 				coroutine::create(ctx->cb, {rv[1], rv[2]})->start();
 				return; // ctx 继续保持 受订阅消息到达
 			}else if(self->current_ != nullptr && std::strncmp(type.c_str(), "unsubscribe", 11) == 0) {
-				self->current_ = nullptr;
-				ctx->co->next();
+				// SUBSCRIBE 多个时, UNSUBSCRIBE 会收到多次
+				ctx->rv = static_cast<int>(ctx->rv) - 1;
+				if(static_cast<int>(ctx->rv) == 0) {
+					self->current_ = nullptr;
+					ctx->co->next();
+				}else{
+					return; // 还未全部终止, 不能销毁上下文
+				}
 			}
 		}
 		delete ctx;
@@ -334,10 +340,12 @@ namespace db {
 		};
 		ctx->key.push_back(php::string("UNSUBSCRIBE", 11));
 		for(int i=0; i<params.length()-1;++i) {
-			php::string& str = params[i].to_string();
+			php::string str = params[i].to_string();
 			argv.push_back(str.c_str());
 			argl.push_back(str.length());
 		}
+		// 在 rv 中记录订阅的个数
+		ctx->rv = static_cast<int>(argv.size() - 1);
 		exec(argv.data(), argl.data(), argv.size(), ctx, cb_subscribe);
 		current_ = ctx;
 		return flame::async(this);

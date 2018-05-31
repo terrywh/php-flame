@@ -5,10 +5,9 @@ namespace flame {
 	// 包裹一个 generator function 以构建“协程”
 	class coroutine {
 	private:
-		coroutine(coroutine* parent);
+		coroutine();
 		int                    status_;
-		coroutine*             parent_;
-		php::value                gen_;
+		std::stack<php::value>    gen_;
 		// 用于异步启动\结束协程
 		uv_timer_t              timer_;
 		
@@ -29,6 +28,7 @@ namespace flame {
 		php::object          ref_;
 		// static void start_cb(uv_async_t* async);
 		static void start_cb(uv_timer_t* timer);
+		static void resume_cb(uv_timer_t* timer);
 		static void close_cb(uv_handle_t* handle);
 	public:
 		static coroutine* current;

@@ -9,7 +9,7 @@ class redis: public php::class_base {
 public:
 	typedef struct request_t {
 		flame::coroutine*         co;
-		php::value               ref;
+		php::value                rv;
 		php::callable             cb;
 		std::vector<php::string> key;
 	} redis_request_t; // 由于特殊使用方式，这里借鉴 hiredis 命名
