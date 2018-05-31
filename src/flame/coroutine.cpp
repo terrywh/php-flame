@@ -29,7 +29,7 @@ namespace flame {
 		coroutine::current->ref_ = php::object(cpp); // 在协程中保存当前对象的引用（防止异步流程丢失当前对象）
 		return php::value(coroutine::current);
 	}
-	coroutine* coroutine::create(php::callable& cb) {
+	coroutine* coroutine::create(php::callable cb) {
 		coroutine* co = new coroutine(nullptr);
 		co->gen_ = php::value([cb, co] (php::parameters& params) mutable -> php::value {
 			coroutine* orig = coroutine::current;
@@ -40,7 +40,7 @@ namespace flame {
 		});
 		return co;
 	}
-	coroutine* coroutine::create(php::callable& cb, std::vector<php::value> argv) {
+	coroutine* coroutine::create(php::callable cb, std::vector<php::value> argv) {
 		coroutine* co = new coroutine(nullptr);
 		co->gen_ = php::value([cb, argv, co] (php::parameters& params) mutable -> php::value {
 			coroutine* orig = coroutine::current;

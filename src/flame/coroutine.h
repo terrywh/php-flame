@@ -32,8 +32,8 @@ namespace flame {
 		static void close_cb(uv_handle_t* handle);
 	public:
 		static coroutine* current;
-		static coroutine* create(php::callable& cb);
-		static coroutine* create(php::callable& cb, std::vector<php::value> argv);
+		static coroutine* create(php::callable cb);
+		static coroutine* create(php::callable cb, std::vector<php::value> argv);
 		void start();
 		void close();
 		inline void async(async_cb_t cb, void* data = nullptr) {
