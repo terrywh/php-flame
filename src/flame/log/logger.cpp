@@ -165,10 +165,10 @@ namespace log {
 	}
 	bool logger::write(const php::string& out) {
 		if(file_ == -2) {
-			std::fprintf(stderr, out.c_str());
+			std::fputs(out.c_str(), stderr);
 			return false;
 		}else if(file_ == -1) {
-			std::fprintf(stdout, out.c_str());
+			std::fputs(out.c_str(), stdout);
 			return false;
 		}else{
 			write_request_t* ctx = new write_request_t {

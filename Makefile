@@ -8,7 +8,7 @@ EXT_VER=2.1.0
 PHP_PREFIX?=/data/server/php-7.0.30
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
-PHP_INCLUDES=$(shell ${PHP_CONFIG} --includes)
+PHP_INCLUDES=$(shell ${PHP_CONFIG} --includes | sed 's/-I/-isystem/g')
 # 编译参数
 # ---------------------------------------------------------------------
 DEPS_DIR=$(shell pwd)/deps
@@ -17,7 +17,7 @@ CXXFLAGS?= -O2
 CXXFLAGS+= -std=c++11 -fPIC
 LDFLAGS?=
 LDFLAGS+= -u get_module -Wl,-rpath='$$ORIGIN/' -lssl -lcrypto -lsasl2
-INCLUDES= ${PHP_INCLUDES} -I./deps -I./deps/include -I./deps/include/libbson-1.0
+INCLUDES= ${PHP_INCLUDES} -isystem./deps/include -isystem./deps/include/libbson-1.0 -isystem./deps
 # 依赖库
 # ---------------------------------------------------------------------
 LIBRARY= ./deps/libphpext/libphpext.a \
@@ -42,10 +42,14 @@ EXTERNAL_OBJECTS=./deps/multipart-parser-c/multipart_parser.o \
  ./deps/kv-parser/kv_parser.o \
  ./deps/fastcgi-parser/fastcgi_parser.o
 HEADERX=deps/deps.h.gch
+DEPENDS=$(SOURCES:%.cpp=%.d)
+
 # 扩展编译过程
 # ----------------------------------------------------------------------
-.PHONY: all install clean clean-deps update-deps deps test
+.PHONY: all install clean clean-deps update-deps deps test variable
 all: ${EXTENSION}
+
+-include $(DEPENDS)
 
 ${EXTENSION}: ${LIBRARY} ${EXTERNAL_OBJECTS} ${OBJECTS}
 	${CXX} -shared ${OBJECTS} ${EXTERNAL_OBJECTS} -Wl,--whole-archive ${LIBRARY} -Wl,--no-whole-archive ${LDFLAGS} -o $@
@@ -54,11 +58,12 @@ ${HEADERX}: deps/deps.h
 src/extension.o: src/extension.cpp
 	${CXX} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES} -c $^ -o $@ 
 %.o: %.cpp ${HEADERX}
-	${CXX} ${INCLUDES} ${CXXFLAGS} -c $< -o $@ 
+	${CXX} ${INCLUDES} ${CXXFLAGS} -MMD -MP -c $< -o $@ 
 # 清理安装
 # ----------------------------------------------------------------------
 clean:
-	rm -f ${HEADERX} ${OBJECTS} $(shell find ./src -name "*.o")
+	rm -f ${HEADERX} ${OBJECTS} ${DEPENDS}
+	rm -f $(shell find ./src -name "*.o") $(shell find ./src -name "*.d")
 	rm -f ${EXTENSION}
 clean-lnks:
 	find -type l | xargs rm
@@ -145,12 +150,15 @@ clean-deps:
 	rm -rf ./deps/include/*
 	rm -rf ./deps/lib/*
 	rm -rf ./deps/bin
-init-deps:
+init-deps: clean-deps
 	git submodule update --init; 
 	cd ./deps/mongo-c-driver; git submodule update --init; 
-	cd ./deps/rabbitmq-c; rm -rf build; 
-	cd ./deps/fmt; rm -rf ./deps/fmt/build;
 	mkdir -p ./deps/include
 	mkdir -p ./deps/lib
 deps: ${EXTERNAL_OBJECTS} ${LIBRARY}
 	
+var:
+	@echo "[OBJECTS]"
+	@echo ${OBJECTS}
+	@echo "[INCLUDES]"
+	@echo ${INCLUDES}
