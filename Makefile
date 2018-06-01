@@ -5,18 +5,18 @@ EXT_NAME=flame
 EXT_VER=2.1.0
 # PHP环境
 # ---------------------------------------------------------------------
-PHP_PREFIX?=/usr/local/php
+PHP_PREFIX?=/data/server/php-7.0.30
 PHP=${PHP_PREFIX}/bin/php
 PHP_CONFIG=${PHP_PREFIX}/bin/php-config
 PHP_INCLUDES=$(shell ${PHP_CONFIG} --includes)
 # 编译参数
 # ---------------------------------------------------------------------
 DEPS_DIR=$(shell pwd)/deps
-CXX?=/usr/local/gcc/bin/g++
+CXX?=clang++
 CXXFLAGS?= -O2
 CXXFLAGS+= -std=c++11 -fPIC
 LDFLAGS?=
-LDFLAGS+= -u get_module -Wl,-rpath='$$ORIGIN/' -lssl -lsasl2
+LDFLAGS+= -u get_module -Wl,-rpath='$$ORIGIN/' -lssl -lcrypto -lsasl2
 INCLUDES= ${PHP_INCLUDES} -I./deps -I./deps/include -I./deps/include/libbson-1.0
 # 依赖库
 # ---------------------------------------------------------------------
@@ -75,7 +75,7 @@ install: ${EXTENSION}
 ./deps/libphpext/libphpext.a:
 	make -C ./deps/libphpext -j2
 ./deps/lib/libuv.a:
-	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC /bin/sh ./configure --prefix=${DEPS_DIR}
+	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC /bin/sh ./configure --prefix=${DEPS_DIR} --enable-shared=no
 	make -C ./deps/libuv -j2
 	make -C ./deps/libuv install
 ./deps/lib/libhttp_parser.a:
@@ -86,22 +86,23 @@ install: ${EXTENSION}
 	mkdir -p ./deps/fmt/build; cd ./deps/fmt/build; cmake -DCMAKE_INSTALL_PREFIX=${DEPS_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC ..
 	make -C ./deps/fmt/build -j2
 	make -C ./deps/fmt/build install
-./deps/lib/libcurl.a: ./deps/lib/libnghttp2.a ./deps/lib/libcares.a
+./deps/lib/libcurl.a: ./deps/lib/libcares.a ./deps/lib/libnghttp2.a 
 	cd ./deps/curl; /bin/sh ./buildconf; PKG_CONFIG_PATH=${DEPS_DIR}/lib/pkgconfig CFLAGS="-fPIC" ./configure --prefix=${DEPS_DIR} --with-nghttp2 --enable-ares --disable-shared
 	make -C ./deps/curl -j2
 	make -C ./deps/curl install
-./deps/lib/libnghttp2.a:
-	cd ./deps/nghttp2; autoreconf -i; automake; autoconf; CFLAGS=-fPIC /bin/sh ./configure --disable-shared --prefix=${DEPS_DIR}
-	make -C ./deps/nghttp2 -j2
-	make -C ./deps/nghttp2 install
 ./deps/lib/libcares.a:
 	cd ./deps/c-ares; chmod +x ./buildconf; ./buildconf;
-	cd ./deps/c-ares; CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=${DEPS_DIR}
+	cd ./deps/c-ares; CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=${DEPS_DIR} --enable-shared=no
 	make -C ./deps/c-ares -j2
 	make -C ./deps/c-ares install
+./deps/lib/libnghttp2.a: ./deps/lib/libcares.a
+	cd ./deps/nghttp2; autoreconf -i; automake; autoconf; CFLAGS="-fPIC" LIBCARES_CFLAGS="-I${DEPS_DIR}/include" LIBCARES_LIBS="-L${DEPS_DIR}/lib -lcares" /bin/sh ./configure --disable-shared --prefix=${DEPS_DIR}
+	make -C ./deps/nghttp2 -j2
+	make -C ./deps/nghttp2 install
 ./deps/lib/libhiredis.a:
 	make -C ./deps/hiredis -j2
 	PREFIX=${DEPS_DIR} make -C ./deps/hiredis install
+	rm ./deps/lib/libhiredis.so*
 ./deps/lib/libmysqlclient.a:
 	cp -r ./deps/mysql-connector-c/include ./deps/include/mysql
 	cp ./deps/mysql-connector-c/lib/libmysqlclient.a ./deps/lib/
@@ -117,6 +118,8 @@ install: ${EXTENSION}
 	cd ./deps/librdkafka; chmod +x ./configure; chmod +x ./lds-gen.py; ./configure --prefix=${DEPS_DIR} --enable-static
 	make -C ./deps/librdkafka -j2
 	make -C ./deps/librdkafka install
+	rm ./deps/lib/librdkafka.so*
+	rm ./deps/lib/librdkafka++.so*
 ./deps/lib/librabbitmq.a:
 	mkdir -p ./deps/rabbitmq-c/build; cd ./deps/rabbitmq-c/build; cmake -DCMAKE_INSTALL_PREFIX=${DEPS_DIR} -DCMAKE_INSTALL_LIBDIR=lib -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-fPIC" ..
 	make -C ./deps/rabbitmq-c/build -j2

@@ -84,8 +84,7 @@ namespace flame {
 			// 下面错误会提示在 run() 函数位置
 			php::fail("keyword 'yield' missing before async function");
 		}
-		// gen_.pop();
-		if(gen_.size() == 1) {
+		if(EG(exception) || gen_.size() == 1) {
 			status_ = -1;
 			uv_timer_stop(&timer_);
 			uv_unref((uv_handle_t*)&timer_);
