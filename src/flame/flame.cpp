@@ -42,7 +42,7 @@ namespace flame {
 	}
 	static php::value go(php::parameters& params) {
 		if((status & 0x01) < 0x01) throw php::exception("flame not yet initialized");
-		status |= 0x02;
+		// status |= 0x02;
 		if(params[0].is_callable()) {
 			coroutine::create(static_cast<php::callable&>(params[0]))->start();
 		}else{
@@ -51,8 +51,8 @@ namespace flame {
 		return nullptr;
 	}
 	static php::value run(php::parameters& params) {
-		if((status & 0x02) < 0x02) throw php::exception("flame needs at least one coroutine, forget to 'flame\\go()' ?");
-		status |= 0x04;
+		if((status & 0x01) < 0x01) throw php::exception("flame not yet initialized");
+		// status |= 0x04;
 		process_self->run();
 		return nullptr;
 	}

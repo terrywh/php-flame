@@ -31,10 +31,6 @@ namespace fastcgi {
 		
 	}
 	ssize_t server_connection::parse(const char* data, ssize_t size) {
-		// for(int i=0;i<size;++i) {
-		// 	std::printf("%02x ", (unsigned char)data[i]);
-		// }
-		// std::printf("\n");
 		return fastcgi_parser_execute(&fpp_, &fps_, data, size);
 	}
 	void server_connection::close() {

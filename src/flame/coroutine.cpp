@@ -53,23 +53,28 @@ namespace flame {
 	, after_(after_t {nullptr, nullptr}) {
 		uv_timer_init(flame::loop, &timer_);
 		timer_.data = this;
-		// 用于防止“协程”中的同步过程还未执行时提前结束
-		uv_ref((uv_handle_t*)&timer_);
+		uv_timer_init(flame::loop, &alive_);
+		uv_ref((uv_handle_t*)&alive_);
 	}
-	void coroutine::close_cb(uv_handle_t* handle) {
-		coroutine* self = reinterpret_cast<coroutine*>(handle->data);
-		if(EG(exception)) {
+	coroutine::~coroutine() {
+		// uv_unref((uv_handle_t*)&alive_);
+	}
+	void coroutine::close_cb(uv_handle_t* timer) {
+		coroutine* self = reinterpret_cast<coroutine*>(timer->data);
+		if(php::exception::has()) {
 			uv_stop(flame::loop);
-			// log::default_logger->panic();
 		}else if(self->after_.func != nullptr) {
 			self->after_.func(self->after_.data);
 		}
 		delete self;
 	}
-	void coroutine::resume_cb(uv_timer_t* handle) {
-		coroutine* self = reinterpret_cast<coroutine*>(handle->data);
+	void coroutine::resume_cb(uv_timer_t* timer) {
+		coroutine* self = reinterpret_cast<coroutine*>(timer->data);
 		php::value& g = self->gen_.top(), rv;
-		if(g.is_generator()) {
+		if(php::exception::has()) {
+			rv = php::exception::get();
+			php::exception::off();
+		}else if(g.is_generator()) {
 			rv = static_cast<php::generator&>(g).get_return();
 		}else{
 			rv = g;
@@ -79,31 +84,32 @@ namespace flame {
 	}
 	void coroutine::close() {
 		assert(status_ != -1);
+		int i = 0;
 		if(status_ > 0) {
 			// 缺陷：由于 coroutine 已经在结束过程，无法在原位置进行异常上报
 			// 下面错误会提示在 run() 函数位置
 			php::fail("keyword 'yield' missing before async function");
 		}
-		if(EG(exception) || gen_.size() == 1) {
+		if(gen_.size() == 1) {
 			status_ = -1;
-			uv_timer_stop(&timer_);
-			uv_unref((uv_handle_t*)&timer_);
+			// uv_timer_stop(&timer_);
 			uv_close((uv_handle_t*)&timer_, close_cb);
 		}else{
 			status_ = 0;
+			// uv_timer_stop(&timer_);
 			uv_timer_start(&timer_, resume_cb, 0, 0);
 		}
 	}
 	void coroutine::run() {
 		while(status_ >= 0) {
 			php::value& g = gen_.top();
-			if(EG(exception) || !g.is_generator()) {
+			if(php::exception::has()) {
 				status_ = 0; // 已经发生异常，不再处理 status_ 问题
 				close();
 				break;
 			}
 			// coroutine 结束，需要确认是否缺少 yield 关键字
-			if(!static_cast<php::generator&>(g).valid()) {
+			if(!g.is_generator() || !static_cast<php::generator&>(g).valid()) {
 				close();
 				break;
 			}
@@ -191,8 +197,8 @@ namespace flame {
 		g.throw_exception(ex);
 		run();
 	}
-	void coroutine::start_cb(uv_timer_t* handle) {
-		coroutine* co = reinterpret_cast<coroutine*>(handle->data);
+	void coroutine::start_cb(uv_timer_t* timer) {
+		coroutine* co = reinterpret_cast<coroutine*>(timer->data);
 		php::callable cb = co->gen_.top();
 		co->gen_.pop();
 		if(cb.is_callable()) {
@@ -202,16 +208,7 @@ namespace flame {
 		}
 	}
 	void coroutine::start() {
-	   // uv_async_send(&async_);
-	   // start_cb(&async_);
-	   uv_timer_stop(&timer_);
-	   uv_timer_start(&timer_, start_cb, 0, 0);
+		// uv_timer_stop(&timer_);
+		uv_timer_start(&timer_, start_cb, 0, 0);
 	}
-	// void coroutine::start_cb(uv_async_t* handle) {
-	// 	coroutine* co = reinterpret_cast<coroutine*>(handle->data);
-	// 	if(co->cb_.is_callable()) {
-	// 		static_cast<php::callable&>(co->cb_).invoke();
-	// 		// co->cb_ = nullptr;
-	// 	}
-	// }
 }

@@ -101,13 +101,26 @@ namespace log {
 		// std::fprintf(stderr, "[%s] %.*s", time::datetime(time::now()), errlen, errstr);
 		if(file_ > 0) {
 			size_t errlen = 0;
-			char* errstr = php::exception_string(&errlen);
-			if(errstr == nullptr) errstr = php::error_string(&errlen);
-			if(errstr == nullptr) return;
+			std::string errstr;
+			if(php::exception::has()) {
+				php::exception ex = php::exception::get();
+				errstr = fmt::format("[{0}] (EXCEPTION) {1}:{2} {3}", 
+					time::datetime(time::now()),
+					ex.file().c_str(),
+					ex.line(),
+					ex.message().c_str());
+			}else if(PG(last_error_type)) {
+				errstr = fmt::format("[{0}] ({1}) {2}:{3} {4}", 
+					time::datetime(time::now()),
+					php::error_type_name(PG(last_error_type)),
+					PG(last_error_file),
+					PG(last_error_lineno),
+					PG(last_error_message));
+			}else {
+				return;
+			}
 			::lseek(file_, SEEK_END, 0);
-			char cache[64];
-			::write(file_, cache, sprintf(cache, "[%s] ", time::datetime(time::now())));
-			::write(file_, errstr, errlen);
+			::write(file_, errstr.c_str(), errstr.length());
 			uv_fs_t req;
 			uv_fs_close(flame::loop, &req, file_, nullptr);
 			file_ = 0;

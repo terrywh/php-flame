@@ -39,7 +39,7 @@ namespace kafka {
 				ctx->co->next(std::move(obj));
 				delete ctx;
 			}else{
-				ctx->rv = php::object::create_exception(rd_kafka_err2str(msg->err), msg->err);
+				ctx->rv = php::exception::create(rd_kafka_err2str(msg->err), msg->err);
 				ctx->self->worker_.queue_work(&ctx->req, consumer_implement::destroy_msg_wk, default_cb);
 			}
 		}else{ // 超时的情况

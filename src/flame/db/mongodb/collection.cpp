@@ -32,7 +32,7 @@ namespace mongodb {
 		if(ctx->rv.is_pointer()) {
 			collection_response_t* res = ctx->rv.ptr<collection_response_t>();
 			if(res->type == RETURN_VALUE_TYPE_ERROR) {
-				ctx->rv = php::object::create_exception(res->error.message, res->error.code);
+				ctx->rv = php::exception::create(res->error.message, res->error.code);
 			}else if(res->type == RETURN_VALUE_TYPE_REPLY) {
 				ctx->rv = write_result::create_from(&res->reply);
 			}

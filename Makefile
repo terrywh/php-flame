@@ -49,8 +49,6 @@ DEPENDS=$(SOURCES:%.cpp=%.d)
 .PHONY: all install clean clean-deps update-deps deps test variable
 all: ${EXTENSION}
 
--include $(DEPENDS)
-
 ${EXTENSION}: ${LIBRARY} ${EXTERNAL_OBJECTS} ${OBJECTS}
 	${CXX} -shared ${OBJECTS} ${EXTERNAL_OBJECTS} -Wl,--whole-archive ${LIBRARY} -Wl,--no-whole-archive ${LDFLAGS} -o $@
 ${HEADERX}: deps/deps.h
@@ -58,12 +56,13 @@ ${HEADERX}: deps/deps.h
 src/extension.o: src/extension.cpp
 	${CXX} -DEXT_NAME=\"${EXT_NAME}\" -DEXT_VER=\"${EXT_VER}\" ${CXXFLAGS} ${INCLUDES} -c $^ -o $@ 
 %.o: %.cpp ${HEADERX}
-	${CXX} ${INCLUDES} ${CXXFLAGS} -MMD -MP -c $< -o $@ 
+	${CXX} ${CXXFLAGS} ${INCLUDES} -MMD -MP -c $< -o $@
+-include $(DEPENDS)
 # 清理安装
 # ----------------------------------------------------------------------
 clean:
 	rm -f ${HEADERX} ${OBJECTS} ${DEPENDS}
-	rm -f $(shell find ./src -name "*.o") $(shell find ./src -name "*.d")
+	rm -f `find ./src -name "*.o"` `find ./src -name "*.d"`
 	rm -f ${EXTENSION}
 clean-lnks:
 	find -type l | xargs rm
@@ -78,7 +77,7 @@ install: ${EXTENSION}
 ./deps/fastcgi-parser/fastcgi_parser.o:
 	make -C ./deps/fastcgi-parser all
 ./deps/libphpext/libphpext.a:
-	make -C ./deps/libphpext -j2
+	PHP_PREFIX=${PHP_PREFIX} make -C ./deps/libphpext -j2
 ./deps/lib/libuv.a:
 	cd ./deps/libuv; /bin/sh ./autogen.sh; CFLAGS=-fPIC /bin/sh ./configure --prefix=${DEPS_DIR} --enable-shared=no
 	make -C ./deps/libuv -j2

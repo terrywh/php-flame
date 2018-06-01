@@ -6,9 +6,11 @@ namespace flame {
 	class coroutine {
 	private:
 		coroutine();
+		~coroutine();
 		int                    status_;
 		std::stack<php::value>    gen_;
 		// 用于异步启动\结束协程
+		uv_timer_t              alive_;
 		uv_timer_t              timer_;
 		
 		typedef void (*async_cb_t)(php::value rv, void* data);

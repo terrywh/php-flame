@@ -89,7 +89,7 @@ namespace http {
 			if(*c == '_') *c = '-';
 			else if(*c >= 'A' && *c <= 'Z') *c = *c - 'A' + 'a';
 		}
-		header_.at(std::move(key_)) = std::move(val_);
+		header_.at(key_.data(), key_.size()) = std::move(val_);
 	}
 	int server_connection::hp_header_complete_cb(http_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);

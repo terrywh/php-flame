@@ -55,16 +55,16 @@ namespace time {
 	}
 	php::value after(php::parameters& params) {
 		php::object tick = php::object::create<ticker>();
-		tick.call("__construct", {params[0], php::BOOL_NO});
+		tick.call("__construct", 11, {params[0], php::BOOL_NO});
 		php::callable cb = params[1];
-		tick.call("start", {cb});
+		tick.call("start", 5, {cb});
 		return std::move(tick);
 	}
 	php::value tick(php::parameters& params) {
 		php::object tick = php::object::create<ticker>();
-		tick.call("__construct", {params[0], php::BOOL_YES});
+		tick.call("__construct", 11, {params[0], php::BOOL_YES});
 		php::callable cb = params[1];
-		tick.call("start", {cb});
+		tick.call("start", 5, {cb});
 		return std::move(tick);
 	}
 }

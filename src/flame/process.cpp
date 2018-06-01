@@ -58,7 +58,6 @@ namespace flame {
 		uv_run(flame::loop, UV_RUN_DEFAULT);
 		// 非错误引发的问题（因异常引发时，进程已经提前结束，不会到达这里）
 		usleep(10000);
-		
 		if(process_type == PROCESS_WORKER) {
 			exit(99); // 标记正常退出: 无需重启
 		}

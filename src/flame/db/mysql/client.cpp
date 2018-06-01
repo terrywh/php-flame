@@ -263,7 +263,7 @@ namespace mysql {
 	void client::one_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		if(ctx->code != 0) { // 错误信息
-			ctx->rv = php::object::create_exception(ctx->sql, ctx->code);
+			ctx->rv = php::exception::create(ctx->sql, ctx->code);
 			ctx->co->next(ctx->rv);
 			delete ctx;
 		}else if(ctx->rv.is_pointer()) { // ResultSet 且近返回一行
@@ -322,7 +322,7 @@ namespace mysql {
 	void client::default_cb(uv_work_t* req, int status) {
 		client_request_t* ctx = reinterpret_cast<client_request_t*>(req->data);
 		if(ctx->code != 0) { // 错误信息
-			ctx->rv = php::object::create_exception(ctx->sql, ctx->code);
+			ctx->rv = php::exception::create(ctx->sql, ctx->code);
 		}else if(ctx->rv.is_pointer()) { // ResultSet
 			MYSQL_RES* rs = ctx->rv.ptr<MYSQL_RES>();
 			php::object obj = php::object::create<result_set>();
