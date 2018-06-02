@@ -57,7 +57,7 @@ namespace flame {
 		uv_ref((uv_handle_t*)&alive_);
 	}
 	coroutine::~coroutine() {
-		// uv_unref((uv_handle_t*)&alive_);
+		uv_unref((uv_handle_t*)&alive_);
 	}
 	void coroutine::close_cb(uv_handle_t* timer) {
 		coroutine* self = reinterpret_cast<coroutine*>(timer->data);
