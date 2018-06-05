@@ -68,7 +68,7 @@ namespace http {
 		ext.add(std::move(class_client));
 		// class handler
 		php::class_entry<http_server_handler> class_handler("flame\\net\\http\\handler");
-		class_handler.prop({"__CONNECTION_HANDLER__", zend_bool(true)});
+		class_handler.prop({"__CONNECTION_HANDLER__", php::BOOL_TRUE});
 		class_handler.add<&http_server_handler::put>("put");
 		class_handler.add<&http_server_handler::remove>("delete");
 		class_handler.add<&http_server_handler::post>("post");
@@ -95,7 +95,7 @@ namespace http {
 		class_server_response.prop({"status", 200});
 		class_server_response.prop({"header", nullptr});
 		class_server_response.prop({"data", nullptr});
-		class_server_response.prop({"ended", zend_bool(false)});
+		class_server_response.prop({"ended", php::BOOL_NO});
 		class_server_response.add<&server_response::__construct>("__construct", ZEND_ACC_PRIVATE); // 私有构造
 		class_server_response.add<&server_response::set_cookie>("set_cookie");
 		class_server_response.add<&server_response::write_header>("write_header");

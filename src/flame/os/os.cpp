@@ -40,7 +40,7 @@ namespace os {
 			options = php::array(0);
 		}
 		options.at("stdout",6) = php::string("pipe",4);
-		options.at("detach",6) = (zend_bool)false;
+		options.at("detach",6) = php::BOOL_NO;
 		args[2] = options;
 		php::parameters argv(args);
 

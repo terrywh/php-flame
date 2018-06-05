@@ -104,7 +104,7 @@ namespace kafka {
 	// void producer_implement::dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t * rkmessage, void *opaque) {
 	// 	producer_request_t* ctx = reinterpret_cast<producer_request_t*>(rkmessage->_private);
 	// 	// TODO 错误、失败处理
-	// 	ctx->rv = php::BOOL_YES;
+	// 	ctx->rv = php::BOOL_TRUE;
 	// }
 	void producer_implement::flush_wk(uv_work_t* req) {
 		producer_request_t* ctx = reinterpret_cast<producer_request_t*>(req->data);

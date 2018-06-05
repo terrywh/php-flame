@@ -141,7 +141,7 @@ namespace mongodb {
 		if(params.length() > 2) {
 			if(params[2].is_true()) {
 				ctx->doc3 = php::array(1);	
-				ctx->doc3.at("upsert",6) = php::BOOL_YES;
+				ctx->doc3.at("upsert",6) = php::BOOL_TRUE;
 			}else if(params[2].is_array()) {
 				ctx->doc3 = static_cast<php::array&>(params[2]);
 			}
@@ -163,7 +163,7 @@ namespace mongodb {
 		if(params.length() > 2) {
 			if(params[2].is_true()) {
 				ctx->doc3 = php::array(1);	
-				ctx->doc3.at("upsert",6) = php::BOOL_YES;
+				ctx->doc3.at("upsert",6) = php::BOOL_TRUE;
 			}else if(params[2].is_array()) {
 				ctx->doc3 = static_cast<php::array&>(params[2]);
 			}

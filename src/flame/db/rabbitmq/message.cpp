@@ -13,7 +13,7 @@ namespace db {
 namespace rabbitmq {
 	void message::init(consumer* c) {
 		prop("exchange", 8) = php::string((const char*)envelope_.exchange.bytes, envelope_.exchange.len);
-		prop("redelivered", 11) = envelope_.redelivered ? php::BOOL_YES : php::BOOL_NO;
+		prop("redelivered", 11) = envelope_.redelivered ? php::BOOL_TRUE : php::BOOL_NO;
 		prop("key", 3) = php::string((const char*)envelope_.routing_key.bytes, envelope_.routing_key.len);
 		prop("val", 3) = php::string((const char*)envelope_.message.body.bytes, envelope_.message.body.len);
 		init_property(&envelope_.message.properties);

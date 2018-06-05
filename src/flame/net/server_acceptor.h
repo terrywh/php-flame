@@ -14,8 +14,7 @@ public:
 		if(cb.is_callable()) {
 			cb_ = cb;
 			// 限定特殊类型标志
-			if(cb_.is_object() && !cb_.is_closure()
-				&& static_cast<php::object&>(static_cast<php::value&>(cb_)).prop("__CONNECTION_HANDLER__").is_true()) {
+			if(cb_.is_object() && static_cast<php::object&>(static_cast<php::value&>(cb_)).prop("__CONNECTION_HANDLER__").is_true()) {
 				cb_type = 2;
 			}else{
 				cb_type = 1;

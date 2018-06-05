@@ -11,9 +11,9 @@ namespace time {
 		}
 		prop("interval", 8) = static_cast<int>(params[0]);
 		if(params.length() > 1) {
-			prop("repeat", 6) = params[1].is_true() ? php::BOOL_YES : php::BOOL_NO;
+			prop("repeat", 6) = params[1].is_true() ? php::BOOL_TRUE : php::BOOL_NO;
 		}else{
-			prop("repeat", 6) = php::BOOL_YES;
+			prop("repeat", 6) = php::BOOL_TRUE;
 		}
 		tm_ = (uv_timer_t*)malloc(sizeof(uv_timer_t));
 		uv_timer_init(flame::loop, tm_);
@@ -62,7 +62,7 @@ namespace time {
 	}
 	php::value tick(php::parameters& params) {
 		php::object tick = php::object::create<ticker>();
-		tick.call("__construct", 11, {params[0], php::BOOL_YES});
+		tick.call("__construct", 11, {params[0], php::BOOL_TRUE});
 		php::callable cb = params[1];
 		tick.call("start", 5, {cb});
 		return std::move(tick);

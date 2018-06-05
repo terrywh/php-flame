@@ -81,7 +81,7 @@ namespace http {
 	void server_connection_base::write_cb(uv_write_t* handle, int status) {
 		write_request_t* ctx = reinterpret_cast<write_request_t*>(handle->data);
 		if(status == UV_ECANCELED || status == 0) {
-			if(ctx->co) ctx->co->next(php::BOOL_YES);
+			if(ctx->co) ctx->co->next(php::BOOL_TRUE);
 		}else{
 			if(ctx->co) ctx->co->next(php::BOOL_NO);
 			log::default_logger->write(fmt::format("(WARN) http write failed: ({0}) {1}", status, uv_strerror(status)));

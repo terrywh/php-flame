@@ -80,7 +80,7 @@ namespace rabbitmq {
 	php::value table::convert(amqp_field_value_t* v) {
 		switch(v->kind) {
 		case AMQP_FIELD_KIND_BOOLEAN:
-			return v->value.boolean ? php::BOOL_YES : php::BOOL_NO;
+			return v->value.boolean ? php::BOOL_TRUE : php::BOOL_NO;
 		case AMQP_FIELD_KIND_I8:
 			return static_cast<int>(v->value.i8);
 		case AMQP_FIELD_KIND_U8:

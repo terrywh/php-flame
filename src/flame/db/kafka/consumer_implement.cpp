@@ -108,7 +108,7 @@ namespace kafka {
 		// TODO 如何确认得到的 offset commit 已包含了上述 message ？
 		consumer_implement* self = reinterpret_cast<consumer_implement*>(opaque);
 		if(self->ctx_) {
-			self->ctx_->rv = php::BOOL_YES;
+			self->ctx_->rv = php::BOOL_TRUE;
 			self->ctx_ = nullptr;
 		}
 	}
