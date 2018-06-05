@@ -36,6 +36,7 @@ namespace flame {
 			coroutine_switch sw(co);
 			co->gen_.push(cb.invoke());
 			co->run();
+			return nullptr;
 		}));
 		return co;
 	}
@@ -45,6 +46,7 @@ namespace flame {
 			coroutine_switch sw(co);
 			co->gen_.push(cb.invoke(std::move(argv)));
 			co->run();
+			return nullptr;
 		}));
 		return co;
 	}
