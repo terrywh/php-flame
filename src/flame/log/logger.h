@@ -14,8 +14,6 @@ namespace log {
 		php::value warn(php::parameters& params);
 		php::value info(php::parameters& params);
 		php::value write(php::parameters& params);
-		
-		bool write(const std::string& data);
 		bool write(const php::string& out);
 		void close();
 		// 特殊函数，用于在进程发生“panic”时记录错误信息（同步）

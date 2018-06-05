@@ -175,7 +175,7 @@ namespace flame {
 			st.func(nullptr, st.data);
 		}
 	}
-	void coroutine::fail(const std::string& message, int code) {
+	void coroutine::fail(const php::value& e, int code) {
 		if(status_ < 0) return;
 		coroutine_switch sw(this);
 
@@ -184,19 +184,7 @@ namespace flame {
 		}
 		php::generator& g = static_cast<php::generator&>(gen_.top());
 		assert(g.is_generator());
-		g.throw_exception(message, code);
-		run();
-	}
-	void coroutine::fail(php::value ex) {
-		if(status_ < 0) return;
-		coroutine_switch sw(this);
-
-		while(!stack_.empty()) {
-			stack_.pop_front();
-		}
-		php::generator& g = static_cast<php::generator&>(gen_.top());
-		assert(g.is_generator());
-		g.throw_exception(ex);
+		g.throw_exception(e, code);
 		run();
 	}
 	void coroutine::start_cb(uv_timer_t* timer) {

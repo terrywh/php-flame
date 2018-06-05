@@ -89,7 +89,7 @@ namespace http {
 			if(*c == '_') *c = '-';
 			else if(*c >= 'A' && *c <= 'Z') *c = *c - 'A' + 'a';
 		}
-		header_.at(key_.data(), key_.size()) = std::move(val_);
+		header_.at( php::string(std::move(key_)) ) = std::move(val_);
 	}
 	int server_connection::hp_header_complete_cb(http_parser* parser) {
 		server_connection* self = reinterpret_cast<server_connection*>(parser->data);
@@ -113,6 +113,8 @@ namespace http {
 			kv_parser_init(&kvparser);
 			kvparser.data = self;
 			kv_parser_execute(&kvparser, &settings, cookie.c_str(), cookie.length());
+		}else{
+			self->cookie_ = nullptr;
 		}
 		self->req.prop("cookie") = std::move(self->cookie_);
 		self->req.prop("header") = std::move(self->header_);

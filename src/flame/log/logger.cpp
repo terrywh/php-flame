@@ -87,16 +87,6 @@ namespace log {
 		if(ctx->co != nullptr) ctx->co->next();
 		delete ctx;
 	}
-	bool logger::write(const std::string& data) {
-		php::buffer out;
-		out.add('[');
-		std::memcpy(out.put(19), time::datetime(time::now()), 19);
-		out.add(']');
-		out.add(' ');
-		std::memcpy(out.put(data.length()), data.c_str(), data.length());
-		out.add('\n');
-		return write(std::move(out));
-	}
 	void logger::panic() {
 		// std::fprintf(stderr, "[%s] %.*s", time::datetime(time::now()), errlen, errstr);
 		if(file_ > 0) {

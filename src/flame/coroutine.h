@@ -51,8 +51,9 @@ namespace flame {
 		}
 		void next(php::value rv);
 		void next();
-		void fail(const std::string& message, int code = 0);
-		void fail(php::value ex);
+		// e -> string message
+		// e -> object exception
+		void fail(const php::value& e, int code = 0);
 		static void prepare();
 
 		friend php::value async();

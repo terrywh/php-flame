@@ -38,8 +38,6 @@ namespace time {
 		ext.add<sleep>("flame\\time\\sleep");
 		ext.add<now>("flame\\time\\now");
 		php::class_entry<ticker> class_ticker("flame\\time\\ticker");
-		// class_ticker.prop("interval", 1000});
-		// class_ticker.prop("repeat", php::BOOL_TRUE));
 		class_ticker.prop({"interval", 1000});
 		class_ticker.prop({"repeat", php::BOOL_TRUE});
 		class_ticker.add<&ticker::__construct>("__construct");

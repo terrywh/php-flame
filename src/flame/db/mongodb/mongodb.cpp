@@ -14,11 +14,16 @@ namespace db {
 namespace mongodb {
 
 	void init(php::extension_entry& ext) {
-		ext.define({"flame\\db\\mongodb\\READ_PREFS_PRIMARY", php::value(mongoc_read_prefs_new(MONGOC_READ_PRIMARY))});
-		ext.define({"flame\\db\\mongodb\\READ_PREFS_SECONDARY", php::value(mongoc_read_prefs_new(MONGOC_READ_SECONDARY))});
-		ext.define({"flame\\db\\mongodb\\READ_PREFS_PRIMARY_PREFERRED", php::value(mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED))});
-		ext.define({"flame\\db\\mongodb\\READ_PREFS_SECONDARY_PREFERRED", php::value(mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED))});
-		ext.define({"flame\\db\\mongodb\\READ_PREFS_NEAREST", php::value(mongoc_read_prefs_new(MONGOC_READ_NEAREST))});
+		std::uintptr_t rpp(reinterpret_cast<std::uintptr_t>(mongoc_read_prefs_new(MONGOC_READ_PRIMARY))),
+			rps(reinterpret_cast<std::uintptr_t>(mongoc_read_prefs_new(MONGOC_READ_SECONDARY))),
+			rppp(reinterpret_cast<std::uintptr_t>(mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED))),
+			rpsp(reinterpret_cast<std::uintptr_t>(mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED))),
+			rpn(reinterpret_cast<std::uintptr_t>(mongoc_read_prefs_new(MONGOC_READ_NEAREST)));
+		ext.define({"flame\\db\\mongodb\\READ_PREFS_PRIMARY", php::value(rpp)});
+		ext.define({"flame\\db\\mongodb\\READ_PREFS_SECONDARY", php::value(rps)});
+		ext.define({"flame\\db\\mongodb\\READ_PREFS_PRIMARY_PREFERRED", php::value(rppp)});
+		ext.define({"flame\\db\\mongodb\\READ_PREFS_SECONDARY_PREFERRED", php::value(rpsp)});
+		ext.define({"flame\\db\\mongodb\\READ_PREFS_NEAREST", php::value(rpn)});
 		
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
 			mongoc_init();
