@@ -7,7 +7,8 @@ template <class SOCKET_TYPE>
 class server_acceptor {
 public:
 	server_acceptor(uv_stream_t* svr)
-	: svr_(svr), cb_type(0) {
+	: svr_(svr), cb_type(0)
+	, co_(nullptr) {
 		svr_->data = this;
 	}
 	void handle(const php::callable& cb) {

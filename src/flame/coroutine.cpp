@@ -6,7 +6,7 @@
 #include "log/logger.h"
 
 namespace flame {
-	coroutine* coroutine::current;
+	coroutine* coroutine::current = nullptr;
 
 	void coroutine::prepare() {
 		
@@ -138,7 +138,7 @@ namespace flame {
 		php::generator& g = static_cast<php::generator&>(gen_.top());
 		assert(g.is_generator());
 
-		if(rv.is_exception()) {
+		if(rv.is_throwable()) {
 			while(!stack_.empty()) {
 				stack_.pop_front();
 			}
