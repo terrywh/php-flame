@@ -235,6 +235,8 @@ namespace mongodb {
 			cpp->milliseconds_ = bson_iter_date_time(i);
 			return std::move(obj);
 		}
+		default:
+			assert(0);
 		}
 	}
 	stack_bson_t::stack_bson_t() {

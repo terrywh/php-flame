@@ -111,6 +111,8 @@ namespace rabbitmq {
 			return convert(&v->value.array);
 		case AMQP_FIELD_KIND_DECIMAL:
 			return nullptr; // 不支持
+		default:
+			assert(0);
 		}
 	}
 }

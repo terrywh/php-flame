@@ -11,6 +11,7 @@ namespace http {
 			handle_default = php::value([] (php::parameters& params) -> php::value {
 				return nullptr;
 			});
+			return nullptr;
 		}
 		php::value __invoke(php::parameters& params) {
 			if(!params[0].is_pointer()) {
