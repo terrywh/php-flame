@@ -139,7 +139,7 @@ namespace net {
 				static_cast<unsigned char>(addrs[i].phys_addr[4]),
 				static_cast<unsigned char>(addrs[i].phys_addr[5]));
 			iaddr.at("mac",3) = php::string(addr, size);
-			iaddr.at("internal",8) = addrs[i].is_internal ? php::BOOL_TRUE : php::BOOL_NO;
+			iaddr.at("internal",8) = addrs[i].is_internal ? php::BOOL_TRUE : php::BOOL_FALSE;
 			if(addrs[i].address.address4.sin_family == AF_INET) {
 				uv_ip4_name(&addrs[i].address.address4, addr, sizeof(addr));
 				iaddr.at("address",7) = php::string(addr);

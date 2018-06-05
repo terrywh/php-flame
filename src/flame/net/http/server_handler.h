@@ -98,7 +98,7 @@ namespace http {
 			if(ctx->self->handle_before.is_callable()) {
 				coroutine::create(ctx->self->handle_before, {
 					ctx->req, ctx->res,
-					(ctx->cb == ctx->self->handle_default) ? php::BOOL_NO : php::BOOL_TRUE,
+					(ctx->cb == ctx->self->handle_default) ? php::BOOL_FALSE : php::BOOL_TRUE,
 				})
 				->after(on_session_middle, ctx)
 				->start();
@@ -117,7 +117,7 @@ namespace http {
 			if(ctx->self->handle_after.is_callable()) {
 				coroutine::create(ctx->self->handle_after, {
 					ctx->req, ctx->res,
-					(ctx->cb == ctx->self->handle_default) ? php::BOOL_NO : php::BOOL_TRUE,
+					(ctx->cb == ctx->self->handle_default) ? php::BOOL_FALSE : php::BOOL_TRUE,
 				})
 				->after(on_session_finish, ctx)
 				->start();

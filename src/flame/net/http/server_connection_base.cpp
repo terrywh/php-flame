@@ -83,7 +83,7 @@ namespace http {
 		if(status == UV_ECANCELED || status == 0) {
 			if(ctx->co) ctx->co->next(php::BOOL_TRUE);
 		}else{
-			if(ctx->co) ctx->co->next(php::BOOL_NO);
+			if(ctx->co) ctx->co->next(php::BOOL_FALSE);
 			log::default_logger->write(fmt::format("(WARN) http write failed: ({0}) {1}", status, uv_strerror(status)));
 		}
 		delete ctx;

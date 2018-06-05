@@ -29,7 +29,7 @@ namespace mongodb {
 			mongoc_read_prefs_t* prefs = mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED);
 			mongoc_client_set_read_prefs(ctx->self->cli_, prefs);
 			mongoc_read_prefs_destroy(prefs);
-			ctx->rv = php::BOOL_NO;
+			ctx->rv = php::BOOL_FALSE;
 		}else{
 			ctx->rv = php::string("failed to connect to mongodb server", 35);
 		}

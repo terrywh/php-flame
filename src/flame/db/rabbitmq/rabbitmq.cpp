@@ -28,7 +28,7 @@ namespace rabbitmq {
 
 		php::class_entry<message> class_message("flame\\db\\rabbitmq\\message");
 		class_message.prop({"exchange", std::string("")});
-		class_message.prop({"redelivered", php::BOOL_NO});
+		class_message.prop({"redelivered", php::BOOL_FALSE});
 		class_message.prop({"key", std::string("")});
 		class_message.prop({"val", std::string("")});
 

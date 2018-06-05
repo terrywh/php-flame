@@ -108,7 +108,7 @@ namespace rabbitmq {
 		if(params.length() > 1 && params[1].is_true()) {
 			ctx->key = php::BOOL_TRUE;
 		}else{
-			ctx->key = php::BOOL_NO;
+			ctx->key = php::BOOL_FALSE;
 		}
 		ctx->req.data = ctx;
 		impl->worker_.queue_work(&ctx->req,

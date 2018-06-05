@@ -106,7 +106,7 @@ php::value server_response_base::write_buffer(php::parameters& params) {
 	) {
 		return flame::async(this);
 	}
-	return php::BOOL_NO;
+	return php::BOOL_FALSE;
 }
 void server_response_base::init(server_connection_base* conn) {
 	conn_ = conn;
