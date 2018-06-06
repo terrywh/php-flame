@@ -107,14 +107,12 @@ void client::curl_multi_timer_cb(uv_timer_t *req) {
 }
 
 int client::curl_multi_timer_handle(CURLM* multi, long timeout_ms, void* userp) {
-	if(userp) {
-		client* self = reinterpret_cast<client*>(userp);
-		if(timeout_ms < 0) {
-			uv_timer_stop(self->timer_);
-		} else {
-			if(timeout_ms == 0) timeout_ms = 1;
-			uv_timer_start(self->timer_, curl_multi_timer_cb, timeout_ms, 0);
-		}
+	client* self = reinterpret_cast<client*>(userp);
+	if(timeout_ms < 0) {
+		uv_timer_stop(self->timer_);
+	} else {
+		if(timeout_ms == 0) timeout_ms = 1;
+		uv_timer_start(self->timer_, curl_multi_timer_cb, timeout_ms, 0);
 	}
 	return 0;
 }

@@ -36,7 +36,7 @@ namespace http {
 			}
 			conn->on_session = on_session;
 			conn->start();
-			return 0;
+			return nullptr;
 		}
 		php::value put(php::parameters& params) {
 			set_handler("PUT", params[0], params[1]);

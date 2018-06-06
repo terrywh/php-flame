@@ -13,12 +13,13 @@ namespace flame {
 	void process::prepare() {
 		// 确认当前是父进程还是子进程
 		char* worker = std::getenv("FLAME_CLUSTER_WORKER");
+		flame::loop = uv_default_loop();
 		if(worker == nullptr) {
 			process_type = PROCESS_MASTER;
 		}else{
+			uv_loop_fork(flame::loop);
 			process_type = PROCESS_WORKER;
 		}
-		flame::loop = uv_default_loop();
 	}
 	static void master_exit_cb(uv_signal_t* handle, int signum) {
 		process* self = reinterpret_cast<process*>(handle->data);
