@@ -1,9 +1,5 @@
-/.vscode
-/src/**/*.o
-/src/**/*.d
-/deps/*.gch
-/deps/bin
-/deps/lib
-/deps/include
-/deps/share
-/flame.so
+*.o
+*.d
+*.so
+*.pch
+*.gch
