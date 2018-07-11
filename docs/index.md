@@ -11,9 +11,8 @@
 	5. [UDP](/php-flame/udp) - 客户端, 服务器;
 3. 驱动
 	1. [Redis](/php-flame/redis) - 客户端；
-	<!-- 2. [Mongodb 客户端](/php-flame/flame_db_mongodb) - 简单封装； -->
-	<!-- 3. [MySQL 客户端](/php-flame/flame_db_mysql) - 简单封装； -->
-	<!-- 4. [Kafka](/php-flame/flame_db_kafka) - 简单生产消费； -->
+	2. [Mongodb](/php-flame/mongodb) - 客户端;
+	3. [MySQL](/php-flame/mysql) - 客户端;
 	4. [RabbitMQ](/php-flame/rabbitmq) - 客户端；
 
 ## 仓库
