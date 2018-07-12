@@ -29,7 +29,7 @@ namespace http {
 		}else{
 			set("timeout", 3000);
 		}
-		if (params.length() > 1) {
+		if (params.length() > 1 && !params[1].empty()) {
 			set("body", params[1]);
 			set("method", "POST");
 		}else{
