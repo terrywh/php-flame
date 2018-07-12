@@ -1,9 +1,10 @@
 #include "../coroutine.h"
 #include "http.h"
-#include "handler.h"
 #include "value_body.h"
+#include "handler.h"
 #include "chunked_writer.h"
 #include "file_writer.h"
+#include "content_writer.h"
 #include "server_request.h"
 #include "server_response.h"
 #include "../time/time.h"
@@ -18,7 +19,7 @@ namespace http {
 			.property({"cookie", nullptr})
 			.property({"body",   nullptr})
 			.method<&server_response::__construct>("__construct", {}, php::PRIVATE)
-			.method<&server_response::to_string>("__toString")
+			.method<&server_response::__destruct>("__destruct")
 			.method<&server_response::set_cookie>("set_cookie", {
 				{"name", php::TYPE::STRING},
 				{"value", php::TYPE::STRING, false, true},
@@ -46,7 +47,27 @@ namespace http {
 	}
 	// 声明为 ZEND_ACC_PRIVATE 禁止创建（不会被调用）
 	php::value server_response::__construct(php::parameters& params) {
-		return nullptr;	
+		return nullptr;
+	}
+	php::value server_response::__destruct(php::parameters& params) {
+		// Content-Length: xxxxx 用法使用对象销毁作为触发实际响应发送
+		if(handler_ && !handler_->res_->chunked() && !(status_ & RESPONSE_STATUS_HEADER_SENT)) {
+			// 头
+			build_ex(*handler_->res_);
+			// 体
+			php::string body = get("body");
+			if(body.empty()) {
+
+			}else{
+				body = ctype_encode(handler_->res_->find(boost::beast::http::field::content_type)->value(), body);
+				handler_->res_->body() = body;
+				handler_->res_->prepare_payload();
+			}
+			// 执行
+			std::make_shared<content_writer>(nullptr, handler_, body, status_)->start();
+			status_ |= RESPONSE_STATUS_HEADER_SENT | RESPONSE_STATUS_FINISHED;
+		}
+		return nullptr;
 	}
 	php::value server_response::set_cookie(php::parameters& params) {
 		php::array cookie(4);
@@ -92,63 +113,80 @@ namespace http {
 	}
 	// chunked encoding 用法
 	php::value server_response::write_header(php::parameters& params) {
-		if(sr_.is_header_done()) {
+		if(status_ & RESPONSE_STATUS_HEADER_SENT) {
 			throw php::exception(zend_ce_exception, "header already sent");
 		}
 		if(params.size() > 0) {
 			set("status", params[0].to_integer());
 		}
-		std::make_shared<chunked_writer>(this, flame::coroutine::current)
-			->start(chunked_writer::STEP_WRITE_HEADER);
+		handler_->res_->chunked(true);
+		build_ex(*handler_->res_);
+		std::make_shared<chunked_writer>(flame::coroutine::current, handler_, RESPONSE_TARGET_WRITE_HEADER, status_)
+			->start();
+		status_ |= RESPONSE_STATUS_HEADER_SENT;
 		return coroutine::async();
 	}
 	php::value server_response::write(php::parameters& params) {
-		if(sr_.is_done()) {
+		if(status_ & RESPONSE_STATUS_FINISHED) {
 			throw php::exception(zend_ce_exception, "response already done");
 		}
-		std::make_shared<chunked_writer>(this, flame::coroutine::current)
-			->start(chunked_writer::STEP_WRITE_CHUNK, params[0]);
+		if(!(status_ & RESPONSE_STATUS_HEADER_SENT)) {
+			handler_->res_->chunked(true);
+			build_ex(*handler_->res_);
+		}
+		php::string chunk = params[0];
+		chunk.to_string();
+		std::make_shared<chunked_writer>(flame::coroutine::current, handler_, RESPONSE_TARGET_WRITE_CHUNK, chunk, status_)
+			->start();
+		status_ |= RESPONSE_STATUS_HEADER_SENT;
 		return coroutine::async();
 	}
 	php::value server_response::end(php::parameters& params) {
-		if(sr_.is_done()) {
+		if(status_ & RESPONSE_STATUS_FINISHED) {
 			throw php::exception(zend_ce_exception, "response already done");
 		}
-		if(params.size() > 0) {
-			std::make_shared<chunked_writer>(this, flame::coroutine::current)
-				->start(chunked_writer::STEP_WRITE_CHUNK_LAST, params[0]);
-		}else{
-			std::make_shared<chunked_writer>(this, flame::coroutine::current)
-				->start(chunked_writer::STEP_WRITE_CHUNK_LAST);
+		if(!(status_ & RESPONSE_STATUS_HEADER_SENT)) {
+			handler_->res_->chunked(true);
+			build_ex(*handler_->res_);
 		}
+		if(params.size() > 0) {
+			php::string chunk = params[0];
+			chunk.to_string();
+			std::make_shared<chunked_writer>(flame::coroutine::current, handler_, RESPONSE_TARGET_WRITE_CHUNK_LAST, chunk, status_)
+				->start();
+		}else{
+			std::make_shared<chunked_writer>(flame::coroutine::current, handler_, RESPONSE_TARGET_WRITE_CHUNK_LAST, status_)
+				->start();
+		}
+		status_ |= RESPONSE_STATUS_HEADER_SENT | RESPONSE_STATUS_FINISHED;
 		return coroutine::async();
 	}
 	php::value server_response::file(php::parameters& params) {
-		if(sr_.is_done()) {
+		if(status_ & RESPONSE_STATUS_HEADER_SENT) {
+			throw php::exception(zend_ce_exception, "header already sent");
+		}
+		if(status_ & RESPONSE_STATUS_FINISHED) {
 			throw php::exception(zend_ce_exception, "response already done");
 		}
-		
+
+		handler_->res_->chunked(true);
+		build_ex(*handler_->res_);
+
 		boost::filesystem::path root, file;
 		root += params[0].to_string();
 		file += params[1].to_string();
-
-		std::make_shared<file_writer>(this, flame::coroutine::current, root / file.lexically_normal())->start();
+		std::make_shared<file_writer>(flame::coroutine::current, handler_, root / file.lexically_normal(), status_)->start();
+		status_ |= RESPONSE_STATUS_HEADER_SENT | RESPONSE_STATUS_FINISHED;
 		return coroutine::async();
 	}
-	php::value server_response::to_string(php::parameters& params) {
-		std::stringstream os;
-		os << ctr_;
-		return os.str();
-	}
 	server_response::server_response()
-	: sr_(ctr_)
-	, status_(0) {
+	: status_(0) {
 
 	}
 	// 支持 content-length 形式的用法
-	void server_response::build_ex() {
-		if(status_ & STATUS_ALREADY_BUILT) return; // 重复使用
-		status_ |= STATUS_ALREADY_BUILT;
+	void server_response::build_ex(boost::beast::http::message<false, value_body<false>>& ctr_) {
+		if(status_ & RESPONSE_STATUS_HEADER_BUILT) return; // 重复使用
+		status_ |= RESPONSE_STATUS_HEADER_BUILT; // 在 chunked_writer 中设置
 		ctr_.result( get("status").to_integer() ); // 非法 status_code 会抛出异常
 		php::array headers = get("header", true);
 		if(headers.typeof(php::TYPE::ARRAY)) {
@@ -212,10 +250,6 @@ CTYPE_AGAIN:
 			ctr_.set(boost::beast::http::field::content_type, "text/plain");
 			goto CTYPE_AGAIN;
 		}
-		php::string body = get("body");
-		if(body.empty()) return;
-		ctr_.body() = ctype_encode(ctype->value(), body);
-		ctr_.prepare_payload();
 	}
 }
 }

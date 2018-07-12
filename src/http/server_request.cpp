@@ -2,6 +2,7 @@
 #include "http.h"
 #include "value_body.h"
 #include "server_request.h"
+#include "handler.h"
 
 namespace flame {
 namespace http {
@@ -31,16 +32,15 @@ namespace http {
 	}
 	php::value server_request::to_string(php::parameters& params) {
 		std::stringstream os;
-		os << ctr_;
+		os << *handler_->req_;
 		return os.str();
 	}
-	void server_request::build_ex() {
-		if(url_) return; // 防止重复 build
+	void server_request::build_ex(const boost::beast::http::message<true, value_body<true>>& ctr_) {
 		auto method = boost::beast::http::to_string(ctr_.method());
 		set("method", php::string(method.data(), method.size()));
 		// 目标请求地址
 		auto target = ctr_.target();
-		url_ = php::parse_url(target.data(), target.size());
+		std::shared_ptr<php::url> url_ = php::parse_url(target.data(), target.size());
 		if(url_->path) {
 			set("path", php::string(url_->path));
 		}else{

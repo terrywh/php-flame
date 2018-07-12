@@ -12,8 +12,7 @@ namespace http {
         std::size_t n = 0;
         for(auto i=boost::asio::buffer_sequence_begin(s); i!=boost::asio::buffer_sequence_end(s); ++i) {
             boost::asio::const_buffer cbuf(*i);
-            std::memcpy(b_.prepare(cbuf.size()), cbuf.data(), cbuf.size());
-            b_.commit(cbuf.size());
+            b_.append((const char *)cbuf.data(), cbuf.size());
             n += cbuf.size();
         }
         error.assign(0, error.category());
@@ -29,4 +28,4 @@ namespace http {
     }
 
 } // http
-} // flame 
+} // flame

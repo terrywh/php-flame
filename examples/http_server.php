@@ -24,7 +24,7 @@ flame\go(function() {
 		// 启动额外的协程 “异步” 继续处理流程
 		flame\go(function() use($res) {
 			// 每秒响应一个 “时间事件”
-			for($i=0;$i<1000;++$i) {
+			for($i=0;$i<10;++$i) {
 				yield flame\time\sleep(1000);
 				yield $res->write("event: time\n");
 				yield $res->write("data: ". flame\time\now() . "\n\n");

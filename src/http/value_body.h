@@ -25,7 +25,7 @@ namespace http {
         void finish(boost::system::error_code& error);
     private:
         php::value& v_;
-        php::stream_buffer b_;
+        php::buffer b_;
     };
     class value_body_writer {
     public:
@@ -38,9 +38,6 @@ namespace http {
         // const boost::beast::http::header<true>& h_;
         const php::value& v_;
     };
-    
-
-
 } // http
-} // flame 
+} // flame
 #include "value_body.ipp"

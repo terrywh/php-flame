@@ -2,6 +2,7 @@
 
 namespace flame {
 namespace http {
+	class handler;
 	class server_request: public php::class_base {
 	public:
 		static void declare(php::extension_entry& ext);
@@ -9,12 +10,9 @@ namespace http {
 		php::value to_string(php::parameters& params);
 		// virtual ~server_request();
 	private:
-		void build_ex();
-		std::shared_ptr<php::url> url_;
-		boost::beast::http::message<true, value_body<true>> ctr_;
+		std::shared_ptr<handler> handler_;
+		void build_ex(const boost::beast::http::message<true, value_body<true>>& ctr);
 
-		bool match_;
-		
 		friend class handler;
 	};
 }
