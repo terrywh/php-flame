@@ -30,7 +30,7 @@ yield $consumer->run(function($message) use($consumer) {
 
 #### `yield flame\rabbitmq\connect(string $url[, array $options = array()]) -> flame\rabbitmq\client`
 连接 `RabbitMQ` 服务器并打开通道, 返回客户端对象实例; 可用选项如下:
-* `prefetch` - `Integer` - `RabbitMQ` 预读取数量, 不能超过 `65536` (等同于 `0`), 默认 `8`;
+* `prefetch` - `Integer` - `RabbitMQ` 预读取数量, 0 < `prefetch` < 65536, 默认 `1`;
 
 **注意**:
 * 设置 `prefetch` 超过 1 的情况下, 相当于处理流程存在"并行";
@@ -117,4 +117,3 @@ void callback(flame\rabbitmq\message $message) {}
 
 #### `string message::__toString()`
 方便消息处理, 返回消息体，与 `$body` 一致；
-

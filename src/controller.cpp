@@ -8,7 +8,9 @@ namespace flame {
 	controller::controller()
 	: type(UNKNOWN)
 	, environ(boost::this_process::environment())
-	, status(0) {
+	, status(0)
+	, ms_(context, SIGINT, SIGTERM)
+	, ws_(context_ex, SIGINT, SIGTERM) {
 		if(environ.count("FLAME_PROCESS_WORKER") == 0) {
 			type = MASTER;
 		}else{
@@ -23,10 +25,7 @@ namespace flame {
 			if(options.exists("worker")) {
 				count = std::min(256, std::max((int)options.get("worker").to_integer(), 1));
 			}
-			worker_.resize(count);
-			for(int i=0; i<worker_.size(); ++i) {
-				spawn(i);
-			}
+			mworker_.resize(count);
 		}else{
 			php::callable("cli_set_process_title").call({ title + " (flame/" + environ["FLAME_PROCESS_WORKER"].to_string() + ")" });
 		}
@@ -72,19 +71,20 @@ namespace flame {
 		std::string script = php::server("SCRIPT_FILENAME");
 		boost::process::environment env = environ;
 		env["FLAME_PROCESS_WORKER"] = std::to_string(i+1);
-		worker_[i] = boost::process::child(executable, script, env, g_, context,
+		mworker_[i] = boost::process::child(executable, script, env, mg_, context,
 			boost::process::std_out > stdout,
 			boost::process::std_err > stdout,
 			boost::process::on_exit = [this, i] (int exit_code, const std::error_code&) {
 			if(exit_code != 0 && (status & STATUS_AUTORESTART)) {
+				// TODO 日志文件中是否记录？
 				std::clog << "[" << time::datetime() << "] (WARN) worker unexpected exit, restart in 3s ..." << std::endl;
 				auto tm = std::make_shared<boost::asio::steady_timer>(context, std::chrono::seconds(3));
 				tm->async_wait([this, tm, i] (const boost::system::error_code& error) {
 					if(!error) spawn(i);
 				});
 			}else{
-				for(int i=0;i<worker_.size();++i) {
-					if(worker_[i].running()) return;
+				for(int i=0;i<mworker_.size();++i) {
+					if(mworker_[i].running()) return;
 				}
 				context.stop();
 			}
@@ -92,51 +92,85 @@ namespace flame {
 	}
 	void controller::master_run() {
 		before();
+		for(int i=0; i<mworker_.size(); ++i) {
+			spawn(i);
+		}
 		// 主进程负责进程监控, 转发信号
-		boost::asio::signal_set s(context, SIGINT, SIGTERM);
-		s.async_wait([this] (const boost::system::error_code& error, int sig) {
-			for(int i=0; i<worker_.size(); ++i) {
-				::kill(worker_[i].id(), sig);
+		ms_.async_wait([this] (const boost::system::error_code& error, int sig) {
+			// TODO 日志文件中是否记录？
+			std::clog << "[" << time::datetime() << "] (INFO) master receives signal '" << sig << "', exiting ..." << std::endl;
+			signal_ = sig;
+			for(int i=0; i<mworker_.size(); ++i) {
+				::kill(mworker_[i].id(), sig);
 			}
 			context.stop();
 		});
 		context.run();
-		after();
-		// 这里有两种情况:
-		// 1. 所有子进程自主退出;
-		// 2. 子进程还未退出, 一段时间后强制结束;
-		std::error_code error;
-		if(!g_.wait_for(std::chrono::seconds(10), error)) {
-			g_.terminate(); // 10s 后还未结束, 强制杀死
-		}
+		master_shutdown();
 	}
 	void controller::worker_run() {
 		before();
 		// boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work(context_ex.get_executor());
-		boost::asio::signal_set s(context_ex, SIGINT, SIGTERM);
-		int signal = 0;
-		s.async_wait([this, &signal] (const boost::system::error_code& error, int sig) {
-			signal = sig;
+		ws_.async_wait([this] (const boost::system::error_code& error, int sig) {
+			signal_ = sig;
 			context.stop();
 		});
 		// 辅助工作线程
-		std::thread workers[4];
+		wworker_.resize(4);
 		for(int i=0;i<4;++i) {
-			workers[i] = std::thread([this] {
+			wworker_[i] = std::thread([this] {
 				context_ex.run();
 			});
 		}
 		// 工作进程负责执行
 		try{
 			context.run();
+
 			php::exception::rethrow();
 		}catch(...) {
 			exception = std::current_exception();
 		}
-		s.cancel();
+		worker_shutdown();
+	}
+	void controller::shutdown() {
+		switch(type) {
+		case MASTER:
+			master_shutdown();
+			break;
+		case WORKER:
+			worker_shutdown();
+			break;
+		default:
+			assert(0 && "未知进程类型");
+		}
+	}
+	void controller::master_shutdown() {
+		if(status & STATUS_SHUTDOWN) return;
+		status |= STATUS_SHUTDOWN;
+
+		options = nullptr;
+		context.stop();
+		context_ex.stop();
+		// 这里有两种情况:
+		// 1. 所有子进程自主退出;
+		// 2. 子进程还未退出, 一段时间后强制结束;
+		std::error_code error;
+		if(!mg_.wait_for(std::chrono::seconds(10), error)) {
+			mg_.terminate(); // 10s 后还未结束, 强制杀死
+		}
+		after();
+	}
+	void controller::worker_shutdown() {
+		if(status & STATUS_SHUTDOWN) return;
+		status |= STATUS_SHUTDOWN;
+
+		options = nullptr;
+		context.stop();
+		context_ex.stop();
+		ws_.cancel();
 		for(int i=0;i<4;++i) {
-			if(workers[i].joinable()) {
-				workers[i].join();
+			if(wworker_[i].joinable()) {
+				wworker_[i].join();
 			}
 		}
 		after();
@@ -144,6 +178,7 @@ namespace flame {
 		coroutine::shutdown();
 		// !!! 发生异常退出, 防止 PHP 引擎将还存活的对象内存提前释放
 		if(exception) exit(-1);
-		if(signal == SIGINT) exit(-2);
+		if(signal_ == SIGINT) exit(-2);
 	}
+
 }

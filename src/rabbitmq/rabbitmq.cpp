@@ -23,7 +23,7 @@ namespace rabbitmq {
 
 		php::object cli(php::class_entry<client>::entry());
 		client* cli_ = static_cast<client*>(php::native(cli));
-		
+
 		cli_->amqp_.handler.reset(new AMQP::LibBoostAsioHandler(context));
 		php::string addr = params[0];
 		cli_->amqp_.connection.reset(new AMQP::TcpConnection(
@@ -34,7 +34,7 @@ namespace rabbitmq {
 		if(params.size() > 1) {
 			php::array opts = params[1];
 			if(opts.exists("prefetch")) {
-				prefetch = std::max(std::uint16_t(0), std::min(std::uint16_t(opts.get("prefetch").to_integer()), std::uint16_t(65536)));
+				prefetch = std::max(std::uint16_t(1), std::min(std::uint16_t(opts.get("prefetch").to_integer()), std::uint16_t(65535)));
 			}
 		}
 		cli_->amqp_.channel->setQos(prefetch);

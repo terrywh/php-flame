@@ -31,8 +31,10 @@ namespace log {
 	logger::~logger() {
 		// 主进程的 logger 退出需要通知日志线程退出
 		if(controller_->type == controller::MASTER) {
-			queue_->send("c", 1, 0);
-			write_.join();
+			if(queue_) {
+				queue_->send("c", 1, 0);
+				write_.join();
+			}
 		}
 	}
 	void logger::initialize() {
@@ -41,6 +43,7 @@ namespace log {
 		}
 		php::md5(reinterpret_cast<const unsigned char*>(fpath_.c_str()), fpath_.size(), qname_);
 		if(controller_->type == controller::MASTER) {
+			boost::interprocess::message_queue::remove(qname_);
 			queue_.reset(new boost::interprocess::message_queue(
 				boost::interprocess::open_or_create, qname_, MESSAGE_MAX_COUNT, MESSAGE_MAX_SIZE
 			));
@@ -50,7 +53,7 @@ ROTATING:
 				static char     data[MESSAGE_MAX_SIZE];
 				static size_t   size;
 				static unsigned sort;
-				
+
 				if(fpath_[0] == '/') { // 文件路径
 					file.reset(new std::ofstream(fpath_, std::ios_base::out | std::ios_base::app));
 				}else{ // 进程标题
@@ -77,8 +80,9 @@ ROTATING:
 						;
 					}
 				}
-CLOSING:		
+CLOSING:
 				boost::interprocess::message_queue::remove(qname_);
+				queue_.reset();
 			});
 		}else{
 			queue_.reset(new boost::interprocess::message_queue(

@@ -11,12 +11,11 @@ namespace flame {
 				return true;
 			})
 			.on_module_shutdown([] (php::extension_entry& ext) -> bool {
-				if(controller_->status & controller::STATUS_STARTED) {
-					if(!context.stopped()) {
-						context.stop();
-					}
-				}
 				controller_.reset();
+				return true;
+			})
+			.on_request_shutdown([] (php::extension_entry& ext) -> bool {
+				controller_->shutdown();
 				return true;
 			});
 		ext
