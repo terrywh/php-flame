@@ -68,12 +68,22 @@ namespace flame {
 			assert(0 && "未知进程类型");
 		}
 	}
+	static std::string build_command_line() {
+		php::stream_buffer sb;
+		std::ostream os(&sb);
+		os << php::constant("PHP_BINARY");
+		php::array argv = php::server("argv");
+		for(auto i=argv.begin(); i!=argv.end(); ++i) {
+			os << " " << i->second;
+		}
+		return std::string(sb.data(), sb.size());
+	}
 	void controller::spawn(int i) {
-		std::string executable = php::constant("PHP_BINARY");
-		std::string script = php::server("SCRIPT_FILENAME");
+		std::string cmd = build_command_line();
+
 		boost::process::environment env = environ;
 		env["FLAME_PROCESS_WORKER"] = std::to_string(i+1);
-		mworker_[i] = boost::process::child(executable, script, env, mg_, context,
+		mworker_[i] = boost::process::child(cmd, env, mg_, context,
 			boost::process::std_out > stdout,
 			boost::process::std_err > stdout,
 			boost::process::on_exit = [this, i] (int exit_code, const std::error_code&) {
