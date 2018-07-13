@@ -44,7 +44,8 @@ namespace rabbitmq {
 			}).onSuccess([this] (const std::string& tag) {
 				set("tag", tag);
 			}).onError([this] (const char* message) {
-				co_->fail(message);
+				std::clog << "consumer error: " << message << std::endl;
+				co_->fail(message, 0);
 			});
 		return coroutine::async();
 	}
@@ -53,12 +54,12 @@ namespace rabbitmq {
 		return amqp_.channel->ack(msg_->tag_, 0);
 	}
 	php::value consumer::reject(php::parameters& params) {
-		php::object msg = params[0];
+		message* msg_ = static_cast<message*>(php::native(params[0]));
 		int flags = 0;
 		if(params.size() > 1) {
 			if(params[1].to_boolean()) flags |= AMQP::requeue;
 		}
-		return amqp_.channel->reject(msg.get("tag").to_integer(), flags);
+		return amqp_.channel->reject(msg_->tag_, flags);
 	}
 	php::value consumer::close(php::parameters& params) {
 		std::string tag = get("tag");

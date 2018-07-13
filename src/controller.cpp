@@ -170,7 +170,7 @@ namespace flame {
 		context.stop();
 		context_ex.stop();
 		ws_.cancel();
-		for(int i=0;i<4;++i) {
+		for(int i=0;i<wworker_.size();++i) {
 			if(wworker_[i].joinable()) {
 				wworker_[i].join();
 			}

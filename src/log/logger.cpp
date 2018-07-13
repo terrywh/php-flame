@@ -35,7 +35,7 @@ namespace log {
 	std::string logger::write(boost::format& fmt) {
 		std::string data = (fmt % fname_).str();
 		assert(data.c_str()[0] == ' ');
-		queue_->send(data.c_str(), data.size(), 0);
+		if(queue_) queue_->send(data.c_str(), data.size(), 0);
 		return std::move(data);
 	}
 	php::value logger::write(php::parameters& params) {
@@ -45,7 +45,7 @@ namespace log {
 		os << fname_;
 		os.put(' ');
 		write_ex(os, params);
-		queue_->send(sb.data(), sb.size(), 0);
+		if(queue_) queue_->send(sb.data(), sb.size(), 0);
 		return nullptr;
 	}
 	php::value logger::info(php::parameters& params) {
@@ -55,7 +55,7 @@ namespace log {
 		os << fname_;
 		os << " [" << time::datetime() << "] (INFO)";
 		write_ex(os, params);
-		queue_->send(sb.data(), sb.size(), 0);
+		if(queue_) queue_->send(sb.data(), sb.size(), 0);
 		return nullptr;
 	}
 	php::value logger::warn(php::parameters& params) {
@@ -79,7 +79,7 @@ namespace log {
 		return nullptr;
 	}
 	php::value logger::rotate(php::parameters& params) {
-		queue_->send("r", 1, 0); // rotate 信号
+		if(queue_) queue_->send("r", 1, 0); // rotate 信号
 		return nullptr;
 	}
 	void logger::write_ex(std::ostream& os, php::parameters& params) {
@@ -113,7 +113,8 @@ namespace log {
 	php::value logger::__construct(php::parameters& params) {
 		if(params.size() > 0) {
 			fpath_ = params[0].to_string();
-		}else{
+		}
+		if(fpath_.size() < 1) {
 			fpath_ = controller_->environ["FLAME_PROCESS_TITLE"].to_string();
 		}
 		php::md5(reinterpret_cast<const unsigned char*>(fpath_.c_str()), fpath_.size(), const_cast<char*>(fname_.data()));
@@ -129,7 +130,11 @@ namespace log {
 			signal_.reset(new boost::asio::signal_set(context));
 			signal_->async_wait(std::bind(&logger::on_sigusr2, this, std::placeholders::_1, std::placeholders::_2));
 		}else if(controller_->type == controller::WORKER && !logger_) { // 在子进程首次创建
-			queue_.reset(new boost::interprocess::message_queue(boost::interprocess::open_only, fname_.c_str()));
+			try{
+				queue_.reset(new boost::interprocess::message_queue(boost::interprocess::open_only, fname_.c_str()));
+			}catch(const std::exception& ex) {
+				queue_.reset(nullptr);
+			}
 		}
 		if((controller_->type == controller::MASTER && !logger_) || // 在主进程首次建立
 			(controller_->type == controller::WORKER && logger_)) { // 在子进程其他创建
@@ -139,7 +144,7 @@ namespace log {
 			f.push_back(' '); // 1
 			f.append(fpath_);
 
-			queue_->send(f.c_str(), f.size(), 0);
+			if(queue_) queue_->send(f.c_str(), f.size(), 0);
 		}
 		return nullptr;
 	}

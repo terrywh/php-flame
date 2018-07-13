@@ -16,7 +16,11 @@
 #### `void logger::fail(mixed $message, ...)`
 #### `void logger::warn(mixed $message, ...)`
 #### `void logger::info(mixed $message, ...)`
-向输出目标输出指定的日志内容，并补充时间戳和日志等级；数组将会被自动转换为 JSON 串，其他均使用 PHP 内置 `toString()` 转换为字符串输出。
+向输出目标输出指定的日志内容，并补充时间戳和日志等级；
+
+**注意**
+* 输出类型 `Array` 调用 `json_encode()` ; `Throwable` 调用 `getMessage()`; 其他 `toString()` 转换为字符串；
+
 #### `void logger::write(mixed $message, ...)`
 向输出目标输出指定的日志内容（不含日期时间、等级）；其余规则与上述 `fail`/`warn`/`info` 等函数一致；
 

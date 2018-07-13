@@ -1,7 +1,7 @@
 #include "coroutine.h"
 
 namespace flame {
-	// 由于 context 销毁时导致剩余的 coroutine 析构, 需要操作 running_ 
+	// 由于 context 销毁时导致剩余的 coroutine 析构, 需要操作 running_
 	std::set<coroutine*> coroutine::running_;
 	// 必须位于 running_ 之后定义
 	boost::asio::io_context    context;
@@ -171,6 +171,9 @@ namespace flame {
 			st_.pop();
 			rv_.push_back(rs);
 		} else {
+			if(rv.front().instanceof(zend_ce_throwable)) {
+				throw php::exception(rv.front());
+			}
 			st_.pop();
 			rv_.push_back(nullptr);
 		}
@@ -188,11 +191,11 @@ namespace flame {
 		zend_execute_data *original_execute_data = EG(current_execute_data);
 		EG(current_execute_data) = generator->execute_data;
 		generator->execute_data->opline--;
-		
+
 		ZVAL_STR(&rv, zend_get_executed_filename_ex());
 		zend_update_property(
 			zend_get_exception_base(exception), exception, "file", sizeof("file")-1, &rv);
-		
+
 		ZVAL_LONG(&rv, zend_get_executed_lineno());
 		zend_update_property(
 			zend_get_exception_base(exception), exception, "line", sizeof("line")-1, &rv);

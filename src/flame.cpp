@@ -16,7 +16,7 @@ extern "C" {
 		std::string sapi = php::constant("PHP_SAPI");
 		if(sapi != "cli") {
 			std::cerr << "Flame can only be using in SAPI='cli' mode\n";
-			return nullptr;
+			return ext;
 		}
 
 		php::class_entry<php::closure> class_closure("flame\\closure");
@@ -44,4 +44,3 @@ extern "C" {
 		return ext;
 	}
 };
-
