@@ -13,6 +13,7 @@ namespace time {
 
 		ext
 			.function<now>("flame\\time\\now")
+			.function<iso>("flame\\time\\iso")
 			.function<sleep>("flame\\time\\sleep", {
 				{"duration", php::TYPE::INTEGER}
 			})
@@ -38,7 +39,7 @@ namespace time {
 		static char cache[24];
 		std::time_t t = std::chrono::system_clock::to_time_t(n);
 		struct tm*  m = std::localtime(&t);
-		sprintf(cache, "%04d-%02d-%02d %02d:%02d:%02d", 
+		sprintf(cache, "%04d-%02d-%02d %02d:%02d:%02d",
 			1900 + m->tm_year,
 			1 + m->tm_mon,
 			m->tm_mday,
@@ -52,6 +53,9 @@ namespace time {
 	}
 	php::value now(php::parameters& params) {
 		return now();
+	}
+	php::value iso(php::parameters& params) {
+		return php::string(datetime(), 19);
 	}
 	php::value sleep(php::parameters& params) {
 		// 绕过类型校验

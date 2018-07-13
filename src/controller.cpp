@@ -1,7 +1,9 @@
 #include "time/time.h"
+#include "log/log.h"
+#include "log/logger.h"
 #include "controller.h"
 #include "coroutine.h"
-#include "execinfo.h"
+// #include "execinfo.h"
 
 namespace flame {
 	std::unique_ptr<controller> controller_;
@@ -76,8 +78,8 @@ namespace flame {
 			boost::process::std_err > stdout,
 			boost::process::on_exit = [this, i] (int exit_code, const std::error_code&) {
 			if(exit_code != 0 && (status & STATUS_AUTORESTART)) {
-				// TODO 日志文件中是否记录？
-				std::clog << "[" << time::datetime() << "] (WARN) worker unexpected exit, restart in 3s ..." << std::endl;
+				// 日志记录
+				log::logger_->write(boost::format(" %2% [%1%] (WARN) worker unexpected exit, restart in 3s ...") % time::datetime());
 				auto tm = std::make_shared<boost::asio::steady_timer>(context, std::chrono::seconds(3));
 				tm->async_wait([this, tm, i] (const boost::system::error_code& error) {
 					if(!error) spawn(i);
@@ -97,8 +99,8 @@ namespace flame {
 		}
 		// 主进程负责进程监控, 转发信号
 		ms_.async_wait([this] (const boost::system::error_code& error, int sig) {
-			// TODO 日志文件中是否记录？
-			std::clog << "[" << time::datetime() << "] (INFO) master receives signal '" << sig << "', exiting ..." << std::endl;
+			// 日志记录
+			log::logger_->write(boost::format(" %3% [%1%] (INFO) master receives signal '%2%', exiting ...") % time::datetime() % sig);
 			signal_ = sig;
 			for(int i=0; i<mworker_.size(); ++i) {
 				::kill(mworker_[i].id(), sig);

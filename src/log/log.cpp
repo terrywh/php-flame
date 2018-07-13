@@ -10,25 +10,24 @@ namespace log {
 	logger*    logger_ = nullptr;
 
 	static void write_before_exit(const std::exception& ex) {
-		boost::format fmt(" (FAIL) Uncaught C++ Exception: %s");
-		fmt % ex.what();
-		// C++ 代码异常需要额外进行输出
-		std::clog << "[" << time::datetime() << "] " << fmt.str() << std::endl;
-		// 额外记录到日志文件
-		if(logger_ && logger_->to_file()) {
-			logger_->write(fmt.str());
+		static boost::format fmt(" %3% [%1%] (FAIL) Uncaught C++ Exception: %2%");
+		if(logger_) {
+			std::string log = logger_->write(fmt % time::datetime() % ex.what());
+			if(logger_->to_file()) {
+				std::clog << log.substr(33) << std::endl;
+			}
 		}
 	}
 	static void write_before_exit(const php::exception& ex) {
-		boost::format fmt(" (FAIL) Uncaught PHP Exception: %s");
+		static boost::format fmt(" %3% [%1%] (FAIL) Uncaught PHP Exception: %2%");
 		// PHP 异常可以获得更多的信息
 		php::object obj(ex);
 		php::string str = obj.call("__tostring");
-		fmt % str;
-		std::clog << "[" << time::datetime() << "] " << fmt.str() << std::endl;
-		// 额外记录到日志文件
-		if(logger_ && logger_->to_file()) {
-			logger_->write(fmt.str());
+		if(logger_) {
+			std::string log = logger_->write(fmt % time::datetime() % str);
+			if(logger_->to_file()) {
+				std::clog << log.substr(33) << std::endl;
+			}
 		}
 	}
 
@@ -92,6 +91,6 @@ namespace log {
 		init_guard();
 		return logger_->fail(params);
 	}
-	
+
 }
 }

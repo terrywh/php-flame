@@ -4,6 +4,7 @@ namespace flame {
 namespace time {
 	void declare(php::extension_entry& ext);
 	php::value now(php::parameters& params);
+	php::value iso(php::parameters& params);
 	php::value sleep(php::parameters& params);
 	php::value after(php::parameters& params);
 	php::value tick(php::parameters& params);
