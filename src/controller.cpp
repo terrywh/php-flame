@@ -191,6 +191,7 @@ namespace flame {
 		// !!! 发生异常退出, 防止 PHP 引擎将还存活的对象内存提前释放
 		if(exception) exit(-1);
 		if(signal_ == SIGINT) exit(-2);
+		exit(0);
 	}
 
 }
