@@ -191,9 +191,12 @@ CLOSING:
 	void logger::rotate_ex(std::pair<std::string, std::shared_ptr<std::ostream>>& file) {
 		if(file.first[0] == '/') {
 			file.second.reset(new std::ofstream(file.first, std::ios_base::out | std::ios_base::app));
-		}else{
-			file.second.reset(&std::clog, boost::null_deleter());
+			// 文件打开失败时不会抛出异常，需要额外的状态检查
+			if(*file.second) return;
+			else
+				std::clog << "ERROR: failed to create/open logger target file, fallback to std::clog.\n";
 		}
+		file.second.reset(&std::clog, boost::null_deleter());
 	}
 }
 }
