@@ -23,7 +23,7 @@ namespace http {
 			req_.reset(new boost::beast::http::message<true, value_body<true>>());
 			BOOST_ASIO_CORO_YIELD boost::beast::http::async_read(socket_, buffer_, *req_,
 				std::bind(&handler::handle, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-			if(error == boost::beast::http::error::end_of_stream || error == boost::asio::error::eof || error == boost::asio::error::broken_pipe) {
+			if(error == boost::beast::http::error::end_of_stream || error == boost::asio::error::eof || error == boost::asio::error::connection_reset) {
 				return;
 			}else if(error) {
 				co_->fail(error);
