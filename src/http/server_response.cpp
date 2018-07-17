@@ -56,13 +56,11 @@ namespace http {
 			build_ex(*handler_->res_);
 			// 体
 			php::string body = get("body");
-			if(body.empty()) {
-
-			}else{
+			if(!body.empty()) {
 				body = ctype_encode(handler_->res_->find(boost::beast::http::field::content_type)->value(), body);
-				handler_->res_->body() = body;
-				handler_->res_->prepare_payload();
 			}
+			handler_->res_->body() = body;
+			handler_->res_->prepare_payload();
 			// 执行
 			std::make_shared<content_writer>(nullptr, handler_, body, status_)->start();
 			status_ |= RESPONSE_STATUS_HEADER_SENT | RESPONSE_STATUS_FINISHED;

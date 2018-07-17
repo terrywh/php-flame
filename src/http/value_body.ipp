@@ -23,7 +23,6 @@ namespace http {
     : v_(v) {}
     template <bool isRequest>
     std::uint64_t value_body<isRequest>::size(const value_body<isRequest>::value_type& v) {
-        assert(v.typeof(php::TYPE::STRING));
         return v.size();
     }
 

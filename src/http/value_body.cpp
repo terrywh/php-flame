@@ -13,9 +13,13 @@ namespace http {
         error.assign(0, error.category());
     }
     boost::optional<std::pair<value_body_writer::const_buffers_type, bool>> value_body_writer::get(boost::system::error_code& error) {
-        php::string data = v_;
-        error.assign(0, error.category());
-        return {{boost::asio::const_buffer(data.data(), data.size()), false}};
+        if(v_.empty()) {
+            return {{boost::asio::const_buffer(nullptr, 0), false}};
+        }else{
+            php::string data = v_;
+            error.assign(0, error.category());
+            return {{boost::asio::const_buffer(data.data(), data.size()), false}};
+        }
     }
 } // http
 } // flame
