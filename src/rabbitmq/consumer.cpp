@@ -44,7 +44,6 @@ namespace rabbitmq {
 			}).onSuccess([this] (const std::string& tag) {
 				set("tag", tag);
 			}).onError([this] (const char* message) {
-				std::clog << "consumer error: " << message << std::endl;
 				co_->fail(message, 0);
 			});
 		return coroutine::async();

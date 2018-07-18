@@ -27,7 +27,7 @@ INCLUDES:= -I${VENDOR_PARSER}/include \
  -isystem ${VENDOR_BOOST}/include \
  $(shell ${VENDOR_PHP}/bin/php-config --includes | sed 's/-I/-isystem/g')
 CXX=clang++
-CXXFLAGS?= -g -O0
+CXXFLAGS?= -fcolor-diagnostics -g -O0
 CXXFLAGS+= -std=c++11 -fPIC ${INCLUDES}
 COMPILER:=$(shell ${CXX} --version | head -n1 | awk '{print $$1}')
 

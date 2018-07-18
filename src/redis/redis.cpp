@@ -26,8 +26,8 @@ namespace redis {
 			co->stack(php::value([cli, co] (php::parameters& params) -> php::value {
 				return cli;
 			}));
-			// client* cli_ = static_cast<client*>(php::native(cli));
-			auto ptr = std::make_shared<_client>();
+			client* cli_ = static_cast<client*>(php::native(cli));
+			auto ptr = cli_->cli_ = std::make_shared<_client>();
 			if(std::strlen(url->path) > 1) {
 				co->stack(php::value([ptr, co, url] (php::parameters& params) -> php::value {
 					php::array arg(1);
@@ -37,7 +37,6 @@ namespace redis {
 				}));
 			}
 			if(url->pass) {
-				std::clog << "9\n";
 				co->stack(php::value([ptr, co, url] (php::parameters& params) -> php::value {
 					php::array arg(1);
 					arg[0] = php::string(url->pass);
