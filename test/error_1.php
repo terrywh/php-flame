@@ -1,5 +1,7 @@
 <?php
-flame\init("core_0");
+flame\init("core_0", [
+	"worker" => 5,
+]);
 function async_fn() {
 	yield 1;
 	yield flame\trigger_error();

@@ -1,8 +1,7 @@
 <?php
-ob_start();
-
 flame\init("time_1");
 flame\go(function() {
+	ob_start();
 	// 1. 毫秒时间戳
 	assert(time() == intval(flame\time\now() / 1000));
 	// 2. sleep
@@ -25,10 +24,8 @@ flame\go(function() {
 		echo "done3.\n";
 	});
 	echo "done1.\n";
+	yield flame\time\sleep(4000);
+	$output = ob_get_flush();
+	assert($output == "done1.\ndone2.\ndone3.\n");
 });
 flame\run();
-
-if(getenv("FLAME_PROCESS_WORKER")) {
-	$output = ob_get_flush();
-	// assert($output == "done1.\ndone2.\ndone3.\n");
-}

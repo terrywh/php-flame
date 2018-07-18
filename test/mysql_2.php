@@ -1,10 +1,9 @@
 <?php
-ob_start();
-
 flame\init("mysql_2");
 flame\go(function() {
+	ob_start();
 	$client = yield flame\mysql\connect("mysql://user:pass@11.22.33.44:3306/database");
-	
+
 	$sql = $client->where(["a"=>"1", "b"=>[2,"3","4"], "c"=>null, "d"=>["{!=}"=>5]]);
 	assert($sql == " WHERE (`a`='1' && `b`  IN ('2','3','4') && `c` IS NULL && `d`!='5')");
 	$sql = $client->where(["{OR}"=>["a"=>["{!=}"=>1], "b"=>["{><}"=>[1, 10, 3]], "c"=>["{~}"=>"aaa%"]]]);
@@ -20,10 +19,7 @@ flame\go(function() {
 	$sql = $client->limit("20, 300");
 	assert($sql == " LIMIT 20, 300");
 	echo "done1.\n";
-});
-flame\run();
-
-if(getenv("FLAME_PROCESS_WORKER")) {
 	$output = ob_get_flush();
 	assert($output == "done1.\n");
-}
+});
+flame\run();

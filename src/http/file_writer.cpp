@@ -75,6 +75,10 @@ namespace http {
 					boost::beast::http::make_chunk(boost::asio::const_buffer(buffer_, n)),
 					std::bind(&file_writer::write_file_data, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 			}else{
+				if(error == boost::asio::error::eof) {
+					BOOST_ASIO_CORO_YIELD boost::asio::post(context,
+						std::bind(&file_writer::write_file_data, this->shared_from_this(), boost::system::error_code(), 0));
+				}
 				break;
 			}
 		}

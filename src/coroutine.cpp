@@ -175,7 +175,7 @@ namespace flame {
 				throw php::exception(rv.front());
 			}
 			st_.pop();
-			rv_.push_back(nullptr);
+			rv_.swap(rv); // 继续传递
 		}
 		while(rv_.front().instanceof(zend_ce_generator)) {
 			php::object g = rv_[0];

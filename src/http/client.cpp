@@ -26,12 +26,12 @@ namespace http {
 				{"body", php::TYPE::INTEGER},
 				{"timeout", php::TYPE::INTEGER, false, true}
 			})
-			.method<&client::post>("put", {
+			.method<&client::put>("put", {
 				{"url", php::TYPE::STRING},
 				{"body", php::TYPE::INTEGER},
 				{"timeout", php::TYPE::INTEGER, false, true}
 			})
-			.method<&client::post>("delete", {
+			.method<&client::delete_>("delete", {
 				{"url", php::TYPE::STRING},
 				{"timeout", php::TYPE::INTEGER, false, true}
 			});
@@ -49,9 +49,9 @@ namespace http {
 			if(opts.exists("connection_per_host")) {
 				int host = opts.get("conn_per_host");
 				if(host > 0 && host < 512) {
-					
+
 				}else{
-					
+
 				}
 			}
 		}
@@ -62,13 +62,11 @@ namespace http {
 		if(!url.typeof(php::TYPE::STRING)) {
 			throw php::exception(zend_ce_exception, "request 'url' must be a string");
 		}
-		
+
 		if(url.size() > 8 && strncasecmp(url.c_str(), "https://", 8) == 0) {
-			std::shared_ptr<executor<ssl::stream<tcp::socket>>> e(new executor<ssl::stream<tcp::socket>>( &obj_, req )) ;
-			e->execute();
+			std::make_shared<executor<ssl::stream<tcp::socket>>>(coroutine::current, &obj_, req)->execute();
 		}else if(url.size() > 7 && strncasecmp(url.c_str(), "http://", 7) == 0) {
-			std::shared_ptr<executor<tcp::socket>> e(new executor<tcp::socket>(&obj_, req));
-			e->execute();
+			std::make_shared<executor<tcp::socket>>(coroutine::current, &obj_, req)->execute();
 		}else{
 			throw php::exception(zend_ce_exception, "request protocol not supported");
 		}
@@ -121,7 +119,7 @@ namespace http {
 	}
 	php::value client::delete_(php::parameters& params) {
 		php::object req(php::class_entry<client_request>::entry());
-		req.set("method",         "GET");
+		req.set("method",         "DELETE");
 		req.set("url",        params[0]);
 		req.set("header", php::array(0));
 		req.set("cookie", php::array(0));

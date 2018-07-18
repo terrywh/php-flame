@@ -1,8 +1,7 @@
 <?php
-// ob_start();
-
 flame\init("rabbitmq_1");
 flame\go(function() {
+	ob_start();
 	$client = yield flame\rabbitmq\connect("amqp://wuhao:123456@11.22.33.44:5672/vhost");
 	$count = 0;
 	$consumer = $client->consume("xypk:gift-10.20.6.51");
@@ -16,10 +15,7 @@ flame\go(function() {
 	});
 
 	echo "done:{$count}.\n";
+	$output = ob_get_flush();
+	assert($output == "done:200.\n");
 });
 flame\run();
-
-// if(getenv("FLAME_PROCESS_WORKER")) {
-// 	$output = ob_get_flush();
-// 	assert($output == "done:200.\n");
-// }

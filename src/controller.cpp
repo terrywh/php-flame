@@ -86,21 +86,22 @@ namespace flame {
 		mworker_[i] = boost::process::child(cmd, env, mg_, context,
 			boost::process::std_out > stdout,
 			boost::process::std_err > stdout,
-			boost::process::on_exit = [this, i] (int exit_code, const std::error_code&) {
-			if(exit_code != 0 && (status & STATUS_AUTORESTART)) {
-				// 日志记录
-				log::logger_->write(boost::format(" %2% [%1%] (WARN) worker unexpected exit, restart in 3s ...") % time::datetime());
-				auto tm = std::make_shared<boost::asio::steady_timer>(context, std::chrono::seconds(3));
-				tm->async_wait([this, tm, i] (const boost::system::error_code& error) {
-					if(!error) spawn(i);
-				});
-			}else{
-				for(int i=0;i<mworker_.size();++i) {
-					if(mworker_[i].running()) return;
+			boost::process::on_exit = [this, i] (int exit_code, const std::error_code& error) {
+				if(error.value() == static_cast<int>(std::errc::no_child_process)) return;
+				if(exit_code != 0 && (status & STATUS_AUTORESTART)) {
+					// 日志记录
+					log::logger_->write(boost::format(" %2% [%1%] (WARN) worker unexpected exit, restart in 3s ...") % time::datetime());
+					auto tm = std::make_shared<boost::asio::steady_timer>(context, std::chrono::seconds(3));
+					tm->async_wait([this, tm, i] (const boost::system::error_code& error) {
+						if(!error) spawn(i);
+					});
+				}else{
+					for(int i=0;i<mworker_.size();++i) {
+						if(mworker_[i].running()) return;
+					}
+					context.stop();
 				}
-				context.stop();
-			}
-		});
+			});
 	}
 	void controller::master_run() {
 		before();
@@ -171,6 +172,7 @@ namespace flame {
 			mg_.terminate(); // 10s 后还未结束, 强制杀死
 		}
 		after();
+		exit(0);
 	}
 	void controller::worker_shutdown() {
 		if(status & STATUS_SHUTDOWN) return;
@@ -189,8 +191,8 @@ namespace flame {
 		// 停止所有还在运行的协程
 		coroutine::shutdown();
 		// !!! 发生异常退出, 防止 PHP 引擎将还存活的对象内存提前释放
-		if(exception) exit(-1);
-		if(signal_ == SIGINT) exit(-2);
+		if(exception) exit(-99);
+		if(signal_ == SIGINT) exit(0);
 		exit(0);
 	}
 

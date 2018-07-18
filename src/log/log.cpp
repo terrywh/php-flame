@@ -49,6 +49,8 @@ namespace log {
 						write_before_exit(ex);
 					}catch(const std::exception& ex) {
 						write_before_exit(ex);
+					}catch(...) {
+						assert(0 && "未知的错误");
 					}
 				}
 				// 一定要提前销毁

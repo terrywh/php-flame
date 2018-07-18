@@ -3,8 +3,9 @@
 namespace flame {
 namespace http {
     template <class Stream>
-    executor<Stream>::executor(const php::object& cli, const php::object& req)
-    : cli_ref(cli)
+    executor<Stream>::executor(std::shared_ptr<flame::coroutine> co, const php::object& cli, const php::object& req)
+    : co_(co)
+    , cli_ref(cli)
     , req_ref(req)
     , res_ref(nullptr)
     , timer_(context) {
@@ -13,7 +14,6 @@ namespace http {
     }
     template <class Stream>
     void executor<Stream>::execute(const boost::system::error_code& error, std::size_t n) { BOOST_ASIO_CORO_REENTER(this) {
-        co_ = flame::coroutine::current;
         // 构建并发送请求
         req_->build_ex();
         BOOST_ASIO_CORO_YIELD cli_->acquire(req_->url_, s_, std::bind(&executor::execute, this->shared_from_this(), std::placeholders::_1, 0));

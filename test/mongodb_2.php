@@ -1,10 +1,9 @@
 <?php
-ob_start();
-
 flame\init("mongodb_2");
 flame\go(function() {
+	ob_start();
 	$client = yield flame\mongodb\connect("mongodb://user:pass@11.22.33.44:27017,44.33.22.11:27017/database?replicaSet=replicaSetName&readPreference=secondaryPreferred");
-	
+
 	$col = $client->collection("test_0");
 	$r = yield $col->delete([]);
 	assert($r["ok"]);
@@ -37,10 +36,7 @@ flame\go(function() {
 	$r = yield $r->next();
 	assert($r["_id"] == 1234);
 	echo "done1.\n";
-});
-flame\run();
-
-if(getenv("FLAME_PROCESS_WORKER")) {
 	$output = ob_get_flush();
 	assert($output == "done1.\n");
-}
+});
+flame\run();
