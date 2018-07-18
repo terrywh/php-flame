@@ -22,33 +22,6 @@ namespace redis {
 			qr_.pop_front();
 		}
 	}
-	void _client::connect(std::shared_ptr<flame::coroutine> co, std::shared_ptr<php::url> url) {
-		tcp::endpoint e (boost::asio::ip::make_address(url->host), url->port ? url->port : 6379);
-		auto ptr = this->shared_from_this();
-		if(std::strlen(url->path) > 1) {
-			co->stack(php::value([this, ptr, co, url] (php::parameters& params) -> php::value {
-				php::array arg(1);
-				arg[0] = php::string(url->path + 1);
-				send(co, new _command("SELECT", arg));
-				return coroutine::async();
-			}));
-		}
-		if(url->pass) {
-			co->stack(php::value([this, ptr, co, url] (php::parameters& params) -> php::value {
-				php::array arg(1);
-				arg[0] = php::string(url->pass);
-				send(co, new _command("AUTH", arg));
-				return coroutine::async();
-			}));
-		}
-		socket_.async_connect(e, [this, ptr, co] (const boost::system::error_code& error) {
-			if(error) {
-				co->fail(error);
-			}else{
-				co->resume();
-			}
-		});
-	}
 	void _client::send(std::shared_ptr<flame::coroutine> co, _command_base* base) {
 		base->co_ = co;
 		qs_.push_back(base);

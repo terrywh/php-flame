@@ -9,7 +9,6 @@ namespace redis {
 	public:
 		_client();
 		~_client();
-		void connect(std::shared_ptr<flame::coroutine> co, std::shared_ptr<php::url> url);
 		// 加入发送队列，若当前还未进行发送，启动发送过程（）
 		void send(std::shared_ptr<flame::coroutine> co, _command_base* base);
 		void read();
@@ -33,6 +32,7 @@ namespace redis {
 			STATUS_FLAG_READING = 0x02,
 		};
 		int status_;
+		friend php::value connect(php::parameters& params);
 		friend class _command;
 		friend class _transaction;
 	};
