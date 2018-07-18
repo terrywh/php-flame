@@ -25,7 +25,7 @@ namespace http {
             std::bind(&content_writer::write, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 
 		if(co_) {
-	        if(error == boost::asio::error::broken_pipe || !error) {
+	        if(error == boost::asio::error::broken_pipe || error == boost::asio::error::connection_reset || !error) {
 	            co_->resume();
 	        }else{
 	            co_->fail(error);

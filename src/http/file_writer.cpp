@@ -41,7 +41,7 @@ namespace http {
 		BOOST_ASIO_CORO_YIELD boost::beast::http::async_write_header(handler_->socket_, *sr_,
 			std::bind(&file_writer::write_not_found, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 
-		if(error == boost::asio::error::broken_pipe) {
+		if(error == boost::asio::error::broken_pipe || error == boost::asio::error::connection_reset) {
 			co_->resume();
 			return;
 		}else if(error){
@@ -53,7 +53,7 @@ namespace http {
 			boost::beast::http::make_chunk_last(),
 			std::bind(&file_writer::write_not_found, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 
-		if(error == boost::asio::error::broken_pipe || !error) {
+		if(error == boost::asio::error::broken_pipe || error == boost::asio::error::connection_reset || !error) {
 			co_->resume();
 		}else{
 			co_->fail(error);
@@ -65,37 +65,28 @@ namespace http {
 		// 头
 		BOOST_ASIO_CORO_YIELD boost::beast::http::async_write_header(handler_->socket_, *sr_,
 			std::bind(&file_writer::write_file_data, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-		if(error == boost::asio::error::broken_pipe) {
-			co_->resume();
-			return;
-		}else if(error){
-			co_->fail(error);
-			return;
-		}
+
 		// 文件内容逐块发送
-		while(true) {
+		while(!error) {
 			BOOST_ASIO_CORO_YIELD boost::asio::async_read(ds_, boost::asio::buffer(buffer_),
 					std::bind(&file_writer::write_file_data, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 			if(n > 0) {
 				BOOST_ASIO_CORO_YIELD boost::asio::async_write(handler_->socket_,
 					boost::beast::http::make_chunk(boost::asio::const_buffer(buffer_, n)),
 					std::bind(&file_writer::write_file_data, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-				if(error) {
-					co_->fail(error);
-					return;
-				}
 			}else{
 				break;
 			}
 		}
 		// 结束
-		BOOST_ASIO_CORO_YIELD boost::asio::async_write(handler_->socket_,
-			boost::beast::http::make_chunk_last(),
-			std::bind(&file_writer::write_not_found, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-
-		if(error == boost::asio::error::broken_pipe || !error) {
+		if(!error) {
+			BOOST_ASIO_CORO_YIELD boost::asio::async_write(handler_->socket_,
+				boost::beast::http::make_chunk_last(),
+				std::bind(&file_writer::write_not_found, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		}
+		if(error == boost::asio::error::broken_pipe || error == boost::asio::error::connection_reset) {
 			co_->resume();
-		}else{
+		}else if(error){
 			co_->fail(error);
 		}
 		// 脱离了 Http 回调协程时, 需要恢复 HANDLER 复用连接

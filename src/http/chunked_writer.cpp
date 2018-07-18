@@ -45,7 +45,7 @@ namespace http {
 				std::bind(&chunked_writer::write, this->shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		}
 		// 本次操作结束
-		if(!error || error == boost::asio::error::eof || error == boost::asio::error::broken_pipe) {
+		if(!error || error == boost::asio::error::eof || error == boost::asio::error::broken_pipe || error == boost::asio::error::connection_reset) {
 			co_->resume();
 		}else if(error) {
 			co_->fail(error);

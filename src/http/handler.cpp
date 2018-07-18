@@ -96,11 +96,11 @@ namespace http {
 			// 此处恢复可能存在两种可能:
 			// 1. 上述 stack 中回调 (Content-Length 响应);
 			// 2. server_response::end() 后回调 (Chunked 响应);
-			if(error == boost::asio::error::eof || error == boost::asio::error::broken_pipe) {
+			if(error == boost::asio::error::eof || error == boost::asio::error::broken_pipe || error == boost::asio::error::connection_reset) {
 				n = 0; // 客户端连接关闭, 标志无需 keepalive
 			}else if(error) {
+				n = 0;
 				co_->fail(error);
-				return;
 			}
 		} while(n > 0); //
 	}}
