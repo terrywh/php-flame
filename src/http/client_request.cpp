@@ -13,6 +13,7 @@ namespace http {
 			.property({"method", "GET"})
 			.property({"url", nullptr})
 			.property({"header", nullptr})
+			.property({"cookie", nullptr})
 			.property({"body", ""})
 			.method<&client_request::__construct>("__construct", {
 				{"url", php::TYPE::STRING},
@@ -74,6 +75,20 @@ namespace http {
 		if(ctr_.find(boost::beast::http::field::host) == ctr_.end()) {
 			ctr_.set(boost::beast::http::field::host, url_->host);
 		}
+		// COOKIE
+		php::array cookie = get("cookie");
+		php::buffer cookies;
+		for(auto i=cookie.begin(); i!=cookie.end(); ++i) {
+			php::string key = i->first;
+			php::string val = i->second.to_string();
+			val = php::url_encode(val.c_str(), val.size());
+			cookies.append(key);
+			cookies.push_back('=');
+			cookies.append(val);
+			cookies.push_back(';');
+			cookies.push_back(' ');
+		}
+		ctr_.set(boost::beast::http::field::cookie, php::string(std::move(cookies)));
 		php::string body = get("body");
 CTYPE_AGAIN:
 		auto ctype = ctr_.find(boost::beast::http::field::content_type);

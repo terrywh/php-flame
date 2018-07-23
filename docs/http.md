@@ -48,6 +48,14 @@ $req->header = ["content-type"=>"application/x-www-form-urlencoded"];
 #### `array client_request::$cookie`
 请求头部定制 Cookie 项；
 
+**示例**：
+``` PHP
+// 单项
+$req->cookie["key1"] = "value/123"; // 自动进行 URL_ENCODE
+// 整体
+$req->cookie = ["key1" => "value/456", "key2" => "value/789"];
+```
+
 **注意**：
 * 设置 Cookie 不要使用 $header ，否则可能导致相互覆盖；
 
@@ -198,7 +206,7 @@ void callback(flame\http\server_request $req, flame\http\server_response $res);
 ```
 
 **注意**:
-* 可以在 `before` 对应回调协程中改变当前请求 `$method` 及 `$path` (重定向到指定的自定有的路径处理过程); 
+* 可以在 `before` 对应回调协程中改变当前请求 `$method` 及 `$path` (重定向到指定的自定有的路径处理过程);
 
 #### `server server::after(callable $cb)`
 设置一个在每次请求处理过程结束后被执行的回调协程, 并返当前服务器对象 (用于串联调用)；`$cb` 原型如下:
@@ -282,7 +290,7 @@ $res->header["X-Server"] = "Flame/0.7.0";
 
 定义一个 Cookie 并以响应头 [Set-Cookie](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Set-Cookie) 形式下发; 其中 `$expire` 参数存在两种形式:
 * 当其值较小时 ( < 30 * 86400) 表示 Cookie 的有效时间长度 (以当前时间开始), 下发 Max-Age 及 Expire 字段 (兼容 IE < 9 浏览器);
-* 当其值较大时 (>= 30 * 86400) 表示 Cookie 的销毁时间点 (一般设置到未来的时间点), 下发 Expire 字段; 
+* 当其值较大时 (>= 30 * 86400) 表示 Cookie 的销毁时间点 (一般设置到未来的时间点), 下发 Expire 字段;
 
 **注意**:
 * 在 `writer_header` (Transfer-Encoding: Chunked) 或 处理协程结束前 (Content-Length: xx) 时才实际进行发送；
