@@ -1,5 +1,5 @@
 #define EXTENSION_NAME    "flame"
-#define EXTENSION_VERSION "0.8.1"
+#define EXTENSION_VERSION "0.8.2"
 
 #include <cstdio>
 #include <sys/types.h>
