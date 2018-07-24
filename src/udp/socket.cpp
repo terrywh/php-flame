@@ -34,7 +34,7 @@ namespace udp {
 		if(params.size() > 0) {
 			php::string str = params[0];
 			char *s = str.data(), *p, *e = s + str.size();
-			for(p = s; p < e; ++p) {
+			for(p=e-2; p>s; --p) {
 				// 分离 地址与端口
 				if(*p == ':') break;
 			}

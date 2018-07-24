@@ -15,18 +15,24 @@ flame\init("http-server", [
 // 启用一个协程作为入口
 flame\go(function() {
 	// 创建 http 服务器
-	$server = new flame\http\server(":::19001");
-	// 设置处理过程
-	$server->before(function($req, $res, $r) {
-		if(!$r) {
-			yield $res->write_header(404);
-			yield flame\time\sleep(2000);
-			yield $res->end("not found");
+	$server = new flame\http\server(":::7678");
+	// 设置默认处理程序
+	$server->before(function($req, $res, $match) {
+		if($match) {
+			$req->data["time"] = flame\time\now();
 		}
 	})->get("/hello", function($req, $res) {
-		$res->body = "hello, world!\n";
+		yield $res->write("hello ");
+		yield $res->end(" world");
+	})->after(function($req, $res, $match) {
+		if($match) {
+			flame\log\info("cost", flame\time\now() - $req->data["time"], "ms");
+		}else{
+			$res->status = 404;
+			$res->body = "not found";
+		}
 	});
-	// 运行服务
+	// 启动并运行服务器
 	yield $server->run();
 });
 // 框架调度执行
@@ -34,9 +40,10 @@ flame\run();
 ```
 
 * HTTP 服务器：[examples/http_server.php](https://github.com/terrywh/php-flame/blob/master/examples/http_server.php)
-* 
 
 ## 依赖
+
+* [php](https://www.php.net)
 
 * [boost](https://www.boost.org/)
 ```

@@ -40,7 +40,7 @@ namespace http {
 	php::value server::__construct(php::parameters& params) {
 		php::string str = params[0];
 		char *s = str.data(), *p, *e = s + str.size();
-		for(p = s; p < e; ++p) {
+		for(p = e-2; p>s; --p) {
 			if(*p == ':') break; // 分离 地址与端口
 		}
 		if(*p != ':') throw php::exception(zend_ce_exception, "create http server failed: address port missing");
