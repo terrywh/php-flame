@@ -127,7 +127,7 @@ namespace log {
 			// 启动消费线程
 			writer_ = std::thread(std::bind(&logger::writer, this));
 			// 主进程在 SIGUSR2 时重载日志(文件)
-			signal_.reset(new boost::asio::signal_set(context));
+			signal_.reset(new boost::asio::signal_set(context, SIGUSR2));
 			signal_->async_wait(std::bind(&logger::on_sigusr2, this, std::placeholders::_1, std::placeholders::_2));
 		}else if(controller_->type == controller::WORKER && !logger_) { // 在子进程首次创建
 			try{
