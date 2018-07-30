@@ -16,6 +16,9 @@ flame\go(function() {
 		}
 		// 使用 $req->data 保存数据（在路径处理器或后置处理器中均可访问）
 		$req->data["start"] = flame\time\now();
+	})->get("/debug", function($req, $res) {
+		$res->header["Content-Type"] = "application/json";
+		$res->body = $req;
 	})->get("/stream", function($req, $res) { // 路径处理器
 		// 使用 Chunked 方式持续返回数据，设置为事件流方式响应数据
 		$res->header["Content-Type"]  = "text/event-stream";
