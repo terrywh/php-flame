@@ -71,7 +71,7 @@ sudo make PREFIX="/data/vendor/amqp-3.1.0" install
 rm -f /data/vendor/amqp-3.1.0/lib/libamqpcpp.so*
 ```
 
-* [MySQL-Connector-C](https://downloads.mysql.com/archives/c-c/) - 6.1.11 Linux - Generic 64bit
+* [MySQL-Connector-C](https://downloads.mysql.com/archives/c-c/) - 6.1.11 Linux - Generic 64bit (注意仅保留静态库)
 ```
 ```
 *目前 8.0 版本未单独提供 libmysqlclient 通用库 (包含在服务器中的版本链接的 ssl 库版本与 CentOS7 不直接兼容);*
