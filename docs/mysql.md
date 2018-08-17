@@ -119,20 +119,24 @@ $aa = "aaaa";
 执行查询并限定结果集大小为1，若找到匹配数据，直接返回数据对应字段值；若未找到，返回 null；
 
 ### `class flame\db\mysql\result`
-数据查询结果对象
+数据查询结果对象, 用于读取“结果集”数据项 或 获取更新型语句执行结果；
 
 **示例**：
 ``` PHP
 <?php
 // ... 通过 client 获得 result_set 对象 $rs
-$rows = $rs->fetch_all(); // 获得所有数据对应的关联数组
-while($row = $rs->fetch_row()) { // 依次获取每行数据关联数组
+$rows = yield $rs->fetch_all(); // 获得所有数据对应的关联数组
+while($row = yield $rs->fetch_row()) { // 依次获取每行数据关联数组
 	var_dump($row);
 }
 ```
 
-#### `array/null result_set::fetch_all()`
+#### `yield result::fetch_all() -> array/null`
 获取结果集中的所有数据，返回二位数组，其元素为每行数据的关联数组；若不存在结果集, 则返回 `NULL`;
 
-#### `array/null result_set::fetch_row()`
+#### `yield result::fetch_row() -> array/null`
 获取结果集中的下一数据，返回该行数据的关联数组；若不存在结果集, 则返回 `NULL`;
+
+#### `result::$affected_rows`
+#### `result::$found_rows`
+#### `result::$insert_id`

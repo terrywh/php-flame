@@ -10,6 +10,7 @@ https://terrywh.github.io/php-flame/
 <?php
 // 框架初始化（自动设置进程名称）
 flame\init("http-server", [
+	"debug" => false, // 非调试状态（自动重启）
 	"worker" => 4, // 多进程服务
 ]);
 // 启用一个协程作为入口
@@ -49,8 +50,8 @@ flame\run();
 ```
 sudo -s
 source /home/wuhao/.bashrc
-./bootstrap.sh --with-toolset=clang --prefix=/data/vendor/boost-1.67.0
-./b2 --prefix=/data/vendor/boost-1.67.0 cxxflags=-fPIC toolset=clang variant=release link=static threading=multi install
+./bootstrap.sh --with-toolset=clang --prefix=/data/vendor/boost-1.68.0
+./b2 --prefix=/data/vendor/boost-1.68.0 cxxflags=-fPIC toolset=clang variant=release link=static threading=multi install
 ```
 
 * [libphpext](https://github.com/terrywh/libphpext.git) - 依赖于 PHP

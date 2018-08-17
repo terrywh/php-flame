@@ -5,16 +5,15 @@ namespace mysql {
 	class _connection_pool: public _connection_base, public std::enable_shared_from_this<_connection_pool> {
 	public:
 		// 以下函数应在主线程调用
-		_connection_pool(std::shared_ptr<php::url> url, std::size_t max = 4);
+		_connection_pool(std::shared_ptr<php::url> url, std::size_t max = 5);
 		~_connection_pool();
-		virtual _connection_pool& exec(std::function<std::shared_ptr<MYSQL_RES> (std::shared_ptr<MYSQL> c, int& error)> wk,
-			std::function<void (std::shared_ptr<MYSQL> c, std::shared_ptr<MYSQL_RES> r, int error)> fn) override;
-		
+		virtual _connection_pool& exec(worker_fn_t&& wk, master_fn_t&& fn) override;
+
 	private:
 		// 以下函数应在工作线程调用
 		void acquire(std::function<void (std::shared_ptr<MYSQL> c)> cb);
 		void release(MYSQL* c);
-		
+
 		std::shared_ptr<php::url> url_;
 		std::uint16_t      max_;
 		std::uint16_t     size_;

@@ -4,7 +4,7 @@ flame\go(function() {
 	ob_start();
 	$cli = yield flame\redis\connect("redis://auth:123456@11.22.33.44:6379/0");
 
-	yield $cli->set("test", "first value");
+	$r = yield $cli->set("test", flame\time\now(), "PX", 5000, "NX");
 	$m = yield $cli->multi();
 	assert($m instanceof flame\redis\transaction);
 	$r = yield $m // TRANSACTION

@@ -6,8 +6,7 @@ namespace mongodb {
 	public:
 		// 以下函数应在主线程调用
 		_connection_lock(std::shared_ptr<mongoc_client_t> c);
-		virtual _connection_lock& exec(std::function<std::shared_ptr<bson_t> (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_error_t> error)> wk,
-			std::function<void (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_t> d, std::shared_ptr<bson_error_t> error)> fn) override;
+		virtual _connection_lock& exec(worker_fn_t&& wk, master_fn_t&& fn) override;
 	private:
 		std::shared_ptr<mongoc_client_t> c_;
 	};

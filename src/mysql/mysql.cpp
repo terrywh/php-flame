@@ -30,9 +30,9 @@ namespace mysql {
 
 		cli_->c_.reset(new _connection_pool(php::parse_url(params[0])));
 		std::shared_ptr<coroutine> co = coroutine::current;
-		cli_->c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> std::shared_ptr<MYSQL_RES> {
+		cli_->c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* {
 			return nullptr;
-		}, [co, cli] (std::shared_ptr<MYSQL> c, std::shared_ptr<MYSQL_RES> rs, int error) {
+		}, [co, cli] (std::shared_ptr<MYSQL> c, MYSQL_RES* rs, int error) {
 			co->resume(cli);
 		});
 		return coroutine::async();
@@ -426,19 +426,6 @@ namespace mysql {
 		// 排序
 		if(params.size() > 3) build_order(cc, buf, params[3]);
 		buf.append(" LIMIT 1", 8);
-	}
-	void fetch_cb(std::shared_ptr<coroutine> co, const php::object& ref, const php::string& field) {
-		co->stack(php::value([field] (php::parameters& params) -> php::value {
-			php::object cs = params[0];
-			assert(cs.instanceof(php::class_entry<result>::entry()));
-			if(static_cast<int>(cs.get("found_rows")) > 0) {
-				php::array row = cs.call("fetch_row");
-				if(field.typeof(php::TYPE::STRING)) return row.get(field);
-				else return std::move(row);
-			}else{
-				return nullptr;
-			}
-		}), ref);
 	}
 }
 }

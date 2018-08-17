@@ -34,6 +34,9 @@ namespace rabbitmq {
 		if(params.size() > 0) {
 			set("body", params[0]);
 		}
+		if(params.size() > 1) {
+			set("routing_key", params[1]);
+		}
 		return nullptr;
 	}
 	php::value message::to_json(php::parameters& params) {

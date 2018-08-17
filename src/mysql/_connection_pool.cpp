@@ -19,18 +19,20 @@ namespace mysql {
 		}
 	}
 	// 以下函数应在主线程调用
-	_connection_pool& _connection_pool::exec(std::function<std::shared_ptr<MYSQL_RES> (std::shared_ptr<MYSQL> c, int& error)> wk,
-			std::function<void (std::shared_ptr<MYSQL> c, std::shared_ptr<MYSQL_RES> r, int error)> fn) {
+	_connection_pool& _connection_pool::exec(worker_fn_t&& wk, master_fn_t&& fn) {
 		auto ptr = this->shared_from_this();
+		// 避免在工作线程中对 wk 捕获的 PHP 对象进行拷贝释放
+		auto wk_ = std::make_shared<worker_fn_t>(std::move(wk));
+		auto fn_ = std::make_shared<master_fn_t>(std::move(fn));
 		// 受保护的连接获取过程
-		boost::asio::post(wait_guard, std::bind(&_connection_pool::acquire, this, [wk, fn, ptr] (std::shared_ptr<MYSQL> c) {
+		boost::asio::post(wait_guard, std::bind(&_connection_pool::acquire, this, [wk_, fn_, ptr] (std::shared_ptr<MYSQL> c) {
 			// 不受保护的工作过程
-			boost::asio::post(controller_->context_ex, [wk, fn, c, ptr] () {
+			boost::asio::post(controller_->context_ex, [wk_, fn_, c, ptr] () {
 				int error = 0;
-				std::shared_ptr<MYSQL_RES> r = wk(c, error);
-				boost::asio::post(context, [fn, c, r, error, ptr] () {
+				MYSQL_RES* r = (*wk_)(c, error);
+				boost::asio::post(context, [wk_, fn_, c, r, error, ptr] () {
 					// 主线程后续流程
-					fn(c, r, error);
+					(*fn_)(c, r, error);
 				});
 			});
 		}));

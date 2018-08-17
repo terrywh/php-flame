@@ -17,11 +17,11 @@ namespace mysql {
 	}
 	php::value transaction::commit(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;
-		c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> std::shared_ptr<MYSQL_RES> { // 工作线程
+		c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
 			MYSQL* conn = c.get();
 			error = mysql_real_query(conn, "COMMIT", 6);
 			return nullptr;
-		}, [co] (std::shared_ptr<MYSQL> c, std::shared_ptr<MYSQL_RES> r, int error) { // 主线程
+		}, [co] (std::shared_ptr<MYSQL> c, MYSQL_RES* r, int error) { // 主线程
 			MYSQL* conn = c.get();
 			if(error) {
 				co->fail(mysql_error(conn), mysql_errno(conn));
@@ -33,11 +33,11 @@ namespace mysql {
 	}
 	php::value transaction::rollback(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;
-		c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> std::shared_ptr<MYSQL_RES> { // 工作线程
+		c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
 			MYSQL* conn = c.get();
 			error = mysql_real_query(conn, "ROLLBACK", 8);
 			return nullptr;
-		}, [co] (std::shared_ptr<MYSQL> c, std::shared_ptr<MYSQL_RES> r, int error) { // 主线程
+		}, [co] (std::shared_ptr<MYSQL> c, MYSQL_RES*, int error) { // 主线程
 			MYSQL* conn = c.get();
 			if(error) {
 				co->fail(mysql_error(conn), mysql_errno(conn));
@@ -83,14 +83,14 @@ namespace mysql {
 	php::value transaction::one(php::parameters& params) {
 		php::buffer buf;
 		build_one(c_, buf, params);
-		fetch_cb(coroutine::current, php::object(this), php::string(nullptr));
+		result::stack_fetch(coroutine::current, php::object(this), php::string(nullptr));
 		c_->query(coroutine::current, php::object(this), std::move(buf));
 		return coroutine::async();
 	}
 	php::value transaction::get(php::parameters& params) {
 		php::buffer buf;
 		build_get(c_, buf, params);
-		fetch_cb(coroutine::current, php::object(this), params[1]);
+		result::stack_fetch(coroutine::current, php::object(this), params[1]);
 		c_->query(coroutine::current, php::object(this), std::move(buf));
 		return coroutine::async();
 	}

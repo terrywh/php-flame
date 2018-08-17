@@ -1,5 +1,6 @@
 #include "../coroutine.h"
 #include "_connection_base.h"
+#include "_connection_lock.h"
 #include "result.h"
 
 namespace flame {
@@ -66,26 +67,29 @@ namespace mysql {
 		}
 		}
 ESCAPE_FINISHED:
-		;		
+		;
 	}
 	void _connection_base::query(std::shared_ptr<coroutine> co, const php::object& ref, const php::string& sql) {
-		exec([sql] (std::shared_ptr<MYSQL> c, int& error) -> std::shared_ptr<MYSQL_RES> { // 工作线程
+		exec([sql] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
 			MYSQL* conn = c.get();
 			error = mysql_real_query(conn, sql.c_str(), sql.size());
 			if(error != 0) return nullptr;
-			MYSQL_RES* r = mysql_store_result(conn); // 为了防止长时间锁表, 与 PHP 内部实现一致使用 store 二非 use
+			MYSQL_RES* r = mysql_use_result(conn); // 为了防止长时间锁表, 与 PHP 内部实现一致使用 store 二非 use
 			if(!r && (error = mysql_field_count(conn)) != 0) return nullptr; // 应该但未返回 RESULT_SET
-			return std::shared_ptr<MYSQL_RES>(r, mysql_free_result);
-		}, [co, sql, ref] (std::shared_ptr<MYSQL> c, std::shared_ptr<MYSQL_RES> r, int error) { // 主线程 (需要继续捕捉 sql 保证其释放动作在主线程进行)
+			return r;
+		}, [co, sql, ref] (std::shared_ptr<MYSQL> c, MYSQL_RES* r, int error) { // 主线程 (需要继续捕捉 sql 保证其释放动作在主线程进行)
 			MYSQL* conn = c.get();
 			if(error) { // 错误
 				co->fail(mysql_error(conn), mysql_errno(conn));
-			}else{ 
+			}else{
 				php::object rs(php::class_entry<result>::entry());
+				result* rs_ = static_cast<result*>(php::native(rs));
+				// 持有当前连接（不放回连接池）
+				rs_->c_.reset(new _connection_lock(c)); // 继续持有当前连接
 				if(r) { // 查询型返回
-					rs.set("found_rows", static_cast<std::int64_t>(mysql_affected_rows(conn)));
-					result* rs_ = static_cast<result*>(php::native(rs));
 					rs_->r_ = r;
+					rs_->f_ = mysql_fetch_fields(r);
+					rs_->n_ = mysql_num_fields(r);
 				}else{ // 更新型返回
 					rs.set("affected_rows", static_cast<std::int64_t>(mysql_affected_rows(conn)));
 					rs.set("insert_id", static_cast<std::int64_t>(mysql_insert_id(conn)));

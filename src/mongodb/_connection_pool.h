@@ -7,8 +7,7 @@ namespace mongodb {
 		// 以下函数应在主线程调用
 		_connection_pool(const php::string& url);
 		~_connection_pool();
-		virtual _connection_pool& exec(std::function<std::shared_ptr<bson_t> (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_error_t> error)> wk,
-			std::function<void (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_t> d, std::shared_ptr<bson_error_t> error)> fn) override;
+		virtual _connection_pool& exec(worker_fn_t&& wk, master_fn_t&& fn) override;
 	private:
 
 		mongoc_client_pool_t* pool_;

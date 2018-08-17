@@ -1,7 +1,7 @@
 # 依赖
 # ----------------------------------------------------------------------------------
 VENDOR_PHP=/data/vendor/php-7.0.30
-VENDOR_BOOST=/data/vendor/boost-1.67.0
+VENDOR_BOOST=/data/vendor/boost-1.68.0
 VENDOR_PHPEXT=/data/vendor/phpext-1.0.0
 VENDOR_PARSER=/data/vendor/parser-1.0.0
 VENDOR_AMQP=/data/vendor/amqp-3.1.0
@@ -26,7 +26,7 @@ INCLUDES:= -I${VENDOR_PARSER}/include \
  -isystem ${VENDOR_MYSQL}/include \
  -isystem ${VENDOR_BOOST}/include \
  $(shell ${VENDOR_PHP}/bin/php-config --includes | sed 's/-I/-isystem/g')
-CXX=clang++
+CXX=clang++-6.0
 CXXFLAGS?= -fcolor-diagnostics -g -O0
 CXXFLAGS+= -std=c++11 -fPIC ${INCLUDES}
 COMPILER:=$(shell ${CXX} --version | head -n1 | awk '{print $$1}')
@@ -78,7 +78,6 @@ ${PCHEADER}.${PCH}: ${PCHEADER}
 %.o: %.cpp ${PCHEADER}.${PCH}
 	${CXX} ${CXXFLAGS} -include ${PCHEADER} -MMD -MP -c $< -o $@
 
-
 # 目标链接
-${TARGETX}: ${TARGET_PCH} ${OBJECTS}
+${TARGETX}: ${OBJECTS}
 	${CXX} -shared ${OBJECTS} ${LDFLAGS} -o $@

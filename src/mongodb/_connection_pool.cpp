@@ -15,11 +15,13 @@ namespace mongodb {
 	_connection_pool::~_connection_pool() {
 		mongoc_client_pool_destroy(pool_);
 	}
-	_connection_pool& _connection_pool::exec(std::function<std::shared_ptr<bson_t> (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_error_t> error)> wk,
-		std::function<void (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_t> d, std::shared_ptr<bson_error_t> error)> fn) {
+	_connection_pool& _connection_pool::exec(worker_fn_t&& wk, master_fn_t&& fn) {
 		auto ptr = this->shared_from_this();
+		// 避免在工作线程中对 wk 捕获的 PHP 对象进行拷贝释放
+		auto wk_ = std::make_shared<worker_fn_t>(std::move(wk));
+		auto fn_ = std::make_shared<master_fn_t>(std::move(fn));
 		// 工作线程
-		boost::asio::post(controller_->context_ex, [this, wk, fn, ptr] () {
+		boost::asio::post(controller_->context_ex, [this, wk_, fn_, ptr] () {
 			// 获取连接
 			std::shared_ptr<mongoc_client_t> c(mongoc_client_pool_pop(pool_), [this, ptr] (mongoc_client_t* c) {
 				boost::asio::post(controller_->context_ex, [this, c, ptr] () {
@@ -28,10 +30,10 @@ namespace mongodb {
 			});
 			std::shared_ptr<bson_error_t> error;
 			// 执行命令
-			std::shared_ptr<bson_t> r = wk(c, error);
+			std::shared_ptr<bson_t> r = (*wk_)(c, error);
 			// 后续流程 (回到主线程)
-			boost::asio::post(context, [this, fn, r, c, error, ptr] () {
-				fn(c, r, error);
+			boost::asio::post(context, [this, wk_, fn_, r, c, error, ptr] () {
+				(*fn_)(c, r, error);
 			});
 		});
 		return *this;

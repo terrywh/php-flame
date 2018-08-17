@@ -4,7 +4,7 @@
 **示例**：
 ``` PHP
 // ...
-$client = new flame\rabbitmq\connect("amqp://user:pass@127.0.0.1:5672/vhost");
+$client = yield flame\rabbitmq\connect("amqp://user:pass@127.0.0.1:5672/vhost");
 $options = ["immediate" => true];
 // 生产
 $producer = $client->produce("exchange", ["immediate"=>true]);
@@ -89,8 +89,8 @@ void callback(flame\rabbitmq\message $message) {}
 ### `class flame\db\rabbitmq\message`
 消费生产过程中使用的消息对象，用于包裹实际的消息内容和其相关属性头信息等数据;
 
-#### `message::__construct([string $body])`
-构建一个 `RabbitMQ` 消息, 可选的填充 `message::$body` 内容;
+#### `message::__construct([string $body, [string $routing_key]])`
+构建一个 `RabbitMQ` 消息, 可选的填充 `message::$body` 内容及设定 `message::$routing_key`;
 
 #### `String message::$routing_key`
 消息生产时指定的 ROUTING KEY；
@@ -103,7 +103,8 @@ void callback(flame\rabbitmq\message $message) {}
 #### `String message::$correlation_id`
 #### `String message::$priority`
 #### `Integer message::$delivery_mode`
-#### `Array message::$header` - 头信息
+#### `Array message::$header`
+头信息
 #### `String message::$content_encoding`
 #### `String message::$content_type`
 #### `String message::$cluster_id`
@@ -111,7 +112,7 @@ void callback(flame\rabbitmq\message $message) {}
 #### `String message::$user_id`
 #### `String message::$type_name`
 #### `Integer message::$timestamp`
-(用户可自行设定)一般为秒级时间戳;
+(用户可自行设定) 秒级时间戳;
 
 #### `String message::$message_id`
 
