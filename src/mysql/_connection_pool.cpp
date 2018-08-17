@@ -5,16 +5,17 @@
 
 namespace flame {
 namespace mysql {
-	_connection_pool::_connection_pool(std::shared_ptr<php::url> url, std::size_t max)
+	_connection_pool::_connection_pool(std::shared_ptr<php::url> url)
 	: url_(url)
-	, max_(max)
+	, min_(6)
+	, max_(128)
 	, size_(0)
 	, wait_guard(controller_->context_ex) {
 
 	}
 	_connection_pool::~_connection_pool() {
 		while(!conn_.empty()) {
-			mysql_close(conn_.front());
+			mysql_close(conn_.front().c);
 			conn_.pop_front();
 		}
 	}
@@ -41,17 +42,28 @@ namespace mysql {
 	// 以下函数应在工作线程调用
 	void _connection_pool::acquire(std::function<void (std::shared_ptr<MYSQL> c)> cb) {
 		wait_.push_back(std::move(cb));
-		while(!conn_.empty()) {
-			if(mysql_ping(conn_.front()) == 0) { // 找到了一个可用连接
-				release(conn_.front());
+
+		auto n = std::chrono::steady_clock::now();
+		while(size_ > min_ && !conn_.empty()) { // 超低水位，关闭不活跃连接
+			auto duration = n - conn_.front().a;
+			if(duration > std::chrono::seconds(300)) {
+				mysql_close(conn_.front().c);
 				conn_.pop_front();
-				return;
-			}else{ // 已丢失的连接抛弃
 				--size_;
-				conn_.pop_front();
+			}else{ // 所有连接还活跃（即使超过低水位）
+				break;
 			}
 		}
-		if(size_ >= max_) return; // 已建立了足够多的连接, 需要等待
+		while(!conn_.empty()) {
+			if(mysql_ping(conn_.front().c) == 0) { // 可用连接
+				release(conn_.front().c);
+				conn_.pop_front();
+				return;
+			}else{
+				--size_;
+			}
+		}
+		if(size_ > max_) return; // 已复用，结束；已建立了足够多的连接, 需要等待
 
 		MYSQL* c = mysql_init(nullptr);
 		if(!mysql_real_connect(c, url_->host, url_->user, url_->pass, url_->path + 1, url_->port, nullptr, 0)) {
@@ -65,7 +77,7 @@ namespace mysql {
 	}
 	void _connection_pool::release(MYSQL* c) {
 		if(wait_.empty()) { // 无等待分配的请求
-			conn_.push_back(c);
+			conn_.push_back({c, std::chrono::steady_clock::now()});
 		}else{ // 立刻分配使用
 			std::function<void (std::shared_ptr<MYSQL> c)> cb = wait_.front();
 			wait_.pop_front();

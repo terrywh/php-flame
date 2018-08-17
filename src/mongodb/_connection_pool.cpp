@@ -10,6 +10,7 @@ namespace mongodb {
 		if(!uri) {
 			throw php::exception(zend_ce_type_error, "cannot connect to mysql server");
 		}
+		mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_MAXPOOLSIZE, 128);
 		pool_ = mongoc_client_pool_new(uri.get());
 	}
 	_connection_pool::~_connection_pool() {
