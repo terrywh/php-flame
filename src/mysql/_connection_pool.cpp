@@ -59,7 +59,9 @@ namespace mysql {
 				release(conn_.front().c);
 				conn_.pop_front();
 				return;
-			}else{
+			}else{ // 连接已丢失，回收资源
+				mysql_close(conn_.front().c);
+				conn_.pop_front();
 				--size_;
 			}
 		}

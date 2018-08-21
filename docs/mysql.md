@@ -138,5 +138,4 @@ while($row = yield $rs->fetch_row()) { // 依次获取每行数据关联数组
 获取结果集中的下一数据，返回该行数据的关联数组；若不存在结果集, 则返回 `NULL`;
 
 #### `result::$affected_rows`
-#### `result::$found_rows`
 #### `result::$insert_id`
