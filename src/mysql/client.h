@@ -9,6 +9,7 @@ namespace mysql {
 		php::value __construct(php::parameters& params) { // 私有
 			return nullptr;
 		}
+		php::value escape(php::parameters& params);
 		php::value begin_tx(php::parameters& params);
 		php::value where(php::parameters& params);
 		php::value order(php::parameters& params);

@@ -11,6 +11,9 @@ mysql://{user}:{pass}@{host}:{port}/{database}
 ### `class flame\mysql\client`
 MySQL 客户端（连接）；
 
+#### `string client::escape(mixed $value[, string quote="'"])`
+进行数据防注入转义，可选的指定对应包裹符号，目前允许：单引号 `'` 及 反单引号 ``` ；
+
 #### `string client::where(mixed $conditions)`
 用于(测试)生成 `WHERE` 子句 `SQL`, 支持以 文本 或 数组 形式描述条件语法, 下述简化接口中 `$where` 参数均以此函数进行条件拼装生成:
 

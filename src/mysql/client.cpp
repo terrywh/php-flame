@@ -13,8 +13,13 @@ namespace mysql {
 		php::class_entry<client> class_client("flame\\mysql\\client");
 		class_client
 			.method<&client::__construct>("__construct", {}, php::PRIVATE)
+			.method<&client::escape>("escape", {
+				{"data", php::TYPE::UNDEFINED},
+			})
 			.method<&client::begin_tx>("begin_tx")
-			.method<&client::query>("query")
+			.method<&client::query>("query", {
+				{"sql", php::TYPE::STRING},
+			})
 			.method<&client::where>("where", {
 				{"where", php::TYPE::UNDEFINED},
 			})
@@ -61,6 +66,16 @@ namespace mysql {
 				{"order", php::TYPE::UNDEFINED, false, true},
 			});
 		ext.add(std::move(class_client));
+	}
+	php::value client::escape(php::parameters& params) {
+		php::buffer buffer;
+		char quote = '\'';
+		if(params.size() > 1 && params[1].typeof(php::TYPE::STRING)) {
+			php::string q = params[1];
+			if(q.data()[0] == '`') quote = '`';
+		}
+		c_->escape(buffer, params[0], quote);
+		return std::move(buffer);
 	}
 	php::value client::begin_tx(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;
