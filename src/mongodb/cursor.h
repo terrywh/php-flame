@@ -9,8 +9,8 @@ namespace mongodb {
 		php::value __construct(php::parameters& params) { // 私有
 			return nullptr;
 		}
-		php::value next(php::parameters& params);
-		php::value to_array(php::parameters& params);
+		php::value fetch_row(php::parameters& params);
+		php::value fetch_all(php::parameters& params);
 	private:
 		std::shared_ptr<_connection_lock> p_;
 		std::shared_ptr<mongoc_cursor_t>  c_;

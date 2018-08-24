@@ -10,11 +10,11 @@ namespace mongodb {
 		php::class_entry<cursor> class_cursor("flame\\mongodb\\cursor");
 		class_cursor
 			.method<&cursor::__construct>("__construct", {}, php::PRIVATE)
-			.method<&cursor::next>("next")
-			.method<&cursor::to_array>("__toArray");
+			.method<&cursor::fetch_row>("fetch_row")
+			.method<&cursor::fetch_all>("fetch_all");
 		ext.add(std::move(class_cursor));
 	}
-	php::value cursor::next(php::parameters& params) {
+	php::value cursor::fetch_row(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;
 		php::object ref(this);
 		p_->exec([this] (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_error_t> error) -> std::shared_ptr<bson_t> {
@@ -40,7 +40,7 @@ namespace mongodb {
 		});
 		return coroutine::async();
 	}
-	php::value cursor::to_array(php::parameters& params) {
+	php::value cursor::fetch_all(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;
 		php::object ref(this);
 		p_->exec([this] (std::shared_ptr<mongoc_client_t> c, std::shared_ptr<bson_error_t> error) -> std::shared_ptr<bson_t> {

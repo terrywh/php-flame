@@ -125,20 +125,17 @@ mongodb 客户端（连接）；
 ### `class flame\mongodb\cursor`
 封装结果集指针类型，用于访问查询结果数据；
 
-#### `yield cursor::next() -> array | null`
+#### `yield cursor::fetch_row() -> array | null`
 遍历底层指针，返回下一个文档；当遍历结束时，返回 `NULL`;
 
 **示例**：
 ``` PHP
 <?php
 // ... 通过 yield collection->find() 获取 $cursor
-while($doc = yield $cursor->next()) {
+while($doc = yield $cursor->fetch_row()) {
 	echo json_encode($doc);
 }
 ```
 
-#### `yield cursor::__toArray() -> array`
+#### `yield cursor::fetch_all() -> array`
 遍历底层指针，返回结果集中的所有文档（关联数组）组成的数组；
-
-**注意**：
-* 请不要混合使用 `next()` 和 `__toArray()` 两种读取方式；
