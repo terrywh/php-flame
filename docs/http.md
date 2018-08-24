@@ -1,32 +1,61 @@
-### `namespace flame\http`
+## `namespace flame\http`
+
+<!-- TOC depthFrom:3 -->
+
+- [`class flame\http\client_request`](#class-flame\http\client_request)
+    - [`client_request::__construct(string $url[, mixed $data[, integer $timeout]])`](#client_request__constructstring-url-mixed-data-integer-timeout)
+    - [`string client_request::$method`](#string-client_requestmethod)
+    - [`string client_request::$url`](#string-client_requesturl)
+    - [`integer client_request::$timeout`](#integer-client_requesttimeout)
+    - [`array client_request::$header`](#array-client_requestheader)
+    - [`array client_request::$cookie`](#array-client_requestcookie)
+    - [`mixed client_request::$body`](#mixed-client_requestbody)
+- [`class flame\http\client_response`](#class-flame\http\client_response)
+    - [`integer client_response::$status`](#integer-client_responsestatus)
+    - [`array client_response::$header`](#array-client_responseheader)
+    - [`array client_response::$cookie`](#array-client_responsecookie)
+    - [`string client_response::$rawBody`](#string-client_responserawbody)
+    - [`mixed client_response::$body`](#mixed-client_responsebody)
+    - [`string client_response::__toString()`](#string-client_response__tostring)
+- [`class flame\http\client`](#class-flame\http\client)
+    - [`client::__construct(array $options)`](#client__constructarray-options)
+    - [`yield client::exec(client_request $request) -> flame\http\client_response`](#yield-clientexecclient_request-request---flame\http\client_response)
+    - [`yield client::get(string $url[, integer $timeout = 3000]) -> flame\http\client_response`](#yield-clientgetstring-url-integer-timeout--3000---flame\http\client_response)
+    - [`yield client::post(string $url, mixed $data[, integer $timeout = 3000])`](#yield-clientpoststring-url-mixed-data-integer-timeout--3000)
+    - [`yield client::put(string $url, mixed $data[, integer $timeout = 3000]) -> flame\http\client_response`](#yield-clientputstring-url-mixed-data-integer-timeout--3000---flame\http\client_response)
+    - [`yield client::delete(string $url[, integer $timeout = 3000]) -> flame\http\client_response`](#yield-clientdeletestring-url-integer-timeout--3000---flame\http\client_response)
+    - [`yield flame\http\get(string $url[, integer $timeout = 3000]) -> flame\http\client_response`](#yield-flame\http\getstring-url-integer-timeout--3000---flame\http\client_response)
+    - [`yield flame\http\post(string $url, mixed $post[, integer $timeout = 3000]) -> flame\http\client_response`](#yield-flame\http\poststring-url-mixed-post-integer-timeout--3000---flame\http\client_response)
+    - [`yield flame\http\put(string $url, mixed $put[, integer $timeout = 3000]) -> flame\http\client_response`](#yield-flame\http\putstring-url-mixed-put-integer-timeout--3000---flame\http\client_response)
+    - [`yield flame\http\delete(string $url, integer $timeout = 3000) -> flame\http\client_response`](#yield-flame\http\deletestring-url-integer-timeout--3000---flame\http\client_response)
+    - [`yield flame\http\exec(client_request $request) -> flame\http\client_response`](#yield-flame\http\execclient_request-request---flame\http\client_response)
+- [`class flame\http\server`](#class-flame\http\server)
+    - [`flame\http\server server::get(string $path, callable $cb)`](#flame\http\server-servergetstring-path-callable-cb)
+    - [`flame\http\server server::post(string $path, callable $cb)`](#flame\http\server-serverpoststring-path-callable-cb)
+    - [`flame\http\server server::put(string $path, callable $cb)`](#flame\http\server-serverputstring-path-callable-cb)
+    - [`flame\http\server server::delete(string $path, callable $cb)`](#flame\http\server-serverdeletestring-path-callable-cb)
+    - [`server server::before(callable $cb)`](#server-serverbeforecallable-cb)
+    - [`server server::after(callable $cb)`](#server-serveraftercallable-cb)
+    - [`void server::close()`](#void-serverclose)
+- [`class flame\http\server_request`](#class-flame\http\server_request)
+    - [`array server_request::$method`](#array-server_requestmethod)
+    - [`string server_request::$path`](#string-server_requestpath)
+    - [`array server_request::$query`](#array-server_requestquery)
+    - [`array server_request::$header`](#array-server_requestheader)
+    - [`array server_request::$cookie`](#array-server_requestcookie)
+    - [`mixed server_request::$body`](#mixed-server_requestbody)
+    - [`server_request::$data`](#server_requestdata)
+- [`class flame\http\server_response`](#class-flame\http\server_response)
+    - [`array server_response::$header`](#array-server_responseheader)
+    - [`server_response::set_cookie(string $name [, string $value = "" [, int $expire = 0 [, string $path = "" [, string $domain = "" [, bool $secure = false [, bool $httponly = false ]]]]]])`](#server_responseset_cookiestring-name--string-value----int-expire--0--string-path----string-domain----bool-secure--false--bool-httponly--false-)
+    - [`yield server_response::write_header(integer $status_code)`](#yield-server_responsewrite_headerinteger-status_code)
+    - [`yield server_response::write(string $data)`](#yield-server_responsewritestring-data)
+    - [`yield server_response::end([string $data])`](#yield-server_responseendstring-data)
+    - [`yield server_response::file(string $root, string $path)`](#yield-server_responsefilestring-root-string-path)
+
+<!-- /TOC -->
+
 提供基本的 HTTP/1 协议服务器, 客户端封装；
-
-<!-- TOC START min:1 max:4 link:true update:true -->
-- [`namespace flame\http`](#namespace-flamehttp)
-- [`class flame\http\client_request`](#class-flamehttpclient_request)
-  - [`client_request::__construct(string $url[, mixed $data[, integer $timeout]])`](#client_request__constructstring-url-mixed-data-integer-timeout)
-  - [`mixed client_request::$body`](#mixed-client_requestbody)
-  - [`flame\http\server server::get(string $path, callable $cb)`](#flamehttpserver-servergetstring-path-callable-cb)
-  - [`flame\http\server server::post(string $path, callable $cb)`](#flamehttpserver-serverpoststring-path-callable-cb)
-  - [`flame\http\server server::put(string $path, callable $cb)`](#flamehttpserver-serverputstring-path-callable-cb)
-  - [`flame\http\server server::delete(string $path, callable $cb)`](#flamehttpserver-serverdeletestring-path-callable-cb)
-  - [`server server::before(callable $cb)`](#server-serverbeforecallable-cb)
-  - [`server server::after(callable $cb)`](#server-serveraftercallable-cb)
-  - [`void server::close()`](#void-serverclose)
-- [`class flame\http\server_request`](#class-flamehttpserver_request)
-  - [`array server_request::$method`](#array-server_requestmethod)
-  - [`string server_request::$path`](#string-server_requestpath)
-  - [`array server_request::$query`](#array-server_requestquery)
-  - [`array server_request::$header`](#array-server_requestheader)
-  - [`array server_request::$cookie`](#array-server_requestcookie)
-  - [`mixed server_request::$body`](#mixed-server_requestbody)
-  - [`server_request::$data`](#server_requestdata)
-- [`class flame\http\server_response`](#class-flamehttpserver_response)
-  - [`array server_response::$header`](#array-server_responseheader)
-
-<!-- TOC END -->
-
-
 
 ### `class flame\http\client_request`
 封装 HTTP 协议的客户端请求请求

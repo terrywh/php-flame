@@ -1,6 +1,39 @@
-### `namespace flame\mongodb`
-提供基本的异步 mongodb 协程式客户端封装；
+## `namespace flame\mongodb`
 
+<!-- TOC depthFrom:3 -->
+
+- [`yield flame\mongodb\connect(string $url) -> flame\mongodb\client`](#yield-flame\mongodb\connectstring-url---flame\mongodb\client)
+- [`class flame\mongodb\client`](#class-flame\mongodb\client)
+    - [`flame\mongodb\collection client::__get(string $name)`](#flame\mongodb\collection-client__getstring-name)
+    - [`flame\mongodb\collection client::collection(string $name)`](#flame\mongodb\collection-clientcollectionstring-name)
+    - [`yield client::execute(array $command[, boolean $update = false]) -> array | flame\mongodb\cursor`](#yield-clientexecutearray-command-boolean-update--false---array--flame\mongodb\cursor)
+- [`class flame\mongodb\collection`](#class-flame\mongodb\collection)
+    - [`yield collection::insert(array $docs[, boolean $ordered = true]) -> array`](#yield-collectioninsertarray-docs-boolean-ordered--true---array)
+    - [`yield collection::delete(array $query[, Integer $limit = 0]) -> array`](#yield-collectiondeletearray-query-integer-limit--0---array)
+    - [`yield collection::update(array $query, array $data[, boolean $upsert = false]) -> array`](#yield-collectionupdatearray-query-array-data-boolean-upsert--false---array)
+    - [`yield collection::find(array $query[, array $projections[, array $sort[, array|integer $limit]]]) -> flame\mongodb\cursor`](#yield-collectionfindarray-query-array-projections-array-sort-arrayinteger-limit---flame\mongodb\cursor)
+    - [`yield collection::one(array $query[, array $sort]) -> array | null`](#yield-collectiononearray-query-array-sort---array--null)
+    - [`yield collection::get(string $field, array $query[, array $sort]) -> mixed`](#yield-collectiongetstring-field-array-query-array-sort---mixed)
+    - [`yield collection::count([array $query)`](#yield-collectioncountarray-query)
+    - [`yield collection::aggregate(array $pipeline) -> cursor`](#yield-collectionaggregatearray-pipeline---cursor)
+- [`class flame\mongodb\object_id`](#class-flame\mongodb\object_id)
+    - [`object_id::__toString()`](#object_id__tostring)
+    - [`object_id::jsonSerialize()`](#object_idjsonserialize)
+    - [`object_id::unix()`](#object_idunix)
+    - [`date_time::__toDateTime()`](#date_time__todatetime)
+- [`class flame\db\mongodb\date_time`](#class-flame\db\mongodb\date_time)
+    - [`date_time::__toString()`](#date_time__tostring)
+    - [`date_time::jsonSerialize()`](#date_timejsonserialize)
+    - [`date_time::unix()`](#date_timeunix)
+    - [`date_time::unix_ms()`](#date_timeunix_ms)
+    - [`date_time::__toDateTime()`](#date_time__todatetime-1)
+- [`class flame\mongodb\cursor`](#class-flame\mongodb\cursor)
+    - [`yield cursor::fetch_row() -> array | null`](#yield-cursorfetch_row---array--null)
+    - [`yield cursor::fetch_all() -> array`](#yield-cursorfetch_all---array)
+
+<!-- /TOC -->
+
+提供基本的异步 mongodb 协程式客户端封装；
 
 **注意**：
 * 对象标识 `ObjectID` 字段需要使用单独的类型 `flame\mongodb\object_id`；
@@ -10,7 +43,7 @@
 * 在使用 MongoDB 提供的 `operator` 时，可考虑使用 `'` 单引号，防止功能符号被转义，例如 `$gt = "aaa"; $filter = ["a" => ['$gt'=>1234]]`；或使用转义符号 `"\$gt"`；
 * 实际指令格式请参考 [MongoDB 文档](https://docs.mongodb.com/manual/reference/command/) 中相关说明;
 
-#### `yield flame\mongodb\connect(string $url) -> flame\mongodb\client`
+### `yield flame\mongodb\connect(string $url) -> flame\mongodb\client`
 连接 MongoDB 数据库, 并返回数据库客户端对象; 连接地址 `$url` 形式如下:
 
 ```

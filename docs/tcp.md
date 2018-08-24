@@ -1,25 +1,25 @@
-### `namespace flame\tcp`
+## `namespace flame\tcp`
+
+<!-- TOC depthFrom:3 -->
+
+- [`yield flame\tcp\connect(string $address) -> flame\tcp\socket`](#yield-flame\tcp\connectstring-address---flame\tcp\socket)
+- [`class flame\tcp\socket`](#class-flame\tcp\socket)
+    - [`String socket::$local_address`](#string-socketlocal_address)
+    - [`String socket::$remote_address`](#string-socketremote_address)
+    - [`yield socket::read([mixed $completion]) -> String`](#yield-socketreadmixed-completion---string)
+    - [`yield socket::write(string data) -> void`](#yield-socketwritestring-data---void)
+    - [`yield socket::close() -> void`](#yield-socketclose---void)
+- [`class flame\tcp\server`](#class-flame\tcp\server)
+    - [`server::__construct(string $address)`](#server__constructstring-address)
+    - [`string server::$local_address`](#string-serverlocal_address)
+    - [`yield server::run(callable $cb) -> void`](#yield-serverruncallable-cb---void)
+    - [`yield server::close()`](#yield-serverclose)
+
+<!-- /TOC -->
+
 提供 TCP 协议的网络连接对象的封装;
 
-<!-- TOC START min:1 max:4 link:true update:false -->
-- [`yield flame\tcp\connect(string $address) -> flame\tcp\socket`](#yield-flametcpconnectstring-address---flametcpsocket)
-- [`class flame\tcp\socket`](#class-flametcpsocket)
-  - [`String socket::$local_address`](#string-socketlocal_address)
-  - [`String socket::$remote_address`](#string-socketremote_address)
-  - [`yield socket::read([mixed $completion]) -> String`](#yield-socketreadmixed-completion---string)
-  - [`yield socket::write(string data) -> void`](#yield-socketwritestring-data---void)
-  - [`yield socket::close() -> void`](#yield-socketclose---void)
-- [`class flame\tcp\server`](#class-flametcpserver)
-  - [`server::__construct(string $address)`](#server__constructstring-address)
-  - [`string server::$local_address`](#string-serverlocal_address)
-  - [`yield server::run(callable $cb) -> void`](#yield-serverruncallable-cb---void)
-  - [`yield server::close()`](#yield-serverclose)
-
-<!-- TOC END -->
-
-
-
-#### `yield flame\tcp\connect(string $address) -> flame\tcp\socket`
+### `yield flame\tcp\connect(string $address) -> flame\tcp\socket`
 连接到指定的远端地址, 完成后返回连接套接字对象实例;
 
 **注意**：

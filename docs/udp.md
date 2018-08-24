@@ -1,17 +1,17 @@
-### `namespace flame\udp`
+## `namespace flame\udp`
+
+<!-- TOC depthFrom:3 -->
+
+- [`class flame\udp\socket`](#class-flame\udp\socket)
+    - [`socket::__construct([string $address])`](#socket__constructstring-address)
+    - [`string socket::$local_address`](#string-socketlocal_address)
+    - [`yield socket::read()`](#yield-socketread)
+    - [`yield socket::send(string $data, string $address)`](#yield-socketsendstring-data-string-address)
+    - [`socket::close()`](#socketclose)
+
+<!-- /TOC -->
+
 提供 UDP 协议的网络连接对象的封装;
-
-<!-- TOC START min:1 max:4 link:true update:false -->
-- [`class flame\udp\socket`](#class-flameudpsocket)
-  - [`socket::__construct([string $address])`](#socket__constructstring-address)
-  - [`string socket::$local_address`](#string-socketlocal_address)
-  - [`yield socket::read()`](#yield-socketread)
-  - [`yield socket::send(string $data, string $address)`](#yield-socketsendstring-data-string-address)
-  - [`socket::close()`](#socketclose)
-
-<!-- TOC END -->
-
-
 
 ### `class flame\udp\socket`
 封装 UDP 协议网络服务器、客户端对象;

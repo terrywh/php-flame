@@ -1,16 +1,22 @@
 ## `namespace flame\os`
+
+<!-- TOC depthFrom:3 -->
+
+- [`array flame\os\interfaces()`](#array-flame\os\interfaces)
+- [`flame\os\process flame\os\spawn(string $exec[, array $argv[, array $opts])`](#flame\os\process-flame\os\spawnstring-exec-array-argv-array-opts)
+    - [`yield flame\os\exec(string $exec[, array $argv[, array $opts]) -> string`](#yield-flame\os\execstring-exec-array-argv-array-opts---string)
+- [`class flame\os\process`](#class-flame\os\process)
+    - [`integer process::$pid`](#integer-processpid)
+    - [`string process::stdout()`](#string-processstdout)
+    - [`string process::stderr()`](#string-processstderr)
+    - [`void process::kill([$signal = SIGTERM])`](#void-processkillsignal--sigterm)
+    - [`yield process::wait() -> void`](#yield-processwait---void)
+
+<!-- /TOC -->
+
 封装系统相关的 API，网卡信息, 异步进程启停输出读取等；
 
-<!-- TOC START min:1 max:4 link:true update:true -->
-  - [`namespace flame\os`](#namespace-flameos)
-      - [`array flame\os\interfaces()`](#array-flameosinterfaces)
-      - [`flame\os\process flame\os\spawn(string $exec[, array $argv[, array $opts])`](#flameosprocess-flameosspawnstring-exec-array-argv-array-opts)
-
-<!-- TOC END -->
-
-
-
-#### `array flame\os\interfaces()`
+### `array flame\os\interfaces()`
 获取当前机器网卡相关信息，返回数组示例如下：
 ``` PHP
 array(2) {
@@ -51,7 +57,7 @@ array(2) {
 }
 ```
 
-#### `flame\os\process flame\os\spawn(string $exec[, array $argv[, array $opts])`
+### `flame\os\process flame\os\spawn(string $exec[, array $argv[, array $opts])`
 启动一个子进程，相关参数如下：
 * `$exec` - string - 可执行文件名或路径；
 * `$argv` - array | null - 参数；

@@ -1,16 +1,14 @@
-
 ## `namespace flame`
-最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
 
+<!-- TOC depthFrom:3 -->
 
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
-
-- [`namespace flame`](#namespace-flame)
-	- [`void flame\init(string $title[, array $options])`](#void-flameinitstring-title-array-options)
-	- [`void flame\go(callable $g)`](#void-flamegocallable-g)
-	- [`void flame\run()`](#void-flamerun)
+- [`void flame\init(string $title[, array $options])`](#void-flame\initstring-title-array-options)
+- [`void flame\go(callable $g)`](#void-flame\gocallable-g)
+- [`void flame\run()`](#void-flame\run)
 
 <!-- /TOC -->
+
+最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
 
 #### `void flame\init(string $title[, array $options])`
 设置并初始化框架, 进程标题 `$title` 及可能的配置；目前可用选项如下:
@@ -38,7 +36,7 @@ flame\init("test_app", [ // 可选
 生成并启动一个“协程”；
 
 **示例**：
-``` php
+``` PHP
 <?php
 function g1() {
 	yield 1;

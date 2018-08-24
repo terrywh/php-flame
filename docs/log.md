@@ -1,19 +1,22 @@
 
-### `namespace flame\log`
-提供简单 log 日志 API，并提供简单的日志重载功能;
+## `namespace flame\log`
 
-<!-- TOC START min:1 max:4 link:true update:true -->
-- [`class flame\log\logger`](#class-flameloglogger)
-  - [`logger::__construct([string $filepath])`](#logger__constructstring-filepath)
-  - [`void logger::fail(mixed $message, ...)`](#void-loggerfailmixed-message-)
-  - [`void logger::warn(mixed $message, ...)`](#void-loggerwarnmixed-message-)
-  - [`void logger::info(mixed $message, ...)`](#void-loggerinfomixed-message-)
-  - [`void logger::write(mixed $message, ...)`](#void-loggerwritemixed-message-)
-  - [`void flame\log\fail(mixed $message, ...)`](#void-flamelogfailmixed-message-)
-  - [`void flame\log\warn(mixed $message, ...)`](#void-flamelogwarnmixed-message-)
-  - [`void flame\log\info(mixed $message, ...)`](#void-flameloginfomixed-message-)
-  - [`void flame\log\write(mixed $message, ...)`](#void-flamelogwritemixed-message-)
-<!-- TOC END -->
+<!-- TOC depthFrom:3 -->
+
+- [`class flame\log\loggerdddd`](#class-flame\log\loggerdddd)
+    - [`logger::__construct([string $filepath])`](#logger__constructstring-filepath)
+    - [`void logger::fail(mixed $message, ...)`](#void-loggerfailmixed-message-)
+    - [`void logger::warn(mixed $message, ...)`](#void-loggerwarnmixed-message-)
+    - [`void logger::info(mixed $message, ...)`](#void-loggerinfomixed-message-)
+    - [`void logger::write(mixed $message, ...)`](#void-loggerwritemixed-message-)
+    - [`void flame\log\fail(mixed $message, ...)`](#void-flame\log\failmixed-message-)
+    - [`void flame\log\warn(mixed $message, ...)`](#void-flame\log\warnmixed-message-)
+    - [`void flame\log\info(mixed $message, ...)`](#void-flame\log\infomixed-message-)
+    - [`void flame\log\write(mixed $message, ...)`](#void-flame\log\writemixed-message-)
+
+<!-- /TOC -->
+
+提供简单 log 日志 API，并提供简单的日志重载功能;
 
 ### `class flame\log\loggerdddd`
 日志类封装

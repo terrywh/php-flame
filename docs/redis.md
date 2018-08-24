@@ -1,16 +1,15 @@
-### `namespace flame\redis`
+## `namespace flame\redis`
+
+<!-- TOC depthFrom:3 -->
+
+- [`yield flame\redis\connect(string $url) -> flame\redis\client`](#yield-flame\redis\connectstring-url---flame\redis\client)
+- [`class flame\redis\client`](#class-flame\redis\client)
+
+<!-- /TOC -->
+
 提供基本的 `Redis` 客户端封装;
 
-<!-- TOC START min:1 max:4 link:true update:false -->
-  - [`yield flame\redis\connect(string $url) -> flame\redis\client`](#yield-flameredisconnectstring-url---flameredisclient)
-  - [`class flame\redis\client`](#class-flameredisclient)
-
-<!-- TOC END -->
-
-
-
-
-#### `yield flame\redis\connect(string $url) -> flame\redis\client`
+### `yield flame\redis\connect(string $url) -> flame\redis\client`
 连接由 `$url` 指定的 `redis` 服务器, 并返回客户端对象; `$url` 格式如下:
 
 ``` 

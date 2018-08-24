@@ -1,42 +1,42 @@
-### `namespace flame\rabbitmq`
+## `namespace flame\rabbitmq`
+
+<!-- TOC depthFrom:3 -->
+
+- [`yield flame\rabbitmq\connect(string $url[, array $options = array()]) -> flame\rabbitmq\client`](#yield-flame\rabbitmq\connectstring-url-array-options--array---flame\rabbitmq\client)
+- [`class flame\rabbitmq\client`](#class-flame\rabbitmq\client)
+    - [`flame\rabbitmq\consumer client::consume(string $queue_name[, array $options])`](#flame\rabbitmq\consumer-clientconsumestring-queue_name-array-options)
+    - [`flame\rabbitmq\procuer producer::produce([string $exchange = "" [, array $options = array()]])`](#flame\rabbitmq\procuer-producerproducestring-exchange----array-options--array)
+- [`class flame\rabbitmq\consumer`](#class-flame\rabbitmq\consumer)
+    - [`yield consumer::run(callable $cb) -> void`](#yield-consumerruncallable-cb---void)
+    - [`boolean consumer::confirm(flame\rabbitmq\message $message)`](#boolean-consumerconfirmflame\rabbitmq\message-message)
+    - [`boolean consumer::reject(flame\rabbitmq\message $message[, $requeue = false])`](#boolean-consumerrejectflame\rabbitmq\message-message-requeue--false)
+    - [`yield consumer::close() -> void`](#yield-consumerclose---void)
+- [`class flame\rabbitmq\producer`](#class-flame\rabbitmq\producer)
+    - [`void producer::publish(string $body[, string $routing_key)`](#void-producerpublishstring-body-string-routing_key)
+    - [`void producer::publish(flame\rabbitmq\message $message[, string $routing_key])`](#void-producerpublishflame\rabbitmq\message-message-string-routing_key)
+- [`class flame\db\rabbitmq\message`](#class-flame\db\rabbitmq\message)
+    - [`message::__construct([string $body, [string $routing_key]])`](#message__constructstring-body-string-routing_key)
+    - [`String message::$routing_key`](#string-messagerouting_key)
+    - [`String message::$body`](#string-messagebody)
+    - [`String message::$expiration`](#string-messageexpiration)
+    - [`String message::$reply_to`](#string-messagereply_to)
+    - [`String message::$correlation_id`](#string-messagecorrelation_id)
+    - [`String message::$priority`](#string-messagepriority)
+    - [`Integer message::$delivery_mode`](#integer-messagedelivery_mode)
+    - [`Array message::$header`](#array-messageheader)
+    - [`String message::$content_encoding`](#string-messagecontent_encoding)
+    - [`String message::$content_type`](#string-messagecontent_type)
+    - [`String message::$cluster_id`](#string-messagecluster_id)
+    - [`String message::$app_id`](#string-messageapp_id)
+    - [`String message::$user_id`](#string-messageuser_id)
+    - [`String message::$type_name`](#string-messagetype_name)
+    - [`Integer message::$timestamp`](#integer-messagetimestamp)
+    - [`String message::$message_id`](#string-messagemessage_id)
+    - [`string message::__toString()`](#string-message__tostring)
+
+<!-- /TOC -->
+
 提供 RabbitMQ 协程式客户端封装；**暂不支持**除生产消费以外的功能 (例如, declare queue/exchange bind queue 等), 请使用 RabbitMQ UI 界面做手工操作;
-
-<!-- TOC START min:1 max:4 link:true update:false -->
-  - [`yield flame\rabbitmq\connect(string $url[, array $options = array()]) -> flame\rabbitmq\client`](#yield-flamerabbitmqconnectstring-url-array-options--array---flamerabbitmqclient)
-- [`class flame\rabbitmq\client`](#class-flamerabbitmqclient)
-  - [`flame\rabbitmq\consumer client::consume(string $queue_name[, array $options])`](#flamerabbitmqconsumer-clientconsumestring-queue_name-array-options)
-  - [`flame\rabbitmq\procuer producer::produce([string $exchange = ""] , ...)`](#flamerabbitmqprocuer-producerproducestring-exchange----array-options--array)
-- [`class flame\rabbitmq\consumer`](#class-flamerabbitmqconsumer)
-  - [`yield consumer::run(callable $cb) -> void`](#yield-consumerruncallable-cb---void)
-  - [`boolean consumer::confirm(flame\rabbitmq\message $message)`](#boolean-consumerconfirmflamerabbitmqmessage-message)
-  - [`boolean consumer::reject(flame\rabbitmq\message $message[, $requeue = false])`](#boolean-consumerrejectflamerabbitmqmessage-message-requeue--false)
-  - [`yield consumer::close() -> void`](#yield-consumerclose---void)
-- [`class flame\rabbitmq\producer`](#class-flamerabbitmqproducer)
-  - [`void producer::publish(string $body[, string $routing_key])`](#void-producerpublishstring-body-string-routing_key)
-  - [`void producer::publish(flame\rabbitmq\message $message[, string $routing_key])`](#void-producerpublishflamerabbitmqmessage-message-string-routing_key)
-- [`class flame\db\rabbitmq\message`](#class-flamedbrabbitmqmessage)
-  - [`message::__construct(...)`](#message__constructstring-body-string-routing_key)
-  - [`String message::$routing_key`](#string-messagerouting_key)
-  - [`String message::$body`](#string-messagebody)
-  - [`String message::$expiration`](#string-messageexpiration)
-  - [`String message::$reply_to`](#string-messagereply_to)
-  - [`String message::$correlation_id`](#string-messagecorrelation_id)
-  - [`String message::$priority`](#string-messagepriority)
-  - [`Integer message::$delivery_mode`](#integer-messagedelivery_mode)
-  - [`Array message::$header`](#array-messageheader)
-  - [`String message::$content_encoding`](#string-messagecontent_encoding)
-  - [`String message::$content_type`](#string-messagecontent_type)
-  - [`String message::$cluster_id`](#string-messagecluster_id)
-  - [`String message::$app_id`](#string-messageapp_id)
-  - [`String message::$user_id`](#string-messageuser_id)
-  - [`String message::$type_name`](#string-messagetype_name)
-  - [`Integer message::$timestamp`](#integer-messagetimestamp)
-  - [`String message::$message_id`](#string-messagemessage_id)
-  - [`string message::__toString()`](#string-message__tostring)
-
-<!-- TOC END -->
-
-
 
 **示例**：
 ``` PHP
@@ -65,7 +65,7 @@ yield $consumer->run(function($message) use($consumer) {
 });
 ```
 
-#### `yield flame\rabbitmq\connect(string $url[, array $options = array()]) -> flame\rabbitmq\client`
+### `yield flame\rabbitmq\connect(string $url[, array $options = array()]) -> flame\rabbitmq\client`
 连接 `RabbitMQ` 服务器并打开通道, 返回客户端对象实例; 可用选项如下:
 * `prefetch` - `Integer` - `RabbitMQ` 预读取数量, 0 < `prefetch` < 65536, 默认 `1`;
 
