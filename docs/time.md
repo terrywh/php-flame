@@ -1,5 +1,15 @@
+### `namespace flame\time`
 
-## `namespace flame\time`
+<!-- TOC START min:1 max:4 link:true update:false -->
+- [`integer flame\time\now()`](#integer-flametimenow)
+- [`integer flame\time\iso()`](#integer-flametimeiso)
+- [`yield flame\time\sleep(integer $ms) -> void`](#yield-flametimesleepinteger-ms---void)
+- [`flame\time\timer flame\time\after(integer $ms, callable $cb)`](#flametimetimer-flametimeafterinteger-ms-callable-cb)
+- [`flame\time\timer flame\time\tick(integer $ms, callable $cb)`](#flametimetimer-flametimetickinteger-ms-callable-cb)
+
+<!-- TOC END -->
+
+
 
 封装与时间有关的 API，例如获取当前时间（毫秒）、SLEEP 等；
 

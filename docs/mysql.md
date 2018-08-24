@@ -1,6 +1,22 @@
 ### `namespace flame\mysql`
 提供基本的异步 mysql 协程十客户端；
 
+<!-- TOC START min:1 max:4 link:true update:false -->
+- [`namespace flame\mysql`](#namespace-flamemysql)
+  - [`yield flame\mysql\connect(string $url) -> flame\mysql\client`](#yield-flamemysqlconnectstring-url---flamemysqlclient)
+- [`class flame\mysql\client`](#class-flamemysqlclient)
+  - [`string client::escape(mixed $value[, string quote="'"])`](#string-clientescapemixed-value-string-quote)
+  - [`string client::limit(mixed $limits)`](#string-clientlimitmixed-limits)
+  - [`yield client::query(string $sql) -> flame\mysql\result`](#yield-clientquerystring-sql---flamemysqlresult)
+  - [`yield client::insert(string $table, array $data) -> flame/mysql/result`](#yield-clientinsertstring-table-array-data---flamemysqlresult)
+  - [`yield client::delete(string $table, array $where[, mixed $order[, mixed $limit]]) -> flame/mysql/result`](#yield-clientdeletestring-table-array-where-mixed-order-mixed-limit---flamemysqlresult)
+  - [`yield client::update(string $table, array $where, mixed $modify[, mixed $order[, mixed $limit]]) -> flame/mysql/result`](#yield-clientupdatestring-table-array-where-mixed-modify-mixed-order-mixed-limit---flamemysqlresult)
+  - [`yield client::select(string $table, mixed $fields[, array $where[, mixed $order[, mixed $limit]]]) -> flame/mysql/result`](#yield-clientselectstring-table-mixed-fields-array-where-mixed-order-mixed-limit---flamemysqlresult)
+
+<!-- TOC END -->
+
+
+
 #### `yield flame\mysql\connect(string $url) -> flame\mysql\client`
 连接 MySQL 数据库, 并返回数据库客户端对象; 连接地址 `$url` 形式如下:
 

@@ -1,5 +1,14 @@
-### `namespace flame\reds`
+### `namespace flame\redis`
 提供基本的 `Redis` 客户端封装;
+
+<!-- TOC START min:1 max:4 link:true update:false -->
+  - [`yield flame\redis\connect(string $url) -> flame\redis\client`](#yield-flameredisconnectstring-url---flameredisclient)
+  - [`class flame\redis\client`](#class-flameredisclient)
+
+<!-- TOC END -->
+
+
+
 
 #### `yield flame\redis\connect(string $url) -> flame\redis\client`
 连接由 `$url` 指定的 `redis` 服务器, 并返回客户端对象; `$url` 格式如下:
@@ -30,4 +39,3 @@ $val = yield $cli->incrby("key3", 2);
 * 实际功能函数基于 `__call()` 魔术函数实现大部分 Reids 指令，函数名称与指令名相同 (忽略大小写);
 * 部分返回会按照 PHP 使用习惯处理为关联数组, 例如 `HGETALL` / `ZSCAN` 等等;
 * 除特殊说明外所有指令都是"异步函数", 故需要使用 `yield` 关键字调用;
-

@@ -1,12 +1,14 @@
+
 ## `namespace flame`
 最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
 
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-	- [`namespace flame`](#namespace-flame)
-			- [`void flame\init(string $title[, array $options])`](#void-flameinitstring-title-array-options)
-			- [`void flame\go(callable $g)`](#void-flamegocallable-g)
-			- [`void flame\run()`](#void-flamerun)
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
+
+- [`namespace flame`](#namespace-flame)
+	- [`void flame\init(string $title[, array $options])`](#void-flameinitstring-title-array-options)
+	- [`void flame\go(callable $g)`](#void-flamegocallable-g)
+	- [`void flame\run()`](#void-flamerun)
 
 <!-- /TOC -->
 
