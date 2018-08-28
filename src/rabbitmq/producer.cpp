@@ -30,6 +30,9 @@ namespace rabbitmq {
 			body.to_string();
 			AMQP::Envelope env(body.c_str(), body.size());
 			msg_->build_ex(env);
+			if(routing_key.empty()) { // 未指定时使用 message 默认的 routing_key
+				routing_key = msg.get("routing_key").to_string();
+			}
 			amqp_.channel->publish(ex_, routing_key, env, flag_);
 		}else{
 			php::string msg = params[0];

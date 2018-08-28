@@ -84,6 +84,8 @@ namespace rabbitmq {
 				data.set(i->first.to_string(), i->second.to_integer());
 			}else if(i->second.typeof(php::TYPE::STRING)) {
 				data.set(i->first.to_string(), i->second.to_string());
+			}else if(i->second.typeof(php::TYPE::FLOAT)) {
+				data.set(i->first.to_string(), AMQP::Double(i->second.to_float()));
 			}else{
 				throw php::exception(zend_ce_type_error, "table conversion failed: unsupported type");
 			}
