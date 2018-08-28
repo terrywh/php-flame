@@ -121,7 +121,10 @@ void callback(flame\rabbitmq\message $message) {}
 生产一条以 `$body` 为内容的消息, 可选的指定 `$routing_key`;
 
 #### `void producer::publish(flame\rabbitmq\message $message[, string $routing_key])`
-生产一条以 `$message` 为内容的消息 `$message` (可以补充指定其他属性及头信息), 可选的指定 `$routing_key`;
+生产一条以 `$message` 为内容的消息, 可选的指定 `$routing_key` (默认为 `$message->routing_key` 属性指定的值);
+
+**注意**：
+* 此函数一般用于为特殊消息（需要指定属性或设置头信息）的生产；
 
 ### `class flame\db\rabbitmq\message`
 消费生产过程中使用的消息对象，用于包裹实际的消息内容和其相关属性头信息等数据;
@@ -149,9 +152,12 @@ void callback(flame\rabbitmq\message $message) {}
 #### `String message::$user_id`
 #### `String message::$type_name`
 #### `Integer message::$timestamp`
+#### `String message::$message_id`
 (用户可自行设定) 秒级时间戳;
 
-#### `String message::$message_id`
+**注意**:
+* 上述属性(除 `$routing_key`/`$body` 外)均由用户自行指定，严格说，数据的含义、功能，在一定程度上也是由用户自行规划指定的；
+
 
 #### `string message::__toString()`
 方便消息处理, 返回消息体，与 `$body` 一致；
