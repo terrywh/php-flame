@@ -88,3 +88,23 @@ sudo make install
 sudo rm -f /data/vendor/mongoc-1.11.0/lib/libbson-1.0.so*
 sudo rm -f /data/vendor/mongoc-1.11.0/lib/libmongoc-1.0.so*
 ```
+
+#### 编译
+```
+cd /path/to/php-flame
+git pull
+make clean
+rm -f flame-debugd.so flame-formal.so
+make -j4
+make install
+mv flame.so flame-debugd.so
+make clean
+CXXFLAGS="-O2" make -j4
+mv flame.so flame-formal.so
+```
+
+#### 推送
+```
+scp flame-debugd.so 11.22.33.44:~/
+ssh -t 11.22.33.44 "sudo rm /path/to/php/lib/php/extensions/no-debug-non-zts-20151012/flame.so; sudo cp ~/flame-debugd.so /path/to/php/lib/php/extensions/no-debug-non-zts-20151012/flame.so"
+```
