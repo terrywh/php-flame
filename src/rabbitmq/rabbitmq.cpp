@@ -68,9 +68,12 @@ namespace rabbitmq {
 				data.set(key, static_cast<double>(field));
 			}else if(field.isString()) {
 				data.set(key, (const std::string&)field);
-			}else{ // 其他类型暂不支持
-				// TODO 记录警告信息?
+			}else if(field.typeID() == 'd') {
+				data.set(key, static_cast<double>(field));
+			}else if(field.typeID() == 'f') {
+				data.set(key, static_cast<float>(field));
 			}
+			// TODO 记录警告信息?
 		}
 		return std::move(data);
 	}
@@ -85,7 +88,7 @@ namespace rabbitmq {
 			}else if(i->second.typeof(php::TYPE::STRING)) {
 				data.set(i->first.to_string(), i->second.to_string());
 			}else if(i->second.typeof(php::TYPE::FLOAT)) {
-				data.set(i->first.to_string(), AMQP::Double(i->second.to_float()));
+				data.set(i->first.to_string(), AMQP::Double {i->second.to_float()});
 			}else{
 				throw php::exception(zend_ce_type_error, "table conversion failed: unsupported type");
 			}

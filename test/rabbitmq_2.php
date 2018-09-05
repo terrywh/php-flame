@@ -9,16 +9,16 @@ flame\go(function() {
 	for($i=0;$i<100;++$i) {
 		$producer->publish(rand(), "flame-test");
 		++$count;
-		yield flame\time\sleep(10);
+		yield flame\time\sleep(100);
 		$message = new flame\rabbitmq\message(rand(), "flame-test");
 		$message->header["a"] = "bb";
-		// $message->header["b"] = flame\time\now();
+		$message->header["b"] = flame\time\now();
 		$message->header["c"] = 123.123;
 		$message->content_type = "text/plain";
 		$message->timestamp = intval(flame\time\now()/1000);
 		$producer->publish($message);
 		++$count;
-		yield flame\time\sleep(10);
+		yield flame\time\sleep(100);
 	}
 	yield flame\time\sleep(1000); // 稍微给点时间确认消费完
 

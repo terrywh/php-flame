@@ -220,21 +220,24 @@ HTTP/1 服务器；
 ``` PHP
 flame\go(function() {
 	$server = new flame\http\server("127.0.0.1:7678");
-	$server->before(function($req, $res, &$next) {
+	$server->before(function($req, $res, $next) { // 前置处理
 		if(...) {
-			$next = false;
+            // 请求重写
+			$req->path = "/hello";
 		}else{
+            // 传递数据
 			$req->data["user"] = ...;
 			$req->data["time"] = flame\time\now();
 		}
-	})->get("/hello", function($req, $res) {
+	})->get("/hello", function($req, $res) { // 路径处理器对应 GET 方法
 		// 返回 content-length: 6 形式
 		$res->body = "abcdef";
 	})->post("/hello", function($req, $res) {
 		// 返回 transfer-encoding: chunked 形式
 		yield $res->write("abc");
 		yield $res->end("def");
-	})->after(function($req, $res, $next) {
+	})->after(function($req, $res, $next) { // 后置处理
+        // 日志记录
 		flame\log\info("request elapse:", flame\time\now() - $req->data["time"], "ms");
 	});
 })
@@ -327,7 +330,7 @@ void callback(flame\http\server_request $req, flame\http\server_response $res);
 **注意**：
 1. 使用 `$res->body = "aaaaaa";` 形式返回 `Content-Length: 6` 形式的响应;
 2. 使用 `$res->write()/end()` 形式返回 `Transfer-Encoding: chunked` 形式的响应;
-
+3. 一般来说形式 1 相对效率较高, 但返回数据必须一次性输出; 形式 2 可用于陆续返回较多数据; 不能混合使用两种形式;  
 
 #### `array server_response::$header`
 响应头部 KEY/VAL 数组，默认包含 `Content-Type: text/plain`（）；其他响应头请酌情考虑添加、覆盖；
@@ -364,8 +367,12 @@ $res->header["X-Server"] = "Flame/0.7.0";
 #### `yield server_response::end([string $data])`
 结束请求，若还未发送响应头，将自动调用 `write_header` 发送相应头（默认 `200 OK`）；可选输出响应内容；输出完成后结束响应；
 
+**注意**:
+* 
+
 #### `yield server_response::file(string $root, string $path)`
 将一个 `$root` 目录为根, 由 `$path` 指定路径的文件作为响应返回;
 
 **注意**:
 * 由于安全问题, `$path` 指定的路径将被自动处理到以 `$root` 为根目录的路径下 (不允许访问超出 `$root` 以外的文件);
+* 
