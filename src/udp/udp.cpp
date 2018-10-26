@@ -39,8 +39,8 @@ namespace udp {
 			// 连接
 			boost::asio::async_connect(o_->socket_, edps, [o, o_, co] (const boost::system::error_code& error, const boost::asio::ip::udp::endpoint& edp) mutable {
 				if(error) return co->fail(error);
-				o.set("local_address", (boost::format("%s:%d") % o_->socket_.local_endpoint().address().to_string() % o_->socket_.local_endpoint().port()).str());
-				o.set("remote_address", (boost::format("%s:%d") % o_->socket_.remote_endpoint().address().to_string() % o_->socket_.remote_endpoint().port()).str());
+				o_->set("local_address", (boost::format("%s:%d") % o_->socket_.local_endpoint().address().to_string() % o_->socket_.local_endpoint().port()).str());
+				o_->set("remote_address", (boost::format("%s:%d") % o_->socket_.remote_endpoint().address().to_string() % o_->socket_.remote_endpoint().port()).str());
 				co->resume(std::move(o));
 			});
 		});
