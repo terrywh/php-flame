@@ -1,19 +1,5 @@
 ## `namespace flame\os`
 
-<!-- TOC depthFrom:3 -->
-
-- [`array flame\os\interfaces()`](#array-flame\os\interfaces)
-- [`flame\os\process flame\os\spawn(string $exec[, array $argv[, array $opts])`](#flame\os\process-flame\os\spawnstring-exec-array-argv-array-opts)
-    - [`yield flame\os\exec(string $exec[, array $argv[, array $opts]) -> string`](#yield-flame\os\execstring-exec-array-argv-array-opts---string)
-- [`class flame\os\process`](#class-flame\os\process)
-    - [`integer process::$pid`](#integer-processpid)
-    - [`string process::stdout()`](#string-processstdout)
-    - [`string process::stderr()`](#string-processstderr)
-    - [`void process::kill([$signal = SIGTERM])`](#void-processkillsignal--sigterm)
-    - [`yield process::wait() -> void`](#yield-processwait---void)
-
-<!-- /TOC -->
-
 封装系统相关的 API，网卡信息, 异步进程启停输出读取等；
 
 ### `array flame\os\interfaces()`

@@ -26,7 +26,8 @@ namespace rabbitmq {
 			.method<&message::__construct>("__construct", {
 				{"body", php::TYPE::STRING, false, true},
 			})
-			.method<&message::to_string>("__toString");
+			.method<&message::to_string>("__toString")
+			.method<&message::to_json>("jsonSerialize");
 
 		ext.add(std::move(class_message));
 	}
@@ -43,20 +44,7 @@ namespace rabbitmq {
 		php::array data(16);
 		data.set("routing_key", get("routing_key"));
 		data.set("body", get("body"));
-		data.set("expiration",get("expiration"));
-		data.set("reply_to", get("reply_to"));
-		data.set("correlation_id", get("correlation_id"));
-		data.set("priority", get("priority"));
-		data.set("delivery_mode", get("delivery_mode"));
-		data.set("header", get("header"));
-		data.set("content_encoding", get("content_encoding"));
-		data.set("content_type", get("content_type"));
-		data.set("cluster_id", get("cluster_id"));
-		data.set("app_id", get("app_id"));
-		data.set("user_id", get("user_id"));
-		data.set("type_name", get("type_name"));
 		data.set("timestamp", get("timestamp"));
-		data.set("message_id", get("message_id"));
 		return std::move(data);
 	}
 	php::value message::to_string(php::parameters& params) {

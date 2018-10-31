@@ -9,11 +9,10 @@ namespace rabbitmq {
 		php::value publish(php::parameters& params);
 	private:
 		// 实际的客户端对象可能超过当前对象的生存期
-		context_type amqp_;
-		std::string    ex_;
-		int          flag_;
+		std::shared_ptr<client_context> amqp_;
+		int                             flag_;
 		
-		friend class client;
+		friend php::value produce(php::parameters& params);
 	};
 }
 }

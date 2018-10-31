@@ -1,20 +1,12 @@
 ## `namespace flame`
 
-<!-- TOC depthFrom:3 -->
-
-- [`void flame\init(string $title[, array $options])`](#void-flame\initstring-title-array-options)
-- [`void flame\go(callable $g)`](#void-flame\gocallable-g)
-- [`void flame\run()`](#void-flame\run)
-
-<!-- /TOC -->
-
 最基本的“协程”函数封装，例如生成“协程”，“协程”调度等；
 
 #### `void flame\init(string $title[, array $options])`
 设置并初始化框架, 进程标题 `$title` 及可能的配置；目前可用选项如下:
 
 * `debug` `Boolean` - 默认 `true`, 在调试模式时: 
-	1. 工作进程崩溃不会自动重启;
+	1. 工作进程崩溃不会自动重启(所有子进城退出后主进程结束);
 	2.  
 * `worker` `Integer` - 工作进程数量, 默认(至少) 1 个 (最多 256 个);
 * `logger` `String` - 重定向日志输出到指定路径文件;

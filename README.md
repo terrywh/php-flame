@@ -78,7 +78,7 @@ rm -f /data/vendor/amqp-3.1.0/lib/libamqpcpp.so*
 *目前 8.0 版本未单独提供 libmysqlclient 通用库 (包含在服务器中的版本链接的 ssl 库版本与 CentOS7 不直接兼容);*
 
 
-* [mongo-c-dirver](http://mongoc.org/libmongoc/current/index.html) - 仅保留静态库
+* [mongo-c-driver](http://mongoc.org/libmongoc/current/index.html) - 仅保留静态库
 ```
 mkdir mongo-c-driver-1.11.0-build
 cd mongo-c-driver-1.11.0-build

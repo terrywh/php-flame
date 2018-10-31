@@ -1,12 +1,13 @@
 # 依赖
 # ----------------------------------------------------------------------------------
-VENDOR_PHP=/data/vendor/php-7.0.30
+VENDOR_PHP?=/data/vendor/php-7.2.11
 VENDOR_BOOST=/data/vendor/boost-1.68.0
-VENDOR_PHPEXT=/data/vendor/phpext-1.0.0
+VENDOR_PHPEXT=/data/vendor/phpext-1.1.0
 VENDOR_PARSER=/data/vendor/parser-1.0.0
-VENDOR_AMQP=/data/vendor/amqp-3.1.0
+VENDOR_AMQP=/data/vendor/amqpcpp-3.2.0
 VENDOR_MYSQL=/data/vendor/mysql-connector-c-6.1.11
-VENDOR_MONGODB=/data/vendor/mongoc-1.11.0
+VENDOR_MONGODB=/data/vendor/mongoc-1.13.0
+VENDOR_RDKAFKA=/data/vendor/librdkafka-0.11.6
 
 # 编译目标
 # ---------------------------------------------------------------------------------
@@ -21,13 +22,14 @@ TARGETX=flame.so
 # 包含路径
 INCLUDES:= -I${VENDOR_PARSER}/include \
  -I${VENDOR_PHPEXT}/include \
+ -isystem ${VENDOR_RDKAFKA}/include \
  -isystem ${VENDOR_AMQP}/include \
  -isystem ${VENDOR_MONGODB}/include/libmongoc-1.0 -isystem ${VENDOR_MONGODB}/include/libbson-1.0 \
  -isystem ${VENDOR_MYSQL}/include \
  -isystem ${VENDOR_BOOST}/include \
  $(shell ${VENDOR_PHP}/bin/php-config --includes | sed 's/-I/-isystem/g')
-CXX=clang++-6.0
-CXXFLAGS?= -fcolor-diagnostics -g -O0
+CXX=g++
+CXXFLAGS?= -g -O0
 CXXFLAGS+= -std=c++11 -fPIC ${INCLUDES}
 COMPILER:=$(shell ${CXX} --version | head -n1 | awk '{print $$1}')
 
@@ -43,6 +45,7 @@ PCHEADER=./src/vendor.h
 # ---------------------------------------------------------------------------------
 # 依赖库
 LIBRARY+= -L${VENDOR_MYSQL}/lib -lmysqlclient \
+ -L${VENDOR_RDKAFKA}/lib -lrdkafka \
  -L${VENDOR_AMQP}/lib -lamqpcpp \
  -L${VENDOR_MONGODB}/lib -lmongoc-static-1.0 -lbson-static-1.0 \
  -L${VENDOR_PHPEXT}/lib -lphpext \

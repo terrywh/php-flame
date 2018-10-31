@@ -1,20 +1,6 @@
 ## `namespace flame\time`
 
-<!-- TOC depthFrom:3 -->
-
-- [`integer flame\time\now()`](#integer-flame\time\now)
-- [`integer flame\time\iso()`](#integer-flame\time\iso)
-- [`yield flame\time\sleep(integer $ms) -> void`](#yield-flame\time\sleepinteger-ms---void)
-- [`flame\time\timer flame\time\after(integer $ms, callable $cb)`](#flame\time\timer-flame\time\afterinteger-ms-callable-cb)
-- [`flame\time\timer flame\time\tick(integer $ms, callable $cb)`](#flame\time\timer-flame\time\tickinteger-ms-callable-cb)
-- [`class flame\time\timer`](#class-flame\time\timer)
-    - [`timer::__construct(integer $interval[, callable $handler])`](#timer__constructinteger-interval-callable-handler)
-    - [`void timer::start()`](#void-timerstart)
-    - [`void timer::stop()`](#void-timerstop)
-
-<!-- /TOC -->
-
-封装与时间有关的 API，例如获取当前时间（毫秒）、SLEEP 等；
+封装与时间有关的 API，例如更低消耗的获取当前时间（毫秒）、协程式的 sleep 函数等；
 
 ### `integer flame\time\now()`
 获取当前时间戳（毫秒级）；

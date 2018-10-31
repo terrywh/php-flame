@@ -38,3 +38,4 @@ namespace ssl = boost::asio::ssl;
 #include <mysql.h>
 #include <my_sys.h>
 #include <mongoc.h>
+#include <librdkafka/rdkafka.h>

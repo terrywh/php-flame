@@ -1,12 +1,5 @@
 ## `namespace flame\redis`
 
-<!-- TOC depthFrom:3 -->
-
-- [`yield flame\redis\connect(string $url) -> flame\redis\client`](#yield-flame\redis\connectstring-url---flame\redis\client)
-- [`class flame\redis\client`](#class-flame\redis\client)
-
-<!-- /TOC -->
-
 提供基本的 `Redis` 客户端封装;
 
 ### `yield flame\redis\connect(string $url) -> flame\redis\client`

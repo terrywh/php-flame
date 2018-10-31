@@ -4,16 +4,17 @@
 	1. [核心](/php-flame/core) - 初始化, 协程启动;
 	2. [时间](/php-flame/time) - 毫秒时间戳, 调度休眠、定时器;
 	3. [系统](/php-flame/os) - 网卡信息, 异步进程;
-	4. [日志](/php-flame/log)；
+	4. [日志](/php-flame/log) - 简单日志记录 API，日志重载信号；
 2. 网络
 	1. [TCP](/php-flame/tcp) - 客户端, 服务器;
 	2. [HTTP](/php-flame/http) - 客户端, 服务器;
 	5. [UDP](/php-flame/udp) - 客户端, 服务器;
 3. 驱动
-	1. [Redis](/php-flame/redis) - 客户端；
-	2. [Mongodb](/php-flame/mongodb) - 客户端;
-	3. [MySQL](/php-flame/mysql) - 客户端;
-	4. [RabbitMQ](/php-flame/rabbitmq) - 客户端；
+	1. [Redis](/php-flame/redis) - 简单客户端；
+	2. [Mongodb](/php-flame/mongodb) - 简单客户端;
+	3. [MySQL](/php-flame/mysql) - 简单客户端;
+	4. [RabbitMQ](/php-flame/rabbitmq) - 简单客户端；
+	5. [Kafka](/php-flame/kafka) - 简单客户端；
 
 ## 仓库
 [https://github.com/terrywh/php-flame/](https://github.com/terrywh/php-flame/)

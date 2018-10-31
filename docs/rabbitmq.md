@@ -1,59 +1,20 @@
 ## `namespace flame\rabbitmq`
 
-<!-- TOC depthFrom:3 -->
-
-- [`yield flame\rabbitmq\connect(string $url[, array $options = array()]) -> flame\rabbitmq\client`](#yield-flame\rabbitmq\connectstring-url-array-options--array---flame\rabbitmq\client)
-- [`class flame\rabbitmq\client`](#class-flame\rabbitmq\client)
-    - [`flame\rabbitmq\consumer client::consume(string $queue_name[, array $options])`](#flame\rabbitmq\consumer-clientconsumestring-queue_name-array-options)
-    - [`flame\rabbitmq\procuer producer::produce([string $exchange = "" [, array $options = array()]])`](#flame\rabbitmq\procuer-producerproducestring-exchange----array-options--array)
-- [`class flame\rabbitmq\consumer`](#class-flame\rabbitmq\consumer)
-    - [`yield consumer::run(callable $cb) -> void`](#yield-consumerruncallable-cb---void)
-    - [`boolean consumer::confirm(flame\rabbitmq\message $message)`](#boolean-consumerconfirmflame\rabbitmq\message-message)
-    - [`boolean consumer::reject(flame\rabbitmq\message $message[, $requeue = false])`](#boolean-consumerrejectflame\rabbitmq\message-message-requeue--false)
-    - [`yield consumer::close() -> void`](#yield-consumerclose---void)
-- [`class flame\rabbitmq\producer`](#class-flame\rabbitmq\producer)
-    - [`void producer::publish(string $body[, string $routing_key)`](#void-producerpublishstring-body-string-routing_key)
-    - [`void producer::publish(flame\rabbitmq\message $message[, string $routing_key])`](#void-producerpublishflame\rabbitmq\message-message-string-routing_key)
-- [`class flame\db\rabbitmq\message`](#class-flame\db\rabbitmq\message)
-    - [`message::__construct([string $body, [string $routing_key]])`](#message__constructstring-body-string-routing_key)
-    - [`String message::$routing_key`](#string-messagerouting_key)
-    - [`String message::$body`](#string-messagebody)
-    - [`String message::$expiration`](#string-messageexpiration)
-    - [`String message::$reply_to`](#string-messagereply_to)
-    - [`String message::$correlation_id`](#string-messagecorrelation_id)
-    - [`String message::$priority`](#string-messagepriority)
-    - [`Integer message::$delivery_mode`](#integer-messagedelivery_mode)
-    - [`Array message::$header`](#array-messageheader)
-    - [`String message::$content_encoding`](#string-messagecontent_encoding)
-    - [`String message::$content_type`](#string-messagecontent_type)
-    - [`String message::$cluster_id`](#string-messagecluster_id)
-    - [`String message::$app_id`](#string-messageapp_id)
-    - [`String message::$user_id`](#string-messageuser_id)
-    - [`String message::$type_name`](#string-messagetype_name)
-    - [`Integer message::$timestamp`](#integer-messagetimestamp)
-    - [`String message::$message_id`](#string-messagemessage_id)
-    - [`string message::__toString()`](#string-message__tostring)
-
-<!-- /TOC -->
-
 提供 RabbitMQ 协程式客户端封装；**暂不支持**除生产消费以外的功能 (例如, declare queue/exchange bind queue 等), 请使用 RabbitMQ UI 界面做手工操作;
 
 **示例**：
 ``` PHP
 // ...
-$client = yield flame\rabbitmq\connect("amqp://user:pass@127.0.0.1:5672/vhost");
-$options = ["immediate" => true];
+$producer = yield flame\rabbitmq\produce("amqp://user:pass@127.0.0.1:5672/vhost");
 // 生产
-$producer = $client->produce("exchange", ["immediate"=>true]);
-// 简单消息生产
-$producer->publish("this is a message payload", "this is the routing key");
+$producer = $producer->publish("exchange", "this is as message payload", "this is the routing key");
 // 属性消息生产
 $message = new flame\rabbitmq\message("this is another message payload", "this is the routing key");
 $message->user_id = "aaaaaa";
 $message->header["aaaaaaa"] = "bbbbbbbb";
-$producer->publish($message);
+$producer->publish("exchange", $message);
 // 消费
-$consumer = $client->consume("queue_name_1", ["nolocal" => true]);
+$consumer = yield flame\rabbitmq\consume("amqp://user:pass@127.0.0.1:5672/vhost", "queue_name_1");
 flame\time\after(5000, function() use($consumer) {
 	// 在另外的协程中终止消费
 	$consumer->close();
@@ -65,26 +26,25 @@ yield $consumer->run(function($message) use($consumer) {
 });
 ```
 
-### `yield flame\rabbitmq\connect(string $url[, array $options = array()]) -> flame\rabbitmq\client`
-连接 `RabbitMQ` 服务器并打开通道, 返回客户端对象实例; 可用选项如下:
+### `yield flame\rabbitmq\consume(string $url[, string $queue [, array $options = array()]]) -> flame\rabbitmq\consumer`
+连接 `RabbitMQ` 服务器, 打开通道, 准备消费指定的队列; 可用选项如下:
 * `prefetch` - `Integer` - `RabbitMQ` 预读取数量, 0 < `prefetch` < 65536, 默认 `1`;
-
-**注意**:
-* 设置 `prefetch` 超过 1 的情况下, 相当于处理流程存在"并行";
-
-### `class flame\rabbitmq\client`
-客户端对象, 包括 生产, 消费在内的主体 API 都有 `client` 对象提供;
-
-#### `flame\rabbitmq\consumer client::consume(string $queue_name[, array $options])`
-创建一个将要消费指定队列 `$queue_name` 消费者, 使用独立的协程将每条带处理的消息回调 `$cb`; 可用选项如下:
 * `nolocal` - `Boolean` - 默认 `false`
 * `noack` - `Boolean` - 默认 `false`, 消息需确认消费成功, 否则无需确认;
 * `exclusive` - `Boolean` - 默认 `false`
 
-#### `flame\rabbitmq\procuer producer::produce([string $exchange = "" [, array $options = array()]])`
-创建一个将要通过 `$exchange` 进行消息生产的生产者；可用选项如下:
+**注意**:
+* 设置 `prefetch` 超过 1 的情况下, 相当于处理流程存在"并行";
+
+### `yield flame\rabbitmq\produce(string $url[, array $options = array()]) -> flame\rabbitmq\producer`
+连接 `RabbitMQ` 服务器, 打开通道, 注备生产消息；可用选项如下:
+* `prefetch` - `Integer` - `RabbitMQ` 预读取数量, 0 < `prefetch` < 65536, 默认 `1`;
 * `mandatory` - `Boolean` - 默认 `false`
 * `immedate` - `Boolean` - 默认 `false`
+
+**注意**:
+* 设置 `prefetch` 超过 1 的情况下, 相当于处理流程存在"并行";
+
 
 ### `class flame\rabbitmq\consumer`
 消费者

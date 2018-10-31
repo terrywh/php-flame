@@ -1,6 +1,5 @@
 #include "../coroutine.h"
 #include "rabbitmq.h"
-#include "client.h"
 #include "consumer.h"
 #include "producer.h"
 #include "message.h"
@@ -9,51 +8,93 @@ namespace flame {
 namespace rabbitmq {
 	void declare(php::extension_entry& ext) {
 		ext
-			.function<connect>("flame\\rabbitmq\\connect", {
+			.function<consume>("flame\\rabbitmq\\consume", {
+				{"address", php::TYPE::STRING},
+				{"queue", php::TYPE::STRING},
+				{"options", php::TYPE::ARRAY, false, true},
+			})
+			.function<produce>("flame\\rabbitmq\\produce", {
 				{"address", php::TYPE::STRING},
 				{"options", php::TYPE::ARRAY, false, true},
 			});
-		client::declare(ext);
 		consumer::declare(ext);
 		producer::declare(ext);
 		message::declare(ext);
 	}
-	php::value connect(php::parameters& params) {
-		// TODO 连接超时处理?
+	client_context::client_context(const php::string& addr)
+	: handler(context)
+	, connection(&handler, AMQP::Address(addr.c_str(), addr.size()))
+	, channel(&connection) {
 
-		php::object cli(php::class_entry<client>::entry());
-		client* cli_ = static_cast<client*>(php::native(cli));
-
-		cli_->amqp_.handler.reset(new AMQP::LibBoostAsioHandler(context));
-		php::string addr = params[0];
-		cli_->amqp_.connection.reset(new AMQP::TcpConnection(
-			cli_->amqp_.handler.get(), AMQP::Address(addr.c_str(), addr.size())
-		));
-		cli_->amqp_.channel.reset(new AMQP::TcpChannel(cli_->amqp_.connection.get()));
+	}
+	static void connect(std::shared_ptr<client_context> cc, std::shared_ptr<coroutine> co,
+						const php::string& addr, std::uint16_t prefetch) {
+		cc->channel.setQos(prefetch);
+		cc->channel.onReady([cc, co] () mutable {
+			co->resume();
+			co.reset();
+			cc->channel.onError(nullptr);
+		});
+		cc->channel.onError([cc, co] (const char* message) mutable {
+			co->fail(message);
+			co.reset();
+			cc->channel.onReady(nullptr);
+		});
+	}
+	php::value consume(php::parameters& params) {
+		std::shared_ptr<coroutine> co = coroutine::current;
+		php::string addr  = params[0];
+		std::string queue = params[1];
 		std::uint16_t prefetch = 8;
-		if(params.size() > 1) {
-			php::array opts = params[1];
+		int           flag  = 0;
+		if(params.size() > 2) {
+			php::array  opts  = params[2];
+			if(opts.get("nolocal").to_boolean())   flag |= AMQP::nolocal;
+			if(opts.get("noack").to_boolean())     flag |= AMQP::noack;
+			if(opts.get("exclusive").to_boolean()) flag |= AMQP::exclusive;
 			if(opts.exists("prefetch")) {
 				prefetch = std::max(std::uint16_t(1), std::min(std::uint16_t(opts.get("prefetch").to_integer()), std::uint16_t(65535)));
 			}
 		}
-		cli_->amqp_.channel->setQos(prefetch);
-		std::shared_ptr<coroutine> co = coroutine::current;
-		cli_->amqp_.channel->onReady([co, cli, cli_] () mutable {
-			co->resume(std::move(cli));
-			co.reset();
-			cli_->amqp_.channel->onError(nullptr);
-			// cli_->amqp_.channel->onReady(nullptr); // 无法清理当前函数
-		});
-		cli_->amqp_.channel->onError([co, cli, cli_] (const char* message) mutable {
-			co->fail(message);
-			co.reset();
-			// cli_->amqp_.channel->onError(nullptr);  // 无法清理当前函数
-			cli_->amqp_.channel->onReady(nullptr);
-			cli = nullptr;
-		});
+
+		std::shared_ptr<client_context> cc = std::make_shared<client_context>(addr);
+		co->stack(php::value([co, cc, queue, flag] (php::parameters& params) -> php::value {
+			php::object cobj(php::class_entry<consumer>::entry());
+			consumer* cptr = static_cast<consumer*>(php::native(cobj));
+			cptr->amqp_  = cc;
+			cptr->flag_  = flag;
+			cptr->queue_ = queue;
+			co->resume(std::move(cobj));
+			return nullptr;
+		}));
+		connect(cc, co, addr, prefetch);
 		return coroutine::async();
-		// return cli;
+	}
+	php::value produce(php::parameters& params) {
+		std::shared_ptr<coroutine> co = coroutine::current;
+		php::string addr  = params[0];
+		int         flag  = 0;
+		std::uint16_t prefetch = 8;
+		if(params.size() > 1) {
+			php::array  opts  = params[1];
+			if(opts.get("mandatory").to_boolean()) flag |= AMQP::mandatory;
+			if(opts.get("immediate").to_boolean()) flag |= AMQP::immediate;
+			if(opts.exists("prefetch")) {
+				prefetch = std::max(std::uint16_t(1), std::min(std::uint16_t(opts.get("prefetch").to_integer()), std::uint16_t(65535)));
+			}
+		}
+
+		std::shared_ptr<client_context> cc = std::make_shared<client_context>(addr);
+		co->stack(php::value([co, cc, flag] (php::parameters& params) -> php::value {
+			php::object pobj(php::class_entry<producer>::entry());
+			producer*   pptr = static_cast<producer*>(php::native(pobj));
+			pptr->amqp_ = cc;
+			pptr->flag_ = flag;
+			co->resume(std::move(pobj));
+			return nullptr;
+		}));
+		connect(cc, co, addr, prefetch);
+		return coroutine::async();
 	}
 	// 仅支持一维数组
 	php::array convert(const AMQP::Table& table) {
