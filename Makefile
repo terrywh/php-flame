@@ -1,8 +1,8 @@
 # 依赖
 # ----------------------------------------------------------------------------------
-VENDOR_PHP?=/data/vendor/php-7.2.11
+VENDOR_PHP?=/data/vendor/php-7.0.32
 VENDOR_BOOST=/data/vendor/boost-1.68.0
-VENDOR_PHPEXT=/data/vendor/phpext-1.1.0
+VENDOR_PHPEXT=/data/vendor/phpext-1.0.0
 VENDOR_PARSER=/data/vendor/parser-1.0.0
 VENDOR_AMQP=/data/vendor/amqpcpp-3.2.0
 VENDOR_MYSQL=/data/vendor/mysql-connector-c-6.1.11
@@ -29,7 +29,7 @@ INCLUDES:= -I${VENDOR_PARSER}/include \
  -isystem ${VENDOR_BOOST}/include \
  $(shell ${VENDOR_PHP}/bin/php-config --includes | sed 's/-I/-isystem/g')
 CXX=g++
-CXXFLAGS?= -g -O0
+CXXFLAGS?= -O2
 CXXFLAGS+= -std=c++11 -fPIC ${INCLUDES}
 COMPILER:=$(shell ${CXX} --version | head -n1 | awk '{print $$1}')
 
