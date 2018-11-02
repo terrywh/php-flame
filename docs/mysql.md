@@ -12,6 +12,9 @@ mysql://{user}:{pass}@{host}:{port}/{database}
 ### `class flame\mysql\client`
 MySQL 客户端（连接）；
 
+#### `yield client::begin_tx() -> flame\mysql\transaction`
+启动一个事务，返回事务对象（与 `flame\mysql\client` 相同接口外，提供 `commit()` | `rollback()` 方法）；
+
 #### `string client::escape(mixed $value[, string quote="'"])`
 进行数据防注入转义，可选的指定对应包裹符号，目前允许：单引号 `'` 及 反单引号 ``` ；
 
@@ -122,7 +125,16 @@ $aa = "aaaa";
 #### `yield client::get(string $table, string $field, array $where[, mixed $order]) -> string`
 执行查询并限定结果集大小为1，若找到匹配数据，直接返回数据对应字段值；若未找到，返回 null；
 
-### `class flame\db\mysql\result`
+### `class flame\mysql\transaction`
+与上述 `flame\mysql\client` 相同的接口外还提供下述两个方法：
+
+#### `yield transaction::commit()`
+提交事务；
+
+#### `yield transaction::rollback()`
+回退事务；
+
+### `class flame\mysql\result`
 数据查询结果对象, 用于读取“结果集”数据项 或 获取更新型语句执行结果；
 
 **示例**：

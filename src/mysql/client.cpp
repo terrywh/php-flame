@@ -55,7 +55,6 @@ namespace mysql {
 			})
 			.method<&client::one>("one", {
 				{"table", php::TYPE::STRING},
-				{"fields", php::TYPE::UNDEFINED},
 				{"where", php::TYPE::UNDEFINED},
 				{"order", php::TYPE::UNDEFINED, false, true},
 			})
