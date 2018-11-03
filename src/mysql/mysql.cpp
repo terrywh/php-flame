@@ -336,7 +336,7 @@ namespace mysql {
 		// 排序
 		if(params.size() > 2) build_order(cc, buf, params[2]);
 		// 限制
-		if(params.size() > 3) build_limit(cc, buf, params[2]);
+		if(params.size() > 3) build_limit(cc, buf, params[3]);
 	}
 	void build_update(std::shared_ptr<_connection_base> cc, php::buffer& buf, php::parameters& params) {
 		buf.append("UPDATE ", 7);

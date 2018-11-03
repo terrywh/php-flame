@@ -10,7 +10,14 @@ namespace mysql {
 	void transaction::declare(php::extension_entry& ext) {
 		php::class_entry<transaction> class_transaction("flame\\mysql\\transaction");
 		class_transaction
+			.method<&transaction::escape>("escape")
 			.method<&transaction::query>("query")
+			.method<&transaction::insert>("insert")
+			.method<&transaction::delete_>("delete")
+			.method<&transaction::update>("update")
+			.method<&transaction::select>("select")
+			.method<&transaction::one>("one")
+			.method<&transaction::get>("get")
 			.method<&transaction::commit>("commit")
 			.method<&transaction::rollback>("rollback");
 		ext.add(std::move(class_transaction));
