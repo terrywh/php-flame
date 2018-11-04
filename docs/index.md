@@ -14,7 +14,7 @@
 	2. [MySQL](/php-flame/mysql) - 简单客户端;
 	3. [RabbitMQ](/php-flame/rabbitmq) - 简单客户端；
 	4. [Kafka](/php-flame/kafka) - 简单客户端；
-	<!-- 6. [Mongodb](/php-flame/mongodb) - 简单客户端; -->
+	5. [Mongodb](/php-flame/mongodb) - 简单客户端;
 
 ## 仓库
 [https://github.com/terrywh/php-flame/](https://github.com/terrywh/php-flame/)

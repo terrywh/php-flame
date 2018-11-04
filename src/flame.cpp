@@ -8,7 +8,7 @@
 #include "redis/redis.h"
 #include "rabbitmq/rabbitmq.h"
 #include "mysql/mysql.h"
-// #include "mongodb/mongodb.h"
+#include "mongodb/mongodb.h"
 #include "kafka/kafka.h"
 
 extern "C" {
@@ -27,8 +27,9 @@ extern "C" {
 		ext
 			.desc({"vendor/boost", BOOST_LIB_VERSION})
 			.desc({"vendor/libphpext", PHPEXT_LIB_VERSION})
-			.desc({"vendor/amqp-cpp", "3.1.0"})
+			.desc({"vendor/amqp-cpp", "3.2.0"})
 			.desc({"vendor/mysqlc", PACKAGE_VERSION})
+			.desc({"vendor/librdkafka", rd_kafka_version_str()})
 			.desc({"vendor/mongoc", MONGOC_VERSION_S});
 
 		flame::declare(ext);
@@ -41,7 +42,7 @@ extern "C" {
 		flame::redis::declare(ext);
 		flame::rabbitmq::declare(ext);
 		flame::mysql::declare(ext);
-		// flame::mongodb::declare(ext);
+		flame::mongodb::declare(ext);
 		flame::kafka::declare(ext);
 		return ext;
 	}

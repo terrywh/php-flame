@@ -11,7 +11,7 @@ VENDOR_RDKAFKA=/data/vendor/librdkafka-0.11.6
 
 # 编译目标
 # ---------------------------------------------------------------------------------
-SOURCES=$(shell find ./src -name "*.cpp" | grep -v "\./src/mongodb")
+SOURCES=$(shell find ./src -name "*.cpp")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 DEPENDS=$(SOURCES:%.cpp=%.d)
 # 扩展
