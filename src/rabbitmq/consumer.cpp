@@ -36,8 +36,8 @@ namespace rabbitmq {
 				php::object msg(php::class_entry<message>::entry());
 				message* msg_ = static_cast<message*>(php::native(msg));
 				msg_->build_ex(m, tag);
-				// TODO 是否需要复用协程实例对象？
-				std::make_shared<coroutine>()->start(cb_, {msg});
+				// TODO 能否复用协程实例对象？
+				if(!cb_.empty()) std::make_shared<coroutine>()->start(cb_, {msg});
 			}).onSuccess([this] (const std::string& tag) {
 				tag_ = tag;
 			}).onError([this] (const char* message) {

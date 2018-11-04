@@ -74,7 +74,7 @@ ESCAPE_FINISHED:
 			MYSQL* conn = c.get();
 			error = mysql_real_query(conn, sql.c_str(), sql.size());
 			if(error != 0) return nullptr;
-			MYSQL_RES* r = mysql_use_result(conn); // 为了防止长时间锁表, 与 PHP 内部实现一致使用 store 二非 use
+			MYSQL_RES* r = mysql_store_result(conn); // 为了防止长时间锁表, 与 PHP 内部实现一致使用 store 而非 use
 			if(!r && (error = mysql_field_count(conn)) != 0) return nullptr; // 应该但未返回 RESULT_SET
 			return r;
 		}, [co, sql, ref] (std::shared_ptr<MYSQL> c, MYSQL_RES* r, int error) { // 主线程 (需要继续捕捉 sql 保证其释放动作在主线程进行)

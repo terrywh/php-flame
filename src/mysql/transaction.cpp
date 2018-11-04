@@ -24,34 +24,36 @@ namespace mysql {
 	}
 	php::value transaction::commit(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;
-		c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
-			MYSQL* conn = c.get();
-			error = mysql_real_query(conn, "COMMIT", 6);
-			return nullptr;
-		}, [co] (std::shared_ptr<MYSQL> c, MYSQL_RES* r, int error) { // 主线程
-			MYSQL* conn = c.get();
-			if(error) {
-				co->fail(mysql_error(conn), mysql_errno(conn));
-			}else{
-				co->resume();
-			}
-		});
+		c_->query(coroutine::current, php::object(this), php::string("COMMIT", 6));
+		// c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
+		// 	MYSQL* conn = c.get();
+		// 	error = mysql_real_query(conn, "COMMIT", 6);
+		// 	return nullptr;
+		// }, [co] (std::shared_ptr<MYSQL> c, MYSQL_RES* r, int error) { // 主线程
+		// 	MYSQL* conn = c.get();
+		// 	if(error) {
+		// 		co->fail(mysql_error(conn), mysql_errno(conn));
+		// 	}else{
+		// 		co->resume();
+		// 	}
+		// });
 		return coroutine::async();
 	}
 	php::value transaction::rollback(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;
-		c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
-			MYSQL* conn = c.get();
-			error = mysql_real_query(conn, "ROLLBACK", 8);
-			return nullptr;
-		}, [co] (std::shared_ptr<MYSQL> c, MYSQL_RES*, int error) { // 主线程
-			MYSQL* conn = c.get();
-			if(error) {
-				co->fail(mysql_error(conn), mysql_errno(conn));
-			}else{
-				co->resume();
-			}
-		});
+		c_->query(coroutine::current, php::object(this), php::string("ROLLBACK", 8));
+		// c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
+		// 	MYSQL* conn = c.get();
+		// 	error = mysql_real_query(conn, "ROLLBACK", 8);
+		// 	return nullptr;
+		// }, [co] (std::shared_ptr<MYSQL> c, MYSQL_RES*, int error) { // 主线程
+		// 	MYSQL* conn = c.get();
+		// 	if(error) {
+		// 		co->fail(mysql_error(conn), mysql_errno(conn));
+		// 	}else{
+		// 		co->resume();
+		// 	}
+		// });
 		return coroutine::async();
 	}
 	php::value transaction::escape(php::parameters& params) {

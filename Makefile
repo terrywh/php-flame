@@ -11,7 +11,7 @@ VENDOR_RDKAFKA=/data/vendor/librdkafka-0.11.6
 
 # 编译目标
 # ---------------------------------------------------------------------------------
-SOURCES=$(shell find ./src -name "*.cpp")
+SOURCES=$(shell find ./src -name "*.cpp" | grep -v "\./src/mongodb")
 OBJECTS=$(SOURCES:%.cpp=%.o)
 DEPENDS=$(SOURCES:%.cpp=%.d)
 # 扩展
@@ -29,7 +29,7 @@ INCLUDES:= -I${VENDOR_PARSER}/include \
  -isystem ${VENDOR_BOOST}/include \
  $(shell ${VENDOR_PHP}/bin/php-config --includes | sed 's/-I/-isystem/g')
 CXX=g++
-CXXFLAGS?= -O2
+CXXFLAGS?= -g -O0
 CXXFLAGS+= -std=c++11 -fPIC ${INCLUDES}
 COMPILER:=$(shell ${CXX} --version | head -n1 | awk '{print $$1}')
 

@@ -81,6 +81,7 @@ namespace mysql {
 		c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* { // 工作线程
 			MYSQL* conn = c.get();
 			error = mysql_real_query(conn, "START TRANSACTION", 17);
+			assert(mysql_field_count(conn) == 0);
 			return nullptr;
 		}, [co] (std::shared_ptr<MYSQL> c, MYSQL_RES* r, int error) { // 主线程
 			MYSQL* conn = c.get();

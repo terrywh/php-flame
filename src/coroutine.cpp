@@ -94,8 +94,7 @@ namespace flame {
 				return;
 			}
 		}
-		php::value rv = rv_.front();
-		if (rv.typeof(php::TYPE::POINTER) && rv.pointer<coroutine>() == current.get()) { // 异步标志
+		if(!rv_.empty() && rv_.front().typeof(php::TYPE::POINTER) && rv_.front().pointer<coroutine>() == current.get()) { // 异步标志
 			if(--status_ != 0) {
 				// 理论上不会出现此种情况
 				// 需要在异常抛出前清理
@@ -177,7 +176,7 @@ namespace flame {
 			st_.pop();
 			rv_.swap(rv); // 继续传递
 		}
-		while(rv_.front().instanceof(zend_ce_generator)) {
+		while(!rv_.empty() && rv_.front().instanceof(zend_ce_generator)) {
 			php::object g = rv_[0];
 			rv_.clear();
 			st_.push(std::make_pair(g, static_cast<zval*>(nullptr)));

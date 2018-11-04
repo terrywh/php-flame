@@ -8,7 +8,8 @@
 #include "redis/redis.h"
 #include "rabbitmq/rabbitmq.h"
 #include "mysql/mysql.h"
-#include "mongodb/mongodb.h"
+// #include "mongodb/mongodb.h"
+#include "kafka/kafka.h"
 
 extern "C" {
 	ZEND_DLEXPORT zend_module_entry* get_module() {
@@ -40,7 +41,8 @@ extern "C" {
 		flame::redis::declare(ext);
 		flame::rabbitmq::declare(ext);
 		flame::mysql::declare(ext);
-		flame::mongodb::declare(ext);
+		// flame::mongodb::declare(ext);
+		flame::kafka::declare(ext);
 		return ext;
 	}
 };
