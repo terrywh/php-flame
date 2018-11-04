@@ -5,8 +5,9 @@
 
 namespace flame {
 namespace mysql {
-	_connection_pool::_connection_pool(std::shared_ptr<php::url> url)
+	_connection_pool::_connection_pool(std::shared_ptr<php::url> url, std::string charset)
 	: url_(url)
+	, charset_(charset)
 	, min_(6)
 	, max_(128)
 	, size_(0)
@@ -68,7 +69,7 @@ namespace mysql {
 		if(size_ > max_) return; // 已复用，结束；已建立了足够多的连接, 需要等待
 
 		MYSQL* c = mysql_init(nullptr);
-		mysql_options(c, MYSQL_SET_CHARSET_NAME, "utf8");
+		mysql_options(c, MYSQL_SET_CHARSET_NAME, charset_.c_str());
 		if(!mysql_real_connect(c, url_->host, url_->user, url_->pass, url_->path + 1, url_->port, nullptr, 0)) {
 			throw std::runtime_error("cannot connect to mysql server");
 		}

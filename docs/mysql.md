@@ -2,12 +2,13 @@
 
 提供基本的异步 mysql 协程式客户端；内部使用连接池机制维护所有与 mysql 服务器的连接；
 
-### `yield flame\mysql\connect(string $url) -> flame\mysql\client`
+### `yield flame\mysql\connect(string $url[, array $options]) -> flame\mysql\client`
 连接 MySQL 数据库, 并返回数据库客户端对象; 连接地址 `$url` 形式如下:
-
 ```
 mysql://{user}:{pass}@{host}:{port}/{database}
 ```
+可选设置连接池中连接的选项，目前可用选项如下：
+* `charset` - 设置字符集，默认 `utf8`;
 
 ### `class flame\mysql\client`
 MySQL 客户端（连接）；

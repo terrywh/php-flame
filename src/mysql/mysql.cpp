@@ -19,7 +19,9 @@ namespace mysql {
 				return true;
 			});
 		ext
-			.function<connect>("flame\\mysql\\connect");
+			.function<connect>("flame\\mysql\\connect",{
+				{"url", php::TYPE::STRING},
+			});
 		transaction::declare(ext);
 		client::declare(ext);
 		result::declare(ext);
@@ -27,8 +29,14 @@ namespace mysql {
 	php::value connect(php::parameters& params) {
 		php::object cli(php::class_entry<client>::entry());
 		client* cli_ = static_cast<client*>(php::native(cli));
-
-		cli_->c_.reset(new _connection_pool(php::parse_url(params[0])));
+		std::string charset {"utf8"};
+		if(params.size() > 1) {
+			php::array opts = params[1];
+			if(opts.exists("charset")) {
+				charset = opts.get("charset").to_string();
+			}
+		}
+		cli_->c_.reset(new _connection_pool(php::parse_url(params[0]), charset));
 		std::shared_ptr<coroutine> co = coroutine::current;
 		cli_->c_->exec([] (std::shared_ptr<MYSQL> c, int& error) -> MYSQL_RES* {
 			return nullptr;

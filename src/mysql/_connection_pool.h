@@ -5,7 +5,7 @@ namespace mysql {
 	class _connection_pool: public _connection_base, public std::enable_shared_from_this<_connection_pool> {
 	public:
 		// 以下函数应在主线程调用
-		_connection_pool(std::shared_ptr<php::url> url);
+		_connection_pool(std::shared_ptr<php::url> url, std::string charset);
 		~_connection_pool();
 		virtual _connection_pool& exec(worker_fn_t&& wk, master_fn_t&& fn) override;
 
@@ -15,6 +15,7 @@ namespace mysql {
 		void release(MYSQL* c);
 
 		std::shared_ptr<php::url> url_;
+		std::string           charset_;
 		const std::uint16_t min_;
 		const std::uint16_t max_;
 		std::uint16_t      size_;
