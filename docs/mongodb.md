@@ -38,7 +38,7 @@ $collection->update(...);
 	* `primaryPreferred`
 	* `secondary`
 	* `secondaryPreferred`
-	* `nearest` 
+	* `nearest`
 	请参考 [MongoDB 相关文档](https://docs.mongodb.com/manual/core/read-preference/) 确认相关选项含义;
 
 ### `class flame\mongodb\client`
@@ -87,8 +87,8 @@ mongodb 客户端（连接）；
 #### `yield collection::get(string $field, array $query[, array $sort]) -> mixed`
 按 `$query` 查询当前集合, 可选的按照 `$sort` 排序, 若存在则返回该文档中对应 `$field` 字段的值, 否则返回 NULL;
 
-#### `yield collection::count([array $query)`
-获取当前集合中（符合条件的）文档数量; 
+#### `yield collection::count([array $query])`
+获取当前集合中（符合条件的）文档数量;
 
 #### `yield collection::aggregate(array $pipeline) -> cursor`
 在当前集合上进行由 `$pipeline` 定义的一些列聚合操作, 并返回数据结果游标；
@@ -97,6 +97,8 @@ mongodb 客户端（连接）；
 * 聚合操作 `$pipeline` 应为二维数组, 例如: `[ ['$group'=> ...], ['$lookup'=> ...], ...])`;
 
 ### `class flame\mongodb\object_id`
+
+#### `object_id::__construcrt()`
 
 #### `object_id::__toString()`
 #### `object_id::jsonSerialize()`
@@ -109,6 +111,9 @@ mongodb 客户端（连接）；
 转换为 PHP 内置 [`DateTime`](http://php.net/manual/en/class.datetime.php) 类型对象；
 
 ### `class flame\db\mongodb\date_time`
+
+#### `date_time::__construct(integer $milliseconds)`
+根据毫秒时间戳构造对象；
 
 #### `date_time::__toString()`
 #### `date_time::jsonSerialize()`

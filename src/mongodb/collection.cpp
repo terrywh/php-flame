@@ -31,7 +31,7 @@ namespace mongodb {
 				{"filter", php::TYPE::ARRAY},
 				{"projection", php::TYPE::ARRAY, false, true},
 				{"sort", php::TYPE::ARRAY, false, true},
-				{"limit", php::TYPE::ARRAY, false, true},
+				{"limit", php::TYPE::UNDEFINED, false, true},
 			})
 			.method<&collection::one>("one", {
 				{"filter", php::TYPE::ARRAY},
