@@ -15,7 +15,12 @@ namespace mongodb {
 		ext.add(std::move(class_object_id));
 	}
 	php::value object_id::__construct(php::parameters& params) {
-		bson_oid_init(&oid_, nullptr);
+		if(params.size() > 0) {
+			php::string oid = params[0].to_string();
+			bson_oid_init_from_string(&oid_, oid.c_str());
+		}else{
+			bson_oid_init(&oid_, nullptr);
+		}
 		return nullptr;
 	}
 	php::value object_id::to_string(php::parameters& params) {
