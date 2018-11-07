@@ -2,10 +2,19 @@
 
 提供基本的 `Redis` 客户端封装;
 
+**示例**：
+``` PHP
+$redis = yield flame\redis\connect("redis://auth:123456@11.22.33.44:6379/0")
+// 方法
+yield $redis->get("key");
+yield $redis->set("key", "val");
+//  支持除 subscribe / xread BLOCK 等带有“阻塞等待” 相关功能外的所有命令形式
+```
+
 ### `yield flame\redis\connect(string $url) -> flame\redis\client`
 连接由 `$url` 指定的 `redis` 服务器, 并返回客户端对象; `$url` 格式如下:
 
-``` 
+```
 # 连接 认证 选择
 redis://auth:${pass}@${host}:${port}/${db}
 # 连接 认证

@@ -1,6 +1,50 @@
 ## `namespace flame\http`
-
 提供基本的 HTTP/1 协议服务器, 客户端封装；
+
+**客户端示例:**
+``` PHP
+// 发送简单 HTTP 请求
+$res = yield flame\http\post("http://www.baidu.tv", ["arg1"=>"val1","arg2"=>"val2"]);
+var_dump($res);
+// 较复杂的请求
+$req = new flame\http\client_request("http://www.baidu.tv");
+$req->method="PUT";
+$req->header["xxxxxxx"] = "yyyyyyyy";
+$req->cookie["aaaaaaa"] = "bbbbbbbb";
+$req->body = json_encode(["a"=>"b","c"=>"d"]);
+$res = yield $cli->exec($req1);
+```
+**服务端示例:**
+``` PHP
+// 创建 http 服务器
+$server = new flame\http\server(":::19001");
+// 设置处理过程
+$server->before(function($req, $res, $r) {
+	$req->data["start"] = flame\time\now();
+	if($r) {
+		$req->data["user"] = yield some_auth_fn($req);
+	}
+})->get("/hello", function($req, $res) {
+	// 此处使用 Content-Length 响应方式
+	if(empty($req->data["user"])) {
+		$res->body = "hello, world!\n";
+	}else{
+		$res->body = "hello, ".$req->data["user"]->name."!\n";
+	}
+})->post("/post", function($req, $res) {
+	// 此处使用 Transfer-Encoding: chunked 响应方式
+	$res->header["content-type"] = "text/html";
+	yield $res->write("this is the request: <br/>");
+	yield $res->write("<hr />")
+	yield $res->write(json_encode($req));
+	yield $res->end("<hr />");
+})->after(function($req, $res, $r) {
+	// 记录本次请求耗时
+	flame\log\info("flame elapsed:", flame\time\now() - $req->data["start"], "ms");
+});
+// 运行服务
+yield $server->run();
+```
 
 ### `class flame\http\client_request`
 封装 HTTP 协议的客户端请求请求
@@ -140,7 +184,6 @@ var_dump($res2);
 
 **示例**：
 ``` PHP
-<?php
 $ret = yield flame\http\post("http://www.baidu.tv", ["arg1"=>"val1","arg2"=>"val2"]);
 var_dump($ret);
 ```
@@ -316,11 +359,11 @@ $res->header["X-Server"] = "Flame/0.7.0";
 结束请求，若还未发送响应头，将自动调用 `write_header` 发送相应头（默认 `200 OK`）；可选输出响应内容；输出完成后结束响应；
 
 **注意**:
-* 
+*
 
 #### `yield server_response::file(string $root, string $path)`
 将一个 `$root` 目录为根, 由 `$path` 指定路径的文件作为响应返回;
 
 **注意**:
 * 由于安全问题, `$path` 指定的路径将被自动处理到以 `$root` 为根目录的路径下 (不允许访问超出 `$root` 以外的文件);
-* 
+*

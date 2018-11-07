@@ -2,6 +2,22 @@
 
 提供基本的异步 mongodb 协程式客户端封装；
 
+**示例**：
+``` PHP
+// ...
+$cli = yield flame\mongodb\connect("mongodb://127.0.0.1:27017/database");
+// 以下两行代码功能相同
+$collection = $cli->col_abc;
+$collection = $cli->collection("col_abc");
+// 执行指令
+yield $cli->execute(["find"=> ..., ...]/*, false*/);
+yield $cli->execute(["update"=> ..., ...], true); // 更新型指令回去副本集主节点执行
+// collection 中存在简化接口
+yield $collection->find(...);
+yield $collection->update(...);
+yield $collection->insert(...);
+```
+
 **注意**：
 * 对象标识 `ObjectID` 字段需要使用单独的类型 `flame\mongodb\object_id`；
 * 日期时间 `DateTime` 字段需要使用单独的类型 `flame\mongodb\date_time`；
@@ -15,21 +31,6 @@
 
 ```
 mongodb://{user}:{pass}@{host}:{port}[,{host}:{port}, ...]/{database}?{option1=value1}[&option2=value2& ...]
-```
-
-**示例**：
-``` PHP
-// ...
-$cli = yield flame\mongodb\connect("mongodb://127.0.0.1:27017/database");
-// 以下两行代码功能相同
-$collection = $cli->col_abc;
-$collection = $cli->collection("col_abc");
-// 执行指令
-$cli->execute(["find"=> ..., ...]/*, false*/);
-$cli->execute(["update"=> ..., ...], true); // 更新型指令回去副本集主节点执行
-// collection 中存在简化接口
-$collection->find(...);
-$collection->update(...);
 ```
 
 **注意**:

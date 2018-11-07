@@ -11,7 +11,7 @@ namespace mysql {
 	, min_(6)
 	, max_(128)
 	, size_(0)
-	, wait_guard(controller_->context_ex) {
+	, wait_guard(context) {
 
 	}
 	_connection_pool::~_connection_pool() {

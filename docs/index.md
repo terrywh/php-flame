@@ -16,9 +16,6 @@
 	4. [Kafka](/php-flame/kafka) - 简单客户端；
 	5. [Mongodb](/php-flame/mongodb) - 简单客户端;
 
-## 仓库
-[https://github.com/terrywh/php-flame/](https://github.com/terrywh/php-flame/)
-
 ## 示例
 ``` PHP
 <?php
@@ -47,9 +44,22 @@ flame\go(function() {
 flame\run();
 ```
 
+## 仓库
+[https://github.com/terrywh/php-flame/](https://github.com/terrywh/php-flame/)
+
 ## 使用
+* 程序入口大致固定：
+```
+<?php
+// 框架初始化：
+flame\init("进程名称");
+flame\go(function() {
+/*首个协程, 逻辑从这里开始*/
+});
+// 框架主流程调度：
+flame\run();
+```
 * 本文档函数说明前置 `yield` 关键字, 标识此函数为 "**异步函数**";
 * 调用异步函数需要使用 `yield fn(...);` 形式；
-* 存在异步函数调用的封装函数也是异步函数 (也需要 `yield fn(...);` 形式调用)；
-* 使用 flame\go() 启动第一个"异步函数";
-* 构造、析构函数等特殊函数无法定义为异步函数；(无法在构造或析构函数中调用异步函数)
+* 存在异步函数调用的**封装函数**也是异步函数 (即：需要 `yield fn(...);` 形式调用)；
+* 构造、析构函数等特殊函数无法定义为异步函数 (即：无法在构造或析构函数中调用异步函数);

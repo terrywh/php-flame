@@ -2,6 +2,39 @@
 
 提供基本的异步 mysql 协程式客户端；内部使用连接池机制维护所有与 mysql 服务器的连接；
 
+**示例**：
+``` PHP
+$client = yield flame\mysql\connect("mysql://user:pass@host:port/dbname");
+// 手工进行 ESCAPE
+assert($client->escape("a.b", '`') == '`a`.`b`');
+assert($client->escape("a'b") == "'a\\'b'");
+// 执行自定义 SQL
+$rs = yield $client->query("SELECT * FROM `test_0`");
+$rs = yield $client->query("INSERT `test_0` VALUES(NULL, 3333)");
+// 取回数据（二维数组，[["KEY"=>"VAL","KEY"=>"VAL"], [...], ...])
+$data = yield $rs->fetch_all();
+assert(count($data) > 0);
+for($i=0;$i<1000;++$i) {
+	// 事务
+	$tx = yield $client->begin_tx();
+	// 简化查询方法
+	$rs = yield $tx->select("test_0",
+		/* Fields */ ["key","val"],
+		/* WHERE */  ["key" => "1234"],
+		/* SORT */ ["key"=>1],
+		/* LIMIT */[10, 20]);
+	$data = yield $rs->fetch_all();
+	assert(count($data) > 0);
+
+	$rs = yield $tx->insert("test_0", ["key"=>null, "val" => "3333"]);
+	assert($rs->insert_id > 0);
+	$rs = yield $tx->query("INSERT INTO `test_1` VALUES(NULL, 3333)");
+	assert($rs->insert_id > 0);
+	// 提交事务
+	yield $tx->commit();
+}
+```
+
 ### `yield flame\mysql\connect(string $url[, array $options]) -> flame\mysql\client`
 连接 MySQL 数据库, 并返回数据库客户端对象; 连接地址 `$url` 形式如下:
 ```

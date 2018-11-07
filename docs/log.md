@@ -3,10 +3,17 @@
 
 提供简单 log 日志 API，并提供简单的日志重载功能;
 
+**示例**:
+``` PHP
+$message = "message";
+$data = ["a"=>"b"];
+flame\log\info("this", "is", "the", $message, $data);
+```
+
 ### `class flame\log\logger`
 日志类封装
 
-**示例**:
+
 
 #### `logger::__construct([string $filepath])`
 创建 `logger` 对象, 可选的将输出重定向到 `$filepath` 文件;

@@ -5,12 +5,11 @@
 #### `void flame\init(string $title[, array $options])`
 设置并初始化框架, 进程标题 `$title` 及可能的配置；目前可用选项如下:
 
-* `debug` `Boolean` - 默认 `true`, 在调试模式时: 
+* `debug` `Boolean` - 默认 `true`, 在调试模式时:
 	1. 工作进程崩溃不会自动重启(所有子进城退出后主进程结束);
 	2.  
 * `worker` `Integer` - 工作进程数量, 默认(至少) 1 个 (最多 256 个);
-* `logger` `String` - 重定向日志输出到指定路径文件;
-
+* `logger` `String` - 重定向日志输出到指定路径文件, 为空或默认状态会重定向到标准错误输出;
 
 **示例**：
 ``` php
@@ -22,25 +21,35 @@ flame\init("test_app", [ // 可选
 
 **注意**：
 * 必须在所有框架函数执行前调用 `init` 进行初始化;
-* 应用名称设置的进程名，后附加 `(flame/m)`（主进程）或 `(flame/${x})` (工作进程) 或 `(flame/w)` (单进程) 以示区分；
+* 应用名称设置的进程名，后附加 `(flame/m)`（主进程）或 `(flame/${x})` (工作进程) 以示区分；
+* !!! 一定在生产环境设置 `debug` 选项为 `false` !!!
 
 #### `void flame\go(callable $g)`
 生成并启动一个“协程”；
 
 **示例**：
 ``` PHP
-<?php
 function g1() {
 	yield 1;
 	yield 2;
 }
 // 传入 Generator 函数的定义：
 flame\go(g1);
+// 回调
 flame\go(function() {
 	yield 3;
 	yield 4;
 
 });
+class A {
+	function b() {
+		yield 4;
+		yield 5;
+	}
+}
+$a = new A();
+// 对象成员
+flame\go([$a, "b"]);
 ```
 
 **注意**：
