@@ -7,21 +7,19 @@ namespace redis {
 	_command::_command(const php::string& cmd, const php::array& arg, int m)
 	: _command_base(m)
 	, cmd_(cmd)
-	, arg_(arg)
+	, arg_(arg.size())
 	, status_(-1) {
-		for(auto i=arg_.begin(); i!=arg_.end(); ++i) {
-			i->second.to_string();
+		for(int i=0; i<arg.size(); ++i) {
+			arg_[i] = arg[i].to_string();
 		}
 	}
 	_command::_command(const php::string& cmd, const php::parameters& arg, int m)
 	: _command_base(m)
 	, cmd_(cmd)
+	, arg_(arg.size())
 	, status_(-1) {
-		arg_ = php::array(arg.size());
-		for(int i=0;i<arg.size();++i) {
-			php::value v = arg[i];
-			v.to_string();
-			arg_[i] = v;
+		for(int i=0; i<arg.size(); ++i) {
+			arg_[i] = arg[i].to_string();
 		}
 	}
 	_command::_command(const php::string& cmd, int m)

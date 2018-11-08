@@ -10,6 +10,7 @@ namespace mysql {
 	void transaction::declare(php::extension_entry& ext) {
 		php::class_entry<transaction> class_transaction("flame\\mysql\\transaction");
 		class_transaction
+			.method<&transaction::__construct>("__construct", {}, php::PRIVATE)
 			.method<&transaction::escape>("escape")
 			.method<&transaction::query>("query")
 			.method<&transaction::insert>("insert")
@@ -21,6 +22,12 @@ namespace mysql {
 			.method<&transaction::commit>("commit")
 			.method<&transaction::rollback>("rollback");
 		ext.add(std::move(class_transaction));
+	}
+	transaction::transaction() {
+		
+	}
+	transaction::~transaction() {
+
 	}
 	php::value transaction::commit(php::parameters& params) {
 		std::shared_ptr<coroutine> co = coroutine::current;

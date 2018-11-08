@@ -99,17 +99,21 @@ mongodb 客户端（连接）；
 
 ### `class flame\mongodb\object_id`
 
-#### `object_id::__construcrt()`
+#### `object_id::__construcrt([string $str_oid])`
+构建新的 `object_id` 对象，或从享有 `oid` 的文本创建对应对象；
 
 #### `object_id::__toString()`
 #### `object_id::jsonSerialize()`
 序列化及调试输出;
 
-#### `object_id::unix()`
+#### `Integer object_id::unix()`
 秒级时间戳，表示当前 `object_id` 的创建时间;
 
-#### `date_time::__toDateTime()`
+#### `DateTime date_time::__toDateTime()`
 转换为 PHP 内置 [`DateTime`](http://php.net/manual/en/class.datetime.php) 类型对象；
+
+#### `boolean object_id::equal(flame\mongodb\object_id $oid)`
+判断当前对象是否与另一个 `object_id` 相等；
 
 ### `class flame\db\mongodb\date_time`
 

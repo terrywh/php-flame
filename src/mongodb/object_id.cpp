@@ -11,7 +11,8 @@ namespace mongodb {
 			.method<&object_id::to_datetime>("__toDateTime")
 			.method<&object_id::unix>("unix")
 			.method<&object_id::to_json>("jsonSerialize")
-			.method<&object_id::to_json>("__debugInfo");
+			.method<&object_id::to_json>("__debugInfo")
+			.method<&object_id::equal>("equal");
 		ext.add(std::move(class_object_id));
 	}
 	php::value object_id::__construct(php::parameters& params) {
@@ -40,6 +41,20 @@ namespace mongodb {
 		bson_oid_to_string(&oid_, str.data());
 		oid.set("$oid", str);
 		return std::move(oid);
+	}
+	php::value object_id::equal(php::parameters& params) {
+		if(params[0].typeof(php::TYPE::STRING)) {
+			php::string data = params[0];
+			bson_oid_t oid;
+			bson_oid_init_from_string(&oid, data.c_str());
+			return bson_oid_equal(&oid_, &oid);
+		}else if(params[0].instanceof(php::class_entry<object_id>::entry())) {
+			php::object obj = params[0];
+			object_id*  ptr = static_cast<object_id*>(php::native(obj));
+			return bson_oid_equal(&oid_, &ptr->oid_);
+		}else{
+			return false;
+		}
 	}
 }
 }

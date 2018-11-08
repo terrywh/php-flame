@@ -1,3 +1,4 @@
+
 #pragma once
 
 namespace flame {
@@ -27,4 +28,3 @@ namespace redis {
 	};
 }
 }
-

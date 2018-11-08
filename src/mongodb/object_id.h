@@ -10,6 +10,7 @@ namespace mongodb {
 		php::value unix(php::parameters& params);
 		php::value to_datetime(php::parameters& params);
 		php::value to_json(php::parameters& params);
+		php::value equal(php::parameters& params);
 	private:
 		bson_oid_t oid_;
 		friend void append_object(bson_t* doc, const php::string& key, const php::object& o);

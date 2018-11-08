@@ -8,8 +8,8 @@ namespace mysql {
 	_connection_pool::_connection_pool(std::shared_ptr<php::url> url, std::string charset)
 	: url_(url)
 	, charset_(charset)
-	, min_(6)
-	, max_(128)
+	, min_(2)
+	, max_(16)
 	, size_(0)
 	, wait_guard(context) {
 
@@ -66,7 +66,7 @@ namespace mysql {
 				--size_;
 			}
 		}
-		if(size_ > max_) return; // 已复用，结束；已建立了足够多的连接, 需要等待
+		if(size_ >= max_) return; // 已复用，结束；已建立了足够多的连接, 需要等待
 
 		MYSQL* c = mysql_init(nullptr);
 		mysql_options(c, MYSQL_SET_CHARSET_NAME, charset_.c_str());

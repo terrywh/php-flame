@@ -10,6 +10,8 @@ namespace mysql {
 		i_ = c->charset;
 		s_ = c->server_status;
 	}
+	_connection_lock::~_connection_lock() {
+	}
 	// 以下函数应在主线程调用
 	_connection_lock& _connection_lock::exec(worker_fn_t&& wk, master_fn_t&& fn) {
 		auto ptr = this->shared_from_this();

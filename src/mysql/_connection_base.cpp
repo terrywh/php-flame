@@ -84,9 +84,8 @@ ESCAPE_FINISHED:
 			}else{
 				php::object rs(php::class_entry<result>::entry());
 				result* rs_ = static_cast<result*>(php::native(rs));
-				// 持有当前连接（不放回连接池）
-				rs_->c_.reset(new _connection_lock(c)); // 继续持有当前连接
 				if(r) { // 查询型返回
+					rs_->c_.reset(new _connection_lock(c)); // 继续持有当前连接
 					rs_->r_ = r;
 					rs_->f_ = mysql_fetch_fields(r);
 					rs_->n_ = mysql_num_fields(r);
