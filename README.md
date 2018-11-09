@@ -56,7 +56,7 @@ source /home/wuhao/.bashrc
 
 * [libphpext](https://github.com/terrywh/libphpext.git) - 依赖于 PHP
 ```
-CXXFLAGS="-g -O2" make -j4
+CXXFLAGS="-O2" make -j4
 make PREFIX=/data/vendor/libphpext-x.x.x install
 ```
 
@@ -67,9 +67,12 @@ make PREFIX=/data/vendor/parser-x.x.x install
 
 * [AMQP-CPP](https://github.com/CopernicaMarketingSoftware/AMQP-CPP.git) - 仅编译静态库
 ```
-make CPP="clang++" CPPFLAGS="-fPIC -Wall -c -I../include -std=c++11 -MD" static
-sudo make PREFIX="/data/vendor/amqp-3.1.0" install
-rm -f /data/vendor/amqp-3.1.0/lib/libamqpcpp.so*
+mkdir build && cd build
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-3.2.0 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release ../
+make
+make install
+// 仅保留静态库
+rm /data/vendor/librdkafka-0.11.6/lib/librdkafka*.so*
 ```
 
 * [MySQL-Connector-C](https://downloads.mysql.com/archives/c-c/) - 6.1.11 Linux - Generic 64bit (注意仅保留静态库)
@@ -80,13 +83,13 @@ rm -f /data/vendor/amqp-3.1.0/lib/libamqpcpp.so*
 
 * [mongo-c-driver](http://mongoc.org/libmongoc/current/index.html) - 仅保留静态库
 ```
-mkdir mongo-c-driver-1.11.0-build
+mkdir stage && cd stage
 cd mongo-c-driver-1.11.0-build
-cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.11.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../mongo-c-driver-1.11.0
-make -j4
-sudo make install
-sudo rm -f /data/vendor/mongoc-1.11.0/lib/libbson-1.0.so*
-sudo rm -f /data/vendor/mongoc-1.11.0/lib/libmongoc-1.0.so*
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.13.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+make
+make install
+rm -f /data/vendor/mongoc-1.13.0/lib/libbson-1.0.so*
+rm -f /data/vendor/mongoc-1.13.0/lib/libmongoc-1.0.so*
 ```
 
 #### 编译
