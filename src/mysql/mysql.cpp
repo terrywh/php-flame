@@ -4,41 +4,42 @@
 #include "_connection_base.h"
 #include "_connection_pool.h"
 #include "client.h"
+#include "result.h"
+#include "tx.h"
 
 namespace flame::mysql {
-    php::value connect(php::parameters& params) {
-		php::object obj(php::class_entry<client>::entry());
+    
+    void declare(php::extension_entry &ext)
+    {
+        ext
+            .on_module_startup([](php::extension_entry &ext) -> bool
+            {
+                return mysql_library_init(0, nullptr, nullptr) == 0;
+            })
+            .on_module_shutdown([](php::extension_entry &ext) -> bool
+            {
+                mysql_library_end();
+                return true;
+            })
+            .function<connect>("flame\\mysql\\connect",
+            {
+                {"url", php::TYPE::STRING},
+            });
+        client::declare(ext);
+        result::declare(ext);
+        tx::declare(ext);
+    }
 
-        client *ptr = static_cast<client *>(php::native(obj));
-        std::string charset {"utf8"};
-		if(params.size() > 1) {
-			php::array opts = params[1];
-			if(opts.exists("charset")) {
-				charset = opts.get("charset").to_string();
-			}
-		}
+    php::value connect(php::parameters& params)
+    {
         url u(params[0]);
-
-        ptr->cp_.reset(new _connection_pool(u, charset));
+        php::object obj(php::class_entry<client>::entry());
+        client *ptr = static_cast<client *>(php::native(obj));
+        ptr->cp_.reset(new _connection_pool(u));
         ptr->cp_->sweep(); // 启动自动清理扫描
         // TODO 确认第一个连接建立
         return std::move(obj);
 	}
-    void declare(php::extension_entry &ext) {
-        ext
-            .on_module_startup([](php::extension_entry &ext) -> bool {
-                return mysql_library_init(0, nullptr, nullptr) == 0;
-            })
-            .on_module_shutdown([](php::extension_entry &ext) -> bool {
-                mysql_library_end();
-                return true;
-            })
-            .function<connect>("flame\\mysql\\connect", {
-                {"url", php::TYPE::STRING},
-            });
-        client::declare(ext);
-    }
-
     // 相等
     static void where_eq(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond)
     {

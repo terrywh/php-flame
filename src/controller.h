@@ -26,21 +26,23 @@ namespace flame {
 	};
 	class controller {
 	public:
-	  boost::asio::io_context context_x;
-	  boost::asio::io_context context_y;
+		boost::asio::io_context context_x;
+		boost::asio::io_context context_y;
 
-	  enum class process_type
-	  {
-		  UNKNOWN = 0,
-		  MASTER = 1,
-		  WORKER = 2,
-	  } type;
-	  boost::process::environment env;
-	  boost::program_options::variables_map options;
-	  enum class controller_status
-	  {
-		  UNKNOWN = 0,
-	  } status;
+		enum class process_type
+		{
+			UNKNOWN = 0,
+			MASTER = 1,
+			WORKER = 2,
+		} type;
+		boost::process::environment env;
+		boost::program_options::variables_map options;
+		enum class controller_status
+		{
+			UNKNOWN = 0,
+		} status;
+
+		std::thread::id mthread_id;
 	private:
 		// 核心进程对象
 		std::unique_ptr<controller_master> master_;

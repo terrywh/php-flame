@@ -2,13 +2,27 @@
 
 flame\init("mysql_1");
 
-flame\go(function() {
-    echo "1\n";
-    $cli = flame\mysql\connect("mysql://ucenter_rw:eVrFSRa2NLdoIPbITvPe@rm-2ze8xu255t0523w07.mysql.rds.aliyuncs.com:3306/ucenter");
-    echo "2\n";
-    var_dump( $cli->escape('a.b') );
-    echo "3\n";
-});
-
+for($i=0;$i<5;++$i) {
+    flame\go(function() {
+        $cli = flame\mysql\connect("mysql://user:password@host:port/database");
+        var_dump( $cli->escape('a.b', '`') );
+        $rs = $cli->query("SELECT * FROM `test_0` LIMIT 3");
+        $row = $rs->fetch_row();
+        var_dump($row);
+        $row = $rs->fetch_row();
+        var_dump($row);
+        $data = $rs->fetch_all();
+        var_dump($data);
+        $tx = $cli->begin_tx();
+        try{
+            $tx->insert("test_0", ["key"=>123, "val"=>"456"]);
+            $tx->update("test_0", ["key"=>123], ["val"=>"567"]);
+            $tx->commit();
+        }catch(Exception $ex) {
+            $tx->rollback();
+            return;
+        }    
+    });
+}
 
 flame\run();

@@ -15,6 +15,7 @@ controller::controller()
 	, env(boost::this_process::environment())
 	, status(controller_status::UNKNOWN) {
 
+	mthread_id = std::this_thread::get_id();
 }
 
 void controller::initialize() {

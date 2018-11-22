@@ -22,6 +22,9 @@ namespace flame
     void coroutine::start(php::callable fn)
     {
         auto co = std::make_shared<coroutine>(std::move(fn));
+        // 需要即时保存 PHP 堆栈
+        coroutine::save_context(co->php_);
+        // 事实上的协程启动会稍后
         boost::asio::post(gcontroller->context_x, [co] {
             // co->c1_ = boost::context::callcc([co] (auto &&cc) {
             co->c1_ = boost::context::fiber([co] (boost::context::fiber &&cc) {
@@ -37,7 +40,7 @@ namespace flame
                 coroutine::current = nullptr;
                 return std::move(co->c2_);
             });
-            co->c1_ = std::move(co->c1_).resume();
+            co->resume();
         });
     }
     coroutine::coroutine(php::callable &&fn)
@@ -73,13 +76,18 @@ namespace flame
     {
         error = e;
         nsize = n;
+
+        assert(std::this_thread::get_id() == gcontroller->mthread_id);
         co_->resume();
     }
-    void coroutine_handler::resume() {
+    void coroutine_handler::resume()
+    {
+        assert(std::this_thread::get_id() == gcontroller->mthread_id);
         co_->resume();
     }
     void coroutine_handler::suspend()
     {
+        assert(std::this_thread::get_id() == gcontroller->mthread_id);
         co_->suspend();
     }
 }

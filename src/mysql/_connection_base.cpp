@@ -1,4 +1,7 @@
+#include "../controller.h"
 #include "_connection_base.h"
+#include "_connection_lock.h"
+#include "result.h"
 
 namespace flame::mysql
 {
@@ -78,5 +81,102 @@ namespace flame::mysql
         }
         }
 ESCAPE_FINISHED:;
+    }
+
+    php::object _connection_base::query(std::shared_ptr<MYSQL> conn, std::string sql, coroutine_handler& ch) {
+        MYSQL_RES* rst = nullptr;
+        int err = 0;
+        boost::asio::post(gcontroller->context_y, [&err, &conn, &ch, query = std::move(sql), &rst] ()
+        {
+            // 在工作线程执行查询
+            err = mysql_real_query(conn.get(), query.c_str(), query.size());
+            if (err == 0)
+            {
+                // 防止锁表, 均使用 store 方式
+                rst = mysql_store_result(conn.get());
+                if (!rst && mysql_field_count(conn.get()) > 0)
+                {
+                    err = -1;
+                }
+            }
+            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+        });
+        ch.suspend();
+        if(err != 0)
+        {
+            int err = mysql_errno(conn.get());
+            throw php::exception(zend_ce_exception,
+                                 (boost::format("failed to query MySQL server: (%1%) %2%") % err % mysql_error(conn.get())).str(),
+                                 err);
+        }
+        php::object obj(php::class_entry<result>::entry());
+        result* ptr = static_cast<result*>(php::native(obj));
+        if(rst) // 存在结果集
+        {
+            ptr->cl_.reset(new _connection_lock(conn));
+            ptr->rs_.reset(rst, mysql_free_result);
+            ptr->f_ = mysql_fetch_fields(rst);
+            ptr->n_ = mysql_num_fields(rst);
+        }
+        else // 更新型操作
+        {
+            obj.set("affect_rows", static_cast<std::int64_t>(mysql_affected_rows(conn.get())));
+            obj.set("insert_id", static_cast<std::int64_t>(mysql_insert_id(conn.get())));
+        }
+        return std::move(obj);
+    }
+
+    php::array _connection_base::fetch(std::shared_ptr<MYSQL> conn, std::shared_ptr<MYSQL_RES> rst, MYSQL_FIELD *f, unsigned int n, coroutine_handler &ch)
+    {
+        MYSQL_ROW row;
+        unsigned long* len;
+        boost::asio::post(gcontroller->context_y, [&rst, &ch, &row, &len] () {
+            row = mysql_fetch_row(rst.get());
+            if(row) {
+                len = mysql_fetch_lengths(rst.get());
+            }
+            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+        });
+        ch.suspend();
+        if(!row) {
+            int err = mysql_errno(conn.get());
+            if(err != 0) {
+                throw php::exception(zend_ce_exception,
+                                     (boost::format("failed to fetch MySQL row: (%1%) %2%") % err % mysql_error(conn.get())).str(),
+                                     err);
+            }else{
+                return nullptr;
+            }
+        }
+        php::array php_row {std::size_t(n)};
+        for(int i=0;i<n;++i) {
+            php::string field(f[i].name, f[i].name_length);
+            php::value  value;
+            switch(f[i].type) {
+                case MYSQL_TYPE_DOUBLE:
+                case MYSQL_TYPE_FLOAT:
+                    value = std::strtod(row[i], nullptr);
+                    break;
+                case MYSQL_TYPE_TINY:
+                case MYSQL_TYPE_SHORT:
+                case MYSQL_TYPE_LONG:
+                case MYSQL_TYPE_INT24:
+                    value = std::strtol(row[i], nullptr, 10);
+                    break;
+                case MYSQL_TYPE_LONGLONG:
+                    value = static_cast<std::int64_t>(std::strtoll(row[i], nullptr, 10));
+                    break;
+                case MYSQL_TYPE_DATETIME: {
+                    php::object obj( php::CLASS{php_date_get_date_ce()} );
+                    obj.call("__construct", {php::string(row[i], len[i])});
+                    value = std::move(obj);
+                    break;
+                }
+                default:
+                    value = php::string(row[i], len[i]);
+            }
+            php_row.set(field, value);
+        }
+        return php_row;
     }
 } // namespace flame::mysql

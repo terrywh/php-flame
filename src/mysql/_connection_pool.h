@@ -10,14 +10,12 @@ namespace flame::mysql
     class _connection_pool : public _connection_base, public std::enable_shared_from_this<_connection_pool>
     {
     public:
-        _connection_pool(url u, std::string charset);
+        _connection_pool(url u);
         ~_connection_pool();
         std::shared_ptr<MYSQL> acquire(coroutine_handler &ch) override;
         void sweep();
-
-      private:
+    private:
         url                               url_;
-        std::string                   charset_;
         const std::uint16_t               min_;
         const std::uint16_t               max_;
         std::uint16_t                    size_;
