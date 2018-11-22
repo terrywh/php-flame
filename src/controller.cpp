@@ -58,7 +58,6 @@ void controller_master::run() {
 	// });
 	// 5. 启动 context_x 运行
 	gcontroller->context_x.run();
-	std::cout << "master: done\n";
 }
 
 controller_worker::controller_worker()
@@ -68,6 +67,7 @@ controller_worker::controller_worker()
 }
 
 void controller_worker::run() {
+	auto work = boost::asio::make_work_guard(gcontroller->context_y);
 	// 子进程的启动过程:
 	// 1. 监听信号进行日志重载或停止
 	// signal_.async_wait([this] (const boost::system::error_code& error, int signal) {
@@ -82,6 +82,11 @@ void controller_worker::run() {
 	}
 	// 3. 启动 context_x 运行
 	gcontroller->context_x.run();
+	work.reset();
+	for (int i = 0; i < 4; ++i)
+	{
+		thread_[i].join();
+	}
 }
 
 

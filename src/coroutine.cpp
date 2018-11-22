@@ -24,7 +24,8 @@ namespace flame
         auto co = std::make_shared<coroutine>(std::move(fn));
         boost::asio::post(gcontroller->context_x, [co] {
             // co->c1_ = boost::context::callcc([co] (auto &&cc) {
-            co->c1_ = boost::context::fiber([co](boost::context::fiber &&cc) {
+            co->c1_ = boost::context::fiber([co] (boost::context::fiber &&cc) {
+                auto work = boost::asio::make_work_guard(gcontroller->context_x);
                 // 启动进入协程
                 coroutine::current = co.get();
                 zend_vm_stack_init();
@@ -73,7 +74,9 @@ namespace flame
         error = e;
         nsize = n;
         co_->resume();
-        // boost::asio::post(co_->sq_, std::bind(&coroutine::resume, co_));
+    }
+    void coroutine_handler::resume() {
+        co_->resume();
     }
     void coroutine_handler::suspend()
     {

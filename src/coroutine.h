@@ -2,7 +2,8 @@
 #include "vendor.h"
 
 namespace flame {
-	class coroutine : public std::enable_shared_from_this<coroutine> {
+	class coroutine : public std::enable_shared_from_this<coroutine>
+	{
 	public:
 		struct php_context_t
 		{
@@ -27,8 +28,6 @@ namespace flame {
 		// boost::context::continuation c2_;
 		boost::context::fiber c1_;
 		boost::context::fiber c2_;
-
-
 		php_context_t php_;
 	};
 
@@ -39,18 +38,12 @@ namespace flame {
 		coroutine_handler(coroutine *co);
 		~coroutine_handler();
 		void operator()(const boost::system::error_code& e, std::size_t n = 0);
+		void resume();
 		void suspend();
 		boost::system::error_code error;
 		std::size_t 	          nsize;
 		coroutine *co_;
-
-		friend bool asio_handler_is_continuation(coroutine_handler *ch)
-		{
-			std::cout << "continuation\n";
-			return true;
-		}
-
-	  private:
+	private:
 		
 	};
 } // namespace flame

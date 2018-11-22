@@ -54,3 +54,12 @@ make install
 rm /data/vendor/rdkafka-0.11.6/lib/*.so*
 ```
 
+#### HttpParser
+``` Bash
+mkdir -p /data/vendor/http-parser-2.8.1/lib
+mkdir -p /data/vendor/http-parser-2.8.1/include
+CFLAGS=-fPIC make libhttp_parser.o
+cp libhttp_parser.o /data/vendor/http-parser-2.8.1/lib
+cp http_parser.h /data/vendor/http-parser-2.8.1/include
+```
+

@@ -3,6 +3,19 @@
 #include "core.h"
 
 namespace flame {
+    static php::value init(php::parameters& params) {
+        gcontroller->initialize();
+        return nullptr;
+    }
+    static php::value go(php::parameters& params) {
+        php::callable fn = params[0];
+        coroutine::start(fn);
+        return nullptr;
+    }
+    static php::value run(php::parameters& params) {
+        gcontroller->run();
+        return nullptr;
+    }
     void declare(php::extension_entry &ext) {
         ext
             .on_module_startup([](php::extension_entry &ext) -> bool {
@@ -17,18 +30,5 @@ namespace flame {
             })
             .function<run>("flame\\run");
     }
-    php::value init(php::parameters& params) {
-        gcontroller->initialize();
-        return nullptr;
-    }
-    php::value go(php::parameters& params) {
-        php::callable fn = params[0];
-        coroutine::start(fn);
-        return nullptr;
-    }
     
-    php::value run(php::parameters& params) {
-        gcontroller->context_x.run();
-        return nullptr;
-    }
 }

@@ -15,6 +15,7 @@ set(VENDOR_MYSQL /data/vendor/mysqlc-6.1.11)
 set(VENDOR_MONGODB /data/vendor/mongoc-1.13.0)
 set(VENDOR_AMQP /data/vendor/amqpcpp-4.0.0)
 set(VENDOR_RDKAFKA /data/vendor/rdkafka-0.11.6)
+set(VENDOR_HTTPPARSER /data/vendor/http-parser-2.8.1)
 # 基本参数
 set(CMAKE_BUILD_TYPE "Debug")
 # set(CMAKE_C_COMPILER /data/vendor/llvm-7.0.0/bin/clang)
@@ -45,9 +46,11 @@ target_include_directories(FLAME SYSTEM PRIVATE
     ${VENDOR_MONGODB}/include/libbson-1.0
     ${VENDOR_AMQP}/include
     ${VENDOR_RDKAFKA}/include
+    ${VENDOR_HTTPPARSER}/include
 )
 # 链接库
 target_link_libraries(FLAME
+    ${VENDOR_HTTPPARSER}/lib/libhttp_parser.o
     ${VENDOR_PHPEXT}/lib/libphpext.a
     ${VENDOR_MYSQL}/lib/libmysqlclient.a
     ${VENDOR_MONGODB}/lib/libmongoc-static-1.0.a

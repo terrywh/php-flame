@@ -1,4 +1,5 @@
 #pragma once
+#include "controller.h"
 #include "coroutine.h"
 
 namespace flame {
@@ -17,8 +18,3 @@ namespace flame {
         coroutine_handler& ch_;
     };
 }
-
-
-auto cmd = std::make_shared<command_xxx>(ch, xxxx);
-cmd->execute();
-php::object = .,..... cmd->xxxxx 

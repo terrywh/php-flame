@@ -1,6 +1,7 @@
 #include "vendor.h"
 #include "core.h"
 #include "time/time.h"
+#include "mysql/mysql.h"
 
 extern "C"
 {
@@ -35,7 +36,7 @@ extern "C"
         // flame::http::declare(ext);
         // flame::redis::declare(ext);
         // flame::rabbitmq::declare(ext);
-        // flame::mysql::declare(ext);
+        flame::mysql::declare(ext);
         // flame::mongodb::declare(ext);
         // flame::kafka::declare(ext);
         return ext;
