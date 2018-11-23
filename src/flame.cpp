@@ -1,5 +1,6 @@
 #include "vendor.h"
 #include "core.h"
+#include "os/os.h"
 #include "time/time.h"
 #include "mysql/mysql.h"
 #include "redis/redis.h"
@@ -30,11 +31,11 @@ extern "C"
             .desc({"vendor/mongoc", MONGOC_VERSION_S});
 
         flame::declare(ext);
+        flame::os::declare(ext);
         flame::time::declare(ext);
         flame::mysql::declare(ext);
         flame::redis::declare(ext);
         flame::mongodb::declare(ext);
-        // flame::os::declare(ext);
         // flame::log::declare(ext);
         // flame::udp::declare(ext);
         // flame::tcp::declare(ext);

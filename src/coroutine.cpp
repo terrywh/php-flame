@@ -63,7 +63,10 @@ namespace flame
         coroutine::current = this;
         c1_ = std::move(c1_).resume();
     }
-
+    coroutine_handler::coroutine_handler()
+        : co_(nullptr) 
+    {
+    }
     coroutine_handler::coroutine_handler(coroutine *co)
         : co_(co)
     {
@@ -71,6 +74,15 @@ namespace flame
     coroutine_handler::~coroutine_handler()
     {
         // std::cout << "~coroutine_handler\n";
+    }
+    void coroutine_handler::reset(coroutine* co)
+    {
+        assert(co_ == nullptr);
+        co_ = co;
+    }
+    coroutine_handler::operator bool() const
+    {
+        return co_ != nullptr;
     }
     void coroutine_handler::operator()(const boost::system::error_code &e, std::size_t n)
     {

@@ -31,8 +31,8 @@ namespace flame::mysql
         ch.suspend();
         if(err != 0) {
             err = mysql_errno(conn_.get());
-            throw php::exception(zend_ce_exception,
-                                 (boost::format("failed to fetch MySQL row: (%1%) %2%") % err % mysql_error(conn_.get())).str(),
+            throw php::exception(zend_ce_error,
+                                 (boost::format("failed to begin transaction: (%1%) %2%") % err % mysql_error(conn_.get())).str(),
                                  err);
         }
         
@@ -50,7 +50,7 @@ namespace flame::mysql
         {
             err = mysql_errno(conn_.get());
             throw php::exception(zend_ce_exception,
-                                 (boost::format("failed to fetch MySQL row: (%1%) %2%") % err % mysql_error(conn_.get())).str(),
+                                 (boost::format("failed to commit MySQL tx: (%1%) %2%") % err % mysql_error(conn_.get())).str(),
                                  err);
         }
     }
@@ -66,7 +66,7 @@ namespace flame::mysql
         {
             err = mysql_errno(conn_.get());
             throw php::exception(zend_ce_exception,
-                                 (boost::format("failed to fetch MySQL row: (%1%) %2%") % err % mysql_error(conn_.get())).str(),
+                                 (boost::format("failed to rollback MySQL tx: (%1%) %2%") % err % mysql_error(conn_.get())).str(),
                                  err);
         }
     }

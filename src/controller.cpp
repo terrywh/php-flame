@@ -77,7 +77,6 @@ void controller_worker::run() {
 	// 2. 启动线程池, 并使用线程池运行 context_y
 	thread_.resize(3);
 	for(int i=0;i<thread_.size();++i) {
-		std::cout << "worker: " << i << std::endl;
 		thread_[i] = std::thread([this] {
 			gcontroller->context_y.run();
 		});

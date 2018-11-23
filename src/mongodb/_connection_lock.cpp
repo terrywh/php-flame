@@ -28,7 +28,7 @@ namespace flame::mongodb
         ch.suspend();
         if (has) // 发生了错误
         {
-            throw php::exception(zend_ce_exception,
+            throw php::exception(zend_ce_error,
                     (boost::format("failed to fetch document: (%1%) %2%") % err->code % err->message).str(),
                     err->code);
         }

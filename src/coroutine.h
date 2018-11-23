@@ -34,9 +34,12 @@ namespace flame {
 	struct coroutine_handler
 	{
 	public:
-		// coroutine_handler(std::shared_ptr<coroutine> co)
+		coroutine_handler();
 		coroutine_handler(coroutine *co);
 		~coroutine_handler();
+		// !!! 慎用: 目前仅用于空构造后指定协程
+		void reset(coroutine* co);
+		operator bool() const;
 		void operator()(const boost::system::error_code& e, std::size_t n = 0);
 		void resume();
 		void suspend();
