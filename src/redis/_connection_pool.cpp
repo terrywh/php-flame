@@ -132,13 +132,14 @@ namespace flame::redis
         { // 立刻分配使用
             std::function<void(std::shared_ptr<redisContext> c)> cb = await_.front();
             await_.pop_front();
-            auto ptr = this->shared_from_this();
+            auto self = this->shared_from_this();
             cb(
-                std::shared_ptr<redisContext>(c, [this, ptr] (redisContext *c)
+                // 释放回调函数须持有当前对象引用 self
+                // (否则连接池可能先于连接归还被销毁)
+                std::shared_ptr<redisContext>(c, [this, self](redisContext *c)
                 {
-                    boost::asio::post(guard_, std::bind(&_connection_pool::release, ptr, c));
-                })
-            );
+                    boost::asio::post(guard_, std::bind(&_connection_pool::release, self, c));
+                }));
         }
     }
     bool _connection_pool::ping(redisContext* c) {

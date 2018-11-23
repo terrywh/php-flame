@@ -109,21 +109,25 @@ ESCAPE_FINISHED:;
                                  (boost::format("failed to query MySQL server: (%1%) %2%") % err % mysql_error(conn.get())).str(),
                                  err);
         }
-        php::object obj(php::class_entry<result>::entry());
-        result* ptr = static_cast<result*>(php::native(obj));
+        
         if(rst) // 存在结果集
         {
+            php::object obj(php::class_entry<result>::entry());
+            result* ptr = static_cast<result*>(php::native(obj));
             ptr->cl_.reset(new _connection_lock(conn));
             ptr->rs_.reset(rst, mysql_free_result);
             ptr->f_ = mysql_fetch_fields(rst);
             ptr->n_ = mysql_num_fields(rst);
+            obj.set("stored_rows", static_cast<std::int64_t>(mysql_num_rows(rst)));
+            return std::move(obj);
         }
         else // 更新型操作
         {
-            obj.set("affect_rows", static_cast<std::int64_t>(mysql_affected_rows(conn.get())));
-            obj.set("insert_id", static_cast<std::int64_t>(mysql_insert_id(conn.get())));
+            php::array data(2);
+            data.set(php::string("affected_rows", 11), static_cast<std::int64_t>(mysql_affected_rows(conn.get())));
+            data.set(php::string("insert_id", 9), static_cast<std::int64_t>(mysql_insert_id(conn.get())));
+            return std::move(data);
         }
-        return std::move(obj);
     }
 
     php::array _connection_base::fetch(std::shared_ptr<MYSQL> conn, std::shared_ptr<MYSQL_RES> rst, MYSQL_FIELD *f, unsigned int n, coroutine_handler &ch)

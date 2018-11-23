@@ -3,6 +3,7 @@
 #include "time/time.h"
 #include "mysql/mysql.h"
 #include "redis/redis.h"
+#include "mongodb/mongodb.h"
 
 extern "C"
 {
@@ -32,6 +33,7 @@ extern "C"
         flame::time::declare(ext);
         flame::mysql::declare(ext);
         flame::redis::declare(ext);
+        flame::mongodb::declare(ext);
         // flame::os::declare(ext);
         // flame::log::declare(ext);
         // flame::udp::declare(ext);
@@ -40,7 +42,7 @@ extern "C"
         
         // flame::rabbitmq::declare(ext);
         
-        // flame::mongodb::declare(ext);
+        
         // flame::kafka::declare(ext);
         return ext;
     }

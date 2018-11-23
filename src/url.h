@@ -11,7 +11,8 @@ namespace flame {
         std::map<std::string, std::string> query;
         std::string   user;
         std::string   pass;
-    private:
-        
+
+        std::string   str();
+   
     };
 }

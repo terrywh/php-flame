@@ -42,13 +42,26 @@ namespace flame
         if (x.field_set & (1 << UF_QUERY)) {
             auto y = x.field_data[UF_QUERY];
             parser_t p('\0', '\0', '=', '\0', '\0', '&', [this](parser_t::entry_type et) {
+                std::string key = et.first;
                 std::string val = et.second;
+                // 一律小写 KEY
+                php::uppercase_inplace(key.data(), key.size());
                 val.resize(php::url_decode_inplace(val.data(), val.size()));
-                query[et.first] = val;
+                query[key] = val;
             });
             p.parse(s + y.off, y.len);
             p.end();
         }
+    }
+
+    std::string url::str() {
+        std::ostringstream ss;
+        ss << schema << "://" << user << ":" << pass << "@" << host << ":" << port << path << "?";
+        for(auto i=query.begin();i!=query.end();++i)
+        {
+            ss << i->first << "=" << i->second << "&";
+        }
+        return ss.str();
     }
 
 } // namespace flame

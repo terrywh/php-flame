@@ -85,13 +85,14 @@ class client {
     /**
      * 执行制定的 SQL 查询, 并返回结果
      * @param string $sql 
-     * @return result 结果对象
+     * @return mixed SELECT 型语句返回结果集对象 `result`; 否则返回关联数组, 一般包含 affected_rows / insert_id 两项;
      */
     function query(string $sql): result {}
     /**
      * 向指定表插入一行或多行数据
      * @param string $table 表名
      * @param array $data 待插入数据, 多行关联数组插入多行数据(以首行 KEY 做字段名); 普通关联数组插入一行数据;
+     * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
     function insert(string $table, array $data): result {}
     /**
@@ -100,6 +101,7 @@ class client {
      * @param mixed $where WHERE 子句, 请参考上文;
      * @param mixed $order ORDER 子句, 请参考上文;
      * @param mixed $limit LIMIT 子句, 请参考上文;
+     * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
     function delete(string $table, mixed $where, mixed $order, mixed $limit): result {}
     /**
@@ -109,6 +111,7 @@ class client {
      * @param mixed $modify 当 $modify 为字符串时, 直接拼接 "UPDATE ... SET $modify", 否则按惯例数组进行 KEY = VAL 拼接;
      * @param mixed $order ORDER 子句, 请参考上文;
      * @param mixed $limit LIMIT 子句, 请参考上文;
+     * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
     function update(string $table, mixed $where, mixed $modify, mixed $order, mixed $limit): result {}
     /**
@@ -150,15 +153,19 @@ class tx {
     /**
      * @see client::query()
      */
-    function query(string $sql): result {}
+    function query(string $sql): mixed {}
     /**
      * @see client::insert()
      */
-    function insert(string $table, array $data): result {}
+    function insert(string $table, array $data): array {}
+    /**
+     * @see client::delete()
+     */
+    function delete(string $table, mixed $where, mixed $order, mixed $limit): array {}
     /**
      * @see client::update()
      */
-    function update(string $table, array $where, mixed $modify, mixed $order = null, mixed $limit = null): result {}
+    function update(string $table, array $where, mixed $modify, mixed $order = null, mixed $limit = null): array {}
     /**
      * @see client::select()
      */
@@ -175,13 +182,9 @@ class tx {
 
 class result {
     /**
-     * @property Integer
+     * @property 结果集包含的记录行数
      */
-    public $affected_rows;
-    /**
-     * @property Integer
-     */
-    public $insert_id;
+    public $fetched_rows;
     /**
      * 取出下一行
      * @return 下一行数据关联数组;
