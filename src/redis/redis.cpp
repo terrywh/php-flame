@@ -1,6 +1,7 @@
 #include "redis.h"
 #include "_connection_pool.h"
 #include "client.h"
+#include "tx.h"
 
 namespace flame::redis
 {
@@ -11,7 +12,7 @@ namespace flame::redis
 			{"uri", php::TYPE::STRING}
 		});
 		client::declare(ext);
-		// tx::declare(ext);
+		tx::declare(ext);
 	}
 
     php::value connect(php::parameters &params)

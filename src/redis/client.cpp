@@ -1,6 +1,7 @@
 #include "../coroutine.h"
 #include "client.h"
 #include "_connection_pool.h"
+#include "tx.h"
 #include "_connection_lock.h"
 
 namespace flame::redis {
@@ -163,12 +164,12 @@ namespace flame::redis {
 		return cp_->exec(rc, name, params, reply_type::SIMPLE, ch);
 	}
 	php::value client::multi(php::parameters& params) {
-        // coroutine_handler ch{coroutine::current};
-        // auto conn_ = cp_->acquire(ch);
-		// php::object obj(php::class_entry<tx>::entry());
-		// tx* ptr = static_cast<tx*>(php::native(tx));
-		// ptr->cl_ = _connection_lock(conn_);
-		// return std::move(tx);
+        coroutine_handler ch{coroutine::current};
+        auto conn_ = cp_->acquire(ch);
+		php::object obj(php::class_entry<tx>::entry());
+		tx *ptr = static_cast<tx *>(php::native(obj));
+		ptr->cl_.reset(new _connection_lock(conn_));
+		return std::move(obj);
 	}
 	php::value client::unimplement(php::parameters& params) {
         throw php::exception(zend_ce_error, "This redis command is NOT yet implemented");

@@ -100,7 +100,7 @@ namespace flame::mysql
     }
 
     void _connection_pool::sweep() {
-        tm_.expires_from_now(std::chrono::seconds(300));
+        tm_.expires_from_now(std::chrono::seconds(60));
         // 注意, 实际的清理流程需要保证 guard_ 串行流程
         tm_.async_wait(boost::asio::bind_executor(guard_, [this] (const boost::system::error_code &error) {
             if(error) return; // 当前对象销毁时会发生对应的 abort 错误
