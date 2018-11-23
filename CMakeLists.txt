@@ -12,6 +12,7 @@ set(VENDOR_PHPEXT /data/vendor/phpext-1.1.0)
 set(VENDOR_PARSER /data/vendor/parser-1.0.0)
 set(VENDOR_BOOST /data/vendor/boost-1.68.0)
 set(VENDOR_MYSQL /data/vendor/mysqlc-6.1.11)
+set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
 set(VENDOR_MONGODB /data/vendor/mongoc-1.13.0)
 set(VENDOR_AMQP /data/vendor/amqpcpp-4.0.0)
 set(VENDOR_RDKAFKA /data/vendor/rdkafka-0.11.6)
@@ -42,6 +43,7 @@ target_include_directories(FLAME SYSTEM PRIVATE
     ${VENDOR_PHPEXT}/include
     ${VENDOR_PARSER}/include
     ${VENDOR_MYSQL}/include
+    ${VENDOR_HIREDIS}/include
     ${VENDOR_MONGODB}/include/libmongoc-1.0
     ${VENDOR_MONGODB}/include/libbson-1.0
     ${VENDOR_AMQP}/include
@@ -53,6 +55,7 @@ target_link_libraries(FLAME
     ${VENDOR_HTTPPARSER}/lib/libhttp_parser.o
     ${VENDOR_PHPEXT}/lib/libphpext.a
     ${VENDOR_MYSQL}/lib/libmysqlclient.a
+    ${VENDOR_HIREDIS}/lib/libhiredis.a
     ${VENDOR_MONGODB}/lib/libmongoc-static-1.0.a
     ${VENDOR_MONGODB}/lib/libbson-static-1.0.a
     ${VENDOR_AMQP}/lib/libamqpcpp.a

@@ -18,7 +18,7 @@ namespace flame {
 		static coroutine* current;
 		static void save_context(php_context_t &ctx);
 		static void restore_context(php_context_t& ctx);
-		static void start(php::callable fn);
+		static void start(php::callable fn, zend_execute_data* execute_data = nullptr);
 		coroutine(php::callable&& fn);
 
 		void suspend();

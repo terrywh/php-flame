@@ -19,11 +19,11 @@ namespace flame
         // EG(fake_scope) = ctx.scope;
         EG(current_execute_data) = ctx.current_execute_data;
     }
-    void coroutine::start(php::callable fn)
+    void coroutine::start(php::callable fn, zend_execute_data* execute_data)
     {
         auto co = std::make_shared<coroutine>(std::move(fn));
         // 需要即时保存 PHP 堆栈
-        coroutine::save_context(co->php_);
+        co->php_.current_execute_data = execute_data == nullptr ? EG(current_execute_data) : execute_data;
         // 事实上的协程启动会稍后
         boost::asio::post(gcontroller->context_x, [co] {
             // co->c1_ = boost::context::callcc([co] (auto &&cc) {

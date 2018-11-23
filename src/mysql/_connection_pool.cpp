@@ -11,6 +11,7 @@ namespace flame::mysql
             url_.query["charset"] = "utf8";
         }
     }
+    
     _connection_pool::~_connection_pool()
     {
         while (!conn_.empty())
@@ -50,39 +51,23 @@ namespace flame::mysql
             if (size_ >= max_) return; // 已建立了足够多的连接, 需要等待已分配连接释放
 
             MYSQL* c = create();
-            ++size_; // 当前还存在的连接数量
-            release(c);
+            if(c == nullptr) {
+                await_.pop_back();
+                boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            }else{
+                ++size_; // 当前还存在的连接数量
+                release(c);
+            }
         });
         // 暂停, 等待连接获取(异步任务)
         ch.suspend();
+        if(!conn) {
+            throw php::exception(zend_ce_exception, "failed to connect to MySQL server", -1);
+        }
         // 恢复, 已经填充连接
         return conn;
     }
-    void _connection_pool::sweep() {
-        tm_.expires_from_now(std::chrono::seconds(300));
-        // 注意, 实际的清理流程需要保证 guard_ 串行流程
-        tm_.async_wait(boost::asio::bind_executor(guard_, [this] (const boost::system::error_code &error) {
-            if(error) return; // 当前对象销毁时会发生对应的 abort 错误
-            auto now = std::chrono::steady_clock::now();
-            for (auto i = conn_.begin(); i != conn_.end() && size_ > min_;)
-            {
-                // 超低水位，关闭不活跃连接
-                auto duration = now - (*i).ttl;
-                if (duration > std::chrono::seconds(60))
-                {
-                    mysql_close((*i).conn);
-                    --size_;
-                    i = conn_.erase(i);
-                }
-                else
-                {
-                    ++i;
-                } // 所有连接还活跃（即使超过低水位）
-            }
-            // 再次启动
-            sweep();
-        }));
-    }
+
     MYSQL* _connection_pool::create() {
         MYSQL* c = mysql_init(nullptr);
         mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
@@ -90,10 +75,11 @@ namespace flame::mysql
         mysql_options(c, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
         if (!mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0))
         {
-            throw std::runtime_error("failed to connect mysql server");
+            return nullptr;
         }
         return c;
     }
+
     void _connection_pool::release(MYSQL *c)
     {
         if (await_.empty())
@@ -111,6 +97,32 @@ namespace flame::mysql
                 })
             );
         }
+    }
+
+    void _connection_pool::sweep() {
+        tm_.expires_from_now(std::chrono::seconds(300));
+        // 注意, 实际的清理流程需要保证 guard_ 串行流程
+        tm_.async_wait(boost::asio::bind_executor(guard_, [this] (const boost::system::error_code &error) {
+            if(error) return; // 当前对象销毁时会发生对应的 abort 错误
+            auto now = std::chrono::steady_clock::now();
+            for (auto i = conn_.begin(); i != conn_.end() && size_ > min_;)
+            {
+                // 超低水位，关闭不活跃或已丢失的连接
+                auto duration = now - (*i).ttl;
+                if (duration > std::chrono::seconds(60) || mysql_ping(conn_.front().conn) != 0)
+                {
+                    mysql_close((*i).conn);
+                    --size_;
+                    i = conn_.erase(i);
+                }
+                else
+                {
+                    ++i;
+                } // 所有连接还活跃（即使超过低水位）
+            }
+            // 再次启动
+            sweep();
+        }));
     }
 
 } // namespace flame::mysql

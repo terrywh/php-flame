@@ -63,3 +63,11 @@ cp libhttp_parser.o /data/vendor/http-parser-2.8.1/lib
 cp http_parser.h /data/vendor/http-parser-2.8.1/include
 ```
 
+#### HiRedis
+``` Bash
+make
+PREFIX=/data/vendor/hiredis-0.14.0 make install
+rm /data/vendor/hiredis-0.14.0/lib/*.so*
+```
+
+

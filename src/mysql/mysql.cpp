@@ -37,7 +37,7 @@ namespace flame::mysql {
         client *ptr = static_cast<client *>(php::native(obj));
         ptr->cp_.reset(new _connection_pool(u));
         ptr->cp_->sweep(); // 启动自动清理扫描
-        // TODO 确认第一个连接建立
+        // TODO 优化: 确认第一个连接建立 ?
         return std::move(obj);
 	}
     // 相等

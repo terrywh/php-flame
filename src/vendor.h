@@ -18,6 +18,8 @@
 #include <stack>
 #include <unordered_set>
 #include <phpext/phpext.h>
+#include <http_parser.h>
+#include <hiredis/hiredis.h>
 #include <parser/separator_parser.hpp>
 #include <parser/multipart_parser.hpp>
 #include <boost/version.hpp>
@@ -44,4 +46,3 @@ namespace ssl = boost::asio::ssl;
 #include <my_sys.h>
 #include <mongoc.h>
 #include <librdkafka/rdkafka.h>
-#include <http_parser.h>
