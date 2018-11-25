@@ -5,6 +5,7 @@
 #include "mysql/mysql.h"
 #include "redis/redis.h"
 #include "mongodb/mongodb.h"
+#include "kafka/kafka.h"
 
 extern "C"
 {
@@ -36,15 +37,12 @@ extern "C"
         flame::mysql::declare(ext);
         flame::redis::declare(ext);
         flame::mongodb::declare(ext);
+        flame::kafka::declare(ext);
+        // flame::rabbitmq::declare(ext);
         // flame::log::declare(ext);
         // flame::udp::declare(ext);
         // flame::tcp::declare(ext);
         // flame::http::declare(ext);
-        
-        // flame::rabbitmq::declare(ext);
-        
-        
-        // flame::kafka::declare(ext);
         return ext;
     }
 };

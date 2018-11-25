@@ -1,0 +1,27 @@
+#pragma once
+#include "../vendor.h"
+#include "../coroutine.h"
+
+namespace flame::kafka
+{
+    class _consumer;
+    class consumer : public php::class_base
+    {
+    public:
+        static void declare(php::extension_entry &ext);
+        php::value __construct(php::parameters &params); // 私有
+        php::value run(php::parameters &params);
+        php::value commit(php::parameters &params);
+        php::value close(php::parameters &params);
+
+    private:
+        std::shared_ptr<_consumer> cs_;
+        coroutine_handler          ch_;
+        int                        cc_ = 8;
+        php::callable              cb_;
+        zend_execute_data*         ex_;
+        bool close_ = false;
+
+        friend php::value consume(php::parameters &params);
+    };
+} // namespace flame::kafka

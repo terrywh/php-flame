@@ -19,7 +19,7 @@ namespace flame
         // EG(fake_scope) = ctx.scope;
         EG(current_execute_data) = ctx.current_execute_data;
     }
-    void coroutine::start(php::callable fn, zend_execute_data* execute_data)
+    std::shared_ptr<coroutine> coroutine::start(php::callable fn, zend_execute_data* execute_data)
     {
         auto co = std::make_shared<coroutine>(std::move(fn));
         // 需要即时保存 PHP 堆栈
@@ -42,6 +42,7 @@ namespace flame
             });
             co->resume();
         });
+        return co;
     }
     coroutine::coroutine(php::callable &&fn)
         : fn_(std::move(fn)), c1_(), c2_() {}
