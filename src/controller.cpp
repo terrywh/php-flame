@@ -4,11 +4,6 @@
 namespace flame {
 // 全局控制器
 std::unique_ptr<controller> gcontroller;
-// 当前协程
-// std::shared_ptr<coroutine> coroutine::current;
-coroutine* coroutine::current;
-// 统一协程上下文
-coroutine::php_context_t coroutine::php_context;
 
 controller::controller()
 	: type(process_type::UNKNOWN)

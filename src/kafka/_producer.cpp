@@ -45,7 +45,7 @@ namespace flame::kafka
                               RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
                               RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
                               RD_KAFKA_V_END);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(err != RD_KAFKA_RESP_ERR_NO_ERROR) {

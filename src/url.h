@@ -12,7 +12,9 @@ namespace flame {
         std::string   user;
         std::string   pass;
 
-        std::string   str();
-   
+        std::string   str(bool update = false, bool with_query = true);
+    private:
+        std::string raw_;
+
     };
 }

@@ -3,6 +3,8 @@
 
 namespace flame
 {
+    // 当前协程
+    std::shared_ptr<coroutine> coroutine::current;
     void coroutine::save_context(php_context_t &ctx)
     {
         ctx.vm_stack = EG(vm_stack);
@@ -23,14 +25,14 @@ namespace flame
     {
         auto co = std::make_shared<coroutine>(std::move(fn));
         // 需要即时保存 PHP 堆栈
-        co->php_.current_execute_data = execute_data == nullptr ? EG(current_execute_data) : execute_data;
+        co->php_.current_execute_data = execute_data == nullptr ? gcontroller->core_execute_data : execute_data;
         // 事实上的协程启动会稍后
         boost::asio::post(gcontroller->context_x, [co] {
             // co->c1_ = boost::context::callcc([co] (auto &&cc) {
             co->c1_ = boost::context::fiber([co] (boost::context::fiber &&cc) {
                 auto work = boost::asio::make_work_guard(gcontroller->context_x);
                 // 启动进入协程
-                coroutine::current = co.get();
+                coroutine::current = co;
                 zend_vm_stack_init();
                 co->c2_ = std::move(cc);
                 // 协程运行
@@ -61,14 +63,14 @@ namespace flame
         // 恢复 PHP 堆栈
         coroutine::restore_context(php_);
         // 恢复进入协程
-        coroutine::current = this;
+        coroutine::current = shared_from_this();
         c1_ = std::move(c1_).resume();
     }
     coroutine_handler::coroutine_handler()
         : co_(nullptr) 
     {
     }
-    coroutine_handler::coroutine_handler(coroutine *co)
+    coroutine_handler::coroutine_handler(std::shared_ptr<coroutine> co)
         : co_(co)
     {
     }
@@ -76,7 +78,11 @@ namespace flame
     {
         // std::cout << "~coroutine_handler\n";
     }
-    void coroutine_handler::reset(coroutine* co)
+    void coroutine_handler::reset()
+    {
+        co_.reset();
+    }
+    void coroutine_handler::reset(std::shared_ptr<coroutine> co)
     {
         assert(co_ == nullptr);
         co_ = co;
@@ -91,16 +97,20 @@ namespace flame
         nsize = n;
 
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
-        co_->resume();
+        boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
     }
     void coroutine_handler::resume()
     {
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
-        co_->resume();
+        boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
     }
     void coroutine_handler::suspend()
     {
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
         co_->suspend();
+    }
+    bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2)
+    {
+        return ch1.co_ < ch2.co_;
     }
 }

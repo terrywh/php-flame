@@ -43,7 +43,7 @@ namespace flame::redis
                 redisGetReply(conn_.get(), (void**)&i->reply);
             }
             // 回到主线程
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         // 整合个命令返回值

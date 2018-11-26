@@ -28,7 +28,7 @@ namespace flame {
 	public:
 		boost::asio::io_context context_x;
 		boost::asio::io_context context_y;
-
+		zend_execute_data* core_execute_data;
 		enum class process_type
 		{
 			UNKNOWN = 0,

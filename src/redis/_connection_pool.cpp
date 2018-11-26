@@ -27,7 +27,7 @@ namespace flame::redis
             await_.push_back([&conn, &ch](std::shared_ptr<redisContext> c) {
                 conn = c;
                 // RESUME 需要在主线程进行
-                boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+                ch.resume();
             });
             while (!conn_.empty())
             {
@@ -53,7 +53,7 @@ namespace flame::redis
             if (c == nullptr)
             {
                 await_.pop_back();
-                boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+                ch.resume();
             }
             else
             {
@@ -78,7 +78,7 @@ namespace flame::redis
         boost::asio::post(gcontroller->context_y, [&rc, &ss, &ch, &rp]() {
             redisAppendFormattedCommand(rc.get(), ss.c_str(), ss.size());
             redisGetReply(rc.get(), (void **)&rp);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         php::value rv = reply2value(rp, argv, rt);

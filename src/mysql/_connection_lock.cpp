@@ -26,7 +26,7 @@ namespace flame::mysql
         int err = 0;
         boost::asio::post(gcontroller->context_y, [this, &ch, &err]() {
             err = mysql_real_query(conn_.get(), "START TRANSACTION", 17);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(err != 0) {
@@ -43,7 +43,7 @@ namespace flame::mysql
         int err = 0;
         boost::asio::post(gcontroller->context_y, [this, &ch, &err]() {
             err = mysql_real_query(conn_.get(), "COMMIT", 6);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if (err != 0)
@@ -59,7 +59,7 @@ namespace flame::mysql
         int err = 0;
         boost::asio::post(gcontroller->context_y, [this, &ch, &err]() {
             err = mysql_real_query(conn_.get(), "ROLLBACK", 8);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if (err != 0)

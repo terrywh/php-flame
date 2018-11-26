@@ -99,7 +99,7 @@ ESCAPE_FINISHED:;
                     err = -1;
                 }
             }
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(err != 0)
@@ -139,7 +139,7 @@ ESCAPE_FINISHED:;
             if(row) {
                 len = mysql_fetch_lengths(rst.get());
             }
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(!row) {

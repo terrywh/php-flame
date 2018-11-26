@@ -40,7 +40,7 @@ rm /data/vendor/mongoc-1.13.0/lib/*.so*
 #### AMQP-CPP
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.0.0 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release ../
+CC=gcc CXX=g++ cmake3 -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.0.0 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
 make
 make install
 rm /data/vendor/amqpcpp-4.0.0/lib/*.so*

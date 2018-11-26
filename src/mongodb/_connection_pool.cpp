@@ -30,7 +30,7 @@ namespace flame::mongodb
             {
                 mongoc_client_pool_push(p_, c);
             });
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         return conn;

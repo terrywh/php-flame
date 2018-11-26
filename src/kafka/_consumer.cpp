@@ -58,7 +58,7 @@ namespace flame::kafka
         boost::asio::post(gcontroller->context_y, [this, &err, &ch] ()
         {
             err = rd_kafka_subscribe(conn_, tops_);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(err != RD_KAFKA_RESP_ERR_NO_ERROR)
@@ -92,7 +92,7 @@ namespace flame::kafka
             {
                 err = RD_KAFKA_RESP_ERR_NO_ERROR;
             }
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(err == RD_KAFKA_RESP_ERR__PARTITION_EOF)
@@ -120,7 +120,7 @@ namespace flame::kafka
         boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]()
         {
             err = rd_kafka_commit_message(conn_, msg, 0);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(err != RD_KAFKA_RESP_ERR_NO_ERROR)
@@ -135,7 +135,7 @@ namespace flame::kafka
         rd_kafka_resp_err_t err;
         boost::asio::post(gcontroller->context_y, [this, &err, &ch] () {
             err = rd_kafka_consumer_close(conn_);
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if (err != RD_KAFKA_RESP_ERR_NO_ERROR)

@@ -30,7 +30,7 @@ namespace flame::mysql
             await_.push_back([&conn, &ch] (std::shared_ptr<MYSQL> c) {
                 conn = c;
                 // RESUME 需要在主线程进行
-                boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+                ch.resume();
             });
             while (!conn_.empty())
             {
@@ -53,7 +53,7 @@ namespace flame::mysql
             MYSQL* c = create();
             if(c == nullptr) {
                 await_.pop_back();
-                boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+                ch.resume();
             }else{
                 ++size_; // 当前还存在的连接数量
                 release(c);

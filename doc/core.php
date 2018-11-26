@@ -19,3 +19,30 @@ function go(callable $cb) {}
  * 框架调度, 上述协程会在框架开始调度运行后启动
  */
 function run() {}
+/**
+ * 从若干个队列中选择(等待)一个有数据队列
+ * @return 若所有通道已关闭, 返回 null; 否则返回一个有数据的通道, 即: 可以无等待 pop()
+ */
+function select(channel $q1, $q2, ...): {}
+/**
+ * 协程型队列
+ */
+class queue {
+    /**
+     * @param integer $max 队列容量, 若已放入数据达到此数量, push() 将"阻塞"(等待消费);
+     */
+    function __construct($max = 1) {}
+    /**
+     * 放入; 若向已关闭的队列放入, 将抛出异常;
+     */
+    function push($v) {}
+    /**
+     * 取出
+     */
+    function pop() {}
+    /**
+     * 关闭 (将唤醒阻塞在取出 pop() 的协程);
+     * 原则上仅能在生产者方向关闭队列;
+     */
+    function close() {}
+}

@@ -23,7 +23,7 @@ namespace flame::mongodb
             {
                 rok = mongoc_client_read_command_with_opts(conn.get(), mongoc_uri_get_database(uri), cmd.get(), mongoc_uri_get_read_prefs_t(uri), nullptr, rep.get(), err.get());
             }
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if(!rok)

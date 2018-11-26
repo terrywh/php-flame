@@ -15,7 +15,7 @@ namespace flame {
 		};
 		static coroutine::php_context_t   php_context;
 		// 当前协程
-		static coroutine* current;
+		static std::shared_ptr<coroutine> current;
 		static void save_context(php_context_t &ctx);
 		static void restore_context(php_context_t& ctx);
 		static std::shared_ptr<coroutine> start(php::callable fn, zend_execute_data* execute_data = nullptr);
@@ -35,18 +35,22 @@ namespace flame {
 	{
 	public:
 		coroutine_handler();
-		coroutine_handler(coroutine *co);
+		coroutine_handler(std::shared_ptr<coroutine> co);
 		~coroutine_handler();
 		// !!! 慎用: 目前仅用于空构造后指定协程
-		void reset(coroutine* co);
+		void reset(std::shared_ptr<coroutine> co);
+		void reset();
 		operator bool() const;
 		void operator()(const boost::system::error_code& e, std::size_t n = 0);
 		void resume();
 		void suspend();
 		boost::system::error_code error;
 		std::size_t 	          nsize;
-		coroutine *co_;
-	private:
+		std::shared_ptr<coroutine> co_;
+
+		friend bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2);
+
+	  private:
 		
 	};
 } // namespace flame

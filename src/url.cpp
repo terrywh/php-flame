@@ -5,7 +5,9 @@ namespace flame
 {
 
     typedef ::parser::separator_parser<std::string, std::string> parser_t;
-    url::url(const php::string &str) {
+    url::url(const php::string &str)
+        : raw_(str)
+    {
         const char* s = str.c_str();
 
         struct http_parser_url x;
@@ -45,7 +47,7 @@ namespace flame
                 std::string key = et.first;
                 std::string val = et.second;
                 // 一律小写 KEY
-                php::uppercase_inplace(key.data(), key.size());
+                php::lowercase_inplace(key.data(), key.size());
                 val.resize(php::url_decode_inplace(val.data(), val.size()));
                 query[key] = val;
             });
@@ -54,14 +56,29 @@ namespace flame
         }
     }
 
-    std::string url::str() {
-        std::ostringstream ss;
-        ss << schema << "://" << user << ":" << pass << "@" << host << ":" << port << path << "?";
-        for(auto i=query.begin();i!=query.end();++i)
-        {
-            ss << i->first << "=" << i->second << "&";
+    std::string url::str(bool with_query, bool update)
+    {
+        if(update) {
+            std::ostringstream ss;
+            ss << schema << "://" << user << ":" << pass << "@" << host << ":" << port << path;
+            if(with_query)
+            {
+                int x = 0;
+                for(auto i=query.begin();i!=query.end();++i)
+                {
+                    if(++x == 1)
+                    {
+                        ss.put('?');
+                    }else
+                    {
+                        ss.put('&');
+                    }
+                    ss << i->first << "=" << i->second;
+                }
+            }
+            raw_ = ss.str();
         }
-        return ss.str();
+        return raw_;
     }
 
 } // namespace flame

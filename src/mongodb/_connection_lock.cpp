@@ -23,7 +23,7 @@ namespace flame::mongodb
             {
                 has = mongoc_cursor_error(cs.get(), err.get());
             }
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine_handler::resume, ch));
+            ch.resume();
         });
         ch.suspend();
         if (has) // 发生了错误
