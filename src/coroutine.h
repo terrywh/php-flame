@@ -13,7 +13,6 @@ namespace flame {
 			zend_class_entry *scope;
 			zend_execute_data *current_execute_data;
 		};
-		static coroutine::php_context_t   php_context;
 		// 当前协程
 		static std::shared_ptr<coroutine> current;
 		static void save_context(php_context_t &ctx);
@@ -47,7 +46,7 @@ namespace flame {
 		coroutine_handler& operator [](boost::system::error_code& e);
 		void resume();
 		void suspend();
-		boost::system::error_code* error;
+		boost::system::error_code* er_;
 		std::shared_ptr<coroutine> co_;
 
 		friend bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2);

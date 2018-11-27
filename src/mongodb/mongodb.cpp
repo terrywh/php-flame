@@ -13,7 +13,7 @@ namespace flame::mongodb
 {
     void declare(php::extension_entry &ext)
     {
-        gcontroller->on_init([]() {
+        gcontroller->on_init([] (const php::array& options) {
                 mongoc_init();
             })
             ->on_stop([]() {

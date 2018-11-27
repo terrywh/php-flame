@@ -8,7 +8,7 @@ namespace flame::tcp {
 	static std::unique_ptr<boost::asio::ip::tcp::resolver> resolver_;
 	void declare(php::extension_entry& ext)
     {
-		gcontroller->on_init([] ()
+		gcontroller->on_init([] (const php::array& options)
         {
             resolver_.reset(new boost::asio::ip::tcp::resolver(gcontroller->context_x));
         })->on_stop([] ()

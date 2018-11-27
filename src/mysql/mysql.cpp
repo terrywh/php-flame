@@ -12,7 +12,7 @@ namespace flame::mysql {
     void declare(php::extension_entry &ext)
     {
         gcontroller
-            ->on_init([]()
+            ->on_init([] (const php::array& options)
             {
                 mysql_library_init(0, nullptr, nullptr);
             })
