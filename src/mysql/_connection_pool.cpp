@@ -110,7 +110,7 @@ namespace flame::mysql
             {
                 // 超低水位，关闭不活跃或已丢失的连接
                 auto duration = now - (*i).ttl;
-                if (duration > std::chrono::seconds(60) || mysql_ping(conn_.front().conn) != 0)
+                if (duration > std::chrono::seconds(60) || mysql_ping((*i).conn) != 0)
                 {
                     mysql_close((*i).conn);
                     --size_;
