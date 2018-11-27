@@ -65,7 +65,7 @@ namespace flame::mysql
         if (err != 0)
         {
             err = mysql_errno(conn_.get());
-            throw php::exception(zend_ce_exception,
+            throw php::exception(zend_ce_error,
                                  (boost::format("failed to rollback MySQL tx: (%1%) %2%") % err % mysql_error(conn_.get())).str(),
                                  err);
         }

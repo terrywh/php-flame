@@ -31,14 +31,14 @@ namespace flame::kafka
         conn_ = rd_kafka_new(RD_KAFKA_CONSUMER, conf, err, sizeof(err));
         if (!conn_)
         {
-            throw php::exception(zend_ce_type_error,
+            throw php::exception(zend_ce_exception,
                                 (boost::format("failed to create Kafka Consumer: %1%") % err).str(), -1);
         }
         auto r = rd_kafka_poll_set_consumer(conn_);
         if (r != RD_KAFKA_RESP_ERR_NO_ERROR)
         {
-            throw php::exception(zend_ce_type_error,
-                                (boost::format("failed to create Kafka Consumer: (%1%) %2%") % r % rd_kafka_err2str(r)).str(), r);
+            throw php::exception(zend_ce_exception,
+                                 (boost::format("failed to create Kafka Consumer: (%1%) %2%") % r % rd_kafka_err2str(r)).str(), r);
         }
         if (topics.size() == 0)
         {
@@ -101,7 +101,7 @@ namespace flame::kafka
         }
         else if(err != RD_KAFKA_RESP_ERR_NO_ERROR)
         {
-            throw php::exception(zend_ce_error,
+            throw php::exception(zend_ce_exception,
                 (boost::format("failed to consume Kafka message: (%1%) %2%") % err % rd_kafka_err2str(err)).str(),
                 err);
         }

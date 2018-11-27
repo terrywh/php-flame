@@ -34,33 +34,30 @@ namespace flame::kafka {
         cb_ = params[0];
         
         // 启动若干协程, 然后进行"并行"消费
-        std::vector<std::shared_ptr<coroutine>> cos(cc_);
-        int run = 0;
-        for(int i=0;i<cos.size();++i)
+        int count = cc_;
+        for (int i = 0; i < count; ++i)
         {
             // 启动协程开始消费
-            ++run;
-            cos[i] = coroutine::start(php::value([this, &run] (php::parameters& params) -> php::value
-            {
+            coroutine::start(php::value([this, &count](php::parameters &params) -> php::value {
                 coroutine_handler ch {coroutine::current};
                 while(!close_)
                 {
                     php::object msg = cs_->consume(ch);
-                        // 可能出现为 NULL 的情况
+                    // 可能出现为 NULL 的情况
                     if (msg.typeof(php::TYPE::NULLABLE))
                     {
                         continue;
                     }
-                    try {
+                    try
+                    {
                         cb_.call({msg});
                     }
                     catch(const std::exception& ex)
                     {
                         std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
-                        close_ = true;
                     }
                 }
-                if (--run == 0) // 当所有并行协程结束后, 停止消费
+                if (--count == 0) // 当所有并行协程结束后, 停止消费
                 {
                     ch_.resume();
                 }

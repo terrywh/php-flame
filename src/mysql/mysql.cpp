@@ -11,16 +11,16 @@ namespace flame::mysql {
     
     void declare(php::extension_entry &ext)
     {
-        ext
-            .on_module_startup([](php::extension_entry &ext) -> bool
+        gcontroller
+            ->on_init([]()
             {
-                return mysql_library_init(0, nullptr, nullptr) == 0;
+                mysql_library_init(0, nullptr, nullptr);
             })
-            .on_module_shutdown([](php::extension_entry &ext) -> bool
+            ->on_stop([] ()
             {
                 mysql_library_end();
-                return true;
-            })
+            });
+        ext
             .function<connect>("flame\\mysql\\connect",
             {
                 {"url", php::TYPE::STRING},

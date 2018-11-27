@@ -34,7 +34,7 @@ namespace flame::os
                         addr->ifa_addr->sa_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
                         address, NI_MAXHOST, nullptr, 0, NI_NUMERICHOST) != 0)
         {
-            throw php::exception(zend_ce_error_exception, gai_strerror(errno));
+            throw php::exception(zend_ce_error, gai_strerror(errno));
         }
         info.set("address", address);
         if (data.exists(name))
@@ -54,7 +54,7 @@ namespace flame::os
         struct ifaddrs *addr;
         if (getifaddrs(&addr) != 0)
         {
-            throw php::exception(zend_ce_error_exception, std::strerror(errno));
+            throw php::exception(zend_ce_error, std::strerror(errno));
         }
         else if (!addr)
         {

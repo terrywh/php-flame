@@ -23,13 +23,13 @@ function run() {}
  * 从若干个队列中选择(等待)一个有数据队列
  * @return 若所有通道已关闭, 返回 null; 否则返回一个有数据的通道, 即: 可以无等待 pop()
  */
-function select(channel $q1, $q2, ...): {}
+function select(channel $q1, $q2/*, ...*/):channel {}
 /**
  * 协程型队列
  */
 class queue {
     /**
-     * @param integer $max 队列容量, 若已放入数据达到此数量, push() 将"阻塞"(等待消费);
+     * @param int $max 队列容量, 若已放入数据达到此数量, push() 将"阻塞"(等待消费);
      */
     function __construct($max = 1) {}
     /**
@@ -45,4 +45,31 @@ class queue {
      * 原则上仅能在生产者方向关闭队列;
      */
     function close() {}
+}
+
+class mutex {
+    /**
+     * 构建一个协程式 mutex 对象
+     */
+    function __construct() {}
+    /**
+     * 加锁
+     */
+    function lock() {}
+    /**
+     * 解锁
+     */
+    function unlock() {}
+}
+
+class guard {
+    /**
+     * 构建守护并锁定 mutex 
+     * @param mutex $mutex 实际保护使用的 mutex 对象
+     */
+    function __construct(mutex $mutex) {}
+    /**
+     * 解锁 mutex 并销毁守护
+     */
+    function __destruct() {}
 }

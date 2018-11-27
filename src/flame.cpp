@@ -7,6 +7,7 @@
 #include "mongodb/mongodb.h"
 #include "kafka/kafka.h"
 #include "rabbitmq/rabbitmq.h"
+#include "tcp/tcp.h"
 
 extern "C"
 {
@@ -40,10 +41,10 @@ extern "C"
         flame::mongodb::declare(ext);
         flame::kafka::declare(ext);
         flame::rabbitmq::declare(ext);
-        // flame::log::declare(ext);
+        flame::tcp::declare(ext);
         // flame::udp::declare(ext);
-        // flame::tcp::declare(ext);
         // flame::http::declare(ext);
+        // flame::log::declare(ext);
         return ext;
     }
 };

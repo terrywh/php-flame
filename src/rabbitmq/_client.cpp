@@ -50,7 +50,7 @@ namespace flame::rabbitmq
         CHECK_AND_SET_FLAG(immediate, AMQP::immediate);
         
         if(err) {
-            throw php::exception(zend_ce_error,
+            throw php::exception(zend_ce_exception,
                 (boost::format("failed to connect RabbitMQ server: %1%") % err).str(), -1);
         }
     }
@@ -84,7 +84,7 @@ namespace flame::rabbitmq
         ch.suspend();
         if(err) {
             throw php::exception(zend_ce_error,
-                (boost::format("failed to consume RabbitMQ message: %1%") % err).str(), -1);
+                (boost::format("failed to consume RabbitMQ queue: %1%") % err).str(), -1);
         }
         consumer_ch_ = ch;
         ch.suspend();

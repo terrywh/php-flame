@@ -50,7 +50,7 @@ function exec(string $command, array $argv, array $options = []):string {}
  * 进程对象
  */
 class process {
-    function kill(integer $signal = SIGTERM) {}
+    function kill(int $signal = SIGTERM) {}
     /**
      * 等待进程结束
      */

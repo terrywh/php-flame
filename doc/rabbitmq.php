@@ -30,7 +30,7 @@ class consumer {
     /**
      * 拒绝消息(可选的返回队列, 重复消费)
      */
-    function reject(message $msg, boolean $requeue = false) {}
+    function reject(message $msg, bool $requeue = false) {}
     /**
      * 关闭消费者 (结束 run() 执行流程)
      * 注意: 由于消费速度较快, 关闭消费者可能需要一段时间, 以保证完整消费;

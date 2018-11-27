@@ -170,6 +170,6 @@ namespace flame::redis {
         return this;
     }
 	php::value tx::unimplement(php::parameters& params) {
-        throw php::exception(zend_ce_error, "This redis command is NOT yet implemented");
+        throw php::exception(zend_ce_type_error, "This redis command is NOT yet implemented");
     }
 } // namespace flame::redis

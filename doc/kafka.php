@@ -69,7 +69,7 @@ class message implements JsonSerializable {
      */
     public $topic;
     /**
-     * @property integer $partition
+     * @property int $partition
      */
     public $partition;
     /**
@@ -77,7 +77,7 @@ class message implements JsonSerializable {
      */
     public $key;
     /**
-     * @property integer $offset
+     * @property int $offset
      */
     public $offset;
     /**

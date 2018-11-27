@@ -13,6 +13,17 @@ controller::controller()
 	mthread_id = std::this_thread::get_id();
 }
 
+controller* controller::on_init(std::function<void ()> fn)
+{
+	init_cb.push_back(fn);
+	return this;
+}
+controller* controller::on_stop(std::function<void ()> fn)
+{
+	stop_cb.push_back(fn);
+	return this;
+}
+
 void controller::initialize() {
 	// 使用此环境变量区分父子进程
 	// if (env.count("FLAME_PROCESS_WORKER") > 0)
@@ -32,10 +43,14 @@ void controller::initialize() {
 
 void controller::run() {
 	// if(type == process_type::WORKER) {
-		worker_->run();
+	worker_->run();
 	// }else{
 		// master_->run();
 	// }
+	for (auto fn : stop_cb)
+	{
+		fn();
+	}
 }
 
 controller_master::controller_master()
@@ -83,6 +98,7 @@ void controller_worker::run() {
 	{
 		thread_[i].join();
 	}
+	
 }
 
 

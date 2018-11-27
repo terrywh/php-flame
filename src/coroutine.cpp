@@ -21,22 +21,22 @@ namespace flame
         // EG(fake_scope) = ctx.scope;
         EG(current_execute_data) = ctx.current_execute_data;
     }
-    std::shared_ptr<coroutine> coroutine::start(php::callable fn, zend_execute_data* execute_data)
+    std::shared_ptr<coroutine> coroutine::start(php::callable fn, /*std::vector<php::value> ag,*/ zend_execute_data *execute_data)
     {
         auto co = std::make_shared<coroutine>(std::move(fn));
         // 需要即时保存 PHP 堆栈
         co->php_.current_execute_data = execute_data == nullptr ? gcontroller->core_execute_data : execute_data;
         // 事实上的协程启动会稍后
-        boost::asio::post(gcontroller->context_x, [co] {
+        boost::asio::post(gcontroller->context_x, [co/*, ag = std::move(ag)*/] {
             // co->c1_ = boost::context::callcc([co] (auto &&cc) {
-            co->c1_ = boost::context::fiber([co] (boost::context::fiber &&cc) {
+            co->c1_ = boost::context::fiber([co/*, ag = std::move(ag)*/] (boost::context::fiber &&cc) {
                 auto work = boost::asio::make_work_guard(gcontroller->context_x);
                 // 启动进入协程
                 coroutine::current = co;
                 zend_vm_stack_init();
                 co->c2_ = std::move(cc);
                 // 协程运行
-                co->fn_.call();
+                co->fn_.call(/*ag*/);
                 // 协程运行完毕
                 zend_vm_stack_destroy();
                 coroutine::current = nullptr;
@@ -93,11 +93,16 @@ namespace flame
     }
     void coroutine_handler::operator()(const boost::system::error_code &e, std::size_t n)
     {
-        error = e;
-        nsize = n;
+        if(error) *error = e;
+        co_->len_ = n;
 
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
         boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
+    }
+    coroutine_handler& coroutine_handler::operator [](boost::system::error_code& e)
+    {
+        error = &e;
+        return *this;
     }
     void coroutine_handler::resume()
     {

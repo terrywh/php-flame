@@ -1,3 +1,4 @@
+#include "../controller.h"
 #include "../coroutine.h"
 #include "mongodb.h"
 #include "_connection_pool.h"
@@ -12,14 +13,11 @@ namespace flame::mongodb
 {
     void declare(php::extension_entry &ext)
     {
-        ext
-            .on_module_startup([](php::extension_entry &ext) -> bool {
+        gcontroller->on_init([]() {
                 mongoc_init();
-                return true;
             })
-            .on_module_shutdown([](php::extension_entry &ext) -> bool {
+            ->on_stop([]() {
                 mongoc_cleanup();
-                return true;
             });
         ext
             .function<connect>("flame\\mongodb\\connect");

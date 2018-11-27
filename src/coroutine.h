@@ -18,7 +18,7 @@ namespace flame {
 		static std::shared_ptr<coroutine> current;
 		static void save_context(php_context_t &ctx);
 		static void restore_context(php_context_t& ctx);
-		static std::shared_ptr<coroutine> start(php::callable fn, zend_execute_data* execute_data = nullptr);
+		static std::shared_ptr<coroutine> start(php::callable fn, /*std::vector<php::value> ag = std::vector<php::value>(0),*/zend_execute_data* execute_data = nullptr);
 		coroutine(php::callable&& fn);
 
 		void suspend();
@@ -29,6 +29,8 @@ namespace flame {
 		boost::context::fiber c1_;
 		boost::context::fiber c2_;
 		php_context_t php_;
+		// 用于部分异步请求返回长度信息
+		std::size_t len_;
 	};
 
 	struct coroutine_handler
@@ -42,10 +44,10 @@ namespace flame {
 		void reset();
 		operator bool() const;
 		void operator()(const boost::system::error_code& e, std::size_t n = 0);
+		coroutine_handler& operator [](boost::system::error_code& e);
 		void resume();
 		void suspend();
-		boost::system::error_code error;
-		std::size_t 	          nsize;
+		boost::system::error_code* error;
 		std::shared_ptr<coroutine> co_;
 
 		friend bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2);
@@ -65,10 +67,11 @@ namespace boost::asio
 		explicit async_result(::flame::coroutine_handler& ch) : ch_(ch) {
 			
 		}
-		using type = void;
-		void get()
+		using type = std::size_t;
+		type get()
 		{
 			ch_.suspend();
+			return ch_.co_->len_;
 		}
 	private:
 		::flame::coroutine_handler &ch_;

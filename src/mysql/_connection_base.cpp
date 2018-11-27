@@ -145,7 +145,7 @@ ESCAPE_FINISHED:;
         if(!row) {
             int err = mysql_errno(conn.get());
             if(err != 0) {
-                throw php::exception(zend_ce_exception,
+                throw php::exception(zend_ce_error,
                                      (boost::format("failed to fetch MySQL row: (%1%) %2%") % err % mysql_error(conn.get())).str(),
                                      err);
             }else{

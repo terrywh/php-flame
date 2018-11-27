@@ -3,6 +3,7 @@
 #include "core.h"
 #include "coroutine_queue.h"
 #include "queue.h"
+#include "mutex.h"
 
 namespace flame {
     static php::value init(php::parameters& params) {
@@ -56,11 +57,8 @@ namespace flame {
         return mm[q];
     }
     void declare(php::extension_entry &ext) {
+        gcontroller.reset(new controller());
         ext
-            .on_module_startup([](php::extension_entry &ext) -> bool {
-                gcontroller.reset(new controller());
-                return true;
-            })
             .function<init>("flame\\init", {
                 {"process_name", php::TYPE::STRING},
             })
@@ -71,6 +69,8 @@ namespace flame {
             .function<select>("flame\\select");
 
         queue::declare(ext);
+        mutex::declare(ext);
+        guard::declare(ext);
     }
     
 }

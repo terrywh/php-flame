@@ -26,7 +26,7 @@ namespace flame
         {
             if(closed_)
             {
-                throw php::exception(zend_ce_error, "queue already closed", -1);
+                throw php::exception(zend_ce_exception, "queue already closed", -1);
             }
             if(q_.size() >= n_)
             {

@@ -2,6 +2,7 @@
 #include "consumer.h"
 #include "_client.h"
 #include "message.h"
+#include "../time/time.h"
 
 namespace flame::rabbitmq
 {
@@ -52,7 +53,14 @@ namespace flame::rabbitmq
                 coroutine_handler cch {coroutine::current};
                 while(auto x = q.pop(cch))
                 {
-                    cb_.call( {x.value()} );
+                    try
+                    {
+                        cb_.call( {x.value()} );
+                    }
+                    catch(const php::exception& ex)
+                    {
+                        std::clog << "[" << time::iso() << "] (ERROR) " << ex << std::endl;
+                    }
                 }
                 if(--count == 0)
                 {
