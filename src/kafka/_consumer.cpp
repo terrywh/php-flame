@@ -64,7 +64,7 @@ namespace flame::kafka
         if(err != RD_KAFKA_RESP_ERR_NO_ERROR)
         {
             throw php::exception(zend_ce_exception,
-                (boost::format() % err % rd_kafka_err2str(err)).str(),
+                (boost::format("failed to subcribe Kafka topics: (%1%) %2%") % err % rd_kafka_err2str(err)).str(),
                 err);
         }
     }

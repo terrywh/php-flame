@@ -29,7 +29,7 @@ namespace flame::mongodb
         if(!rok)
         {
             throw php::exception(zend_ce_exception,
-                    (boost::format("failed to execute MongoDB command: (%1%) %1%") % err->message % err->code).str(),
+                    (boost::format("failed to execute MongoDB command: (%1%) %1%") % err->code % err->message).str(),
                     err->code);
         }
         else if(bson_has_field(rep.get(), "cursor"))

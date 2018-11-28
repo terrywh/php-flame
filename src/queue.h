@@ -4,6 +4,10 @@
 
 namespace flame
 {
+    namespace core
+    {
+        php::value select(php::parameters &params);
+    }
     class queue: public php::class_base 
     {
     public:
@@ -15,6 +19,6 @@ namespace flame
     private:
         std::shared_ptr<coroutine_queue<php::value>> q_;
 
-        friend php::value select(php::parameters &params);
+        friend php::value core::select(php::parameters &params);
     };
 }

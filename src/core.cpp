@@ -5,38 +5,7 @@
 #include "queue.h"
 #include "mutex.h"
 
-namespace flame {
-    static php::value init(php::parameters& params) {
-        gcontroller->initialize();
-        return nullptr;
-    }
-    static php::value go(php::parameters& params) {
-        php::callable fn = params[0];
-        coroutine::start(fn);
-        return nullptr;
-    }
-    static php::value run(php::parameters& params) {
-        gcontroller->core_execute_data = EG(current_execute_data);
-        gcontroller->run();
-        return nullptr;
-    }
-    // static coroutine_queue<int> q;
-    // static php::value produce(php::parameters& params)
-    // {
-    //     coroutine_handler ch{coroutine::current};
-    //     q.push(static_cast<int>(params[0]), ch);
-    //     return nullptr;
-    // }
-    // static php::value consume(php::parameters& params)
-    // {
-    //     coroutine_handler ch{coroutine::current};
-    //     auto x = q.pop(ch);
-    //     if(x) {
-    //         return x.value();
-    //     }else{
-    //         return nullptr;
-    //     }
-    // }
+namespace flame::core {
     php::value select(php::parameters& params)
     {
         std::vector< std::shared_ptr<coroutine_queue<php::value>> > qs;
@@ -57,15 +26,7 @@ namespace flame {
         return mm[q];
     }
     void declare(php::extension_entry &ext) {
-        gcontroller.reset(new controller());
         ext
-            .function<init>("flame\\init", {
-                {"process_name", php::TYPE::STRING},
-            })
-            .function<go>("flame\\go", {
-                {"coroutine", php::TYPE::CALLABLE},
-            })
-            .function<run>("flame\\run")
             .function<select>("flame\\select");
 
         queue::declare(ext);

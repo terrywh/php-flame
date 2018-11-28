@@ -25,7 +25,7 @@ namespace flame
     {
         auto co = std::make_shared<coroutine>(std::move(fn));
         // 需要即时保存 PHP 堆栈
-        co->php_.current_execute_data = execute_data == nullptr ? gcontroller->core_execute_data : execute_data;
+        co->php_.current_execute_data = execute_data;
         // 事实上的协程启动会稍后
         boost::asio::post(gcontroller->context_x, [co/*, ag = std::move(ag)*/] {
             // co->c1_ = boost::context::callcc([co] (auto &&cc) {
@@ -33,6 +33,12 @@ namespace flame
                 auto work = boost::asio::make_work_guard(gcontroller->context_x);
                 // 启动进入协程
                 coroutine::current = co;
+                if(co->php_.current_execute_data == nullptr)
+                {
+                    // 若 run 还未执行时, core_execute_data 还没有值;
+                    // 故赋值延迟到此处进行
+                    co->php_.current_execute_data = gcontroller->core_execute_data;
+                }
                 zend_vm_stack_init();
                 co->c2_ = std::move(cc);
                 // 协程运行
@@ -67,11 +73,13 @@ namespace flame
         c1_ = std::move(c1_).resume();
     }
     coroutine_handler::coroutine_handler()
-        : co_(nullptr) 
+        : co_(nullptr)
+        , er_(nullptr)
     {
     }
     coroutine_handler::coroutine_handler(std::shared_ptr<coroutine> co)
         : co_(co)
+        , er_(nullptr)
     {
     }
     coroutine_handler::~coroutine_handler()
@@ -91,9 +99,9 @@ namespace flame
     {
         return co_ != nullptr;
     }
-    void coroutine_handler::operator()(const boost::system::error_code &e, std::size_t n)
+    void coroutine_handler::operator() (const boost::system::error_code &e, std::size_t n)
     {
-        if(error) *error = e;
+        if(er_) *er_ = e;
         co_->len_ = n;
 
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
@@ -101,7 +109,7 @@ namespace flame
     }
     coroutine_handler& coroutine_handler::operator [](boost::system::error_code& e)
     {
-        error = &e;
+        er_ = &e;
         return *this;
     }
     void coroutine_handler::resume()

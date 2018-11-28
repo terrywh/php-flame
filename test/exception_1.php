@@ -6,5 +6,4 @@ flame\go(function() {
     throw new Exception("Aaaaaaa");
 });
 
-
 flame\run();
