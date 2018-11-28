@@ -10,11 +10,13 @@ namespace flame
 		void run();
 
     private:
-		std::vector<boost::process::child> worker_;
-        std::vector<boost::process::async_pipe> pipe_;
-        std::vector<boost::asio::streambuf> buff_;
-		boost::process::group               group_;
-		boost::asio::signal_set            signal_;
+		std::vector<std::unique_ptr<boost::process::child>>    worker_;
+        std::vector<std::unique_ptr<boost::process::async_pipe>> sout_;
+        std::vector<std::unique_ptr<boost::process::async_pipe>> eout_;
+        std::vector<boost::asio::streambuf> sbuf_;
+        std::vector<boost::asio::streambuf> ebuf_;
+        boost::process::group               group_;
+		std::unique_ptr<boost::asio::signal_set> signal_;
 		std::thread                        thread_;
         std::size_t                        count_;
 
@@ -23,6 +25,7 @@ namespace flame
 
         void spawn_worker(int i);
         void reload_output();
-        void redirect_output(int i);
+        void redirect_sout(int i);
+        void redirect_eout(int i);
     };
 }

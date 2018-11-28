@@ -5,30 +5,7 @@
 #include "queue.h"
 #include "mutex.h"
 
-namespace flame {
-    static php::value init(php::parameters& params) {
-        php::array options(0);
-        if(params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) {
-            options = params[1];
-        }
-        gcontroller->core_execute_data = EG(current_execute_data);
-        gcontroller->initialize(params[0], options);
-        return nullptr;
-    }
-    static php::value go(php::parameters& params) {
-        php::callable fn = params[0];
-        coroutine::start(fn);
-        return nullptr;
-    }
-    static php::value run(php::parameters& params) {
-        if(gcontroller->status & controller::STATUS_INITIALIZED) {
-            gcontroller->core_execute_data = EG(current_execute_data);
-            gcontroller->run();
-        }else{
-            throw php::exception(zend_ce_type_error, "failed to run flame: not yet initialized (forget to call 'flame\\init()' ?)");
-        }
-        return nullptr;
-    }
+namespace flame::core {
     php::value select(php::parameters& params)
     {
         std::vector< std::shared_ptr<coroutine_queue<php::value>> > qs;
@@ -49,16 +26,7 @@ namespace flame {
         return mm[q];
     }
     void declare(php::extension_entry &ext) {
-        gcontroller.reset(new controller());
         ext
-            .function<init>("flame\\init", {
-                {"process_name", php::TYPE::STRING},
-                {"options", php::TYPE::ARRAY, false, true},
-            })
-            .function<go>("flame\\go", {
-                {"coroutine", php::TYPE::CALLABLE},
-            })
-            .function<run>("flame\\run")
             .function<select>("flame\\select");
 
         queue::declare(ext);

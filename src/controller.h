@@ -1,9 +1,9 @@
 #pragma once
 #include "vendor.h"
-#include "controller_master.h"
-#include "controller_worker.h"
 
 namespace flame {
+	class controller_master;
+	class controller_worker;
 	class controller {
 	public:
 		boost::asio::io_context context_x;

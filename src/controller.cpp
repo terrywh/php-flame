@@ -11,7 +11,21 @@ namespace flame {
 		: type(process_type::UNKNOWN)
 		, env(boost::this_process::environment())
 		, status(STATUS_UNKNOWN) {
-
+		// FLAME_MAX_WORKERS 环境变量会被继承, 故此处顺序须先检测子进程
+		if (env.count("FLAME_CUR_WORKER") > 0)
+		{
+			type = process_type::WORKER;
+		}
+		else if (env.count("FLAME_MAX_WORKERS") > 0)
+		{
+			worker_size = std::atoi(env["FLAME_MAX_WORKERS"].to_string().c_str());
+			worker_size = std::min(std::max((int)worker_size, 1), 512);
+			type = process_type::MASTER;
+		} 
+		else
+		{
+			type = process_type::WORKER;
+		}
 		mthread_id = std::this_thread::get_id();
 	}
 	controller *controller::on_init(std::function<void (const php::array &options)> fn)
@@ -30,31 +44,18 @@ namespace flame {
 		{
 			fn(options);
 		}
-		if(options.exists("worker"))
+		if(type == process_type::WORKER)
 		{
-			worker_size = std::min( std::max( (int)options.get("worker").to_integer(), 1), 256 );
-			// 使用此环境变量区分父子进程
-			if (env.count("FLAME_PROCESS_WORKER") > 0)
-			{
-				php::callable("cli_set_process_title").call({title + " (flame/" + env["FLAME_PROCESS_WORKER"].to_string() + ")"});
-				type = process_type::WORKER;
-				worker_.reset(new controller_worker());
-				worker_->initialize(options);
-			}
-			else
-			{
-				php::callable("cli_set_process_title").call({title + " (flame/m)"});
-				type = process_type::MASTER;
-				master_.reset(new controller_master());
-				master_->initialize(options);
-			}
-		}
-		else
-		{
-			php::callable("cli_set_process_title").call({title + " (flame/w)"});
-			type = process_type::WORKER;
+			std::string index = env["FLAME_CUR_WORKER"].to_string();
+			if(index.empty()) index = "w";
+			php::callable("cli_set_process_title").call({title + " (php-flame/" + index + ")"});
 			worker_.reset(new controller_worker());
 			worker_->initialize(options);
+		}else/* if(type == process_type::MASTER)*/
+		{
+			php::callable("cli_set_process_title").call({title + " (php-flame/m)"});
+			master_.reset(new controller_master());
+			master_->initialize(options);
 		}
 	}
 
@@ -63,7 +64,7 @@ namespace flame {
 		{
 			worker_->run();
 		}
-		else
+		else /* if(type == process_type::MASTER)*/
 		{
 			master_->run();
 		}

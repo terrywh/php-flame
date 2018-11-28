@@ -41,11 +41,9 @@ namespace flame::tcp {
         {
 			std::string delim = params[0];
             len = boost::asio::async_read_until(socket_, buffer_, delim, ch[err]);
-            std::cout << "len: " << len << std::endl;
         }
         else if (params[0].typeof(php::TYPE::INTEGER)) // 3. 读取指定长度
         {
-            std::cout << "INTEGER\n";
 			std::size_t want = params[0].to_integer();
 			if(buffer_.size() >= want) {
                 len = want;
