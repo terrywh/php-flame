@@ -49,7 +49,9 @@ namespace flame
                 if(x==0)
                 {
                     std::cerr << "[" << time::iso() << "] (FATAL) " << ex.what() << "\n";
-                    exit(-1);
+                    boost::asio::post(gcontroller->context_x, [] () {
+                        gcontroller->context_x.stop();
+                    });
                 }else
                 {
                     std::cerr << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
@@ -57,7 +59,6 @@ namespace flame
             }
             return rv;
         }));
-        // coroutine::start(fn);
         return nullptr;
     }
     static php::value fake_fn(php::parameters& params)

@@ -65,7 +65,7 @@ namespace flame::redis
         ch.suspend();
         if (!conn)
         {
-            throw php::exception(zend_ce_exception, "failed to connect to MySQL server", -1);
+            throw php::exception(zend_ce_exception, "failed to connect to Redis server", -1);
         }
         // 恢复, 已经填充连接
         return conn;

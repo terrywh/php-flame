@@ -14,14 +14,15 @@ namespace flame {
 			zend_execute_data *current_execute_data;
 		};
 		//
-		static boost::context::segmented_stack stack_allocator;
+		static boost::context::fixedsize_stack stack_allocator;
 		static std::size_t count;
 		// 当前协程
 		static std::shared_ptr<coroutine> current;
 		static void save_context(php_context_t &ctx);
 		static void restore_context(php_context_t& ctx);
-		static std::shared_ptr<coroutine> start(php::callable fn, /*std::vector<php::value> ag = std::vector<php::value>(0),*/zend_execute_data* execute_data = nullptr);
-		coroutine(php::callable&& fn);
+		static php_context_t global_context;
+		static std::shared_ptr<coroutine> start(php::callable fn);
+		coroutine(php::callable fn);
 		~coroutine();
 
 		void suspend();

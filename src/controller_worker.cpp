@@ -4,7 +4,7 @@
 namespace flame
 {
     controller_worker::controller_worker()
-        : signal_(new boost::asio::signal_set(gcontroller->context_x, SIGTERM, SIGINT))
+    : signal_(new boost::asio::signal_set(gcontroller->context_x, SIGINT, SIGTERM))
     {
 
     }
@@ -15,18 +15,14 @@ namespace flame
     void controller_worker::run()
     {
         // 1. 停止信号调用退出通知
-        signal_->async_wait([this] (const boost::system::error_code& error, int sig)
+        signal_->async_wait([this](const boost::system::error_code &error, int sig)
         {
+            signal_->clear();
+            
             auto ft = gcontroller->cbmap->equal_range("quit");
             for(auto i=ft.first; i!=ft.second; ++i)
             {
                 i->second.call();
-            }
-            signal_.reset();
-
-            if (sig == SIGINT)
-            {
-                gcontroller->context_x.stop();
             }
         });
         // 工作线程的使用时随机的, 需要保持其一直存在
@@ -42,6 +38,7 @@ namespace flame
         }
         // 3. 启动 context_x 运行
         gcontroller->context_x.run();
+        signal_.reset();
         // 4. 确认工作线程停止
         work.reset();
         for (int i = 0; i < thread_.size(); ++i)

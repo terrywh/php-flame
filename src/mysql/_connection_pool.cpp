@@ -38,6 +38,7 @@ namespace flame::mysql
                 { // 可用连接
                     MYSQL *c = conn_.front().conn;
                     conn_.pop_front();
+                    mysql_reset_connection(c);
                     release(c);
                     return;
                 }
