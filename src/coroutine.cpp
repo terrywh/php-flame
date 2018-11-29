@@ -3,6 +3,7 @@
 
 namespace flame
 {
+    std::size_t coroutine::count = 0;
     // 当前协程
     std::shared_ptr<coroutine> coroutine::current;
     void coroutine::save_context(php_context_t &ctx)
@@ -23,6 +24,7 @@ namespace flame
     }
     std::shared_ptr<coroutine> coroutine::start(php::callable fn, /*std::vector<php::value> ag,*/ zend_execute_data *execute_data)
     {
+        ++coroutine::count;
         auto co = std::make_shared<coroutine>(std::move(fn));
         // 需要即时保存 PHP 堆栈
         co->php_.current_execute_data = execute_data;
@@ -45,6 +47,11 @@ namespace flame
                 // 协程运行完毕
                 zend_vm_stack_destroy();
                 coroutine::current = nullptr;
+                if(--coroutine::count)
+                {
+                    // 所有协程结束后退出
+                    gcontroller->context_x.stop();
+                }
                 return std::move(co->c2_);
             });
             co->resume();

@@ -13,6 +13,7 @@ namespace flame {
 			zend_class_entry *scope;
 			zend_execute_data *current_execute_data;
 		};
+		static std::size_t count;
 		// 当前协程
 		static std::shared_ptr<coroutine> current;
 		static void save_context(php_context_t &ctx);
