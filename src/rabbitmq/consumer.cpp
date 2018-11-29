@@ -45,11 +45,10 @@ namespace flame::rabbitmq
         coroutine_queue<php::object> q(cc_->pf_);
         // 启动若干协程, 然后进行"并行>"消费
         int count = (int)std::ceil(cc_->pf_ / 2.0);
-        std::vector<std::shared_ptr<coroutine>> cos(count);
         for (int i = 0; i < count; ++i)
         {
             // 启动协程开始消费
-            cos[i] = coroutine::start(php::value([this, &q, &count, &ch, i] (php::parameters &params) -> php::value {
+            coroutine::start(php::value([this, &q, &count, &ch, i] (php::parameters &params) -> php::value {
                 coroutine_handler cch {coroutine::current};
                 while(auto x = q.pop(cch))
                 {
@@ -59,7 +58,7 @@ namespace flame::rabbitmq
                     }
                     catch(const php::exception& ex)
                     {
-                        std::clog << "[" << time::iso() << "] (ERROR) " << ex << std::endl;
+                        std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                 }
                 if(--count == 0)
