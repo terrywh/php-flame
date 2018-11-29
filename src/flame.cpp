@@ -12,6 +12,7 @@
 #include "kafka/kafka.h"
 #include "rabbitmq/rabbitmq.h"
 #include "tcp/tcp.h"
+#include "http/http.h"
 
 namespace flame 
 {
@@ -96,7 +97,7 @@ extern "C"
             flame::rabbitmq::declare(ext);
             flame::tcp::declare(ext);
             // flame::udp::declare(ext);
-            // flame::http::declare(ext);
+            flame::http::declare(ext);
             // flame::log::declare(ext);
         }
         else
