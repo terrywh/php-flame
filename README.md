@@ -8,7 +8,7 @@
 
 ``` Bash
 ./bootstrap.sh --prefix=/data/vendor/boost-1.68.0
-./b2 -j4 --prefix=/data/vendor/boost-1.68.0 cxxflags="-fPIC" segmented-stacks=on context-impl=ucontext define=BOOST_USE_SEGMENTED_STACKS define=BOOST_USE_UCONTEXT variant=release link=static threading=multi install
+./b2 -j4 --prefix=/data/vendor/boost-1.68.0 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
 
 #### libphpext
