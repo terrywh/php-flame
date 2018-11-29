@@ -29,14 +29,50 @@ namespace flame
     static php::value go(php::parameters& params)
     {
         php::callable fn = params[0];
-        coroutine::start(fn);
+        coroutine::start(php::callable([fn] (php::parameters& params) -> php::value
+        {
+            php::value rv;
+            try{
+                rv = fn.call();
+            }
+            catch (const php::exception &ex)
+            {
+                int x = 0;
+                auto ft = gcontroller->cbmap->equal_range("exception");
+                for(auto i=ft.first; i!=ft.second; ++i)
+                {
+                    ++x;
+                    i->second.call({ex});
+                }
+                if(x==0)
+                {
+                    std::cerr << "[" << time::iso() << "] (FATAL) " << ex.what() << "\n";
+                    exit(-1);
+                }else
+                {
+                    std::cerr << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
+                }
+            }
+            return rv;
+        }));
         return nullptr;
     }
-    static php::value fake_go(php::parameters& params)
+    static php::value fake_fn(php::parameters& params)
     {
         return nullptr;
     }
-    static php::value run(php::parameters& params) {
+    static php::value on(php::parameters &params)
+    {
+        std::string event = params[0].to_string();
+        if (!params[1].typeof(php::TYPE::CALLABLE))
+        {
+            throw php::exception(zend_ce_type_error, "callable is required", -1);
+        }
+        gcontroller->cbmap->insert({event, params[1]});
+        return nullptr;
+    }
+    static php::value run(php::parameters& params)
+    {
         if(gcontroller->status & controller::STATUS_INITIALIZED)
         {
             gcontroller->core_execute_data = EG(current_execute_data);
@@ -44,6 +80,11 @@ namespace flame
         }else{
             throw php::exception(zend_ce_type_error, "failed to run flame: not yet initialized (forget to call 'flame\\init()' ?)");
         }
+        return nullptr;
+    }
+    static php::value quit(php::parameters& params)
+    {
+        gcontroller->context_x.stop();
         return nullptr;
     }
 }
@@ -82,10 +123,17 @@ extern "C"
             .function<flame::run>("flame\\run");
         if(flame::gcontroller->type == flame::controller::process_type::WORKER)
         {
-            ext.function<flame::go>("flame\\go",
+            ext
+            .function<flame::go>("flame\\go",
             {
                 {"coroutine", php::TYPE::CALLABLE},
-            });
+            })
+            .function<flame::on>("flame\\on",
+            {
+                {"event", php::TYPE::STRING},
+                {"callback", php::TYPE::CALLABLE},
+            })
+            .function<flame::quit>("flame\\quit");
             flame::core::declare(ext);
             flame::os::declare(ext);
             flame::time::declare(ext);
@@ -101,10 +149,9 @@ extern "C"
         }
         else
         {
-            ext.function<flame::fake_go>("flame\\go",
-            {
-                {"coroutine", php::TYPE::CALLABLE},
-            });
+            ext
+            .function<flame::fake_fn>("flame\\go")
+            .function<flame::fake_fn>("flame\\on");
         }
         return ext;
     }

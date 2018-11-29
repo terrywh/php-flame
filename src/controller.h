@@ -24,6 +24,8 @@ namespace flame {
 		int status;
 		std::size_t    worker_size;
 		std::thread::id mthread_id;
+		// 防止 PHP 提前回收, 使用堆容器
+		std::multimap<std::string, php::callable>* cbmap;
 	private:
 		// 核心进程对象
 		std::unique_ptr<controller_master> master_;
