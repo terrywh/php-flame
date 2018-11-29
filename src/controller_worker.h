@@ -10,6 +10,7 @@ namespace flame
 		void run();
 
 	private:
-		std::vector<std::thread> thread_;
+		std::vector<std::thread*> thread_;
+		std::unique_ptr<boost::asio::signal_set> signal_;
 	};
 }

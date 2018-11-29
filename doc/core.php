@@ -7,8 +7,8 @@ namespace flame;
  * 初始化框架, 设置进程名称及相关配置;
  * @param string $process_name 进程名称
  * @param array  $options 选项配置, 目前可用如下:
- *  * `worker` - 工作进程仓库
- *  * `logger` - 日志输出重定向目标文件(完整路径);
+ *  * `logger` - 日志输出重定向目标文件(完整路径, 若不提供使用标准输出); 
+ *      向主进程发送 SIGUSR2 信号该文件将会被重新打开(或生成);
  */
 function init($process_name, $options = []) {}
 /**
@@ -24,6 +24,18 @@ function run() {}
  * @return 若所有通道已关闭, 返回 null; 否则返回一个有数据的通道, 即: 可以无等待 pop()
  */
 function select(channel $q1, $q2/*, ...*/):channel {}
+/**
+ * 监听框架的通知
+ * @param string $event 目前消息存在以下两种:
+ *  * "exception" - 未捕获的异常通知;
+ *  * "exit" - 退出消息, 一般用于平滑停止各种服务;
+ * @param callable 回调函数
+ */
+function on(string $event, callable $cb) {}
+/**
+ * 用于在用户异常处理流程中退出整个框架
+ */
+function quit() {}
 /**
  * 协程型队列
  */

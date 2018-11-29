@@ -27,12 +27,12 @@ namespace flame::log
     static void write_ex(int lv, php::parameters& params)
     {
         if(lv < level) return;
-        std::cout << '[' << time::iso() << "] (";
-        std::cout << LEVEL_S[lv];
-        std::cout << "] ";
+        std::clog << '[' << time::iso() << "] (";
+        std::clog << LEVEL_S[lv];
+        std::clog << "] ";
         for (int i = 0; i < params.size(); ++i)
         {
-            std::cout << ' ' << params[i].ptr();
+            std::clog << ' ' << params[i].ptr();
         }
     }
     static php::value trace(php::parameters &params)

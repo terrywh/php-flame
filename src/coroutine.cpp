@@ -33,8 +33,7 @@ namespace flame
                 auto work = boost::asio::make_work_guard(gcontroller->context_x);
                 // 启动进入协程
                 coroutine::current = co;
-                if(co->php_.current_execute_data == nullptr)
-                {
+                if(co->php_.current_execute_data == nullptr) {
                     // 若 run 还未执行时, core_execute_data 还没有值;
                     // 故赋值延迟到此处进行
                     co->php_.current_execute_data = gcontroller->core_execute_data;

@@ -6,7 +6,9 @@ namespace flame
     controller_master::controller_master()
         : signal_(new boost::asio::signal_set(gcontroller->context_y, SIGINT, SIGTERM, SIGUSR2))
         , worker_(gcontroller->worker_size)
+        , sout_(gcontroller->worker_size)
         , sbuf_(gcontroller->worker_size)
+        , eout_(gcontroller->worker_size)
         , ebuf_(gcontroller->worker_size)
     {
 
@@ -36,6 +38,9 @@ namespace flame
     }
     void controller_master::spawn_worker(int i)
     {
+        sout_[i].reset( new boost::process::async_pipe(gcontroller->context_x) );
+        eout_[i].reset( new boost::process::async_pipe(gcontroller->context_x) );
+
         ++count_;
         std::string cmd = start_command_line();
         boost::process::environment env = gcontroller->env;
@@ -68,11 +73,8 @@ namespace flame
                         }
                     });
                 }
-                else
-                {
-                    sout_[i]->close();
-                    eout_[i]->close();
-                }
+                sout_[i]->close();
+                eout_[i]->close();
             }) );
         
     }
@@ -90,12 +92,9 @@ namespace flame
             else
             {
                 auto y = sbuf_[i].data();
-                for (auto x = boost::asio::buffer_sequence_begin(y); x != boost::asio::buffer_sequence_end(y); ++x)
-                {
-                    offile_->write((char*)x->data(), x->size());
-                }
-                offile_->flush();
+                *offile_ << std::string(boost::asio::buffers_begin(y), boost::asio::buffers_begin(y) + nread);
                 sbuf_[i].consume(nread);
+                offile_->flush();
 
                 redirect_sout(i);
             }
@@ -115,13 +114,10 @@ namespace flame
             else
             {
                 auto y = ebuf_[i].data();
-                for (auto x = boost::asio::buffer_sequence_begin(y); x != boost::asio::buffer_sequence_end(y); ++x)
-                {
-                    offile_->write((char *)x->data(), x->size());
-                }
-                offile_->flush();
+                *offile_ << std::string(boost::asio::buffers_begin(y), boost::asio::buffers_begin(y) + nread);
                 ebuf_[i].consume(nread);
-
+                offile_->flush();
+                
                 redirect_eout(i);
             }
         });
@@ -133,8 +129,6 @@ namespace flame
         // 1. 新增环境变量及命令行参数, 启动子进程;
         for(int i=0;i<gcontroller->worker_size;++i)
         {
-            sout_.push_back(std::make_unique<boost::process::async_pipe>(gcontroller->context_x));
-            eout_.push_back(std::make_unique<boost::process::async_pipe>(gcontroller->context_x));
             spawn_worker(i);
             redirect_sout(i);
             redirect_eout(i);
@@ -175,12 +169,12 @@ namespace flame
             offile_.reset(new std::ofstream(ofpath_, std::ios_base::out | std::ios_base::app));
             // 文件打开失败时不会抛出异常，需要额外的状态检查
 			if(!(*offile_)) {
-                std::cout << "(ERROR) failed to create/open logger target file, fallback to standard output\n";
+                std::clog << "(ERROR) failed to create/open logger target file, fallback to standard output\n";
             }else{
                 return;
             }
 		}
         
-        offile_.reset(&std::cout, boost::null_deleter());
+        offile_.reset(&std::clog, boost::null_deleter());
     }
 }

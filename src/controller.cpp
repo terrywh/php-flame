@@ -10,7 +10,9 @@ namespace flame {
 	controller::controller()
 		: type(process_type::UNKNOWN)
 		, env(boost::this_process::environment())
-		, status(STATUS_UNKNOWN) {
+		, status(STATUS_UNKNOWN)
+		, cbmap(new std::multimap<std::string, php::callable>())
+	{
 		// FLAME_MAX_WORKERS 环境变量会被继承, 故此处顺序须先检测子进程
 		if (env.count("FLAME_CUR_WORKER") > 0)
 		{
@@ -68,6 +70,7 @@ namespace flame {
 		{
 			master_->run();
 		}
+		delete cbmap;
 		// 运行完毕
 		for (auto fn : stop_cb)
 		{
