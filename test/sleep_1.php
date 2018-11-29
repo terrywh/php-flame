@@ -12,7 +12,7 @@ function mySleep2($ms) {
 for($i=0;$i<200;++$i) {
     flame\go(function() {
         $i = 0;
-        for($x=0;$x<200;++$x) {
+        for($x=0;$x<2000;++$x) {
             echo ++$i, "\n";
             mySleep1();
             // flame\time\sleep(10);

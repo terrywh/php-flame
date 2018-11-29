@@ -4,6 +4,7 @@
 #include "controller_worker.h"
 #include "coroutine.h"
 #include "core.h"
+#include "log/log.h"
 #include "os/os.h"
 #include "time/time.h"
 #include "mysql/mysql.h"
@@ -56,6 +57,7 @@ namespace flame
             }
             return rv;
         }));
+        // coroutine::start(fn);
         return nullptr;
     }
     static php::value fake_fn(php::parameters& params)
@@ -136,6 +138,7 @@ extern "C"
             })
             .function<flame::quit>("flame\\quit");
             flame::core::declare(ext);
+            flame::log::declare(ext);
             flame::os::declare(ext);
             flame::time::declare(ext);
             flame::mysql::declare(ext);
@@ -146,7 +149,7 @@ extern "C"
             flame::tcp::declare(ext);
             // flame::udp::declare(ext);
             flame::http::declare(ext);
-            // flame::log::declare(ext);
+            
         }
         else
         {

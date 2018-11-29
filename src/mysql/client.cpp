@@ -13,6 +13,7 @@ namespace flame::mysql
         class_client
             .constant({"AAAA",123})
             .method<&client::__construct>("__construct", {}, php::PRIVATE)
+            .method<&client::__destruct>("__destruct")
             .method<&client::escape>("escape",
             {
                 {"data", php::TYPE::UNDEFINED},
@@ -59,6 +60,11 @@ namespace flame::mysql
         ext.add(std::move(class_client));
     }
     php::value client::__construct(php::parameters& params) {
+        return nullptr;
+    }
+    php::value client::__destruct(php::parameters &params)
+    {
+        // std::cout << "client destruct\n";
         return nullptr;
     }
     php::value client::escape(php::parameters &params)

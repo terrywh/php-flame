@@ -13,6 +13,8 @@ namespace flame {
 			zend_class_entry *scope;
 			zend_execute_data *current_execute_data;
 		};
+		//
+		static boost::context::segmented_stack stack_allocator;
 		static std::size_t count;
 		// 当前协程
 		static std::shared_ptr<coroutine> current;
@@ -20,6 +22,7 @@ namespace flame {
 		static void restore_context(php_context_t& ctx);
 		static std::shared_ptr<coroutine> start(php::callable fn, /*std::vector<php::value> ag = std::vector<php::value>(0),*/zend_execute_data* execute_data = nullptr);
 		coroutine(php::callable&& fn);
+		~coroutine();
 
 		void suspend();
 		void resume();
@@ -31,6 +34,7 @@ namespace flame {
 		php_context_t php_;
 		// 用于部分异步请求返回长度信息
 		std::size_t len_;
+		
 	};
 
 	struct coroutine_handler

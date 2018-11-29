@@ -17,12 +17,17 @@ namespace flame
         // 1. 停止信号调用退出通知
         signal_->async_wait([this] (const boost::system::error_code& error, int sig)
         {
-            auto ft = gcontroller->cbmap->equal_range("exit");
+            auto ft = gcontroller->cbmap->equal_range("quit");
             for(auto i=ft.first; i!=ft.second; ++i)
             {
                 i->second.call();
             }
             signal_.reset();
+
+            if (sig == SIGINT)
+            {
+                gcontroller->context_x.stop();
+            }
         });
         // 工作线程的使用时随机的, 需要保持其一直存在
         auto work = boost::asio::make_work_guard(gcontroller->context_y);

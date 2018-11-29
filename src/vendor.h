@@ -26,8 +26,10 @@
 #include <parser/multipart_parser.hpp>
 #include <boost/version.hpp>
 #include <boost/core/null_deleter.hpp>
-#include <boost/context/continuation.hpp>
+#define BOOST_USE_UCONTEXT
+#define BOOST_USE_SEGMENTED_STACKS
 #include <boost/context/fiber.hpp>
+#include <boost/context/segmented_stack.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
