@@ -29,12 +29,12 @@ namespace flame::kafka
         
         php::object obj(php::class_entry<consumer>::entry());
         consumer* ptr = static_cast<consumer*>(php::native(obj));
-        ptr->cs_.reset(new _consumer(config, topics));
         if (config.exists("concurrent"))
         {
-            ptr->cc_ = std::min(std::min(std::max(static_cast<int>(config.get("concurrenty")), 1), 8), 256);
+            ptr->cc_ = std::min(std::min(std::max(static_cast<int>(config.get("concurrent")), 1), 8), 256);
             config.erase("concurrent");
         }
+        ptr->cs_.reset(new _consumer(config, topics));
         coroutine_handler ch {coroutine::current};
         // 订阅
         ptr->cs_->subscribe(ch);

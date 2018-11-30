@@ -15,12 +15,13 @@ namespace flame::http
     _connection_pool::~_connection_pool() {
     }
     std::shared_ptr<tcp::socket>
-    _connection_pool::acquire(std::shared_ptr<url> url, int32_t timeout, coroutine_handler &ch) {
+    _connection_pool::acquire(std::shared_ptr<url> url, time_t_ ts,coroutine_handler &ch) {
         boost::system::error_code ec_;
 
         // 超时预处理
-        boost::asio::steady_timer tmo(gcontroller->context_x);
         auto cc = false;
+        auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(ts - std::chrono::steady_clock::now()).count();
+        boost::asio::steady_timer tmo(gcontroller->context_x);
         tmo.expires_after(std::chrono::milliseconds(timeout));
         tmo.async_wait([&cc, &ch, &ec_](const boost::system::error_code &ec) {
             if(ec == boost::asio::error::operation_aborted)
@@ -32,11 +33,11 @@ namespace flame::http
 
         std::shared_ptr<tcp::socket> c;
         auto type = url->schema + url->host + std::to_string(url->port);
-        while(cp_.count(type) > 0) {
-            auto it = cp_.find(type);
-            if(it != cp_.end()) {
+        while(hp_.count(type) > 0) {
+            auto it = hp_.find(type);
+            if(it != hp_.end()) {
                 auto s = it->second.first;
-                cp_.erase(it);
+                hp_.erase(it);
                 s->async_wait(tcp::socket::wait_write, ch[ec_]);
                 if(!ec_) {
                     c = s;
@@ -74,13 +75,14 @@ DONE:
         if(c)
             return c;
 
-        return create(url, timeout, ch);
+        return create(url, ts, ch);
     }
-    std::shared_ptr<tcp::socket> _connection_pool::create(std::shared_ptr<url> u, int timeout, coroutine_handler& ch) {
+    std::shared_ptr<tcp::socket> _connection_pool::create(std::shared_ptr<url> u, time_t_ ts, coroutine_handler& ch) {
         boost::system::error_code ec_;
         // 超时预处理
-        boost::asio::steady_timer tmo(gcontroller->context_x);
         bool cc = false;
+        auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(ts - std::chrono::steady_clock::now()).count();
+        boost::asio::steady_timer tmo(gcontroller->context_x);
         tmo.expires_after(std::chrono::milliseconds(timeout));
         tmo.async_wait([&cc, &ch, &ec_] (const boost::system::error_code &ec) {
             if(ec == boost::asio::error::operation_aborted) {
@@ -130,15 +132,13 @@ END:
         return c;
     }
 
-    php::value _connection_pool::execute(
-            std::string type,
-            std::shared_ptr<tcp::socket> c, 
-            boost::beast::http::message<true, value_body<true>> &ctr_, 
-            int32_t timeout, 
-            coroutine_handler &ch) {
-        boost::system::error_code ec_;
+    php::value _connection_pool::execute(client_request* req, time_t_ ts, coroutine_handler &ch) {
+        auto c = acquire(req->url_, ts, ch);
+
         // 构建并发送请求
-        bool cc = false;
+        bool cc      = false;
+        auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(ts - std::chrono::steady_clock::now()).count();
+        boost::system::error_code ec_;
         boost::asio::steady_timer tmo(gcontroller->context_x);
         tmo.expires_after(std::chrono::milliseconds(timeout));
         tmo.async_wait([&ch, &cc, &ec_](const boost::system::error_code &ec) {
@@ -149,7 +149,7 @@ END:
             ch.resume();
         });
 
-        boost::beast::http::async_write(*c, ctr_, [&cc, &ch, &ec_](const boost::system::error_code& ec, std::size_t n) {
+        boost::beast::http::async_write(*c, req->ctr_, [&cc, &ch, &ec_](const boost::system::error_code& ec, std::size_t n) {
             if(cc == true) return ;
             ec_ = ec;
             ch.resume();
@@ -175,9 +175,12 @@ END:
             throw php::exception(zend_ce_exception, "failed to read response: timeout");
         if(ec_)
             throw php::exception(zend_ce_exception, (boost::format("failed to read response: (%1%) %2%") % ec_.value() % ec_.message()).str(), ec_.value());
+
         res_->build_ex();
         tmo.cancel();
-        if(res_->ctr_.keep_alive() && ctr_.keep_alive())
+
+        auto type = req->url_->schema + req->url_->host + std::to_string(req->url_->port);
+        if(res_->ctr_.keep_alive() && req->ctr_.keep_alive())
             release(type, c);
         else {
             --ps_[type];
@@ -190,7 +193,7 @@ END:
         if (await_[type].empty()) {
             // 无等待分配的请求
             if(!s)
-                cp_.insert(std::make_pair(type, std::make_pair(s, std::chrono::steady_clock::now())));
+                hp_.insert(std::make_pair(type, std::make_pair(s, std::chrono::steady_clock::now())));
         } else {
             // 立刻分配使用
             std::function<void(std::shared_ptr<tcp::socket>)> cb = await_[type].front();
@@ -203,11 +206,11 @@ END:
         tm_.async_wait([this] (const boost::system::error_code &ec) {
             auto now = std::chrono::steady_clock::now();
             if(ec) return; // 当前对象销毁时会发生对应的 abort 错误
-            for (auto i = cp_.begin(); i != cp_.end();) {
+            for (auto i = hp_.begin(); i != hp_.end();) {
                 auto itvl = std::chrono::duration_cast<std::chrono::seconds>(now - i->second.second);
                 if(itvl.count() > 30) {
                     --ps_[i->first];
-                    i = cp_.erase(i);
+                    i = hp_.erase(i);
                 } else
                     ++i;
             }

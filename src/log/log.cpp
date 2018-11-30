@@ -29,11 +29,12 @@ namespace flame::log
         if(lv < level) return;
         std::clog << '[' << time::iso() << "] (";
         std::clog << LEVEL_S[lv];
-        std::clog << "] ";
+        std::clog << ") ";
         for (int i = 0; i < params.size(); ++i)
         {
             std::clog << ' ' << params[i].ptr();
         }
+        std::clog << '\n';
     }
     static php::value trace(php::parameters &params)
     {

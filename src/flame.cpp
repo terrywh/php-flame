@@ -4,6 +4,7 @@
 #include "controller_worker.h"
 #include "coroutine.h"
 #include "core.h"
+#include "log/log.h"
 #include "os/os.h"
 #include "time/time.h"
 #include "mysql/mysql.h"
@@ -48,7 +49,9 @@ namespace flame
                 if(x==0)
                 {
                     std::cerr << "[" << time::iso() << "] (FATAL) " << ex.what() << "\n";
-                    exit(-1);
+                    boost::asio::post(gcontroller->context_x, [] () {
+                        gcontroller->context_x.stop();
+                    });
                 }else
                 {
                     std::cerr << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
@@ -136,6 +139,7 @@ extern "C"
             })
             .function<flame::quit>("flame\\quit");
             flame::core::declare(ext);
+            flame::log::declare(ext);
             flame::os::declare(ext);
             flame::time::declare(ext);
             flame::mysql::declare(ext);

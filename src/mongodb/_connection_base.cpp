@@ -48,7 +48,19 @@ namespace flame::mongodb
         }
         else
         {
-            return bson2array(rep);
+            php::array r(4);
+
+            bson_iter_t i;
+            bson_oid_t oid;
+            bson_iter_init(&i, rep.get());
+            while (bson_iter_next(&i))
+            {
+                const char* key = bson_iter_key(&i);
+                std::uint32_t len = bson_iter_key_len(&i);
+                if(len > 0 && key[0] == '$') continue;
+                r.set(php::string(key, len), iter2value(&i));
+            }
+            return std::move(r);
         }
     }
 } // namespace flame::mongodb

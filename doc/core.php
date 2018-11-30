@@ -28,7 +28,7 @@ function select(channel $q1, $q2/*, ...*/):channel {}
  * 监听框架的通知
  * @param string $event 目前消息存在以下两种:
  *  * "exception" - 未捕获的异常通知;
- *  * "exit" - 退出消息, 一般用于平滑停止各种服务;
+ *  * "quit" - 退出消息, 一般用于平滑停止各种服务;
  * @param callable 回调函数
  */
 function on(string $event, callable $cb) {}

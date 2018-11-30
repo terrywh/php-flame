@@ -57,11 +57,11 @@ namespace flame::http {
         req_->build_ex();
 
         auto type    = req_->url_->schema + req_->url_->host + std::to_string(req_->url_->port);
-        auto timeout = static_cast<int>(req_->get("timeout"));
+        auto timeout = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<int>(req_->get("timeout")));
         if(req_->url_->schema.compare("http") == 0) {
-            return cp_->execute(type, cp_->acquire(req_->url_, timeout, ch), req_->ctr_, timeout, ch);
+            return cp_->execute(req_, timeout, ch);
         } else if(req_->url_->schema.compare("https") == 0) {
-            return cp_->execute(type, cp_->acquire(req_->url_, timeout, ch), req_->ctr_, timeout, ch);
+            //return cp_->execute(req_, timeout, ch);
         }
         throw php::exception(zend_ce_exception, "request protocol not supported");
     }

@@ -144,7 +144,7 @@ namespace flame
                 // 信号的默认处理: 转给所有子进程
                 for(auto i=worker_.begin(); i!=worker_.end(); ++i)
                 {
-                    ::kill( (*i)->id(), sig );
+                    ::kill( (*i)->id(), SIGTERM );
                 }
             }
         });

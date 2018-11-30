@@ -9,6 +9,7 @@ namespace flame::mysql
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params);
+        php::value __destruct(php::parameters &params);
         php::value escape(php::parameters &params);
         php::value begin_tx(php::parameters &params);
         // php::value where(php::parameters &params);
