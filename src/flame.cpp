@@ -89,6 +89,7 @@ namespace flame
     static php::value quit(php::parameters& params)
     {
         gcontroller->context_x.stop();
+        gcontroller->context_y.stop();
         return nullptr;
     }
 }
