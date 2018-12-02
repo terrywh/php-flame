@@ -9,7 +9,6 @@ namespace http {
 		php::class_entry<server_request> class_server_request(
 			"flame\\http\\server_request");
 		class_server_request
-			.property({"timeout", 3000})
 			.property({"method", "GET"})
 			.property({"path", "/"})
 			.property({"query", nullptr})

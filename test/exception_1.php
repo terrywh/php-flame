@@ -5,10 +5,13 @@ function test() {
     flame\time\sleep(1000);
     throw new Exception("Aaaaaaa");
 }
+function test2() {
+    test();
+}
 
 flame\go(function() {
     flame\time\sleep(1000);
-    test();
+    test2();
 });
 
 // 可选
