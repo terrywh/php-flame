@@ -6,6 +6,10 @@
 #include "client_request.h"
 #include "client_response.h"
 #include "_connection_pool.h"
+#include "server.h"
+#include "server_request.h"
+#include "server_response.h"
+#include "_handler.h"
 
 namespace flame::http {
 	//php::value client_ref;
@@ -35,6 +39,9 @@ namespace flame::http {
 		client_request::declare(ext);
 		client_response::declare(ext);
 		client::declare(ext);
+		server::declare(ext);
+		server_request::declare(ext);
+		server_response::declare(ext);
 	}
 	static void init_guard() {
 		if(!client_) {
