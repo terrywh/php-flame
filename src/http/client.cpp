@@ -60,10 +60,10 @@ namespace flame::http {
         auto timeout = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<int>(req_->get("timeout")));
         if(req_->url_->schema.compare("http") == 0) {
             return cp_->execute(req_, timeout, ch);
-        } else if(req_->url_->schema.compare("https") == 0) {
+        } /*else if(req_->url_->schema.compare("https") == 0) {*/
             //return cp_->execute(req_, timeout, ch);
-        }
-        throw php::exception(zend_ce_exception, "request protocol not supported");
+        /*}*/
+        throw php::exception(zend_ce_exception, (boost::format("HTTP schema \'%1%\' not implemented)") % req_->url_->schema).str());
     }
     php::value client::exec(php::parameters& params) {
         return exec_ex(params[0]);

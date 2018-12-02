@@ -19,10 +19,9 @@ namespace flame::http
         const std::uint32_t max_;
 
         boost::asio::ip::tcp::resolver resolver_;
-        std::multimap<std::string, std::pair<std::shared_ptr<tcp::socket>, time_t_>> hp_; // connection_pool
-        std::multimap<std::string, std::pair<std::shared_ptr<ssl::stream<tcp::socket>>, time_t_>> hsp_; // connection_pool
         std::map<std::string, int32_t> ps_; // pool_size
-        std::map<std::string, std::list<std::function<void(std::shared_ptr<boost::asio::ip::tcp::socket>)>>> await_;
+        std::multimap<std::string, std::pair<std::shared_ptr<tcp::socket>, time_t_>> p_; // connection pool
+        std::map<std::string, std::list<std::function<void(std::shared_ptr<tcp::socket>)>>> wl_; // await list
         boost::asio::steady_timer tm_;
     };
 
