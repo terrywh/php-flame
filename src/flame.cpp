@@ -24,7 +24,6 @@ namespace flame
         {
             options = params[1];
         }
-        gcontroller->core_execute_data = EG(current_execute_data);
         gcontroller->initialize(params[0], options);
         return nullptr;
     }
@@ -46,15 +45,20 @@ namespace flame
                     ++x;
                     i->second.call({ex});
                 }
+                // php::object obj = ex;
                 if(x==0)
                 {
+                    // std::cerr << "[" << time::iso() << "] (FATAL) " << obj.call("gettraceasstring") << "\n";
                     std::cerr << "[" << time::iso() << "] (FATAL) " << ex.what() << "\n";
                     boost::asio::post(gcontroller->context_x, [] () {
+                        gcontroller->status |= controller::controller_status::STATUS_EXCEPTION;
                         gcontroller->context_x.stop();
+                        gcontroller->context_y.stop();
                     });
                 }else
                 {
-                    std::cerr << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
+                    // std::clog << "[" << time::iso() << "] (ERROR) " << obj.call("gettraceasstring") << "\n";
+                    std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
                 }
             }
             return rv;
@@ -79,7 +83,7 @@ namespace flame
     {
         if(gcontroller->status & controller::STATUS_INITIALIZED)
         {
-            gcontroller->core_execute_data = EG(current_execute_data);
+            gcontroller->default_execute_data = EG(current_execute_data);
             gcontroller->run();
         }else{
             throw php::exception(zend_ce_type_error, "failed to run flame: not yet initialized (forget to call 'flame\\init()' ?)");
@@ -89,6 +93,7 @@ namespace flame
     static php::value quit(php::parameters& params)
     {
         gcontroller->context_x.stop();
+        gcontroller->context_y.stop();
         return nullptr;
     }
 }

@@ -73,8 +73,9 @@ namespace flame
                         }
                     });
                 }
-                sout_[i]->close();
-                eout_[i]->close();
+                worker_[i].reset();
+                sout_[i].reset();
+                eout_[i].reset();
             }) );
         
     }
@@ -134,7 +135,8 @@ namespace flame
             redirect_eout(i);
         }
         // 2. 监听信号进行日志重载或停止
-        signal_->async_wait([this] (const boost::system::error_code &error, int sig) {
+        signal_->async_wait([this](const boost::system::error_code &error, int sig) {
+            if(error) return;
             if(sig == SIGUSR2)
             {
                 reload_output();
@@ -144,8 +146,10 @@ namespace flame
                 // 信号的默认处理: 转给所有子进程
                 for(auto i=worker_.begin(); i!=worker_.end(); ++i)
                 {
-                    ::kill( (*i)->id(), SIGTERM );
+                    if(*i) ::kill( (*i)->id(), SIGTERM );
                 }
+                signal_.reset();
+                gcontroller->context_x.stop();
             }
         });
         // 3. 启动运行
@@ -169,7 +173,7 @@ namespace flame
             offile_.reset(new std::ofstream(ofpath_, std::ios_base::out | std::ios_base::app));
             // 文件打开失败时不会抛出异常，需要额外的状态检查
 			if(!(*offile_)) {
-                std::clog << "(ERROR) failed to create/open logger target file, fallback to standard output\n";
+                std::cerr << "(ERROR) failed to create/open logger target file, fallback to standard output\n";
             }else{
                 return;
             }

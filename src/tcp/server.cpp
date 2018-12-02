@@ -34,9 +34,9 @@ namespace flame::tcp
     {
         std::string str_addr = params[0];
         auto pair = addr2pair(str_addr);
-        if(pair.second.empty())
+        if(pair.first.empty() || pair.second.empty())
         {
-            throw php::exception(zend_ce_type_error, "failed to bind tcp socket: missing port");
+            throw php::exception(zend_ce_type_error, "failed to bind tcp socket: address malformed");
         }
         boost::asio::ip::address addr = boost::asio::ip::make_address(pair.first);
         addr_.address(addr);
@@ -97,7 +97,7 @@ namespace flame::tcp
                     }
                     catch(const php::exception& ex)
                     {
-                        std::cout << "[" << time::iso << "] (ERROR) " << ex << std::endl;
+                        std::clog << "[" << time::iso << "] (ERROR) " << ex.what() << std::endl;
                     }
                     return nullptr;
                 }));
