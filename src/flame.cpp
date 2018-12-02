@@ -155,7 +155,6 @@ extern "C"
             flame::tcp::declare(ext);
             // flame::udp::declare(ext);
             flame::http::declare(ext);
-            
         }
         else
         {

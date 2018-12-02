@@ -12,5 +12,6 @@ namespace flame::http {
 		std::shared_ptr<url> url_;
 		boost::beast::http::message<true, value_body<true>> ctr_;
 		friend class client;
-	};
+		friend class _connection_pool;
+    };
 }
