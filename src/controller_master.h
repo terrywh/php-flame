@@ -8,7 +8,6 @@ namespace flame
 		controller_master();
         void initialize(const php::array& options);
 		void run();
-
     private:
 		std::vector<std::unique_ptr<boost::process::child>>    worker_;
         std::vector<std::unique_ptr<boost::process::async_pipe>> sout_;

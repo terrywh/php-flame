@@ -8,7 +8,6 @@ namespace flame
 		controller_worker();
         void initialize(const php::array& options);
 		void run();
-
 	private:
 		std::vector<std::thread*> thread_;
 		std::unique_ptr<boost::asio::signal_set> signal_;

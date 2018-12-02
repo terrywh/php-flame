@@ -58,12 +58,12 @@ namespace flame
                     save_context(coroutine::global_context);
                     // 启动进入协程
                     coroutine::current = co_;
-                    zend_execute_data ex;
-                    std::memset(&ex, sizeof(zend_execute_data), 0);
-                    EG(current_execute_data) = &ex;
+                    EG(current_execute_data) = gcontroller->default_execute_data;
                     zend_vm_stack_init();
                     // 协程运行;
                     co_->fn_.call(/*ag*/);
+                    // 实际协程销毁可能会较晚, 保证在 Zend 引擎前释放
+                    co_->fn_ = nullptr;
                     // 协程运行完毕
                     zend_vm_stack_destroy();
                     coroutine::current = nullptr;
@@ -75,7 +75,7 @@ namespace flame
                         if (--coroutine::count == 0)
                         {
                             // 所有协程结束后退出
-                            gcontroller->context_x.stop();
+                            gcontroller->stop();
                         }
                     });
                     return std::move(co_->c2_);

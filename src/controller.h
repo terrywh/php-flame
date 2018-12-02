@@ -8,7 +8,7 @@ namespace flame {
 	public:
 		boost::asio::io_context context_x;
 		boost::asio::io_context context_y;
-		zend_execute_data* core_execute_data;
+		zend_execute_data* default_execute_data;
 		enum class process_type
 		{
 			UNKNOWN = 0,
@@ -20,6 +20,8 @@ namespace flame {
 		{
 			STATUS_UNKNOWN = 0,
 			STATUS_INITIALIZED = 1,
+			STATUS_SHUTDOWN = 2,
+			STATUS_EXCEPTION = 4,
 		};
 		int status;
 		std::size_t    worker_size;
@@ -41,6 +43,7 @@ namespace flame {
 		void run();
 		controller *on_init(std::function<void(const php::array &options)> fn);
 		controller* on_stop(std::function<void ()> fn);
+		void stop();
 	};
 
 	extern std::unique_ptr<controller> gcontroller;
