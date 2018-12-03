@@ -50,40 +50,7 @@ flame\go(function() {
     //flame\time\sleep(2000);
 });
 
-// 清理超时连接
-// 清理被断开连接
-/*flame\go(function() {*/
-    //for($i = 0; $i < 1; ++$i) {
-        //flame\http\get("http://127.0.0.1:8081/");
-        //flame\time\sleep(1000);
-    //}
-/*});*/
-
-
-/*flame\go(function() {*/
-    //$req = new flame\http\client_request("http://127.0.0.1:8080/", null, 5000);
-    //$req->method = "GET";
-    //$req->body = "aaaaaaaaaa";
-    //$cli->exec($req);
-
-    //flame\time\sleep(100000);
-//});
-
-// 多协程并发
-/*$opt["connection_per_host"] = 20;*/
-//$cli = new flame\http\client($opt);
-//for($i = 0; $i < 300; $i++) {
-    //flame\go(function() use($cli) {
-        //$req = new flame\http\client_request("http://127.0.0.1:8080/", null, 5000);
-        //$req->method = "GET";
-        //$req->body = "aaaaaaaaaa";
-        //$cli->exec($req);
-    //});
-/*}*/
-
-
 // 直接使用全局连接测试
-// core dump
 flame\go(function() {
     for($i = 0; $i < 50; $i++) {
         flame\go(function() use($i) {
@@ -105,6 +72,50 @@ flame\go(function() {
             var_dump("global client " . $i);
         });
     }
+});
+
+// 连接超时测试
+flame\go(function() {
+    $opt["connection_per_host"] = 1;
+    $cli = new flame\http\client($opt);
+    flame\go(function() use($cli) {
+        try {
+            var_dump("client ------ 0 4s " . microtime());
+            $req = new flame\http\client_request("http://127.0.0.1:8081/get", null, 4000);
+            //$req = new flame\http\client_request("http://8.7.198.45", null, 500);
+            $req->method = "GET";
+            $cli->exec($req);
+        } catch(Exception $e) {
+            echo $e;
+        }
+        var_dump("client ------- 0 4s " . microtime());
+    });
+    flame\go(function() use($cli) {
+        try {
+            var_dump("client ++++++ 1 1s " . microtime());
+            $req = new flame\http\client_request("http://127.0.0.1:8081/get", null, 1000);
+            //$req = new flame\http\client_request("http://8.7.198.45", null, 500);
+            $req->method = "GET";
+            $cli->exec($req);
+        } catch(Exception $e) {
+            echo $e;
+        }
+        var_dump("client ++++++ 1 1s " . microtime());
+    });
+    flame\go(function() use($cli) {
+        try {
+            var_dump("client ------ 2 15s " . microtime());
+            $req = new flame\http\client_request("http://127.0.0.1:8081/get", null, 15000);
+            //$req = new flame\http\client_request("http://8.7.198.45", null, 500);
+            $req->method = "GET";
+            $cli->exec($req);
+        } catch(Exception $e) {
+            echo $e;
+        }
+        var_dump("client ------- 2 15s " . microtime());
+    });
+
+    flame\time\sleep(20000);
 });
 
 flame\run();

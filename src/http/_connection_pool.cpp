@@ -14,88 +14,51 @@ namespace flame::http
 
     _connection_pool::~_connection_pool() {
     }
-    std::shared_ptr<tcp::socket>
-    _connection_pool::acquire(std::shared_ptr<url> url, time_t_ ts,coroutine_handler &ch) {
-        boost::system::error_code ec_;
 
-        // 超时预处理
-        auto cc = false;
-        auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(ts - std::chrono::steady_clock::now()).count();
-        boost::asio::steady_timer tmo(gcontroller->context_x);
-        tmo.expires_after(std::chrono::milliseconds(timeout));
-        tmo.async_wait([&cc, &ch, &ec_](const boost::system::error_code &ec) {
-            if(ec == boost::asio::error::operation_aborted)
-                return;
-            cc = true;
-            ec_ = ec;
-            ch.resume();
-        });
-
-        std::shared_ptr<tcp::socket> c;
+    void _connection_pool::acquire(std::shared_ptr<url> url, std::shared_ptr<_connection_pool::context_t> ctx) {
         auto type = url->schema + url->host + std::to_string(url->port);
         while(p_.count(type) > 0) {
             auto it = p_.find(type);
             if(it != p_.end()) {
                 auto s = it->second.first;
                 p_.erase(it);
-                s->async_wait(tcp::socket::wait_write, ch[ec_]);
-                if(!ec_) {
-                    c = s;
+                s->async_wait(tcp::socket::wait_write, [ctx](const boost::system::error_code& ec) {
+                    if(ec == boost::asio::error::operation_aborted || (ctx->timeout())) return ;
+                    ctx->ec_ = ec;
+                    ctx->ch_.resume();
+                });
+                ctx->ch_.suspend();
+                if(ctx->timeout())
+                    goto DONE;
+                if(!ctx->ec_) {
+                    ctx->c_ = s;
                     goto DONE;
                 }
-                // 若连接存在异常，直接释放
-                --ps_[type];
+                // 连接异常，直接释放
+                release(type, nullptr);
             }
+            ctx->ec_ = boost::system::error_code{};
         }
 
         // 未获取到连接，且连接数达到最大
-        if(!c) {
-            if(ps_[type] >= max_) {
-                auto cb = wl_[type].emplace_back([&c, &ch](std::shared_ptr<tcp::socket> s) {
-                    c = s;
-                    ch.resume();
-                });
-                ch.suspend();
-                // 此处可能由于释放的连接已关闭
-                // 导致此处连接为空，而需要重建连接
-                if(cc) {
-                    for(auto i = wl_[type].begin(); i != wl_[type].end(); ++i ) {
-                        if(&(*i) == &cb) {
-                            wl_[type].erase(i);
-                            break;
-                        }
-                    }
-                }
-            }
+        if(!ctx->c_ && ps_[type] > max_) {
+            // 此处可能由于释放的连接已关闭
+            // 导致此处连接为空，而需要重建连接
+            ctx->wait();
+            if(!ctx->c_)
+                --ps_[type];
         }
 DONE:
-        if(cc == true) {
-            throw php::exception(zend_ce_exception, (boost::format("timeout to acquire new connection, host %1%, connections %2%, connection limit %3%") % (url->host + std::to_string(url->port)) % ps_[type] % max_).str());
+        if(ctx->timeout()) {
+            release(type, ctx->c_);
+            throw php::exception(zend_ce_exception, (boost::format("timeout to acquire new connection, host %1%, connection limit %2%") % (url->host + std::to_string(url->port)) % max_).str());
         }
-        tmo.cancel();
-        if(c)
-            return c;
-
-        return create(url, ts, ch);
+        if(!ctx->c_)
+            create(url, ctx);
     }
 
-    std::shared_ptr<tcp::socket>
-    _connection_pool::create(std::shared_ptr<url> u, time_t_ ts, coroutine_handler& ch) {
-        boost::system::error_code ec_;
-        // 超时预处理
-        bool cc = false;
-        auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(ts - std::chrono::steady_clock::now()).count();
-        boost::asio::steady_timer tmo(gcontroller->context_x);
-        tmo.expires_after(std::chrono::milliseconds(timeout));
-        tmo.async_wait([&cc, &ch, &ec_] (const boost::system::error_code &ec) {
-            if(ec == boost::asio::error::operation_aborted) {
-                return;
-            }
-            cc = true;
-            ec_ = ec;
-            ch.resume();
-        });
-
+    void 
+    _connection_pool::create(std::shared_ptr<url> u, std::shared_ptr<_connection_pool::context_t> ctx) {
         tcp::resolver::results_type eps_;
         auto c = std::make_shared<tcp::socket>(gcontroller->context_x);
         auto type = u->schema + u->host + std::to_string(u->port);
@@ -103,115 +66,119 @@ DONE:
         resolver_.async_resolve(
             u->host, 
             std::to_string(u->port), 
-            [&eps_, &ec_, &cc, &ch] (const boost::system::error_code& ec, tcp::resolver::results_type eps) {
-                if(cc){
+            [&eps_, ctx, c] (const boost::system::error_code& ec, tcp::resolver::results_type eps) {
+                // 存在DNS应答超时，导致cc已释放而产生crash
+                if(ctx->timeout()) {
                     return ;
                 }
-                ec_ = ec;
+                ctx->ec_ = ec;
                 eps_ = std::move(eps);
-                ch.resume();
+                ctx->ch_.resume();
         });
-        ch.suspend();
-        if(ec_ || cc)
+        ctx->ch_.suspend();
+        if(ctx->ec_ || ctx->timeout())
             goto END;
 
-        boost::asio::async_connect(*c, eps_, [&cc, &ch, &ec_] (const boost::system::error_code& ec, const tcp::endpoint& ep) {
-            if(cc)
+        ctx->to_ |= context_t::CONNECT;
+        boost::asio::async_connect(*c, eps_, [c, ctx] (const boost::system::error_code& ec, const tcp::endpoint& ep) {
+            if(ec == boost::asio::error::operation_aborted || ctx->timeout())
                 return ;
-            ec_ = ec;
-            ch.resume();
+            ctx->ec_ = ec;
+            ctx->ch_.resume();
         });
-        ch.suspend();
+        ctx->ch_.suspend();
 END:
-        if(cc == true) {
-            --ps_[type];
-            throw php::exception(zend_ce_exception, (boost::format("timeout to create new connection, host %1%, connections %2%, connection limit %3%") % (u->host + std::to_string(u->port)) % ps_[type] % max_).str());
+        if(ctx->timeout()) {
+            if(ctx->to_ & context_t::CONNECT)
+                c->cancel();
+            release(type, nullptr);
+            throw php::exception(zend_ce_exception, "timeout to create new connection");
         } 
-        tmo.cancel();
-        if(ec_) {
-            --ps_[type];
-            throw php::exception(zend_ce_exception, (boost::format("failed to create new connection: (%1%) %2%") % ec_.value() % ec_.message()).str(), ec_.value());
+        if(ctx->ec_) {
+            release(type, nullptr);
+            ctx->tm_.cancel();
+            throw php::exception(zend_ce_exception, (boost::format("failed to create new connection: (%1%) %2%") % ctx->ec_.value() % ctx->ec_.message()).str(), ctx->ec_.value());
         }
-        return c;
+        ctx->c_ = c;
     }
 
-    php::value _connection_pool::execute(client_request* req, time_t_ ts, coroutine_handler &ch) {
-        auto c = acquire(req->url_, ts, ch);
+    php::value 
+    _connection_pool::execute(client_request* req, int32_t timeout, coroutine_handler &ch) {
+        auto type = req->url_->schema + req->url_->host + std::to_string(req->url_->port);
+        auto ctx  = std::make_shared<_connection_pool::context_t>(ch, wl_[type], timeout);
+        ctx->expire();
+        acquire(req->url_, ctx);
 
         // 构建并发送请求
-        bool cc      = false;
-        auto type    = req->url_->schema + req->url_->host + std::to_string(req->url_->port);
-        auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(ts - std::chrono::steady_clock::now()).count();
-        boost::system::error_code ec_;
-        boost::asio::steady_timer tmo(gcontroller->context_x);
-        tmo.expires_after(std::chrono::milliseconds(timeout));
-        tmo.async_wait([&ch, &cc, &ec_](const boost::system::error_code &ec) {
-            if(ec == boost::asio::error::operation_aborted)
-                return;
-            cc = true;
-            ec_ = ec;
-            ch.resume();
+        boost::beast::http::async_write(*ctx->c_, req->ctr_, [ctx](const boost::system::error_code& ec, std::size_t n) {
+            if(ec == boost::asio::error::operation_aborted || ctx->timeout()) return ;
+            ctx->ec_ = ec;
+            ctx->ch_.resume();
         });
-
-        boost::beast::http::async_write(*c, req->ctr_, [&cc, &ch, &ec_](const boost::system::error_code& ec, std::size_t n) {
-            if(cc == true) return ;
-            ec_ = ec;
-            ch.resume();
-        });
-        ch.suspend();
-        if(cc) {
-            --ps_[type];
+        ctx->ch_.suspend();
+        if(ctx->timeout()) {
+            release(type, nullptr);
+            ctx->c_->cancel();
             throw php::exception(zend_ce_exception, "failed to write request: timeout");
         }
-        if(ec_) {
-            --ps_[type];
-            throw php::exception(zend_ce_exception, (boost::format("failed to write request: (%1%) %2%") % ec_.value() % ec_.message()).str(), ec_.value());
+        if(ctx->ec_) {
+            release(type, nullptr);
+            ctx->tm_.cancel();
+            throw php::exception(zend_ce_exception, (boost::format("failed to write request: (%1%) %2%") % ctx->ec_.value() % ctx->ec_.message()).str(), ctx->ec_.value());
         }
 
         // 构建并读取响应
         auto res_ref = php::object(php::class_entry<client_response>::entry());
         auto res_    = static_cast<client_response*>(php::native(res_ref));
         boost::beast::flat_buffer b;
-        boost::beast::http::async_read(*c, b, res_->ctr_, [&ch, &cc, &ec_] (const boost::system::error_code& ec, std::size_t n) {
-            if(cc == true) return ;
-            ec_ = ec;
-            ch.resume();
+        boost::beast::http::async_read(*ctx->c_, b, res_->ctr_, [ctx] (const boost::system::error_code& ec, std::size_t n) {
+            if(ec == boost::asio::error::operation_aborted || ctx->timeout()) return ;
+            ctx->ec_  = ec;
+            ctx->to_ |= context_t::DONE;
+            ctx->ch_.resume();
         });
 
-        ch.suspend();
-        if(cc) {
+        ctx->ch_.suspend();
+        if(ctx->timeout()) {
+            ctx->c_->cancel();
+            release(type, nullptr);
             throw php::exception(zend_ce_exception, "failed to read response: timeout");
-            --ps_[type];
         }
-        if(ec_) {
-            throw php::exception(zend_ce_exception, (boost::format("failed to read response: (%1%) %2%") % ec_.value() % ec_.message()).str(), ec_.value());
-            --ps_[type];
+        if(ctx->ec_) {
+            ctx->tm_.cancel();
+            release(type, nullptr);
+            throw php::exception(zend_ce_exception, (boost::format("failed to read response: (%1%) %2%") % ctx->ec_.value() % ctx->ec_.message()).str(), ctx->ec_.value());
         }
 
         res_->build_ex();
-        tmo.cancel();
+        ctx->tm_.cancel();
 
         if(res_->ctr_.keep_alive() && req->ctr_.keep_alive())
-            release(type, c);
+            release(type, ctx->c_);
         else
             release(type, nullptr);
         return res_ref;
     }
 
     void _connection_pool::release(std::string type, std::shared_ptr<tcp::socket> s) {
-        if(!s)
-            --ps_[type];
+        // read / write timeout，释放空连接
+        // 队列中有等待，导致callback->resume会在io run 排队，
+        // 导致其他协程通过 connections < max 
         if (wl_[type].empty()) {
             // 无等待分配的请求
             if(s)
                 p_.insert(std::make_pair(type, std::make_pair(s, std::chrono::steady_clock::now())));
+            else
+                --ps_[type];
         } else {
             // 立刻分配使用
-            std::function<void(std::shared_ptr<tcp::socket>)> cb = wl_[type].front();
+            auto ctx = wl_[type].front();
             wl_[type].pop_front();
-            cb(s);
+            // 释放空连接时，连接池计数在cb->resume后减小
+            (*ctx)(s);
         }
     }
+
     void _connection_pool::sweep() {
         tm_.expires_from_now(std::chrono::seconds(30));
         tm_.async_wait([this] (const boost::system::error_code &ec) {
@@ -221,7 +188,8 @@ END:
             for (auto i = p_.begin(); i != p_.end();) {
                 auto itvl = std::chrono::duration_cast<std::chrono::seconds>(now - i->second.second);
                 if(itvl.count() > 30) {
-                    --ps_[i->first];
+                    //--ps_[i->first];
+                    release(i->first, nullptr);
                     i = p_.erase(i);
                 } else
                     ++i;
@@ -236,5 +204,50 @@ END:
             sweep();
         });
     }
+
+    _connection_pool::context_t::context_t(coroutine_handler &ch, _connection_pool::queue_t& q, int32_t to) 
+    : ch_(ch)
+    , to_(NORMAL)
+    , tm_(gcontroller->context_x)
+    , q_(q)
+    , tp_(std::chrono::steady_clock::now() + std::chrono::milliseconds(to) ){
+    }
+    void _connection_pool::context_t::expire() {
+        boost::system::error_code ec;
+        tm_.expires_at(tp_);
+        tm_.async_wait([this, ctx = shared_from_this()](const boost::system::error_code &ec) {
+            if(ec == boost::asio::error::operation_aborted || (to_ & DONE))
+                return;
+            if(to_ & WAIT) {
+                for(auto i = q_.begin(); i != q_.end(); ++i ) {
+                    if( i->get() == this) {
+                        q_.erase(i);
+                        break;
+                    }
+                }
+                to_ &= ~WAIT;
+            }
+            to_ |= TIMEOUT;
+            ec_  = ec;
+            ch_.resume();
+        });
+    }
+    void _connection_pool::context_t::wait() {
+        to_ |= WAIT;
+        q_.push_back(shared_from_this());
+        ch_.suspend();
+    }
+    bool _connection_pool::context_t::timeout() {
+        return to_ & TIMEOUT;
+    }
+    void _connection_pool::context_t::operator()(std::shared_ptr<tcp::socket> c) {
+        // timeout的resume与此处的resume可能会在io_context上排队
+        // 在timeout时，需要先清理queue，再做resume
+        if(timeout()) return ;
+        to_ &= ~WAIT;
+        c_ = c;
+        ch_.resume();
+    }
 }
+
 
