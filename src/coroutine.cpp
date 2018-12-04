@@ -3,7 +3,7 @@
 
 namespace flame
 {
-    boost::context::fixedsize_stack coroutine::stack_allocator(256 * 1024);
+    boost::context::fixedsize_stack coroutine::stack_allocator(64 * 1024);
     std::size_t coroutine::count = 0;
     coroutine::php_context_t coroutine::global_context;
     // 当前协程

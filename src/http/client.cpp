@@ -53,7 +53,6 @@ namespace flame::http {
     }
     php::value client::exec_ex(const php::object& req) {
         coroutine_handler ch{coroutine::current};
-        std::cerr << coroutine::current << std::endl;
         auto req_ = static_cast<client_request*>(php::native(req));
         req_->build_ex();
 

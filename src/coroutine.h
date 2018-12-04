@@ -54,7 +54,7 @@ namespace flame {
 		void suspend();
 		boost::system::error_code* er_;
 		std::shared_ptr<coroutine> co_;
-        std::shared_ptr<std::atomic<int>> stat_;
+		std::shared_ptr<std::atomic<int>> stat_;
 
 		friend bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2);
 

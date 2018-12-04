@@ -41,36 +41,33 @@ namespace flame::http
         }
 
         // 未获取到连接，且连接数达到最大
-        if(!ctx->c_ && ps_[type] > max_) {
+        if(!ctx->c_ && ps_[type] >= max_) {
             // 此处可能由于释放的连接已关闭
             // 导致此处连接为空，而需要重建连接
             ctx->wait();
-            if(!ctx->c_)
+            // 在此处release连接会导致连接数只增不减
+            // 此处超时不应该减连接数
+            if(!ctx->c_ && !ctx->timeout())
                 --ps_[type];
         }
 DONE:
-        if(ctx->timeout()) {
-            release(type, ctx->c_);
+        // 引处不由于超时，并未获取到连接，所以无需释放连接
+        if(ctx->timeout())
             throw php::exception(zend_ce_exception, (boost::format("timeout to acquire new connection, host %1%, connection limit %2%") % (url->host + std::to_string(url->port)) % max_).str());
-        }
         if(!ctx->c_)
             create(url, ctx);
     }
 
-    void 
-    _connection_pool::create(std::shared_ptr<url> u, std::shared_ptr<_connection_pool::context_t> ctx) {
-        tcp::resolver::results_type eps_;
-        auto c = std::make_shared<tcp::socket>(gcontroller->context_x);
+    void _connection_pool::create(std::shared_ptr<url> u, std::shared_ptr<_connection_pool::context_t> ctx) {
+        auto c    = std::make_shared<tcp::socket>(gcontroller->context_x);
         auto type = u->schema + u->host + std::to_string(u->port);
+        tcp::resolver::results_type eps_;
         ++ps_[type];
         resolver_.async_resolve(
             u->host, 
             std::to_string(u->port), 
             [&eps_, ctx, c] (const boost::system::error_code& ec, tcp::resolver::results_type eps) {
-                // 存在DNS应答超时，导致cc已释放而产生crash
-                if(ctx->timeout()) {
-                    return ;
-                }
+                if(ctx->timeout()) return ;
                 ctx->ec_ = ec;
                 eps_ = std::move(eps);
                 ctx->ch_.resume();
@@ -81,8 +78,7 @@ DONE:
 
         ctx->to_ |= context_t::CONNECT;
         boost::asio::async_connect(*c, eps_, [c, ctx] (const boost::system::error_code& ec, const tcp::endpoint& ep) {
-            if(ec == boost::asio::error::operation_aborted || ctx->timeout())
-                return ;
+            if(ec == boost::asio::error::operation_aborted || ctx->timeout()) return ;
             ctx->ec_ = ec;
             ctx->ch_.resume();
         });
@@ -102,8 +98,7 @@ END:
         ctx->c_ = c;
     }
 
-    php::value 
-    _connection_pool::execute(client_request* req, int32_t timeout, coroutine_handler &ch) {
+    php::value _connection_pool::execute(client_request* req, int32_t timeout, coroutine_handler &ch) {
         auto type = req->url_->schema + req->url_->host + std::to_string(req->url_->port);
         auto ctx  = std::make_shared<_connection_pool::context_t>(ch, wl_[type], timeout);
         ctx->expire();
@@ -117,13 +112,13 @@ END:
         });
         ctx->ch_.suspend();
         if(ctx->timeout()) {
-            release(type, nullptr);
             ctx->c_->cancel();
+            release(type, nullptr);
             throw php::exception(zend_ce_exception, "failed to write request: timeout");
         }
         if(ctx->ec_) {
-            release(type, nullptr);
             ctx->tm_.cancel();
+            release(type, nullptr);
             throw php::exception(zend_ce_exception, (boost::format("failed to write request: (%1%) %2%") % ctx->ec_.value() % ctx->ec_.message()).str(), ctx->ec_.value());
         }
 
@@ -216,8 +211,7 @@ END:
         boost::system::error_code ec;
         tm_.expires_at(tp_);
         tm_.async_wait([this, ctx = shared_from_this()](const boost::system::error_code &ec) {
-            if(ec == boost::asio::error::operation_aborted || (to_ & DONE))
-                return;
+            if(ec == boost::asio::error::operation_aborted || (to_ & DONE)) return;
             if(to_ & WAIT) {
                 for(auto i = q_.begin(); i != q_.end(); ++i ) {
                     if( i->get() == this) {
