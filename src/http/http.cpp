@@ -12,7 +12,6 @@
 #include "_handler.h"
 
 namespace flame::http {
-	//php::value client_ref;
     client* client_;
 	
 	void declare(php::extension_entry& ext) {

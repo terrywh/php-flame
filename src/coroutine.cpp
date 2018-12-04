@@ -115,11 +115,13 @@ namespace flame
     coroutine_handler::coroutine_handler()
         : co_(nullptr)
         , er_(nullptr)
+        , stat_(new std::atomic<int>(0))
     {
     }
     coroutine_handler::coroutine_handler(std::shared_ptr<coroutine> co)
         : co_(co)
         , er_(nullptr)
+        , stat_(new std::atomic<int>(0))
     {
     }
     coroutine_handler::~coroutine_handler()
@@ -129,11 +131,13 @@ namespace flame
     void coroutine_handler::reset()
     {
         co_.reset();
+        *stat_ = 0;
     }
     void coroutine_handler::reset(std::shared_ptr<coroutine> co)
     {
         assert(co_ == nullptr);
-        co_ = co;
+        co_   = co;
+        *stat_ = 0;
     }
     coroutine_handler::operator bool() const
     {
@@ -144,7 +148,7 @@ namespace flame
         if(er_) *er_ = e;
         co_->len_ = n;
 
-        boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
+        resume();
     }
     coroutine_handler& coroutine_handler::operator [](boost::system::error_code& e)
     {
@@ -153,12 +157,14 @@ namespace flame
     }
     void coroutine_handler::resume()
     {
-        boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
+        if(--*stat_ == 0)
+            boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
     }
     void coroutine_handler::suspend()
     {
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
-        co_->suspend();
+        if(++*stat_ == 1)
+            co_->suspend();
     }
     bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2)
     {

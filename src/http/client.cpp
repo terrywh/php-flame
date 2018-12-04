@@ -56,10 +56,8 @@ namespace flame::http {
         auto req_ = static_cast<client_request*>(php::native(req));
         req_->build_ex();
 
-        auto type    = req_->url_->schema + req_->url_->host + std::to_string(req_->url_->port);
-        auto timeout = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<int>(req_->get("timeout")));
         if(req_->url_->schema.compare("http") == 0) {
-            return cp_->execute(req_, timeout, ch);
+            return cp_->execute(req_, static_cast<int>(req_->get("timeout")), ch);
         } /*else if(req_->url_->schema.compare("https") == 0) {*/
             //return cp_->execute(req_, timeout, ch);
         /*}*/
