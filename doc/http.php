@@ -2,12 +2,61 @@
 
 namespace flame\http;
 
+/**
+ * 使用默认客户端, 执行请求
+ */
 function exec(client_request $req): client_response {}
+/**
+ * 使用默认客户端, 构建并执行一个 GET 请求
+ */
 function get(string $url, int $timeout = 3000): client_response {}
+/**
+ * 使用默认客户端, 构建并执行一个 POST 请求
+ */
 function post(string $url, mixed $data, int $timeout = 3000): client_response {}
+/**
+ * 使用默认客户端, 构建并执行一个 PUT 请求
+ */
 function put(string $url, mixed $data, int $timeout = 3000): client_response {}
+/**
+ * 使用默认客户端, 构建并执行一个 DELETE 请求
+ */
 function delete(string $url, int $timeout = 3000): client_response {}
 
+/**
+ * 客户端
+ */
+class client {
+    /**
+     * 构建新的客户端对象
+     * @param array $options 选项, 目前支持的选项如下:
+     *  * "connection_per_host" - 单个 HOST 目标连接限制, 默认 16;
+     */
+    function __construct(array $options = []) {}
+    /**
+     * 执行请求, 返回响应
+     */
+    function exec(client_request $req): client_response {}
+    /**
+     * 构建并执行一个 GET 请求
+     */
+    function get(string $url, int $timeout = 3000): client_response {}
+    /**
+     * 构建并执行一个 POST 请求
+     */
+    function post(string $url, mixed $data, int $timeout = 3000) {}
+    /**
+     * 构建并执行一个 PUT 请求
+     */
+    function put(string $url, mixed $data, int $timeout = 3000): client_response {}
+    /**
+     * 构建并执行一个 DELETE 请求
+     */
+    function delete(string $url, int $timeout = 3000): client_response {}
+}
+/**
+ * 作为客户端的请求对象
+ */
 class client_request {
     /**
      * @property int

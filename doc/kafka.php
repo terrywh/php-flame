@@ -63,7 +63,7 @@ class producer {
     function flush() {}
 }
 
-class message implements JsonSerializable {
+class message implements \JsonSerializable {
     /**
      * @property string $topic
      */
