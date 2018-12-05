@@ -50,7 +50,7 @@ namespace flame::http
             {   
                 res_.reset();
                 req_.reset();
-                std::clog << "[" << time::iso() << "] (WARNING) failed to read http request: " << error.message() << std::endl;
+                std::clog << "[" << time::iso() << "] (WARNING) failed to read http request: (" << error.value() << ") " << error.message() << std::endl;
                 return;
             }
             res_.reset(new boost::beast::http::message<false, value_body<false>>());

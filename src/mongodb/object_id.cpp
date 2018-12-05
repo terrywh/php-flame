@@ -6,6 +6,7 @@ namespace flame::mongodb
     {
         php::class_entry<object_id> class_object_id("flame\\mongodb\\object_id");
         class_object_id
+            .implements(&php_json_serializable_ce)
             .method<&object_id::__construct>("__construct")
             .method<&object_id::to_string>("__toString")
             .method<&object_id::to_json>("__toJSON")
