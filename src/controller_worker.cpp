@@ -24,6 +24,7 @@ namespace flame
                 auto ft = gcontroller->cbmap->equal_range("quit");
                 for (auto i = ft.first; i != ft.second; ++i)
                 {
+                    // TODO 修复: 需要在协程调用退出回调
                     i->second.call();
                 }
             });
@@ -32,7 +33,7 @@ namespace flame
         auto work = boost::asio::make_work_guard(gcontroller->context_y);
         // 子进程的启动过程:
         // 2. 启动线程池, 并使用线程池运行 context_y
-        thread_.resize(3);
+        thread_.resize(8);
         for (int i = 0; i < thread_.size(); ++i)
         {
             thread_[i] = new std::thread([this] {

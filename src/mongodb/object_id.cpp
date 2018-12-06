@@ -15,9 +15,7 @@ namespace flame::mongodb
             .method<&object_id::to_json>("jsonSerialize")
             .method<&object_id::to_json>("__debugInfo")
             .method<&object_id::equal>("equal",
-            {
-                {"object_id", "?flame\\mongodb\\object_id"}
-            });
+                                       {{"object_id", "?flame\\mongodb\\object_id"}});
         ext.add(std::move(class_object_id));
     }
     php::value object_id::__construct(php::parameters &params)

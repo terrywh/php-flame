@@ -47,6 +47,11 @@ namespace flame::kafka
         
         php::object obj(php::class_entry<producer>::entry());
         producer* ptr = static_cast<producer*>(php::native(obj));
+        if (config.exists("concurrent"))
+        {
+            // ptr->cc_ = std::min(std::min(std::max(static_cast<int>(config.get("concurrent")), 1), 8), 256);
+            config.erase("concurrent");
+        }
         ptr->pd_.reset(new _producer(config, topics));
 
         // TODO 优化: 确认首次连接已建立

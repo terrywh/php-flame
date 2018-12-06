@@ -27,10 +27,12 @@ namespace flame::kafka
     }
     _producer::~_producer()
     {
-        for(auto i=tops_.begin(); i!=tops_.end(); ++i) {
-            rd_kafka_topic_destroy(i->second);
+        if(conn_) {
+            for(auto i=tops_.begin(); i!=tops_.end(); ++i) {
+                rd_kafka_topic_destroy(i->second);
+            }
+            rd_kafka_destroy(conn_);
         }
-        rd_kafka_destroy(conn_);
     }
     void _producer::publish(const php::string &topic, const php::string &key, const php::string &payload, const php::array &headers, coroutine_handler &ch)
     {
@@ -58,6 +60,6 @@ namespace flame::kafka
     }
     void _producer::flush(coroutine_handler& ch)
     {
-        rd_kafka_flush(conn_, 10000);
+        if(conn_) rd_kafka_flush(conn_, 10000);
     }
 } // namespace flame::kafka

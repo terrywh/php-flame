@@ -5,7 +5,7 @@ namespace flame::mysql
 {
         
     _connection_pool::_connection_pool(url u)
-        : url_(std::move(u)), min_(2), max_(8), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
+        : url_(std::move(u)), min_(2), max_(4), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
     {
         if(!url_.query.count("charset")) {
             url_.query["charset"] = "utf8";

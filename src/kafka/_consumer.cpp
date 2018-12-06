@@ -48,9 +48,11 @@ namespace flame::kafka
     }
     _consumer::~_consumer()
     {
-        // rd_kafka_consumer_close(conn_);
-        rd_kafka_topic_partition_list_destroy(tops_);
-        rd_kafka_destroy(conn_);
+        if(conn_) {
+            // rd_kafka_consumer_close(conn_);
+            rd_kafka_topic_partition_list_destroy(tops_);
+            rd_kafka_destroy(conn_);
+        }
     }
     void _consumer::subscribe(coroutine_handler &ch)
     {

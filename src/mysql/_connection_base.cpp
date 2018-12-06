@@ -73,6 +73,8 @@ namespace flame::mysql
             b.push_back(')');
             break;
         }
+        case IS_OBJECT:
+            // TODO DateTime 类型的 SQL 拼接
         default:
         {
             php::string str = v;
