@@ -14,8 +14,9 @@ namespace flame
         std::vector<std::unique_ptr<boost::process::async_pipe>> eout_;
         std::vector<boost::asio::streambuf> sbuf_;
         std::vector<boost::asio::streambuf> ebuf_;
-        boost::process::group               group_;
-		std::unique_ptr<boost::asio::signal_set> signal_;
+        // boost::process::group               group_;
+		std::unique_ptr<boost::asio::signal_set>  signal_;
+        std::unique_ptr<boost::asio::steady_timer> timer_;
 		std::thread                        thread_;
         std::size_t                        count_;
 
@@ -26,5 +27,7 @@ namespace flame
         void reload_output();
         void redirect_sout(int i);
         void redirect_eout(int i);
+
+        void close_worker();
     };
 }

@@ -72,7 +72,13 @@ namespace flame {
 		}
 		delete cbmap;
 		// 运行完毕
-		(status & controller_status::STATUS_EXCEPTION) ? exit(-1) : exit(0);
+		if(status & controller_status::STATUS_EXCEPTION) {
+			std::cout << (int)type << ":EXCEPTION\n";
+			exit(-1);
+		} else {
+			std::cout << (int)type << ":NORMAL\n";
+			exit(0);
+		}
 		// 由于 PHP 自行回收可能导致 C++ 空间中的 PHP 对象被进行二次释放导致异常
 	}
 

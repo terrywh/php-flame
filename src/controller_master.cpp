@@ -4,8 +4,7 @@
 namespace flame
 {
     controller_master::controller_master()
-        : signal_(new boost::asio::signal_set(gcontroller->context_y, SIGINT, SIGTERM, SIGUSR2))
-        , worker_(gcontroller->worker_size)
+        : worker_(gcontroller->worker_size)
         , sout_(gcontroller->worker_size)
         , sbuf_(gcontroller->worker_size)
         , eout_(gcontroller->worker_size)
@@ -46,7 +45,7 @@ namespace flame
         boost::process::environment env = gcontroller->env;
         env["FLAME_CUR_WORKER"] = std::to_string(i + 1);
 
-        worker_[i].reset( new boost::process::child(cmd, env, group_, gcontroller->context_x,
+        worker_[i].reset( new boost::process::child(cmd, env/*, group_*/, gcontroller->context_x,
             boost::process::std_out > *sout_[i],
             boost::process::std_err > *eout_[i],
             // boost::process::std_out > boost::process::null,
@@ -58,8 +57,8 @@ namespace flame
                 if (exit_code != 0)
                 {
                     // 日志记录
-                    int sec = std::rand() % 3 + 2;
-                    std::cerr << "(FATAL) worker unexpected exit, restart in " << sec << " ...\n";
+                    int sec = std::rand() % 3 + 3;
+                    std::cerr << "(FATAL) worker unexpected exit (" << exit_code << "), restart in " << sec << " ...\n";
 
                     auto tm = std::make_shared<boost::asio::steady_timer>(gcontroller->context_x, std::chrono::seconds(sec));
                     tm->async_wait([this, tm, i](const boost::system::error_code &error) {
@@ -77,7 +76,8 @@ namespace flame
                 sout_[i].reset();
                 eout_[i].reset();
             }) );
-        
+        redirect_sout(i);
+        redirect_eout(i);
     }
     void controller_master::redirect_sout(int i)
     {
@@ -131,41 +131,42 @@ namespace flame
         for(int i=0;i<gcontroller->worker_size;++i)
         {
             spawn_worker(i);
-            redirect_sout(i);
-            redirect_eout(i);
         }
         // 2. 监听信号进行日志重载或停止
+        signal_.reset(new boost::asio::signal_set(gcontroller->context_y, SIGINT, SIGTERM, SIGUSR2));
         signal_->async_wait([this](const boost::system::error_code &error, int sig) {
-            if(error) return;
-            if(sig == SIGUSR2)
-            {
-                reload_output();
-            }
-            else
-            {
-                // 信号的默认处理: 转给所有子进程
-                for(auto i=worker_.begin(); i!=worker_.end(); ++i)
-                {
-                    if(*i) ::kill( (*i)->id(), SIGTERM );
-                }
-                signal_.reset();
-                gcontroller->context_x.stop();
-            }
-        });
+                if (error)
+                    return;
+                boost::asio::post(gcontroller->context_x, [this, sig]() {
+                    if (sig == SIGUSR2)
+                    {
+                        reload_output();
+                    }
+                    else
+                    {
+                        close_worker();
+                        // 似乎主进程与子进程 signal 处理之间有干扰
+                        // 需要后置清理
+                        // signal_.reset();
+                    }
+                });
+            });
         // 3. 启动运行
         thread_ = std::thread([this] {
             gcontroller->context_y.run();
         });
         gcontroller->context_x.run();
         // 4. 等待工作线程结束
-        signal_.reset();
+        if (signal_) signal_.reset();
+        if (timer_) timer_.reset();
         thread_.join();
-        // 5. 等待工作进程结束
-        std::error_code error;
-        if(!group_.wait_for(std::chrono::seconds(10), error))
-        {
-            group_.terminate();
+        // 5. 强制进程结束
+        for(auto i=worker_.begin();i!=worker_.end();++i) {
+            if(*i) {
+                (*i)->terminate();
+            }
         }
+        // if(!group_.wait_for(std::chrono::seconds(1))) group_.terminate();
     }
     void controller_master::reload_output()
     {
@@ -178,7 +179,22 @@ namespace flame
                 return;
             }
 		}
-        
         offile_.reset(&std::clog, boost::null_deleter());
+    }
+    void controller_master::close_worker()
+    {
+        for (auto i = worker_.begin(); i != worker_.end(); ++i)
+        {
+            if (*i)
+            {
+                ::kill((*i)->id(), SIGTERM);
+            }
+        }
+        timer_.reset(new boost::asio::steady_timer(gcontroller->context_y));
+        timer_->expires_after(std::chrono::seconds(10));
+        timer_->async_wait([] (const boost::system::error_code& error) {
+            if(error) return;
+            gcontroller->context_x.stop();
+        });
     }
 }
