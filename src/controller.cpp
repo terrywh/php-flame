@@ -13,6 +13,9 @@ namespace flame {
 		, status(STATUS_UNKNOWN)
 		, cbmap(new std::multimap<std::string, php::callable>())
 	{
+		
+		worker_size = std::atoi(env["FLAME_MAX_WORKERS"].to_string().c_str());
+		worker_size = std::min(std::max((int)worker_size, 1), 512);
 		// FLAME_MAX_WORKERS 环境变量会被继承, 故此处顺序须先检测子进程
 		if (env.count("FLAME_CUR_WORKER") > 0)
 		{
@@ -20,12 +23,11 @@ namespace flame {
 		}
 		else if (env.count("FLAME_MAX_WORKERS") > 0)
 		{
-			worker_size = std::atoi(env["FLAME_MAX_WORKERS"].to_string().c_str());
-			worker_size = std::min(std::max((int)worker_size, 1), 512);
 			type = process_type::MASTER;
 		} 
 		else
 		{
+			worker_size = 0;
 			type = process_type::WORKER;
 		}
 		mthread_id = std::this_thread::get_id();
@@ -48,9 +50,13 @@ namespace flame {
 		}
 		if(type == process_type::WORKER)
 		{
-			std::string index = env["FLAME_CUR_WORKER"].to_string();
-			if(index.empty()) index = "w";
-			php::callable("cli_set_process_title").call({title + " (php-flame/" + index + ")"});
+			if (worker_size > 0)
+			{
+				std::string index = env["FLAME_CUR_WORKER"].to_string();
+				php::callable("cli_set_process_title").call({title + " (php-flame/" + index + ")"});
+			}else{
+				php::callable("cli_set_process_title").call({title + " (php-flame/w)"});
+			}
 			worker_.reset(new controller_worker());
 			worker_->initialize(options);
 		}else/* if(type == process_type::MASTER)*/
@@ -73,10 +79,8 @@ namespace flame {
 		delete cbmap;
 		// 运行完毕
 		if(status & controller_status::STATUS_EXCEPTION) {
-			std::cout << (int)type << ":EXCEPTION\n";
 			exit(-1);
 		} else {
-			std::cout << (int)type << ":NORMAL\n";
 			exit(0);
 		}
 		// 由于 PHP 自行回收可能导致 C++ 空间中的 PHP 对象被进行二次释放导致异常

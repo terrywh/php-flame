@@ -23,7 +23,7 @@ namespace flame
             if(error) return;
             // 似乎主进程与子进程 signal 处理之间有干扰
             // 需要后置清理
-            // signal_.reset();
+            if(gcontroller->worker_size == 0) signal_.reset();
             boost::asio::post(gcontroller->context_x, [this] () {
                 gcontroller->status |= controller::controller_status::STATUS_SHUTDOWN;
                 auto ft = gcontroller->cbmap->equal_range("quit");
