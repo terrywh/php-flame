@@ -14,6 +14,12 @@ class client {
      */
     function __call($name, $argv) {}
     /**
+     * @return bool true
+     */
+    function __isset($name) {
+        return true;
+    }
+    /**
      * 支持 Redis 大部分指令:
      * 
      * @method get()

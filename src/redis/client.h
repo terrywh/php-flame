@@ -10,6 +10,7 @@ namespace flame::redis
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params); // 私有
         php::value __call(php::parameters &params);
+        php::value __isset(php::parameters& params);
         // 处理特殊情况的命令
         php::value mget(php::parameters &params);
         php::value hmget(php::parameters &params);

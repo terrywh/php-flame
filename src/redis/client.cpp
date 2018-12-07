@@ -13,6 +13,9 @@ namespace flame::redis {
 				{"cmd", php::TYPE::STRING},
 				{"arg", php::TYPE::ARRAY},
 			})
+			.method<&client::__isset>("__isset", {
+				{"cmd", php::TYPE::STRING},
+			})
 			.method<&client::mget>("mget", {
 				{"key", php::TYPE::STRING},
 			})
@@ -71,6 +74,9 @@ namespace flame::redis {
         php::string name = params[0];
         php::array  argv = params[1];
         return cp_->exec(rc, name, argv, reply_type::SIMPLE, ch);
+	}
+	php::value client::__isset(php::parameters& params) {
+		return true;
 	}
 	php::value client::mget(php::parameters& params)
 	{
