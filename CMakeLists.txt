@@ -19,6 +19,7 @@ set(VENDOR_RDKAFKA /data/vendor/rdkafka-0.11.6)
 set(VENDOR_HTTPPARSER /data/vendor/http-parser-2.8.1)
 # 基本参数
 set(CMAKE_BUILD_TYPE "Debug")
+# set(CMAKE_BUILD_TYPE "Release")
 # set(CMAKE_C_COMPILER /data/vendor/llvm-7.0.0/bin/clang)
 # set(CMAKE_CXX_COMPILER /data/vendor/llvm-7.0.0/bin/clang++)
 set(CMAKE_C_COMPILER /data/vendor/gcc-8.2.0/bin/gcc)

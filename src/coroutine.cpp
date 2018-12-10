@@ -15,6 +15,9 @@ namespace flame
         ctx.vm_stack_end = EG(vm_stack_end);
         //   ctx.scope = EG(fake_scope);
         ctx.current_execute_data = EG(current_execute_data);
+        ctx.exception = EG(exception);
+        ctx.exception_class = EG(exception_class);
+        ctx.error_handling = EG(error_handling);
     }
     void coroutine::restore_context(php_context_t &ctx)
     {
@@ -23,6 +26,9 @@ namespace flame
         EG(vm_stack_end) = ctx.vm_stack_end;
         // EG(fake_scope) = ctx.scope;
         EG(current_execute_data) = ctx.current_execute_data;
+        EG(exception) = ctx.exception;
+        EG(exception_class) = ctx.exception_class;
+        EG(error_handling) = ctx.error_handling;
     }
     // 参考 zend_execute.c 
     static zend_vm_stack zend_vm_stack_new_page(size_t size, zend_vm_stack prev)
@@ -58,7 +64,11 @@ namespace flame
                     save_context(coroutine::global_context);
                     // 启动进入协程
                     coroutine::current = co_;
-                    EG(current_execute_data) = gcontroller->default_execute_data;
+
+                    EG(current_execute_data) = nullptr;
+                    EG(error_handling) = EH_NORMAL;
+                    EG(exception_class) = nullptr;
+                    EG(exception) = nullptr;
                     zend_vm_stack_init();
                     // 协程运行;
                     co_->fn_.call(/*ag*/);

@@ -12,6 +12,10 @@ namespace flame {
 			zval *vm_stack_end;
 			zend_class_entry *scope;
 			zend_execute_data *current_execute_data;
+
+			zend_object *         exception;
+			zend_error_handling_t error_handling;
+			zend_class_entry *    exception_class;
 		};
 		//
 		static boost::context::fixedsize_stack stack_allocator;
