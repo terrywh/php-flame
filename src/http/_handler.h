@@ -33,7 +33,9 @@ namespace flame::http
         php::object svr_obj;
         boost::asio::ip::tcp::socket socket_;
 
-        std::shared_ptr<boost::beast::http::message<true, value_body<true>>> req_;
+        
+        // std::shared_ptr<boost::beast::http::message<true, value_body<true>>> req_;
+        std::shared_ptr<boost::beast::http::request_parser<value_body<true>>> req_;
         std::shared_ptr<boost::beast::http::message<false, value_body<false>>> res_;
         boost::beast::flat_buffer buffer_;
     };

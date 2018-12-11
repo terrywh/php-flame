@@ -13,12 +13,14 @@
 
 namespace flame::http {
     client* client_;
-	
+	std::int64_t body_max_size = 1024 * 1024 * 1024;
+
 	void declare(php::extension_entry& ext) {
 		client_ = nullptr;
 		ext.on_module_startup([] (php::extension_entry& ext) -> bool {
 			// 在框架初始化后创建全局HTTP客户端
             gcontroller->on_init([] (const php::array& opts) {
+				body_max_size = std::max(php::ini("post_max_size").calc(), body_max_size);
                 client_ = new client();
                 php::parameters p(0, nullptr);
                 client_->__construct(p);

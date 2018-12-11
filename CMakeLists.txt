@@ -8,7 +8,7 @@ execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
     COMMAND sed "s/ *-I/;/g"
     OUTPUT_VARIABLE VENDOR_PHP_INCLUDES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(VENDOR_PHPEXT /data/vendor/phpext-1.1.0)
+set(VENDOR_PHPEXT /data/vendor/phpext-1.1.1)
 set(VENDOR_PARSER /data/vendor/parser-1.0.0)
 set(VENDOR_BOOST /data/vendor/boost-1.68.0)
 set(VENDOR_MYSQL /data/vendor/mysqlc-6.1.11)

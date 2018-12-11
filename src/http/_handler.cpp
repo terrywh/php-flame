@@ -30,14 +30,18 @@ namespace flame::http
             req_.reset();
             res_.reset();
             return;
+        }else{
+            req_.reset();
+            res_.reset();
+            read_request();
         }
-        read_request();
     }
 
     void _handler::read_request()
     {
         // 读取请求
-        req_.reset(new boost::beast::http::message<true, value_body<true>>());
+        req_.reset(new boost::beast::http::request_parser<value_body<true>>());
+        req_->body_limit(body_max_size);
         boost::beast::http::async_read(socket_, buffer_, *req_, [self = shared_from_this(), this] (const boost::system::error_code &error, std::size_t n)
         {
             if(error == boost::beast::http::error::end_of_stream || error == boost::asio::error::operation_aborted)
@@ -55,7 +59,7 @@ namespace flame::http
             }
             res_.reset(new boost::beast::http::message<false, value_body<false>>());
             // 默认为请求 KeepAlive 配置
-            res_->keep_alive(req_->keep_alive());
+            res_->keep_alive(req_->get().keep_alive());
             // 默认应为非 chunked 模式
             assert(!res_->chunked());
             call_handler();
@@ -69,7 +73,7 @@ namespace flame::http
         server_request *req_ptr = static_cast<server_request *>(php::native(req));
         server_response *res_ptr = static_cast<server_response *>(php::native(res));
 
-        req_ptr->build_ex(*req_); // 将 C++ 请求对象展开到 PHP 中
+        req_ptr->build_ex(req_->get()); // 将 C++ 请求对象展开到 PHP 中
         res_ptr->handler_ = shared_from_this();
 
         coroutine::start(php::callable([self = shared_from_this(), this, req, req_ptr, res, res_ptr] (php::parameters& params) -> php::value

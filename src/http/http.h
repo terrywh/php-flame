@@ -5,6 +5,7 @@ namespace http {
     class _connection_pool;
 	class client;
 	extern client* client_;
+	extern std::int64_t body_max_size;
 
 	void declare(php::extension_entry& ext);
 	php::value get(php::parameters& params);
