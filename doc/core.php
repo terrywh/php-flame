@@ -9,6 +9,13 @@ namespace flame;
  * @param array  $options 选项配置, 目前可用如下:
  *  * `logger` - 日志输出重定向目标文件(完整路径, 若不提供使用标准输出); 
  *      向主进程发送 SIGUSR2 信号该文件将会被重新打开(或生成);
+ *  * `level` - 日志输出级别, 设置该级别下的日志将不被记录; 可用级别如下
+ *      "debug"
+ *      "info"
+ *      "warning"
+ *      "error"
+ *      "fatal"
+ *  请参见 flame\log 命名空间;
  */
 function init($process_name, $options = []) {}
 /**
