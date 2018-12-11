@@ -185,12 +185,10 @@ namespace flame::http {
 		if(headers.typeof(php::TYPE::ARRAY)) {
 			for(auto i=headers.begin(); i!=headers.end(); ++i) {
 				php::string key { i->first };
-				i->second.to_string();
-
-				ctr_.set(boost::string_view(key.c_str(), key.size()), i->second);
+				php::string val { i->second };
+				ctr_.set(boost::string_view(key.c_str(), key.size()), val);
 			}
 		}
-		ctr_.set(boost::beast::http::field::connection, ctr_.keep_alive() ? "keep-alive" : "close");
 		php::array cookies = get("cookie", true);
 		if(cookies.typeof(php::TYPE::ARRAY)) {
 			for(auto i=cookies.begin(); i!=cookies.end(); ++i) {

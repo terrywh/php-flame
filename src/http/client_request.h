@@ -6,11 +6,10 @@ namespace flame::http {
 	public:
 		static void declare(php::extension_entry& ext);
 		php::value __construct(php::parameters& params);
-		php::value to_string(php::parameters& params);
 	private:
-		void build_ex();
+		void build_url();
+		void build_ex(boost::beast::http::message<true, value_body<true>>& ctr_);
 		std::shared_ptr<url> url_;
-		boost::beast::http::message<true, value_body<true>> ctr_;
 		friend class client;
 		friend class _connection_pool;
     };

@@ -38,7 +38,8 @@ namespace flame::mysql
                 { // 可用连接
                     MYSQL *c = conn_.front().conn;
                     conn_.pop_front();
-                    mysql_reset_connection(c);
+                    if(version_ >= 50700) mysql_reset_connection(c);
+                    else mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
                     release(c);
                     return;
                 }
@@ -78,6 +79,7 @@ namespace flame::mysql
         {
             return nullptr;
         }
+        version_ = mysql_get_server_version(c);
         return c;
     }
 

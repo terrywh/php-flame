@@ -19,8 +19,7 @@ namespace http {
 				{"url", php::TYPE::STRING},
 				{"body", php::TYPE::UNDEFINED, false, true},
 				{"timeout", php::TYPE::INTEGER, false, true},
-			})
-			.method<&client_request::to_string>("__toString");
+			});
 
 		ext.add(std::move(class_client_request));
 	}
@@ -41,13 +40,8 @@ namespace http {
 		set("cookie", php::array(0));
 		return nullptr;
 	}
-	php::value client_request::to_string(php::parameters& params) {
-		std::stringstream os;
-		build_ex();
-		os << ctr_;
-		return os.str();
-	}
-	void client_request::build_ex() {
+	void client_request::build_url()
+	{
 		if(url_) return; // 防止重复 build
 		// 目标请求地址
         php::string u = get("url", true);
@@ -61,6 +55,10 @@ namespace http {
 		}else if(!url_->port && !url_->schema.compare(0, 4, "http")) {
 			url_->port = 80;
 		}
+	}
+	void client_request::build_ex(boost::beast::http::message<true, value_body<true>>& ctr_)
+	{
+		// if(url_) return; // 防止重复 build
 		// 消息容器
 		ctr_.method(boost::beast::http::string_to_verb(get("method").to_string()));
 		std::string target(url_->path.length() > 0? url_->path : "/");

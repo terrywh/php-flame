@@ -9,8 +9,7 @@ namespace http {
 		// 声明为 ZEND_ACC_PRIVATE 禁止创建（不会被调用）
 		php::value __construct(php::parameters& params);
 	private:
-		boost::beast::http::message<false, value_body<false>> ctr_;
-		void build_ex();
+		void build_ex(boost::beast::http::message<false, value_body<false>>& ctr_);
 		friend class _connection_pool;
 	};
 }

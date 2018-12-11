@@ -11,5 +11,7 @@ namespace flame
 	private:
 		std::vector<std::thread*> thread_;
 		std::unique_ptr<boost::asio::signal_set> signal_;
+
+		void await_signal();
 	};
 }

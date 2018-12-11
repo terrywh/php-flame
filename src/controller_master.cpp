@@ -123,6 +123,26 @@ namespace flame
             }
         });
     }
+    void controller_master::await_signal()
+    {
+        signal_->async_wait([this](const boost::system::error_code &error, int sig) {
+            if (error) return;
+            await_signal();
+            boost::asio::post(gcontroller->context_x, [this, sig]() {
+                if (sig == SIGUSR2)
+                {
+                    reload_output();
+                }
+                else
+                {
+                    close_worker();
+                    // 似乎主进程与子进程 signal 处理之间有干扰
+                    // 需要后置清理
+                    // signal_.reset();
+                }
+            });
+        });
+    }
     // !!! run 实际上是在 initialize 中执行 (防止实际启用了功能)
     void controller_master::run()
     {
@@ -134,23 +154,7 @@ namespace flame
         }
         // 2. 监听信号进行日志重载或停止
         signal_.reset(new boost::asio::signal_set(gcontroller->context_y, SIGINT, SIGTERM, SIGUSR2));
-        signal_->async_wait([this](const boost::system::error_code &error, int sig) {
-                if (error)
-                    return;
-                boost::asio::post(gcontroller->context_x, [this, sig]() {
-                    if (sig == SIGUSR2)
-                    {
-                        reload_output();
-                    }
-                    else
-                    {
-                        close_worker();
-                        // 似乎主进程与子进程 signal 处理之间有干扰
-                        // 需要后置清理
-                        // signal_.reset();
-                    }
-                });
-            });
+        await_signal();
         // 3. 启动运行
         thread_ = std::thread([this] {
             gcontroller->context_y.run();

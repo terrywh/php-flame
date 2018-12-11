@@ -23,7 +23,7 @@ namespace http {
 	php::value client_response::to_string(php::parameters& params) {
 		return get("rawBody");
 	}
-	void client_response::build_ex() {
+	void client_response::build_ex(boost::beast::http::message<false, value_body<false>>& ctr_) {
 		set("status", ctr_.result_int());
 		php::array header = get("header", true);
 		if(header.typeof(php::TYPE::NULLABLE)) {

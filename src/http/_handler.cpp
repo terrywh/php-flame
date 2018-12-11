@@ -115,13 +115,15 @@ namespace flame::http
                 return nullptr;
             }
 HANDLE_BREAK:
-            if (res_->chunked() && (res_ptr->status_ & server_response::STATUS_BODY_SENT))
+            if(!res_->chunked()/* && !(res_ptr->status_ & server_response::STATUS_BODY_SENT)*/)
             {
-                // Chunked 方式 已结束
-                start();
-            }
-            else if(!res_->chunked()/* && !(res_ptr->status_ & server_response::STATUS_BODY_SENT)*/)
-            {
+                // if(!(res_ptr->status_ & server_response::STATUS_HEAD_SENT)) {
+                //     res_ptr->set("status", 404);
+                //     res_ptr->set("body", nullptr);
+                // }
+                if(gcontroller->status & controller::controller_status::STATUS_SHUTDOWN) {
+                    res_->keep_alive(false);
+                }
                 res_ptr->build_ex(*res_);
                 // Content 方式, 待结束
                 php::string body = res.get("body");
@@ -132,10 +134,16 @@ HANDLE_BREAK:
                 res_->body() = body;
                 res_->prepare_payload();
 
-                boost::beast::http::async_write(socket_, *res_, [self = shared_from_this(), this](const boost::system::error_code &error, std::size_t nsent)
-                {
+                boost::system::error_code error;
+                boost::beast::http::async_write(socket_, *res_, ch[error]);
+                if(error) {
+                    res_.reset();
+                    req_.reset();
+                    throw php::exception(zend_ce_exception,
+                                         (boost::format("failed to write_head: (%1%) %2%") % error.value() % error.message()).str(), error.value());
+                }else{
                     start();
-                });
+                }
             }/*else
             {
                 // Chunked 未结束 -> server_response::__destruct() -> finish()
@@ -150,6 +158,10 @@ HANDLE_BREAK:
         res_ptr->build_ex(*res_);
         res_->chunked(true);
         res_->set(boost::beast::http::field::transfer_encoding, "chunked");
+        if (gcontroller->status & controller::controller_status::STATUS_SHUTDOWN)
+        {
+            res_->keep_alive(false);
+        }
         boost::system::error_code error;
 
         boost::beast::http::serializer<false, value_body<false>> sr(*res_);
@@ -246,19 +258,22 @@ WRITE_ERROR:
     }
     void _handler::finish(server_response *res_ptr, coroutine_handler &ch)
     {
-        if(res_ && res_->chunked() && !(res_ptr->status_ & server_response::STATUS_BODY_END)) {
-            boost::system::error_code error;
-            boost::asio::async_write(socket_, boost::beast::http::make_chunk_last(), ch[error]);
-            
-            if(error)
+        if(res_)
+        {
+            if(res_->chunked() && !(res_ptr->status_ & server_response::STATUS_BODY_END))
             {
+                boost::system::error_code error;
+                boost::asio::async_write(socket_, boost::beast::http::make_chunk_last(), ch[error]);
                 res_.reset();
                 req_.reset();
-                std::clog << "[" << time::iso() << "] (ERROR) failed to write_end: (" << error.value() << ") " << error.message() << std::endl;
-            }
-            else
-            {
-                start();
+                if (error)
+                {
+                    std::clog << "[" << time::iso() << "] (ERROR) failed to write_end: (" << error.value() << ") " << error.message() << std::endl;
+                }
+                else
+                {
+                    start();
+                }
             }
         }
     }

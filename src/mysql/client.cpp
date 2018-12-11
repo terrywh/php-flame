@@ -56,7 +56,8 @@ namespace flame::mysql
                 {"field", php::TYPE::STRING},
                 {"where", php::TYPE::UNDEFINED},
                 {"order", php::TYPE::UNDEFINED, false, true},
-            });
+            })
+            .method<&client::version>("version");
         ext.add(std::move(class_client));
     }
     php::value client::__construct(php::parameters& params) {
@@ -154,5 +155,10 @@ namespace flame::mysql
             return nullptr;
         }
     }
-
+    php::value client::version(php::parameters &params)
+    {
+        coroutine_handler ch{coroutine::current};
+        auto conn = cp_->acquire(ch);
+        return mysql_get_server_version(conn.get());
+    }
 } // namespace flame::mysql

@@ -1,4 +1,5 @@
 #pragma once
+#include "../vendor.h"
 #include "../url.h"
 
 namespace flame::http
@@ -41,6 +42,10 @@ namespace flame::http
             queue_t                      &q_;
             int32_t                      to_;
             time_t_                      tp_;
+
+            boost::beast::http::message<true, value_body<true>> req_;
+            boost::beast::http::message<false, value_body<false>> res_;
+            boost::beast::flat_buffer buf_;
         };
 
         const std::uint32_t max_;

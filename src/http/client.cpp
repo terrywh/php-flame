@@ -54,8 +54,7 @@ namespace flame::http {
     php::value client::exec_ex(const php::object& req) {
         coroutine_handler ch{coroutine::current};
         auto req_ = static_cast<client_request*>(php::native(req));
-        req_->build_ex();
-
+        req_->build_url();
         if(req_->url_->schema.compare("http") == 0) {
             return cp_->execute(req_, static_cast<int>(req_->get("timeout")), ch);
         } /*else if(req_->url_->schema.compare("https") == 0) {*/

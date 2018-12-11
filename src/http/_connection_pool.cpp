@@ -101,11 +101,12 @@ END:
     php::value _connection_pool::execute(client_request* req, int32_t timeout, coroutine_handler &ch) {
         auto type = req->url_->schema + req->url_->host + std::to_string(req->url_->port);
         auto ctx  = std::make_shared<_connection_pool::context_t>(ch, wl_[type], timeout);
+        req->build_ex(ctx->req_);
+        
         ctx->expire();
         acquire(req->url_, ctx);
-
         // 构建并发送请求
-        boost::beast::http::async_write(*ctx->c_, req->ctr_, [ctx](const boost::system::error_code& ec, std::size_t n) {
+        boost::beast::http::async_write(*ctx->c_, ctx->req_, [ctx](const boost::system::error_code& ec, std::size_t n) {
             if(ec == boost::asio::error::operation_aborted || ctx->timeout()) return ;
             ctx->ec_ = ec;
             ctx->ch_.resume();
@@ -125,8 +126,7 @@ END:
         // 构建并读取响应
         auto res_ref = php::object(php::class_entry<client_response>::entry());
         auto res_    = static_cast<client_response*>(php::native(res_ref));
-        boost::beast::flat_buffer b;
-        boost::beast::http::async_read(*ctx->c_, b, res_->ctr_, [ctx] (const boost::system::error_code& ec, std::size_t n) {
+        boost::beast::http::async_read(*ctx->c_, ctx->buf_, ctx->res_, [ctx] (const boost::system::error_code& ec, std::size_t n) {
             if(ec == boost::asio::error::operation_aborted || ctx->timeout()) return ;
             ctx->ec_  = ec;
             ctx->to_ |= context_t::DONE;
@@ -145,10 +145,10 @@ END:
             throw php::exception(zend_ce_exception, (boost::format("failed to read response: (%1%) %2%") % ctx->ec_.value() % ctx->ec_.message()).str(), ctx->ec_.value());
         }
 
-        res_->build_ex();
+        res_->build_ex(ctx->res_);
         ctx->tm_.cancel();
 
-        if(res_->ctr_.keep_alive() && req->ctr_.keep_alive())
+        if(ctx->req_.keep_alive() && ctx->res_.keep_alive())
             release(type, ctx->c_);
         else
             release(type, nullptr);

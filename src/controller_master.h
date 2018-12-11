@@ -28,6 +28,7 @@ namespace flame
         void redirect_sout(int i);
         void redirect_eout(int i);
 
+        void await_signal();
         void close_worker();
     };
 }
