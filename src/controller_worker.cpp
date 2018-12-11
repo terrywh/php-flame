@@ -15,7 +15,7 @@ namespace flame
     void controller_worker::await_signal() {
         signal_->async_wait([this] (const boost::system::error_code &error, int sig)
         {
-            if(error) return;
+            if(error || sig == SIGUSR2) return;
             // 似乎主进程与子进程 signal 处理之间有干扰
             // 需要后置清理
             if(gcontroller->worker_size == 0) signal_.reset();
@@ -37,7 +37,7 @@ namespace flame
         // 工作线程的使用是随机的, 需要保持其一直存在
         auto work = boost::asio::make_work_guard(gcontroller->context_y);
         // 1. 停止信号调用退出通知
-        signal_.reset(new boost::asio::signal_set(gcontroller->context_y, SIGINT, SIGTERM));
+        signal_.reset(new boost::asio::signal_set(gcontroller->context_y, SIGUSR2, SIGINT, SIGTERM));
         await_signal();
 
         // 子进程的启动过程:
