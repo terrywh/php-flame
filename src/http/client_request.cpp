@@ -49,7 +49,7 @@ namespace http {
 			throw php::exception(zend_ce_exception, "request 'url' must be a string");
 		}
 
-		url_ = std::make_shared<url>(u);
+		url_ = std::make_shared<url>(u, false);
 		if(!url_->port && !url_->schema.compare(0, 5, "https")) {
 			url_->port = 443;
 		}else if(!url_->port && !url_->schema.compare(0, 4, "http")) {
@@ -62,14 +62,9 @@ namespace http {
 		// 消息容器
 		ctr_.method(boost::beast::http::string_to_verb(get("method").to_string()));
 		std::string target(url_->path.length() > 0? url_->path : "/");
-        std::string query;
-        for(auto it = url_->query.begin(); it != url_->query.end(); ++it) {
-            query.append(it->first).append("=").append(it->second).append("&");
-        }
-		if(query.size() > 0) {
-            query.erase(query.length() - 1);
+		if(!url_->query_raw.empty()) {
 			target.append("?");
-			target.append(query);
+			target.append(url_->query_raw);
 		}
 		ctr_.target(target);
 		// 头

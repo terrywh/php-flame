@@ -5,7 +5,7 @@ namespace flame
 {
 
     typedef ::parser::separator_parser<std::string, std::string> parser_t;
-    url::url(const php::string &str)
+    url::url(const php::string &str, bool parse_query)
         : raw_(str)
     {
         const char* s = str.c_str();
@@ -43,16 +43,19 @@ namespace flame
         }
         if (x.field_set & (1 << UF_QUERY)) {
             auto y = x.field_data[UF_QUERY];
-            parser_t p('\0', '\0', '=', '\0', '\0', '&', [this](parser_t::entry_type et) {
-                std::string key = et.first;
-                std::string val = et.second;
-                // 一律小写 KEY
-                php::lowercase_inplace(key.data(), key.size());
-                val.resize(php::url_decode_inplace(val.data(), val.size()));
-                query[key] = val;
-            });
-            p.parse(s + y.off, y.len);
-            p.end();
+            query_raw.assign(s + y.off, y.len);
+            if(parse_query) {
+                parser_t p('\0', '\0', '=', '\0', '\0', '&', [this](parser_t::entry_type et) {
+                    std::string key = et.first;
+                    std::string val = et.second;
+                    // 一律小写 KEY
+                    php::lowercase_inplace(key.data(), key.size());
+                    val.resize(php::url_decode_inplace(val.data(), val.size()));
+                    query[key] = val;
+                });
+                p.parse(s + y.off, y.len);
+                p.end();
+            }
         }
     }
 
@@ -63,18 +66,7 @@ namespace flame
             ss << schema << "://" << user << ":" << pass << "@" << host << ":" << port << path;
             if(with_query)
             {
-                int x = 0;
-                for(auto i=query.begin();i!=query.end();++i)
-                {
-                    if(++x == 1)
-                    {
-                        ss.put('?');
-                    }else
-                    {
-                        ss.put('&');
-                    }
-                    ss << i->first << "=" << i->second;
-                }
+                ss << "?" << query_raw;
             }
             raw_ = ss.str();
         }

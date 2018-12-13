@@ -1,19 +1,24 @@
 <?php
 flame\init("http_2");
 
-$server = new flame\http\server(":::8370");
-$poll;
-flame\go(function() use($server, &$poll) {
+flame\go(function() {
+    $server = new flame\http\server(":::56120");
+    $poll;
 
     $server->before(function($req, $res, $m) {
         $req->data["start"] = flame\time\now();
         if(!$m) {
             $res->status = 404;
-            $res->body = "Not Found\n";
+            $res->body = "404 Not Found\n";
             return false; // 阻止后续 handle / after 的运行
         }
-    })->get("/", function($req, $res) {
-        $res->body = json_encode($req);
+    })->POST("/", function($req, $res) {
+        $res->status = 200;
+        $res->header["Content-Type"] = "application/json";
+        $res->body = $req->body;
+        // 文件上传
+        var_dump($req->file);
+        // return $res->body = json_encode($req);
     })->get("/poll", function($req, $res) use(&$poll) {
         $res->header["Content-Type"] = "text/event-stream";
         $res->header["Cache-Control"] = "no-cache";
@@ -29,6 +34,10 @@ flame\go(function() use($server, &$poll) {
         //     }
         //     echo "done1\n";
         // });
+    })->get("/404", function($req, $res) {
+        $res->status = 404;
+        $res->header["Connection"] = "close";
+        $res->body = "404 Not Found\n";
     })->get("/push", function($req, $res) use(&$poll) {
         if($poll) {
             $poll->write("event: time\n");
@@ -40,6 +49,10 @@ flame\go(function() use($server, &$poll) {
     })->get("/abc", function($req, $res) {
         $res->header["Content-Type"] = "text/html";
         $res->file(__DIR__, "/coroutine_1.php");
+    })->get("/from", function($req, $res) {
+        $r = flame\http\get("http://127.0.0.1:56120/");
+        flame\time\sleep(10000);
+        $res->body = $r->body;
     })->after(function($req, $res, $m) {
         $end = flame\time\now();
         // echo "elapsed: ", ($end - $req->data["start"]), "ms\n";
@@ -48,9 +61,9 @@ flame\go(function() use($server, &$poll) {
     echo "done2\n";
 });
 
-flame\on("quit", function() use($server) {
-    echo "quit\n";
-    $server->close();
-});
+// flame\on("quit", function() use($server) {
+//     echo "quit\n";
+//     $server->close();
+// });
 
 flame\run();

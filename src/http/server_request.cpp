@@ -16,6 +16,7 @@ namespace http {
 			.property({"cookie", nullptr})
 			.property({"body", nullptr})
 			.property({"rawBody", ""})
+			.property({"file", nullptr})
 			.property({"data", nullptr})
 			.method<&server_request::__construct>("__construct", {}, php::PRIVATE);
 
@@ -75,7 +76,9 @@ namespace http {
 				set("rawBody", body); // 不在 multipart 时保留原始数据
 			}
 			if(ctype != ctr_.end()) { // 存在时按照类型进行解析
-				set("body", ctype_decode(ctype->value(), body));
+				php::array files(4);
+				set("body", ctype_decode(ctype->value(), body, &files));
+				set("file", files);
 			}else{ // 不存在与 rawBody 相同
 				set("body", body);
 			}

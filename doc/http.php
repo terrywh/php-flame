@@ -227,6 +227,24 @@ class server_request {
      */
     public $rawBody;
     /**
+     * 上传文件，形如：
+     *  [
+     *      "file_field_1"=>
+     *      [
+     *          "content-type" => "mime_type",
+     *          ... // other header field lowercased if available
+     *          "filename" => "original_file_name",
+     *          "size" => file_data_size,
+     *          "data" => "file_data", // content of the uploaded file
+     *      ],
+     *      "file_filed_2"=>
+     *      ...
+     *  ]
+     * 若无上传文件时可能为空
+     * @property array
+     */
+    public $file;
+    /**
      * 用户可设置的请求关联数据;
      * 例如: 在 before 回调中从 Cookie 中提取用户信息放在 $req->data["user"] 中, 后续处理器即可访问 $req->data["user"] 获取户信息;
      * @property array

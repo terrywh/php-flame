@@ -86,7 +86,7 @@ namespace flame::http {
 		}
 		return r;
 	}
-	php::value ctype_decode(boost::string_view ctype, const php::string& v) {
+	php::value ctype_decode(boost::string_view ctype, const php::string& v, php::array* files) {
 		if(ctype.compare(0, 16, "application/json") == 0) {
 			return php::json_decode(v);
 		}else if(ctype.compare(0, 33, "application/x-www-form-urlencoded") == 0) {
@@ -94,24 +94,55 @@ namespace flame::http {
 			php::callable("parse_str")({v, data.make_ref()});
 			return data;
 		}else if(ctype.compare(0, 19, "multipart/form-data") == 0) {
-			std::size_t begin = ctype.find_first_of(';', 19) + 1;
-			php::string cache;
-			parser::separator_parser<std::string, php::buffer> p1('\0','\0','=','"','"',';', [&cache] (std::pair<std::string, php::buffer> entry) {
-				if(entry.first == "boundary" || entry.first == "name") {
-					cache = php::string(std::move(entry.second));
+			std::string boundary;
+			std::string field;
+			php::array meta(4);
+			parser::separator_parser<std::string, std::string> p1('\0','\0','=','"','"',';', [&boundary, &field, &meta] (std::pair<std::string, std::string> entry) {
+				if(entry.first == "boundary") {
+					boundary = std::move(entry.second);
+				}else if(entry.first == "content-disposition") {
+					// 此项头信息没有用途
+				}else if(entry.first == "name") {
+					// 这里可能有不严格的地方存在，即每个 Header 项后可能都存在对应的补充字段，且这些字段名称可能重复
+					// 表单字段名
+					field = std::move(entry.second);
+				}else{
+					meta.set(entry.first, entry.second);
 				}
 			});
-			p1.parse(ctype.data() + begin, ctype.data() + ctype.size() - (ctype.data() + begin));
-			p1.parse(";", 1); // 结尾分隔符可能不存在(可以认为数据行可能不完整)
+			std::size_t begin = ctype.find_first_of(';', 19) + 1;
+			p1.parse(ctype.data() + begin, ctype.size() - begin);
+			p1.parse(";", 1); // 保证一行 K/V 结束，复用 PARSER
 
-			php::array data(4);
-			parser::multipart_parser<std::string, php::buffer> p2(cache, [&p1, &cache, &begin, &data] (std::pair<std::string, php::buffer> entry) {
-				if(entry.first.size() == 0) {
-					data.set(cache, std::move(entry.second));
-				}else{
-					begin = boost::string_view(entry.second.data(), entry.second.size()).find_first_of(';') + 1;
-					p1.parse(entry.second.data() + begin, entry.second.data() + entry.second.size() - (entry.second.data() + begin));
-					p1.parse(";", 1);
+			php::array data(8);
+			parser::multipart_parser<std::string, php::buffer> p2(boundary, [&p1, &field, &meta, &data, &files] (std::pair<std::string, php::buffer> entry) {
+				if(entry.first.size() == 0) { // Part Data
+					if(meta.exists("filename") > 0) {
+						if(files) { // 接收对应文件
+							// 上传文件 meta 
+							meta["size"] = entry.second.size();
+							meta["data"] = std::move(entry.second);
+							files->set(field, meta);
+						}
+					}else{
+						data.set(field, std::move(entry.second));
+					}
+					meta = php::array(4);
+				}else{ // Part Header
+					php::lowercase_inplace(entry.first.data(), entry.first.size());
+					std::size_t end = boost::string_view(entry.second.data(), entry.second.size()).find_first_of(';');
+					if(end == std::string::npos) {
+						meta[entry.first] = std::move(entry.second);
+					}else if(entry.first == "content-disposition") {
+						// 这里可能有不严格的地方存在，即每个 Header 项后可能都存在对应的补充字段，且这些字段名称可能重复
+						std::size_t begin = end + 1;
+						if(entry.second.size() > begin + 2) {
+							p1.parse(entry.second.data() + begin, entry.second.size() - begin);
+							p1.parse(";", 1); // 保证一行 K/V 结束，复用 PARSER
+						}
+					}else{
+						meta[entry.first] = php::string(entry.second.data(), end);
+					}
 				}
 			});
 			p2.parse(v.data(), v.size());
