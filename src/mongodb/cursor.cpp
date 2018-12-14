@@ -15,17 +15,33 @@ namespace flame::mongodb
     }
     php::value cursor::fetch_row(php::parameters &params)
     {
-        coroutine_handler ch{coroutine::current};
-        return cl_->fetch(cs_, ch);
+        php::array row(nullptr);
+        if(cs_ && cl_) {
+            coroutine_handler ch{coroutine::current};
+            row = cl_->fetch(cs_, ch);
+        }
+        if(row.typeof(php::TYPE::NULLABLE)) {
+            // 尽早释放连接
+            cs_.reset();
+            cl_.reset();
+        }
+        return row;
     }
     php::value cursor::fetch_all(php::parameters &params)
     {
-        coroutine_handler ch{coroutine::current};
-        php::array data(8);
-        for(php::array row = cl_->fetch(cs_, ch); !row.typeof(php::TYPE::NULLABLE); row = cl_->fetch(cs_, ch))
-        {
-            data.set(data.size(), row);
+        if(cs_ && cl_) {
+            coroutine_handler ch{coroutine::current};
+            php::array data(8);
+            for(php::array row = cl_->fetch(cs_, ch); !row.typeof(php::TYPE::NULLABLE); row = cl_->fetch(cs_, ch))
+            {
+                data.set(data.size(), row);
+            }
+            // 尽早释放连接
+            cs_.reset();
+            cl_.reset();
+            return data;
+        }else{
+            return nullptr;
         }
-        return data;
     }
 } // namespace flame::mongodb

@@ -16,19 +16,34 @@ namespace flame::mysql
     }
     php::value result::fetch_row(php::parameters &params)
     {
-        coroutine_handler ch{coroutine::current};
-        return cl_->fetch(cl_->acquire(ch), rs_, f_, n_, ch);
+        php::array row(nullptr);
+        if(cl_ && rs_) {
+            coroutine_handler ch{coroutine::current};
+            row = cl_->fetch(cl_->acquire(ch), rs_, f_, n_, ch);
+        }
+        if(row.typeof(php::TYPE::NULLABLE)) {
+            // 尽早的释放连接
+            rs_.reset();
+            cl_.reset();
+        }
+        return row;
     }
     php::value result::fetch_all(php::parameters &params)
     {
-        coroutine_handler ch{coroutine::current};
-        auto conn = cl_->acquire(ch);
-        php::array data {4}, row;
-        
-        if(!rs_) return nullptr;
-        for(row = cl_->fetch(conn, rs_, f_, n_, ch); !row.typeof(php::TYPE::NULLABLE); row = cl_->fetch(conn, rs_, f_, n_, ch)) {
-            data.set(data.size(), row);
+        if(cl_ && rs_) {
+            coroutine_handler ch{coroutine::current};
+            auto conn = cl_->acquire(ch);
+            php::array data {4}, row;
+
+            for(row = cl_->fetch(conn, rs_, f_, n_, ch); !row.typeof(php::TYPE::NULLABLE); row = cl_->fetch(conn, rs_, f_, n_, ch)) {
+                data.set(data.size(), row);
+            }
+            // 尽早的释放连接
+            rs_.reset();
+            cl_.reset();
+            return data;
+        }else{
+            return nullptr;
         }
-        return data;
     }
 } // namespace flame::mysql

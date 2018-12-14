@@ -1,6 +1,8 @@
 <?php
 /**
  * MongoDB 基本客户端
+ * 注意:
+ * 1. 同一协程中连续进行 MongoDB 查询操作, 且游标不读取数据不销毁 (或 不读取完不销毁) 可能导致进程死锁; (请将游标读取完毕 或 主动 unset 释放游标对象)
  */
 namespace flame\mongodb;
 
@@ -47,11 +49,11 @@ class collection {
 }
 class cursor {
     /**
-     * 读取当前 cursor 返回一个文档; 若返回已完成, 返回 null;
+     * 读取当前 cursor 返回一个文档; 若读取已完成, 返回 null;
      */
     function fetch_row():mixed {}
     /**
-     * 读取当前 cursor 返回所有文档 (二维)
+     * 读取当前 cursor 返回所有文档 (二维); 若读取已完成, 返回 null;
      */
     function fetch_all(): array {}
 }

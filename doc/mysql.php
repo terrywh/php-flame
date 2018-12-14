@@ -1,6 +1,8 @@
 <?php
 /**
- * 
+ * MySQL 客户端
+ * 注意:
+ * 1. 同一协程中连续进行 MySQL 查询操作, 且结果集数据不读取且不销毁(或不读取完且不销毁)可能导致进程死锁; (请将结果集读取完 或 主动 unset 释放结果集对象)
  */
 namespace flame\mysql;
 /**
@@ -186,15 +188,15 @@ class result {
      */
     public $fetched_rows;
     /**
-     * 取出下一行
+     * 读取下一行
      * @return 下一行数据关联数组;
-     *  若不存在下一行, 返回 NULL
+     *  若读取已完成, 返回 NULL
      */
     function fetch_row():?array {}
     /**
-     * 取出(剩余)全部行
+     * 读取 (剩余) 全部行
      * @return 二维数组, 可能为空数组; 
-     *  若当前对象不包含结果集(更新型查询), 返回 NULL
+     *  若读取已完成, 返回 NULL
      */
     function fetch_all():?array {}
 };

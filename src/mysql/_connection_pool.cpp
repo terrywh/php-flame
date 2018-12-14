@@ -38,8 +38,6 @@ namespace flame::mysql
                 { // 可用连接
                     MYSQL *c = conn_.front().conn;
                     conn_.pop_front();
-                    if(version_ >= 50700) mysql_reset_connection(c);
-                    else mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
                     release(c);
                     return;
                 }
@@ -91,6 +89,10 @@ namespace flame::mysql
         }
         else
         { // 立刻分配使用
+            // 每次连接复用前，需要清理状态
+            if(version_ >= 50700) mysql_reset_connection(c);
+            else mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
+
             std::function<void(std::shared_ptr<MYSQL> c)> cb = await_.front();
             await_.pop_front();
             auto self = this->shared_from_this();
@@ -102,7 +104,6 @@ namespace flame::mysql
                 }));
         }
     }
-
     void _connection_pool::sweep() {
         tm_.expires_from_now(std::chrono::seconds(60));
         // 注意, 实际的清理流程需要保证 guard_ 串行流程
