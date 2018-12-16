@@ -33,14 +33,12 @@ namespace flame::mongodb
                 ch.resume();
             });
             mongoc_client_t* c = mongoc_client_pool_try_pop(p_);
-            std::cout << "try pop: " << c << "\n";
             if(c) release(c);
         });
         ch.suspend();
         return conn;
     }
     void _connection_pool::release(mongoc_client_t* c) {
-        std::cout << "release: " << c << std::endl;
         if(await_.empty()) {
             mongoc_client_pool_push(p_, c);
         }else{
