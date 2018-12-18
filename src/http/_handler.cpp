@@ -25,7 +25,7 @@ namespace flame::http
         // 第一次请求或允许复用
         if ((gcontroller->status & controller::controller_status::STATUS_SHUTDOWN)
                 || svr_ptr->closed_
-                || req_ && !req_->keep_alive() || res_ && !res_->keep_alive()) 
+                || (req_ && !req_->keep_alive()) || (res_ && !res_->keep_alive()))
         {
             req_.reset();
             res_.reset();

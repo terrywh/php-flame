@@ -29,6 +29,10 @@ namespace flame::mongodb
             });
         ext.add(std::move(class_client));
     }
+    php::value client::__construct(php::parameters &params)
+    {
+        return nullptr;
+    }
     php::value client::execute(php::parameters &params)
     {
         bool write = false;

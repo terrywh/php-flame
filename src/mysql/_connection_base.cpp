@@ -126,7 +126,7 @@ ESCAPE_FINISHED:;
         else // 更新型操作
         {
             php::array data(2);
-            data.set(php::string("affected_rows", 11), static_cast<std::int64_t>(mysql_affected_rows(conn.get())));
+            data.set(php::string("affected_rows", 13), static_cast<std::int64_t>(mysql_affected_rows(conn.get())));
             data.set(php::string("insert_id", 9), static_cast<std::int64_t>(mysql_insert_id(conn.get())));
             return std::move(data);
         }

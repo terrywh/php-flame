@@ -50,7 +50,7 @@ namespace flame::redis
                 return; // 已建立了足够多的连接, 需要等待已分配连接释放
 
             redisContext *c = create();
-            if (c == nullptr)
+            if (c == nullptr) // 创建新连接失败
             {
                 await_.pop_back();
                 ch.resume();

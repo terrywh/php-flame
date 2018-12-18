@@ -2,13 +2,13 @@
 
 #### PHP
 ``` Bash
-./configure  --prefix=/data/vendor/php-7.2.11 --with-config-file-path=/data/vendor/php-7.0.32/etc --disable-fpm --disable-phar --disable-dom --disable-libxml --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-openssl --with-readline --enable-mbstring --without-pear
+./configure  --prefix=/data/vendor/php-7.2.13 --with-config-file-path=/data/vendor/php-7.2.13/etc --disable-fpm --disable-phar --disable-dom --disable-libxml --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-openssl --with-readline --enable-mbstring --without-pear
 ```
 #### Boost
 
 ``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.68.0
-./b2 -j4 --prefix=/data/vendor/boost-1.68.0 cxxflags="-fPIC" variant=release link=static threading=multi install
+./bootstrap.sh --prefix=/data/vendor/boost-1.69.0
+./b2 -j4 --prefix=/data/vendor/boost-1.69.0 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
 
 #### libphpext
@@ -40,10 +40,10 @@ rm /data/vendor/mongoc-1.13.0/lib/*.so*
 #### AMQP-CPP
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake3 -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.0.0 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
+CC=gcc CXX=g++ cmake3 -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.0.1 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
 make
 make install
-rm /data/vendor/amqpcpp-4.0.0/lib/*.so*
+# rm /data/vendor/amqpcpp-4.0.1/lib/*.so*
 ```
 
 #### Rdkafka

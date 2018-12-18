@@ -117,7 +117,7 @@ extern "C"
         ext
             .desc({"vendor/boost", BOOST_LIB_VERSION})
             .desc({"vendor/libphpext", PHPEXT_LIB_VERSION})
-            .desc({"vendor/amqpcpp", "4.0.0"})
+            .desc({"vendor/amqpcpp", "4.0.1"})
             .desc({"vendor/mysqlc", PACKAGE_VERSION})
             .desc({"vendor/librdkafka", rd_kafka_version_str()})
             .desc({"vendor/mongoc", MONGOC_VERSION_S});
