@@ -46,10 +46,12 @@ namespace flame::redis
             ch.resume();
         });
         ch.suspend();
+        // TODO 若执行过程当中存在异常，如何上报？（似乎 Redis 原则上不会部分失败）
         // 整合个命令返回值
         php::array data(cmds_.size());
         for(auto i=cmds_.begin(); i!=cmds_.end(); ++i) {
             data.set(data.size(), reply2value(i->reply, i->argv, i->type));
+            freeReplyObject(i->reply);
         }
         // 命令执行完毕 (所有返回值处理完成)
         cmds_.clear();

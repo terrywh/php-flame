@@ -54,7 +54,7 @@ namespace flame::http
             {   
                 res_.reset();
                 req_.reset();
-                std::clog << "[" << time::iso() << "] (WARNING) failed to read http request: (" << error.value() << ") " << error.message() << std::endl;
+                std::cerr << "[" << time::iso() << "] (WARNING) failed to read http request: (" << error.value() << ") " << error.message() << std::endl;
                 return;
             }
             res_.reset(new boost::beast::http::message<false, value_body<false>>());
@@ -115,7 +115,9 @@ namespace flame::http
             {
                 res_.reset();
                 req_.reset();
-                std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
+                php::object obj = ex;
+                std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
+                // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                 return nullptr;
             }
 HANDLE_BREAK:
@@ -272,7 +274,7 @@ WRITE_ERROR:
                 req_.reset();
                 if (error)
                 {
-                    std::clog << "[" << time::iso() << "] (ERROR) failed to write_end: (" << error.value() << ") " << error.message() << std::endl;
+                    std::cerr << "[" << time::iso() << "] (ERROR) failed to write_end: (" << error.value() << ") " << error.message() << std::endl;
                 }
                 else
                 {

@@ -29,9 +29,10 @@ namespace flame::redis
                 // RESUME 需要在主线程进行
                 ch.resume();
             });
+            auto now = std::chrono::steady_clock::now();
             while (!conn_.empty())
             {
-                if(ping(conn_.front().conn))
+                if(now - conn_.front().ttl < std::chrono::seconds(15) || ping(conn_.front().conn))
                 {
                     // 可用连接
                     redisContext *c = conn_.front().conn;
@@ -81,9 +82,15 @@ namespace flame::redis
             ch.resume();
         });
         ch.suspend();
-        php::value rv = reply2value(rp, argv, rt);
-        freeReplyObject(rp);
-        return std::move(rv);
+        if(rp) {
+            php::value rv = reply2value(rp, argv, rt);
+            freeReplyObject(rp);
+            return std::move(rv);
+        }else if(rc->err) {
+            throw php::exception(zend_ce_exception, (boost::format("failed to exec Redis command: (%d) %s") % rc->err % rc->errstr).str(), rc->err);
+        }else{
+            return nullptr;
+        }
     }
     php::value _connection_pool::exec(std::shared_ptr<redisContext> rc, php::string &name, php::parameters &argv, reply_type rt, coroutine_handler& ch)
     {
@@ -98,25 +105,19 @@ namespace flame::redis
         if(!c || c->err) {
             return nullptr;
         }
-        if(!url_.pass.empty()) {
-            // 认证
-            redisReply* rp = (redisReply*)redisCommand(c, "AUTH %s", url_.pass.c_str());
+        if(!url_.pass.empty()) { // 认证
+            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply*)redisCommand(c, "AUTH %s", url_.pass.c_str()),
+                (void (*)(redisReply*))freeReplyObject);
             if(!rp || rp->type == REDIS_REPLY_ERROR) {
-                if(rp) {
-                    redisFree(c);
-                    freeReplyObject(rp);
-                }
+                redisFree(c);
                 return nullptr;
             }
         }
-        if(url_.path.length() > 1) {
-            // 指定数据库
-            redisReply *rp = (redisReply *)redisCommand(c, "SELECT %d", std::atoi(url_.path.c_str() + 1));
+        if(url_.path.length() > 1) { // 指定数据库
+            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "SELECT %d", std::atoi(url_.path.c_str() + 1)),
+                (void (*)(redisReply*))freeReplyObject);
             if(!rp || rp->type == REDIS_REPLY_ERROR) {
-                if(rp) {
-                    redisFree(c);
-                    freeReplyObject(rp);
-                }
+                redisFree(c);
                 return nullptr;
             }
         }
@@ -124,7 +125,12 @@ namespace flame::redis
     }
     void _connection_pool::release(redisContext *c)
     {
-        if (await_.empty())
+        if(c->err)
+        {
+            // 出现上下文异常的连接直接抛弃
+            --size_;
+        }
+        else if (await_.empty())
         { // 无等待分配的请求
             conn_.push_back({c, std::chrono::steady_clock::now()});
         }
@@ -143,10 +149,9 @@ namespace flame::redis
         }
     }
     bool _connection_pool::ping(redisContext* c) {
-        redisReply *rp = (redisReply *)redisCommand(c, "PING");
+        std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "PING"), (void (*)(redisReply*))freeReplyObject);
         if (!rp || rp->type == REDIS_REPLY_ERROR)
         {
-            if (rp) freeReplyObject(rp);
             return false;
         }
         return true;

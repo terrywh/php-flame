@@ -97,7 +97,9 @@ namespace flame::tcp
                     }
                     catch(const php::exception& ex)
                     {
-                        std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
+                        php::object obj = ex;
+                        std::cerr << "[" << time::iso() << "] (ERROR) "<< obj.call("__toString") << "\n";
+                        // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                     return nullptr;
                 }));

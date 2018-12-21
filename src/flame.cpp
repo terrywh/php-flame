@@ -45,11 +45,11 @@ namespace flame
                     ++x;
                     i->second.call({ex});
                 }
-                // php::object obj = ex;
+                php::object obj = ex;
                 if(x==0)
                 {
-                    // std::cerr << "[" << time::iso() << "] (FATAL) " << obj.call("gettraceasstring") << "\n";
-                    std::cerr << "[" << time::iso() << "] (FATAL) " << ex.what() << "\n";
+                    std::cerr << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
+                    // std::cerr << "[" << time::iso() << "] (FATAL) " << ex.what() << "\n";
                     boost::asio::post(gcontroller->context_x, [] () {
                         gcontroller->status |= controller::controller_status::STATUS_EXCEPTION;
                         gcontroller->context_x.stop();
@@ -57,8 +57,8 @@ namespace flame
                     });
                 }else
                 {
-                    // std::clog << "[" << time::iso() << "] (ERROR) " << obj.call("gettraceasstring") << "\n";
-                    std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
+                    std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
+                    // std::cerr << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
                 }
             }
             return rv;

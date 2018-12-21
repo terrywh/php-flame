@@ -52,9 +52,11 @@ namespace flame::kafka {
                     {
                         cb_.call({msg});
                     }
-                    catch(const std::exception& ex)
+                    catch(const php::exception& ex)
                     {
-                        std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
+                        php::object obj = ex;
+                        std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
+                        // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                 }
                 if (--count == 0) // 当所有并行协程结束后, 停止消费
