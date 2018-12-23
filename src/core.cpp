@@ -25,9 +25,13 @@ namespace flame::core {
         std::shared_ptr<coroutine_queue<php::value>> q = select_queue(qs, ch);
         return mm[q];
     }
+    php::value co_id(php::parameters& params) {
+        return reinterpret_cast<uintptr_t>(coroutine::current.get());
+    }
     void declare(php::extension_entry &ext) {
         ext
-            .function<select>("flame\\select");
+            .function<select>("flame\\select")
+            .function<co_id>("flame\\co_id");
 
         queue::declare(ext);
         mutex::declare(ext);
