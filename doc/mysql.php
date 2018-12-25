@@ -11,7 +11,7 @@ namespace flame\mysql;
  *  mysql://{user}:{pass}@{host}:{port}/{database}?opt1=val1
  *  目前可用的选项如下:
  *      * "charset" => 字符集
- * 
+ * 注意：若服务端配置默认字符集与上述字符集不同，每次连接使用（复用）均会进行字符集设置，这里可能会产生部分额外消耗；
  * @return client 客户端对象
  */
 function connect($url): client {}

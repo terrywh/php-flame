@@ -6,6 +6,7 @@ namespace flame::mysql
         
     _connection_pool::_connection_pool(url u)
         : url_(std::move(u)), min_(2), max_(4), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
+        , charset_(boost::logic::indeterminate)
     {
         if(!url_.query.count("charset")) {
             url_.query["charset"] = "utf8";
@@ -56,6 +57,7 @@ namespace flame::mysql
                 ch.resume();
             }else{
                 ++size_; // 当前还存在的连接数量
+                version_ = mysql_get_server_version(c);
                 release(c);
             }
         });
@@ -68,16 +70,17 @@ namespace flame::mysql
         return conn;
     }
 
-    MYSQL* _connection_pool::create() {
+    MYSQL* _connection_pool::create()
+    {
         MYSQL* c = mysql_init(nullptr);
-        mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
+        // 这里的 CHARSET 设定会被 reset_connection 重置同时不会影响 client_charactor_set_name 变量
+        // mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
         unsigned int timeout = 5; // 连接超时
         mysql_options(c, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
         if (!mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0))
         {
             return nullptr;
         }
-        version_ = mysql_get_server_version(c);
         return c;
     }
 
@@ -92,6 +95,9 @@ namespace flame::mysql
             // 每次连接复用前，需要清理状态
             if(version_ >= 50700) mysql_reset_connection(c);
             else mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
+            // 由于上述 reset 动作，会导致字符集被重置为服务端字符集，确认字符集是否匹配
+            if(boost::logic::indeterminate(charset_)) query_charset(c);
+            if(charset_) mysql_set_character_set(c, url_.query["charset"].c_str());
 
             std::function<void(std::shared_ptr<MYSQL> c)> cb = await_.front();
             await_.pop_front();
@@ -104,6 +110,23 @@ namespace flame::mysql
                 }));
         }
     }
+
+    void _connection_pool::query_charset(MYSQL* c) {
+        // 使用 mysql_get_charactor_set_name() 获取到的字符集与下述查询不同
+        int err = mysql_real_query(c, "SHOW VARIABLES WHERE `Variable_name`='character_set_client'", 59);
+        charset_ = false; // 乐观
+        if (err == 0)
+        {
+            std::unique_ptr<MYSQL_RES> rst(mysql_store_result(c));
+            if (!rst) return;
+            MYSQL_ROW row = mysql_fetch_row(rst.get());
+            if(!row) return;
+            unsigned long* len = mysql_fetch_lengths(rst.get());
+            std::string charset(row[1], len[1]);
+            charset_ = charset != url_.query["charset"];
+        }
+    }
+
     void _connection_pool::sweep() {
         tm_.expires_from_now(std::chrono::seconds(60));
         // 注意, 实际的清理流程需要保证 guard_ 串行流程

@@ -31,9 +31,11 @@ namespace flame::mysql
         boost::asio::steady_timer tm_;
 
         unsigned long version_;
+        boost::logic::tribool charset_;
         
         MYSQL* create();
         void release(MYSQL *c);
+        void query_charset(MYSQL* c);
     };
 
 } // namespace flame::mysql
