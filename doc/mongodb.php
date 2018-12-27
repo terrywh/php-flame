@@ -35,7 +35,10 @@ class collection {
     function insert(array $data, bool $ordered = true):array {}
     function delete(array $query, int $limit = 0):array {}
     function update(array $query, array $update, $upsert = false):array {}
-    function find(array $query, array $projection = null, array $sort = null, mixed $limit):cursor {}
+    /**
+     * @param mixed $limit 可以为 int 设置 limit 值，或 array 设置 [skip, $limit] 
+     */
+    function find(array $query, array $projection = null, array $sort = null, mixed $limit = null):cursor {}
     /**
      * 查询并返回单个文档
      */
