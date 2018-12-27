@@ -5,7 +5,7 @@ namespace flame::mysql
 {
         
     _connection_pool::_connection_pool(url u)
-        : url_(std::move(u)), min_(2), max_(4), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
+        : url_(std::move(u)), min_(2), max_(6), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
         , charset_(boost::logic::indeterminate)
     {
         if(url_.port < 10) url_.port = 3306;
@@ -58,7 +58,6 @@ namespace flame::mysql
                 ch.resume();
             }else{
                 ++size_; // 当前还存在的连接数量
-                version_ = mysql_get_server_version(c);
                 release(c);
             }
         });
@@ -93,9 +92,14 @@ namespace flame::mysql
         }
         else
         { // 立刻分配使用
-            // 每次连接复用前，需要清理状态
-            if(version_ >= 50700) mysql_reset_connection(c);
-            else mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
+            // 每次连接复用前，需要清理状态;
+            // 这里兼容不支持 mysql_reset_connection() 新 API 的情况
+            // （不支持自动切换到 mysql_change_user() 兼容老版本或变异版本）
+            if(boost::logic::indeterminate(reset_) || reset_) {
+                if(mysql_reset_connection(c) != 0) reset_ = false;
+            }else{
+                mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
+            }
             // 由于上述 reset 动作，会导致字符集被重置为服务端字符集，确认字符集是否匹配
             if(boost::logic::indeterminate(charset_)) query_charset(c);
             if(charset_) mysql_set_character_set(c, url_.query["charset"].c_str());

@@ -30,7 +30,7 @@ namespace flame::mysql
         std::list<connection_t> conn_;
         boost::asio::steady_timer tm_;
 
-        unsigned long version_;
+        boost::logic::tribool reset_;
         boost::logic::tribool charset_;
         
         MYSQL* create();
