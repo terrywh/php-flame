@@ -22,12 +22,12 @@ namespace flame::http {
             })
             .method<&client::post>("post", {
                 {"url", php::TYPE::STRING},
-                {"body", php::TYPE::INTEGER},
+                {"body", php::TYPE::UNDEFINED},
                 {"timeout", php::TYPE::INTEGER, false, true}
             })
             .method<&client::put>("put", {
                 {"url", php::TYPE::STRING},
-                {"body", php::TYPE::INTEGER},
+                {"body", php::TYPE::UNDEFINED},
                 {"timeout", php::TYPE::INTEGER, false, true}
             })
             .method<&client::delete_>("delete", {

@@ -73,8 +73,18 @@ namespace flame::mysql
             b.push_back(')');
             break;
         }
-        case IS_OBJECT:
-            // TODO DateTime 类型的 SQL 拼接
+        case IS_OBJECT: {
+            php::object obj = v;
+            php::string str;
+            if(obj.instanceof(php_date_get_date_ce())) {
+                // DateTime 类型的 SQL 拼接
+                str = obj.call("format", {php::string("Y-m-d H:i:s")});
+            }else{
+                str = obj.to_string();
+            }
+            escape(conn, b, str, quote);
+            break;
+        }
         default:
         {
             php::string str = v;
