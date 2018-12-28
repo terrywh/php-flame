@@ -168,6 +168,11 @@ ESCAPE_FINISHED:;
         for(int i=0;i<n;++i) {
             php::string field(f[i].name, f[i].name_length);
             php::value  value;
+            if(row[i] == nullptr) {
+                value = nullptr;
+                php_row.set(field, value);
+                continue;
+            }
             switch(f[i].type) {
                 case MYSQL_TYPE_DOUBLE:
                 case MYSQL_TYPE_FLOAT:
