@@ -98,6 +98,9 @@ namespace flame
     }
 }
 
+#define VERSION_MACRO(major, minor, patch) VERSION_JOIN(major, minor, patch)
+#define VERSION_JOIN(major, minor, patch) #major"."#minor"."#patch
+
 extern "C"
 {
     ZEND_DLEXPORT zend_module_entry *get_module()
@@ -117,8 +120,9 @@ extern "C"
         ext
             .desc({"vendor/boost", BOOST_LIB_VERSION})
             .desc({"vendor/libphpext", PHPEXT_LIB_VERSION})
+            .desc({"vendor/hiredis", VERSION_MACRO(HIREDIS_MAJOR, HIREDIS_MINOR, HIREDIS_PATCH)})
+            .desc({"vendor/mysqlc", mysql_get_client_info()})
             .desc({"vendor/amqpcpp", "4.0.1"})
-            .desc({"vendor/mysqlc", PACKAGE_VERSION})
             .desc({"vendor/librdkafka", rd_kafka_version_str()})
             .desc({"vendor/mongoc", MONGOC_VERSION_S});
 

@@ -110,6 +110,40 @@ namespace flame::http
                 {
                     rv = ia->second.call({req, res, ih != svr_ptr->cb_.end()});
                 }
+HANDLE_BREAK:
+                if(!res_->chunked()/* && !(res_ptr->status_ & server_response::STATUS_BODY_SENT)*/)
+                {
+                    // if(!(res_ptr->status_ & server_response::STATUS_HEAD_SENT)) {
+                    //     res_ptr->set("status", 404);
+                    //     res_ptr->set("body", nullptr);
+                    // }
+                    if(gcontroller->status & controller::controller_status::STATUS_SHUTDOWN) {
+                        res_->keep_alive(false);
+                    }
+                    res_ptr->build_ex(*res_);
+                    // Content 方式, 待结束
+                    php::string body = res.get("body");
+                    if (!body.empty())
+                    {
+                        body = ctype_encode(res_->find(boost::beast::http::field::content_type)->value(), body);
+                    }
+                    res_->body() = body;
+                    res_->prepare_payload();
+
+                    boost::system::error_code error;
+                    boost::beast::http::async_write(socket_, *res_, ch[error]);
+                    if(error) {
+                        res_.reset();
+                        req_.reset();
+                        throw php::exception(zend_ce_exception,
+                                            (boost::format("failed to write_head: (%1%) %2%") % error.value() % error.message()).str(), error.value());
+                    }else{
+                        start();
+                    }
+                }/*else
+                {
+                    // Chunked 未结束 -> server_response::__destruct() -> finish()
+                }*/
             }
             catch(const php::exception& ex)
             {
@@ -118,42 +152,7 @@ namespace flame::http
                 php::object obj = ex;
                 std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
                 // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
-                return nullptr;
             }
-HANDLE_BREAK:
-            if(!res_->chunked()/* && !(res_ptr->status_ & server_response::STATUS_BODY_SENT)*/)
-            {
-                // if(!(res_ptr->status_ & server_response::STATUS_HEAD_SENT)) {
-                //     res_ptr->set("status", 404);
-                //     res_ptr->set("body", nullptr);
-                // }
-                if(gcontroller->status & controller::controller_status::STATUS_SHUTDOWN) {
-                    res_->keep_alive(false);
-                }
-                res_ptr->build_ex(*res_);
-                // Content 方式, 待结束
-                php::string body = res.get("body");
-                if (!body.empty())
-                {
-                    body = ctype_encode(res_->find(boost::beast::http::field::content_type)->value(), body);
-                }
-                res_->body() = body;
-                res_->prepare_payload();
-
-                boost::system::error_code error;
-                boost::beast::http::async_write(socket_, *res_, ch[error]);
-                if(error) {
-                    res_.reset();
-                    req_.reset();
-                    throw php::exception(zend_ce_exception,
-                                         (boost::format("failed to write_head: (%1%) %2%") % error.value() % error.message()).str(), error.value());
-                }else{
-                    start();
-                }
-            }/*else
-            {
-                // Chunked 未结束 -> server_response::__destruct() -> finish()
-            }*/
             return nullptr;
         }));
     }
