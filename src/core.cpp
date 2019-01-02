@@ -30,6 +30,15 @@ namespace flame::core {
     }
     void declare(php::extension_entry &ext) {
         ext
+            .on_request_shutdown([] (php::extension_entry& ext) -> bool
+            {
+                if(coroutine::count > 0 && (gcontroller->status & controller::controller_status::STATUS_RUN) == 0)
+                {
+                    std::cerr << "[FATAL] process exited prematurely: missing 'flame\\run();' ?\n";
+                    exit(-1);
+                }
+                return true;
+            })
             .function<select>("flame\\select")
             .function<co_id>("flame\\co_id");
 

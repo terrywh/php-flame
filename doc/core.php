@@ -30,7 +30,7 @@ function run() {}
  * 从若干个队列中选择(等待)一个有数据队列
  * @return 若所有通道已关闭, 返回 null; 否则返回一个有数据的通道, 即: 可以无等待 pop()
  */
-function select(channel $q1, $q2/*, ...*/):channel {}
+function select(queue $q1, $q2/*, ...*/):queue {}
 /**
  * 监听框架的通知
  * @param string $event 目前消息存在以下两种:

@@ -8,6 +8,22 @@ flame\go(function() {
 	]);
 	$proc->wait();
 	var_dump( $proc->stdout() );
-	var_dump( flame\os\exec("ping", ["-c", 3, "www.baidu.com"]) );
+
+	$proc = flame\os\spawn("ping", ["-c", 5, "www.baidu.com"], [
+		"cwd" => "/data/htdocs",
+	]);
+	flame\time\sleep(1000);
+	$proc->wait();
+	
+	
+	for($i = 0; $i<10; ++$i) {
+		flame\go(function() {
+			for($j=0;$j<100;++$j) {
+				flame\os\exec("ping", ["-c", 1, "www.baidu.com"]);
+			}
+		});
+	}
+	flame\time\sleep(60000);
+	echo "done.\n";
 });
 flame\run();

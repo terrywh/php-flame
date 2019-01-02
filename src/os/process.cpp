@@ -16,10 +16,12 @@ namespace flame::os
         class_process
             .property({"pid", 0})
             .method<&process::__construct>("__construct", {}, php::PRIVATE)
+            .method<&process::__destruct>("__destruct")
             .method<&process::kill>("kill",
             {
                 {"signal", php::TYPE::INTEGER, false, true}
             })
+            .method<&process::detach>("detach")
             .method<&process::wait>("wait")
             .method<&process::stdout>("stdout")
             .method<&process::stderr>("stderr");
@@ -29,16 +31,24 @@ namespace flame::os
     {
         return nullptr;
     }
+    php::value process::__destruct(php::parameters& params)
+    {
+        if(!detach_) {
+            if(!c_.wait_for(std::chrono::milliseconds(10000))) c_.terminate();
+            if(c_.joinable()) c_.join();
+        }
+        return nullptr;
+    }
     php::value process::kill(php::parameters &params)
     {
-        if (params.size() > 0)
-        {
-            ::kill(get("pid"), params[0].to_integer());
-        }
-        else
-        {
-            ::kill(get("pid"), SIGTERM);
-        }
+        if (params.size() > 0) ::kill(get("pid"), params[0].to_integer());
+        else ::kill(get("pid"), SIGTERM);
+        return nullptr;
+    }
+    php::value process::detach(php::parameters& params) 
+    {
+        detach_ = true;
+        c_.detach();
         return nullptr;
     }
     php::value process::wait(php::parameters &params)
@@ -46,6 +56,7 @@ namespace flame::os
         if (!exit_) {
             ch_.reset(coroutine::current);
             ch_.suspend();
+            c_.join();
         }
         return nullptr;
     }

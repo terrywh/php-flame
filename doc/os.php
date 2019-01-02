@@ -42,6 +42,9 @@ function interfaces():array {}
 function spawn(string $command, array $argv = [], array $options = []):process {}
 /**
  * 调用上述 spawn() 异步启动进程, 并等待其结束, 返回进程标准输出
+ * @param array $options 目前可用的选项如下：
+ *  * "cwd" - string - 工作路径;
+ *  * "env" - array - 环境变量，K/V 结构文本;
  * @return string 进程标准输出内容
  */
 function exec(string $command, array $argv, array $options = []):string {}

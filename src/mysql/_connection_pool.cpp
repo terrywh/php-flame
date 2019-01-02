@@ -73,8 +73,8 @@ namespace flame::mysql
     MYSQL* _connection_pool::create()
     {
         MYSQL* c = mysql_init(nullptr);
-        // 这里的 CHARSET 设定会被 reset_connection 重置同时不会影响 client_charactor_set_name 变量
-        // mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
+        // 这里的 CHARSET 设定会被 reset_connection 重置为系统值
+        mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
         unsigned int timeout = 5; // 连接超时
         mysql_options(c, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
         if (!mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0))
@@ -95,8 +95,11 @@ namespace flame::mysql
             // 每次连接复用前，需要清理状态;
             // 这里兼容不支持 mysql_reset_connection() 新 API 的情况
             // （不支持自动切换到 mysql_change_user() 兼容老版本或变异版本）
-            if(boost::logic::indeterminate(reset_) || reset_) {
-                if(mysql_reset_connection(c) != 0) reset_ = false;
+            if(boost::logic::indeterminate(reset_)) {
+                if(mysql_reset_connection(c)) reset_ = true;
+                else reset_ = false;
+            }else if(reset_) {
+                mysql_reset_connection(c);
             }else{
                 mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
             }

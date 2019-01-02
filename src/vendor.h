@@ -34,6 +34,7 @@
 #include <boost/process.hpp>
 #include <boost/process/async.hpp>
 #include <boost/logic/tribool.hpp>
+#include <boost/logic/tribool_io.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/coroutine.hpp>

@@ -18,10 +18,11 @@ namespace flame {
 		boost::process::environment env;
 		enum controller_status
 		{
-			STATUS_UNKNOWN = 0,
-			STATUS_INITIALIZED = 1,
-			STATUS_SHUTDOWN = 2,
-			STATUS_EXCEPTION = 4,
+			STATUS_UNKNOWN     = 0x00,
+			STATUS_INITIALIZED = 0x01,
+			STATUS_SHUTDOWN    = 0x02,
+			STATUS_EXCEPTION   = 0x04,
+			STATUS_RUN         = 0x08,
 		};
 		int status;
 		std::size_t    worker_size;

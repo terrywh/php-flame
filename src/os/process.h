@@ -7,8 +7,10 @@ namespace flame::os {
 	public:
 		static void declare(php::extension_entry& ext);
 		php::value __construct(php::parameters& params);
+		php::value __destruct(php::parameters& params);
 		php::value kill(php::parameters& params);
 		php::value wait(php::parameters& params);
+		php::value detach(php::parameters& params);
 		php::value stdout(php::parameters& params);
 		php::value stderr(php::parameters& params);
 	private:
@@ -16,7 +18,8 @@ namespace flame::os {
         coroutine_handler         ch_;
 		std::future<std::string> out_;
 		std::future<std::string> err_;
-		bool exit_;
+		bool exit_ = false;
+		bool detach_ = false;
 		friend class php::value spawn(php::parameters& params);
 		friend class php::value exec(php::parameters& params);
 	};

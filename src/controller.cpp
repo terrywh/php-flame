@@ -68,6 +68,7 @@ namespace flame {
 	}
 
 	void controller::run() {
+		status &= controller_status::STATUS_RUN;
 		if(type == process_type::WORKER)
 		{
 			worker_->run();
