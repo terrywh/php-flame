@@ -34,7 +34,7 @@ namespace flame::core {
             {
                 if(coroutine::count > 0 && (gcontroller->status & controller::controller_status::STATUS_RUN) == 0)
                 {
-                    std::cerr << "[FATAL] process exited prematurely: missing 'flame\\run();' ?\n";
+                    std::cerr << "[FATAL] process exited prematurely (missing 'flame\\run();'?)\n";
                     exit(-1);
                 }
                 return true;

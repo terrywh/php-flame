@@ -2,6 +2,7 @@
 
 /**
  * 日志模块, 可通过框架配置设置日志等级以过滤日志输出;
+ * @see flame\init()
  */
 namespace flame\log;
 /**

@@ -1,4 +1,7 @@
 <?php
+/**
+ * 提供 Kafka 基本生产消费功能封装
+ */
 namespace flame\kafka;
 
 /**
@@ -22,7 +25,9 @@ function consume(array $config, array $topics) {}
  * @param array $topics 待生产的目标 TOPIC 名称列表
  */
 function produce(array $config, array $topics) {}
-
+/**
+ * 消费者
+ */
 class consumer {
     /**
      * 执行消费, 实际的回调函数会被对应的协程回调执行
@@ -41,7 +46,9 @@ class consumer {
      */
     function close() {}
 }
-
+/**
+ * 生产者
+ */
 class producer {
     /**
      * 生产消息
@@ -62,7 +69,9 @@ class producer {
      */
     function flush() {}
 }
-
+/**
+ * 消息对象
+ */
 class message implements \JsonSerializable {
     /**
      * @property string $topic

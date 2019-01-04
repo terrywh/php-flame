@@ -1,16 +1,26 @@
 <?php
 flame\init("http_2");
 
+class JsonObject implements JsonSerializable {
+    function jsonSerialize()
+    {
+        $date = new DateTime();
+        return ["date" => $date->unix()];
+    }
+}
+
 flame\go(function() {
-    $server = new flame\http\server(":::56120");
+    $server = new flame\http\server(":::56101");
     $poll;
 
     $server->before(function($req, $res, $m) {
         $req->data["start"] = flame\time\now();
         if(!$m) {
-            $res->status = 404;
-            $res->body = "404 Not Found\n";
-            return false; // 阻止后续 handle / after 的运行
+            $res->status = intval(substr($req->path, 1));
+            $res->header["Access-Control-Allow-Origin"] = "*";
+            $res->header["Content-Type"] = "application/json";
+            $res->body = ["a" => "bbbb"];
+            return false;
         }
     })->POST("/", function($req, $res) {
         $res->status = 200;
@@ -34,10 +44,6 @@ flame\go(function() {
         //     }
         //     echo "done1\n";
         // });
-    })->get("/404", function($req, $res) {
-        $res->status = 404;
-        $res->header["Connection"] = "close";
-        $res->body = "404 Not Found\n";
     })->get("/push", function($req, $res) use(&$poll) {
         if($poll) {
             $poll->write("event: time\n");
@@ -53,6 +59,9 @@ flame\go(function() {
         $r = flame\http\get("http://127.0.0.1:56120/");
         flame\time\sleep(10000);
         $res->body = $r->body;
+    })->get("/json", function($req, $res) {
+        $res->header["content-type"] = "application/json";
+        $res->body = ["data" => new JsonObject()];
     })->after(function($req, $res, $m) {
         $end = flame\time\now();
         // echo "elapsed: ", ($end - $req->data["start"]), "ms\n";

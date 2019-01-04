@@ -1,4 +1,7 @@
 <?php
+/**
+ * 提供对 TCP 网络操作的相关封装
+ */
 namespace flame\tcp;
 
 /**
@@ -8,7 +11,15 @@ namespace flame\tcp;
 function connect(string $address):socket {}
 
 class socket {
+    /**
+     * 本地地址（含端口）
+     * @property string
+     */
     public $local_address;
+    /**
+     * 远端地址（含端口）
+     * @property string
+     */
     public $remote_address;
     /**
      * 读取一定量的数据, 实际读取方式根据 $completion 参数决定;

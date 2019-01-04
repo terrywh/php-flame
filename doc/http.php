@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * 提供基本的 HTTP 客户端、服务端封装；
+ * 注意：暂不支持作为 HTTPS 客户端、服务端；
+ */
 namespace flame\http;
 
 /**
@@ -24,7 +27,7 @@ function put(string $url, mixed $data, int $timeout = 3000): client_response {}
 function delete(string $url, int $timeout = 3000): client_response {}
 
 /**
- * 客户端
+ * 客户端，用于执行请求
  */
 class client {
     /**
@@ -55,7 +58,7 @@ class client {
     function delete(string $url, int $timeout = 3000): client_response {}
 }
 /**
- * 作为客户端的请求对象
+ * 客户端请求对象，用于拼装生成一个客户端请求（待执行）
  */
 class client_request {
     /**
@@ -87,7 +90,9 @@ class client_request {
      */
     function __construct(string $url, mixed $body = null, int $timeout = 3000) {}
 }
-
+/**
+ * 客户端响应对象，执行请求后得到
+ */
 class client_response {
     /**
      * 响应码
@@ -113,7 +118,9 @@ class client_response {
      */
     public $rawBody;
 }
-
+/**
+ * HTTP 服务器
+ */
 class server {
     /**
      * 服务端本地监听地址
@@ -184,7 +191,9 @@ class server {
      */
     function close() {}
 }
-
+/**
+ * 服务端请求对象（由 server 对应回调获得）
+ */
 class server_request {
     /**
      * 请求方法
@@ -253,7 +262,7 @@ class server_request {
 }
 
 /**
- * 服务端响应对象, 提供接口向客户端返回数据
+ * 服务端响应对象（由 server 对应处理回调获得）提供接口向客户端返回数据
  */
 class server_response {
     /**

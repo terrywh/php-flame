@@ -1,15 +1,14 @@
 <?php
 /**
- * MySQL 客户端
+ * 提供基本的 MySQL 客户端封装，内部使用连接池
  * 注意:
  * 1. 同一协程中连续进行 MySQL 查询操作, 且结果集数据不读取且不销毁(或不读取完且不销毁)可能导致进程死锁; (请将结果集读取完 或 主动 unset 释放结果集对象)
  * 2. MySQL 读取数据时数值型字段读取映射为 PHP 对应数值类型；`DATETIME` 映射为 PHP 内置类型 `DateTime`;
  * 3. 客户端提供的简化方法如 `insert()` `update()` 也同时支持与上述反向的映射;
- * 
  */
 namespace flame\mysql;
 /**
- * 连接 MySQL 服务器
+ * 建立（连接）到 MySQL 服务器的客户端对象
  * @param string $url 服务端地址, 形如:
  *  mysql://{user}:{pass}@{host}:{port}/{database}?opt1=val1
  *  目前可用的选项如下:
@@ -80,7 +79,7 @@ function connect($url): client {}
 
 
 /**
- * MySQL 客户端
+ * MySQL 客户端（内部使用连接池）
  */
 class client {
     /**
@@ -184,7 +183,9 @@ class tx {
      */
     function get(string $table, string $field, array $where, mixed $order = null): mixed {}
 };
-
+/**
+ * 结果集
+ */
 class result {
     /**
      * @property 结果集包含的记录行数

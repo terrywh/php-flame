@@ -1,15 +1,31 @@
 <?php
-
+/**
+ * 提供操作系统相关信息读取、进程操作等功能封装
+ */
 namespace flame\os;
-
+/**
+ * 信号
+ */
 const SIGTERM = 15;
+/**
+ * 信号
+ */
 const SIGKILL = 9;
+/**
+ * 信号
+ */
 const SIGINT  = 2;
+/**
+ * 信号
+ */
 const SIGUSR1 = 10;
+/**
+ * 信号
+ */
 const SIGUSR2 = 12;
 
 /**
- * 获取当前系统网卡绑定地址
+ * 获取当前系统网卡绑定地址等信息
  * @example
  *  array(2) {
  *      ["lo"]=>
@@ -53,11 +69,20 @@ function exec(string $command, array $argv, array $options = []):string {}
  * 进程对象
  */
 class process {
+    /**
+     * 向进程发送指定信号
+     */
     function kill(int $signal = SIGTERM) {}
     /**
      * 等待进程结束
      */
     function wait() {}
+    /**
+     * 获取进程标准输出（若进程还未结束需要等待）
+     */
     function stdout():string {}
+    /**
+     * 获取进程错误输出（若进程还未结束需要等待）
+     */
     function stderr():string {}
 }

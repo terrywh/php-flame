@@ -1,6 +1,6 @@
 <?php
 /**
- * MongoDB 基本客户端
+ * 提供 Redis 基本客户端封装
  */
 namespace flame\redis;
 
@@ -10,7 +10,8 @@ function connect(string $url):client {}
  */
 class client {
     /**
-     * 用于通用的实现可用 Redis 命令
+     * 用于通用的实现可用 Redis 命令，支持 REDIS 大部分指令
+     * @return mixed 可能返回 int/string/array/null 等类型
      */
     function __call($name, $argv) {}
     /**
@@ -60,7 +61,7 @@ class client {
     function punsubscribe() {}
 }
 /**
- * 
+ * 用于记录待执行的命令并批量执行
  */
 class tx {
     /**
@@ -73,6 +74,7 @@ class tx {
     }
     /**
      * 执行目前提交的命令并带回所有响应返回
+     * @return array 返回数据项与命令一一对应
      */
     function exec():array {}
 }

@@ -34,6 +34,9 @@ namespace flame::kafka
             ptr->cc_ = std::min(std::min(std::max(static_cast<int>(config.get("concurrent")), 1), 8), 256);
             config.erase("concurrent");
         }
+        if (!config.exists("log.connection.close")) {
+            config.set("log.connection.close", "false");
+        }
         ptr->cs_.reset(new _consumer(config, topics));
         coroutine_handler ch {coroutine::current};
         // 订阅
@@ -52,8 +55,10 @@ namespace flame::kafka
             // ptr->cc_ = std::min(std::min(std::max(static_cast<int>(config.get("concurrent")), 1), 8), 256);
             config.erase("concurrent");
         }
+        if (!config.exists("log.connection.close")) {
+            config.set("log.connection.close", "false");
+        }
         ptr->pd_.reset(new _producer(config, topics));
-
         // TODO 优化: 确认首次连接已建立
         return std::move(obj);
     }

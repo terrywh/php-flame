@@ -7,15 +7,18 @@ namespace flame;
  * 初始化框架, 设置进程名称及相关配置;
  * @param string $process_name 进程名称
  * @param array  $options 选项配置, 目前可用如下:
- *  * `logger` - 日志输出重定向目标文件(完整路径, 若不提供使用标准输出); 
+ *  * "logger" - 日志输出重定向目标文件(完整路径, 若不提供使用标准输出); 
  *      向主进程发送 SIGUSR2 信号该文件将会被重新打开(或生成);
- *  * `level` - 日志输出级别, 设置该级别下的日志将不被记录; 可用级别如下
+ *  * "level" - 日志输出级别, 设置该级别下的日志将不被记录; 可用级别如下
  *      "debug"
  *      "info"
  *      "warning"
  *      "error"
  *      "fatal"
- *  请参见 flame\log 命名空间;
+ *  @see flame\log
+ * 
+ * 使用环境变量 FLAME_MAX_WORKERS=X 启动多进程模式
+ * 主进程将自动进行日志文件写入，子进程自动拉起；
  */
 function init($process_name, $options = []) {}
 /**
@@ -24,6 +27,7 @@ function init($process_name, $options = []) {}
 function go(callable $cb) {}
 /**
  * 框架调度, 上述协程会在框架开始调度运行后启动
+ * 注意：协程异步调度需要 run() 才能启动执行；
  */
 function run() {}
 /**
@@ -65,7 +69,9 @@ class queue {
      */
     function close() {}
 }
-
+/**
+ * 协程互斥量（锁）
+ */
 class mutex {
     /**
      * 构建一个协程式 mutex 对象
@@ -80,7 +86,9 @@ class mutex {
      */
     function unlock() {}
 }
-
+/**
+ * 协程锁（使用上述 mutex 构建自动加锁解锁流程）
+ */
 class guard {
     /**
      * 构建守护并锁定 mutex 
