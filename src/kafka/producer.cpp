@@ -25,8 +25,10 @@ namespace flame::kafka
     }
     php::value producer::__destruct(php::parameters &params)
     {
-        coroutine_handler ch {coroutine::current};
-        pd_->flush(ch);
+        if(pd_) {
+            coroutine_handler ch {coroutine::current};
+            pd_->flush(ch);
+        }
         return nullptr;
     }
     php::value producer::publish(php::parameters &params)
