@@ -200,7 +200,7 @@ namespace flame::mysql {
             {
                 if (i->second.typeof(php::TYPE::ARRAY))
                 {
-                    where_ex(cc, buf, i->second, i->first, " && ");
+                    where_ex(cc, buf, i->second, i->first, " AND ");
                 }
                 else
                 {
@@ -218,17 +218,17 @@ namespace flame::mysql {
                     {
                         assert(i->second.typeof(php::TYPE::ARRAY));
                         buf.append(" NOT ", 5);
-                        where_ex(cc, buf, i->second, php::string(nullptr), " && ");
+                        where_ex(cc, buf, i->second, php::string(nullptr), " AND ");
                     }
                     else if (key.size() == 4 && (strncasecmp(key.c_str(), "{OR}", 4) == 0 || strncasecmp(key.c_str(), "{||}", 4) == 0))
                     {
                         assert(i->second.typeof(php::TYPE::ARRAY));
-                        where_ex(cc, buf, i->second, php::string(nullptr), " || ");
+                        where_ex(cc, buf, i->second, php::string(nullptr), " OR ");
                     }
                     else if ((key.size() == 5 && strncasecmp(key.c_str(), "{AND}", 5) == 0) || (key.size() == 4 && strncasecmp(key.c_str(), "{&&}", 4) == 0))
                     {
                         assert(i->second.typeof(php::TYPE::ARRAY));
-                        where_ex(cc, buf, i->second, php::string(nullptr), " && ");
+                        where_ex(cc, buf, i->second, php::string(nullptr), " AND ");
                     }
                     else if (key.size() == 4 && strncasecmp(key.c_str(), "{!=}", 4) == 0)
                     {
@@ -289,7 +289,7 @@ namespace flame::mysql {
                         }
                         else
                         {
-                            where_ex(cc, buf, cond, key, " && ");
+                            where_ex(cc, buf, cond, key, " AND ");
                         }
                     }
                     else
@@ -313,7 +313,7 @@ namespace flame::mysql {
         }
         else if (data.typeof(php::TYPE::ARRAY))
         {
-            where_ex(cc, buf, data, php::string(0), " && ");
+            where_ex(cc, buf, data, php::string(0), " AND ");
         }
         else
         {
@@ -353,7 +353,7 @@ namespace flame::mysql {
                         buf.push_back(' ');
                         buf.append(i->second);
                     }
-                    else if (i->second.typeof(php::TYPE::YES) || (i->second.typeof(php::TYPE::INTEGER) &&static_cast<int>(i->second) >= 0))
+                    else if (i->second.typeof(php::TYPE::YES) || (i->second.typeof(php::TYPE::INTEGER) && static_cast<int>(i->second) >= 0))
                     {
                         buf.append(" ASC", 4);
                     }
