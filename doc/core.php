@@ -26,6 +26,10 @@ function init($process_name, $options = []) {}
  */
 function go(callable $cb) {}
 /**
+ * 获取一个当前协程 ID 标识
+ */
+function co_id():int {}
+/**
  * 框架调度, 上述协程会在框架开始调度运行后启动
  * 注意：协程异步调度需要 run() 才能启动执行；
  */
