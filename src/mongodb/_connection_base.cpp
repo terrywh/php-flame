@@ -9,9 +9,12 @@ namespace flame::mongodb
     void _connection_base::fake_deleter(bson_t *doc) {}
     php::value _connection_base::exec(std::shared_ptr<mongoc_client_t> conn, php::array& pcmd, bool write, coroutine_handler &ch)
     {
-        auto cmd = array2bson(pcmd);
-        std::shared_ptr<bson_t> rep(bson_new(), bson_destroy);
-        auto err = std::make_shared<bson_error_t>();
+        std::shared_ptr<bson_t> cmd = array2bson(pcmd);
+        // 此处不能使用 bson_new 创建 bson_t 否则会导致内存泄漏
+        //（实际对 reply 的使用流程会重新初始化 reply 导致其值被至于 stack 上，导致此处 heap 内存泄漏）
+        bson_t reply;
+        std::shared_ptr<bson_t> rep(&reply, bson_destroy);
+        std::shared_ptr<bson_error_t> err = std::make_shared<bson_error_t>();
         int  rok = 0;
         boost::asio::post(gcontroller->context_y, [conn, write, &cmd, &rep, &err, &rok, &ch] () {
             const mongoc_uri_t *uri = mongoc_client_get_uri(conn.get());

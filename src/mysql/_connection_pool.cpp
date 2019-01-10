@@ -125,7 +125,7 @@ namespace flame::mysql
         charset_ = false; // 乐观
         if (err == 0)
         {
-            std::unique_ptr<MYSQL_RES> rst(mysql_store_result(c));
+            std::unique_ptr<MYSQL_RES, void (*)(MYSQL_RES*)> rst(mysql_store_result(c), mysql_free_result);
             if (!rst) return;
             MYSQL_ROW row = mysql_fetch_row(rst.get());
             if(!row) return;

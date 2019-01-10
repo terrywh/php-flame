@@ -187,6 +187,9 @@ namespace flame
     }
     void controller_master::close_worker()
     {
+        if(close_) return;
+        // 关闭动作仅作一次（组织重置 timer_ 超时时间）
+        close_ = true;
         for (auto i = worker_.begin(); i != worker_.end(); ++i)
         {
             if (*i)

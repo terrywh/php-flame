@@ -39,14 +39,24 @@ namespace flame::kafka
         rd_kafka_resp_err_t err;
         rd_kafka_headers_t* hdrs = array2hdrs(headers);
         boost::asio::post(gcontroller->context_y, [this, &err, &topic, &key, &payload, &hdrs, &ch]() {
-            err = rd_kafka_producev(conn_,
-                              RD_KAFKA_V_TOPIC(topic.c_str()),
-                              RD_KAFKA_V_KEY(key.c_str(), key.size()),
-                              RD_KAFKA_V_PARTITION(RD_KAFKA_PARTITION_UA),
-                              RD_KAFKA_V_HEADERS(hdrs),
-                              RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
-                              RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
-                              RD_KAFKA_V_END);
+            if(key.size() > 0) {
+                err = rd_kafka_producev(conn_,
+                    RD_KAFKA_V_TOPIC(topic.c_str()),
+                    RD_KAFKA_V_KEY(key.c_str(), key.size()),
+                    RD_KAFKA_V_PARTITION(RD_KAFKA_PARTITION_UA),
+                    RD_KAFKA_V_HEADERS(hdrs),
+                    RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
+                    RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
+                    RD_KAFKA_V_END);
+            }else{ // 无 KEY 时默认 partitioner 会随机分配
+                err = rd_kafka_producev(conn_,
+                    RD_KAFKA_V_TOPIC(topic.c_str()),
+                    RD_KAFKA_V_PARTITION(RD_KAFKA_PARTITION_UA),
+                    RD_KAFKA_V_HEADERS(hdrs),
+                    RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
+                    RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
+                    RD_KAFKA_V_END);
+            }
             // TODO 优化: 是否可以考虑按周期间隔进行调用?
             rd_kafka_poll(conn_, 5);
             ch.resume();
