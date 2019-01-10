@@ -31,7 +31,7 @@ namespace flame::kafka
         consumer* ptr = static_cast<consumer*>(php::native(obj));
         if (config.exists("concurrent"))
         {
-            ptr->cc_ = std::min(std::min(std::max(static_cast<int>(config.get("concurrent")), 1), 8), 256);
+            ptr->cc_ = std::min(std::max(static_cast<int>(config.get("concurrent")), 1), 256);
             config.erase("concurrent");
         }
         if (!config.exists("log.connection.close")) {

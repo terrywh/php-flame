@@ -39,7 +39,7 @@ namespace flame::rabbitmq
         if(i == u.query.end()) {
             pf_ = 8;
         }else{
-            pf_ = std::min(std::max(std::atoi(i->second.c_str()), 1), 1024);
+            pf_ = std::min(std::max(std::atoi(i->second.c_str()), 1), 256);
         }
         ch_.setQos(pf_);
 
