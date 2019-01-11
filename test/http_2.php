@@ -22,7 +22,9 @@ flame\go(function() {
             $res->body = ["a" => "bbbb"];
             return false;
         }
-    })->POST("/", function($req, $res) {
+    })->get("/", function($req, $res) {
+        $res->body = json_encode($req);
+    })->post("/", function($req, $res) {
         $res->status = 200;
         $res->header["Content-Type"] = "application/json";
         $res->body = $req->body;

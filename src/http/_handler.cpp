@@ -44,7 +44,7 @@ namespace flame::http
         req_->body_limit(body_max_size);
         boost::beast::http::async_read(socket_, buffer_, *req_, [self = shared_from_this(), this] (const boost::system::error_code &error, std::size_t n)
         {
-            if(error == boost::beast::http::error::end_of_stream || error == boost::asio::error::operation_aborted)
+            if(error == boost::beast::http::error::end_of_stream || error == boost::asio::error::operation_aborted || boost::asio::error::connection_reset)
             {
                 res_.reset();
                 req_.reset();
