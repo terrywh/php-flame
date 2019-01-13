@@ -43,6 +43,12 @@ namespace flame {
 		return this;
 	}
 	void controller::initialize(const std::string& title, const php::array& options) {
+		// 多进程模式退出超时时间
+		if(options.exists("timeout")) {
+			worker_quit = std::max(static_cast<int>(options.get("timeout")), 64);
+		}else{
+			worker_quit = 10;
+		}
 		status |= STATUS_INITIALIZED;
 		for (auto fn : init_cb)
 		{

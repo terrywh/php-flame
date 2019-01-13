@@ -187,8 +187,14 @@ namespace flame
     }
     void controller_master::close_worker()
     {
-        if(close_) return;
-        // 关闭动作仅作一次（组织重置 timer_ 超时时间）
+        // 第二次进行 “强制关闭”
+        if(close_)
+        {
+            timer_.reset();
+            gcontroller->context_x.stop();
+            return;
+        }
+        // 第一次设置超时
         close_ = true;
         for (auto i = worker_.begin(); i != worker_.end(); ++i)
         {
@@ -198,7 +204,7 @@ namespace flame
             }
         }
         timer_.reset(new boost::asio::steady_timer(gcontroller->context_y));
-        timer_->expires_after(std::chrono::seconds(10));
+        timer_->expires_after(std::chrono::seconds(gcontroller->worker_quit));
         timer_->async_wait([] (const boost::system::error_code& error) {
             if(error) return;
             gcontroller->context_x.stop();

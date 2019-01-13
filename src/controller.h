@@ -26,6 +26,7 @@ namespace flame {
 		};
 		int status;
 		std::size_t    worker_size;
+		std::size_t    worker_quit; // 多进程退出超时时间
 		std::thread::id mthread_id;
 		// 防止 PHP 提前回收, 使用堆容器
 		std::multimap<std::string, php::callable>* cbmap;
