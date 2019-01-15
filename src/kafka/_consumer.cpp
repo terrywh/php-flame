@@ -97,8 +97,9 @@ namespace flame::kafka
             ch.resume();
         });
         ch.suspend();
-        if(err == RD_KAFKA_RESP_ERR__PARTITION_EOF)
+        if(err == RD_KAFKA_RESP_ERR__PARTITION_EOF/* || err == RD_KAFKA_RESP_ERR__TRANSPORT*/)
         {
+            // TODO RD_KAFKA_RESP_ERR__TRANSPORT 是否要忽略？
             return nullptr;
         }
         else if(err != RD_KAFKA_RESP_ERR_NO_ERROR)

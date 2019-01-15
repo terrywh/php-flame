@@ -57,8 +57,10 @@ namespace flame::kafka
                     RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
                     RD_KAFKA_V_END);
             }
-            // TODO 优化: 是否可以考虑按周期间隔进行调用?
-            rd_kafka_poll(conn_, 5);
+            if(err == RD_KAFKA_RESP_ERR_NO_ERROR) {
+                // TODO 优化: 是否可以考虑按周期间隔进行调用?
+                rd_kafka_poll(conn_, 5);
+            }
             ch.resume();
         });
         ch.suspend();

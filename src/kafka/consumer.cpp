@@ -42,14 +42,15 @@ namespace flame::kafka {
                 coroutine_handler ch {coroutine::current};
                 while(!close_)
                 {
-                    php::object msg = cs_->consume(ch);
-                    // 可能出现为 NULL 的情况
-                    if (msg.typeof(php::TYPE::NULLABLE))
-                    {
-                        continue;
-                    }
                     try
-                    {
+                    {  
+                        // consume 本身可能出现异常，不应导致进程停止
+                        php::object msg = cs_->consume(ch);
+                        // 可能出现为 NULL 的情况
+                        if (msg.typeof(php::TYPE::NULLABLE))
+                        {
+                            continue;
+                        }
                         cb_.call({msg});
                     }
                     catch(const php::exception& ex)
