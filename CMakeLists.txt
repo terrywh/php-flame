@@ -18,7 +18,6 @@ add_library(FLAME SHARED ${SOURCES})
 # 依赖项目录
 set(VENDOR_GCC /data/vendor/gcc-8.2.0)
 set(VENDOR_LLVM /data/vendor/llvm-7.0.0)
-set(VENDOR_JEMALLOC /data/vendor/jemalloc-5.1.0)
 set(VENDOR_PHP /data/vendor/php-7.2.13)
 execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
     COMMAND sed "s/ *-I/;/g"
@@ -77,7 +76,6 @@ target_link_libraries(FLAME
     sasl2
     ssl
     crypto
-    ${VENDOR_JEMALLOC}/lib/libjemalloc.a
     pthread
     rt
 )
