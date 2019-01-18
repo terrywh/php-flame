@@ -7,7 +7,7 @@ namespace flame;
  * 初始化框架, 设置进程名称及相关配置;
  * @param string $process_name 进程名称
  * @param array  $options 选项配置, 目前可用如下:
- *  * "logger" - 日志输出重定向目标文件(完整路径, 若不提供使用标准输出); 
+ *  * "logger" - 日志输出重定向目标文件(完整路径, 若不提供使用标准输出);
  *      向主进程发送 SIGUSR2 信号该文件将会被重新打开(或生成);
  *  * "level" - 日志输出级别, 设置该级别下的日志将不被记录; 可用级别如下
  *      "debug"
@@ -15,8 +15,9 @@ namespace flame;
  *      "warning"
  *      "error"
  *      "fatal"
+ *  * "timeout" - 多进程退出超时（超时后会被强制杀死）
  *  @see flame\log
- * 
+ *
  * 使用环境变量 FLAME_MAX_WORKERS=X 启动多进程模式
  * 主进程将自动进行日志文件写入，子进程自动拉起；
  */
@@ -95,7 +96,7 @@ class mutex {
  */
 class guard {
     /**
-     * 构建守护并锁定 mutex 
+     * 构建守护并锁定 mutex
      * @param mutex $mutex 实际保护使用的 mutex 对象
      */
     function __construct(mutex $mutex) {}
