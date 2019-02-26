@@ -4,6 +4,7 @@
 #include "_consumer.h"
 #include "kafka.h"
 #include "message.h"
+#include "../coroutine_queue.h"
 
 namespace flame::kafka {
 
@@ -29,29 +30,24 @@ namespace flame::kafka {
 	}
 	php::value consumer::run(php::parameters& params)
     {
-        close_ = false;
-        ex_ = EG(current_execute_data);
         cb_ = params[0];
-        
+        coroutine_handler ch_run {coroutine::current};
+        coroutine_queue<php::object> q;
         // 启动若干协程, 然后进行"并行"消费
         int count = cc_;
         for (int i = 0; i < count; ++i)
         {
             // 启动协程开始消费
-            coroutine::start(php::value([this, &count](php::parameters &params) -> php::value {
+            coroutine::start(php::value([this, &ch_run, &q, &count](php::parameters &params) -> php::value {
                 coroutine_handler ch {coroutine::current};
-                while(!close_)
+                while(true)
                 {
                     try
-                    {  
+                    {
                         // consume 本身可能出现异常，不应导致进程停止
-                        php::object msg = cs_->consume(ch);
-                        // 可能出现为 NULL 的情况
-                        if (msg.typeof(php::TYPE::NULLABLE))
-                        {
-                            continue;
-                        }
-                        cb_.call({msg});
+                        std::optional<php::object> m = q.pop(ch);
+                        if(m) cb_.call({m.value()});
+                        else break;
                     }
                     catch(const php::exception& ex)
                     {
@@ -60,30 +56,26 @@ namespace flame::kafka {
                         // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                 }
-                if (--count == 0) // 当所有并行协程结束后, 停止消费
-                {
-                    ch_.resume();
-                }
+                if(--count == 0) ch_run.resume();
+
                 return nullptr;
             }));
         }
-        // 暂停当前消费协程 (等待消费停止)
-        ch_.reset(coroutine::current);
-        ch_.suspend();
+        cs_->consume(q, ch_run);
+        ch_run.suspend();
         return nullptr;
 	}
     php::value consumer::commit(php::parameters& params)
     {
         php::object obj = params[0];
         coroutine_handler ch {coroutine::current};
-        
+
         cs_->commit(obj, ch);
         return nullptr;
     }
 	php::value consumer::close(php::parameters& params) {
         coroutine_handler ch {coroutine::current};
         cs_->close(ch);
-        close_ = true;
         return nullptr;
 	}
-} // namespace 
+} // namespace

@@ -16,11 +16,9 @@ namespace flame::kafka
 
     private:
         std::shared_ptr<_consumer> cs_;
-        coroutine_handler          ch_;
         int                        cc_ = 8;
         php::callable              cb_;
         zend_execute_data*         ex_;
-        bool close_ = false;
 
         friend php::value consume(php::parameters &params);
     };

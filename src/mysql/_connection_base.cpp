@@ -46,15 +46,7 @@ namespace flame::mysql
             char *to = b.prepare(str.size() * 2 + 2);
             std::size_t n = 0;
             to[n++] = quote;
-            // 摘自 mysql_real_escape_string_quote() @ libmysql.c:1228 相关流程
-            if (conn->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES)
-            {
-                n += escape_quotes_for_mysql(conn->charset, to + 1, str.size() * 2 + 1, str.c_str(), str.size(), quote);
-            }
-            else
-            {
-                n += escape_string_for_mysql(conn->charset, to + 1, str.size() * 2 + 1, str.c_str(), str.size());
-            }
+            n += mysql_real_escape_string_quote(conn.get(), to + n, str.c_str(), str.size(), quote);
             to[n++] = quote;
             b.commit(n);
             break;
@@ -121,7 +113,7 @@ ESCAPE_FINISHED:;
                                  (boost::format("failed to query MySQL server: (%1%) %2%") % err % mysql_error(conn.get())).str(),
                                  err);
         }
-        
+
         if(rst) // 存在结果集
         {
             php::object obj(php::class_entry<result>::entry());

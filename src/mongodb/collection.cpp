@@ -239,7 +239,7 @@ namespace flame::mongodb
         if (!pipeline.exists(0))
             throw php::exception(zend_ce_type_error, "aggregate pipeline must be a array of stages (array)");
         cmd.set("pipeline", params[0]);
-        cmd.set("cursor", php::array(0));
+        cmd.set("cursor", php::object(php::CLASS(zend_standard_class_def)));
 
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);

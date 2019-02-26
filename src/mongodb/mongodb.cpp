@@ -99,7 +99,7 @@ namespace flame::mongodb
     php::array bson2array(bson_t* v)
     {
         if(v == nullptr) return nullptr;
-        
+
         php::array doc(4);
 
         bson_iter_t i;
@@ -149,7 +149,7 @@ namespace flame::mongodb
                 case IS_ARRAY:
                 {
                     auto a = array2bson(val);
-                    if (bson_has_field(a.get(), "0"))
+                    if (bson_has_field(a.get(), "0") || bson_count_keys(a.get()) == 0)
                     {
                         bson_append_array(doc, key.c_str(), key.size(), a.get());
                     }
@@ -159,7 +159,7 @@ namespace flame::mongodb
                     }
                     break;
                 }
-                case IS_OBJECT: 
+                case IS_OBJECT:
                 {
                     php::object o = val;
                     if (o.instanceof (php_date_get_date_ce()))
@@ -178,7 +178,9 @@ namespace flame::mongodb
                     }
                     else
                     {
-                        bson_append_null(doc, key.c_str(), key.size());
+                        bson_t uninitialized;
+                        bson_append_document_begin(doc, key.c_str(), key.size(), &uninitialized);
+                        bson_append_document_end(doc, &uninitialized);
                     }
                 }
             }

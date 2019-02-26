@@ -51,7 +51,7 @@ namespace flame::http
                 return;
             }
             else if (error)
-            {   
+            {
                 res_.reset();
                 req_.reset();
                 std::cerr << "[" << time::iso() << "] (WARNING) failed to read http request: (" << error.value() << ") " << error.message() << std::endl;
@@ -90,7 +90,7 @@ namespace flame::http
             try
             {
                 php::value rv = true;
-                if(ib != svr_ptr->cb_.end()) 
+                if(ib != svr_ptr->cb_.end())
                 {
                     rv = ib->second.call({req, res, ih != svr_ptr->cb_.end()});
                 }

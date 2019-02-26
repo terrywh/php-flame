@@ -1,7 +1,7 @@
 #include "../controller.h"
 #include "_connection_pool.h"
 
-namespace flame::mongodb 
+namespace flame::mongodb
 {
     _connection_pool::_connection_pool(const std::string& url)
     : guard_(gcontroller->context_y)
@@ -10,8 +10,10 @@ namespace flame::mongodb
         const bson_t* options = mongoc_uri_get_options(uri.get());
         if (!bson_has_field(options, MONGOC_URI_READPREFERENCE))
         {
-            mongoc_uri_set_option_as_utf8(uri.get(), MONGOC_URI_READPREFERENCE, "secondaryPreferred");
-        }
+			mongoc_read_prefs_t* pref = mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED); // secondaryPreferred
+			mongoc_uri_set_read_prefs_t(uri.get(), pref);
+			mongoc_read_prefs_destroy(pref);
+		}
         mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_CONNECTTIMEOUTMS, 5000);
         mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_MAXPOOLSIZE, 6);
 

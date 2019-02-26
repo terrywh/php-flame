@@ -22,12 +22,12 @@ https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98
 
 #### PHP
 ``` Bash
-./configure  --prefix=/data/vendor/php-7.2.13 --with-config-file-path=/data/vendor/php-7.2.13/etc --disable-fpm --disable-phar --disable-dom --disable-libxml --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-openssl --with-readline --enable-mbstring --without-pear
+./configure --prefix=/data/vendor/php-7.2.15 --with-config-file-path=/data/vendor/php-7.2.15/etc --disable-fpm --disable-phar --disable-dom --disable-libxml --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-openssl --with-readline --enable-mbstring --without-pear --with-curl --enable-mbstring --host=x86_64-linux-gnu --target=x86_64-linux-gnu
 ```
 #### Boost
 
 ``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.69.0
+./bootstrap.sh --prefix=/data/vendor/boost-1.69.0~/
 ./b2 -j4 --prefix=/data/vendor/boost-1.69.0 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
 
@@ -42,50 +42,52 @@ make install
 make install
 ```
 
-#### mysql-connector-c v6.1.11
+#### mysql-connector-c v8.0.15
 ``` Bash
-mv mysql-connector-c-6.1.11-src/ /data/vendor/mysqlc-6.1.11
-rm /data/vendor/mysqlc-6.1.11/lib/*.so*
+mkdir -p /data/vendor/mysqlc-8.0.15/lib
+cp -R mysql-8.0.15-linux-glibc2.12-x86_64/include /data/vendor/mysqlc-8.0.15
+cp mysql-8.0.15-linux-glibc2.12-x86_64/lib/libmysqlclient.a /data/vendor/mysqlc-8.0.15/lib
 ```
 
 #### mongoc-driver
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.13.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+# with openssl 1.0 in another path
+# -DOPENSSL_INCLUDE_DIR=/usr/include/openssl-1.0 -DOPENSSL_SSL_LIBRARY=/usr/lib/openssl-1.0/libssl.so -DOPENSSL_CRYPTO_LIBRARY=/usr/lib/openssl-1.0/libcrypto.so
 make
 make install
-rm /data/vendor/mongoc-1.13.0/lib/*.so*
+rm /data/vendor/mongoc-1.14.0/lib/*.so*
 ```
 
 #### AMQP-CPP
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake3 -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.0.1 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.3 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
 make
 make install
-# rm /data/vendor/amqpcpp-4.0.1/lib/*.so*
 ```
 
 #### Rdkafka
 ``` Bash
-./configure --prefix=/data/vendor/rdkafka-0.11.6
+./configure --prefix=/data/vendor/rdkafka-1.0.0
 make
 make install
-rm /data/vendor/rdkafka-0.11.6/lib/*.so*
+rm /data/vendor/rdkafka-1.0.0/lib/*.so*
 ```
 
 #### HttpParser
 ``` Bash
-mkdir -p /data/vendor/http-parser-2.8.1/lib
-mkdir -p /data/vendor/http-parser-2.8.1/include
-CFLAGS=-fPIC make libhttp_parser.o
-cp libhttp_parser.o /data/vendor/http-parser-2.8.1/lib
-cp http_parser.h /data/vendor/http-parser-2.8.1/include
+mkdir -p /data/vendor/http-parser-2.9.0/lib
+mkdir -p /data/vendor/http-parser-2.9.0/include
+CC=gcc CFLAGS=-fPIC make libhttp_parser.o
+cp libhttp_parser.o /data/vendor/http-parser-2.9.0/lib
+cp http_parser.h /data/vendor/http-parser-2.9.0/include
 ```
 
 #### HiRedis
 ``` Bash
-make
+CC=gcc make
 PREFIX=/data/vendor/hiredis-0.14.0 make install
 rm /data/vendor/hiredis-0.14.0/lib/*.so*
 ```

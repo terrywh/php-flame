@@ -1,4 +1,5 @@
 #include "../coroutine.h"
+#include "mongodb.h"
 #include "_connection_pool.h"
 #include "client.h"
 #include "collection.h"
@@ -10,6 +11,9 @@ namespace flame::mongodb
         php::class_entry<client> class_client("flame\\mongodb\\client");
         class_client
             .method<&client::__construct>("__construct", {}, php::PRIVATE)
+            .method<&client::dump>("dump", {
+                {"data", php::TYPE::ARRAY},
+            })
             .method<&client::execute>("execute",
             {
                 {"command", php::TYPE::ARRAY},
@@ -23,7 +27,7 @@ namespace flame::mongodb
             {
                 {"name", php::TYPE::STRING}
             })
-            .method<&client::__isset>("__isset", 
+            .method<&client::__isset>("__isset",
             {
                 {"name", php::TYPE::STRING}
             });
@@ -33,13 +37,18 @@ namespace flame::mongodb
     {
         return nullptr;
     }
+    php::value client::dump(php::parameters& params)
+    {
+        std::cout << bson_as_relaxed_extended_json(array2bson(params[0]).get(), nullptr) << std::endl;
+        return nullptr;
+    }
     php::value client::execute(php::parameters &params)
     {
         bool write = false;
         if (params.size() > 1) write = params[1].to_boolean();
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        
+
         php::array cmd = params[0];
         return cp_->exec(conn_, cmd, write, ch);
     }

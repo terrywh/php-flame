@@ -9,6 +9,7 @@ namespace flame::mongodb
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params);
+        php::value dump(php::parameters &params);
         php::value execute(php::parameters &params);
         php::value __get(php::parameters &params);
         php::value __isset(php::parameters &params);

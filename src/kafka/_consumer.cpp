@@ -2,6 +2,7 @@
 #include "_consumer.h"
 #include "kafka.h"
 #include "message.h"
+#include "../coroutine_queue.h"
 
 namespace flame::kafka
 {
@@ -15,7 +16,7 @@ namespace flame::kafka
         return t;
     }
     _consumer::_consumer(php::array &config, php::array &topics)
-    : strd_(gcontroller->context_y)
+    : close_(false)
     {
         if (!config.exists("bootstrap.servers") && !config.exists("metadata.broker.list"))
         {
@@ -70,37 +71,34 @@ namespace flame::kafka
                 err);
         }
     }
-    php::object _consumer::consume(coroutine_handler& ch)
+    void _consumer::consume(coroutine_queue<php::object>& q, coroutine_handler& ch)
     {
         rd_kafka_resp_err_t err;
         rd_kafka_message_t* msg = nullptr;
+POLL_MESSAGE:
         // 由于 poll 动作本身阻塞, 为防止所有工作线被占用, 这里绑定到 strd_ 执行
         // (理论上仅占用一个协程)
-        boost::asio::post(strd_, [this, &err, &msg, &ch]()
+        boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]()
         {
-            msg = rd_kafka_consumer_poll(conn_, 200);
-            if(!msg)
-            {
-                // 这里考虑关闭 consumer 的即时型, 需要在 200ms 超时后进行关闭判定
-                // 考虑到可能并行协程数量, 最长需要 concurrent * 200ms 才能完全关闭
-                err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
-            }
+            msg = rd_kafka_consumer_poll(conn_, 500);
+            if(!msg) err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
             else if (msg->err)
             {
                 err = msg->err;
                 rd_kafka_message_destroy(msg);
             }
-            else
-            {
-                err = RD_KAFKA_RESP_ERR_NO_ERROR;
-            }
+            else err = RD_KAFKA_RESP_ERR_NO_ERROR;
             ch.resume();
         });
         ch.suspend();
-        if(err == RD_KAFKA_RESP_ERR__PARTITION_EOF/* || err == RD_KAFKA_RESP_ERR__TRANSPORT*/)
+        if(err == RD_KAFKA_RESP_ERR__PARTITION_EOF)
         {
-            // TODO RD_KAFKA_RESP_ERR__TRANSPORT 是否要忽略？
-            return nullptr;
+            if(close_)
+            {
+                q.close(); // 关闭队列使对应消费协程自行退出
+                return;
+            } // 消费已被关闭
+            else goto POLL_MESSAGE;
         }
         else if(err != RD_KAFKA_RESP_ERR_NO_ERROR)
         {
@@ -113,7 +111,8 @@ namespace flame::kafka
             php::object obj(php::class_entry<message>::entry());
             message* ptr = static_cast<message*>(php::native(obj));
             ptr->build_ex(msg); // msg 交由 message 对象管理
-            return std::move(obj);
+            q.push(std::move(obj), ch);
+            goto POLL_MESSAGE;
         }
     }
     void _consumer::commit(const php::object& obj, coroutine_handler& ch)
@@ -147,6 +146,7 @@ namespace flame::kafka
                                  (boost::format("failed to close Kafka consumer: (%1%) %2%") % err % rd_kafka_err2str(err)).str(),
                                  err);
         }
+        close_ = true;
     }
 
 } // namespace flame::kafka

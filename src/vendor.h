@@ -1,7 +1,7 @@
 #pragma once
 
 #define EXTENSION_NAME "flame"
-#define EXTENSION_VERSION "0.12.11"
+#define EXTENSION_VERSION "0.12.12"
 
 #include <cstdio>
 #include <sys/types.h>
@@ -47,6 +47,6 @@ namespace ssl = boost::asio::ssl;
 #include <amqpcpp.h>
 #include <amqpcpp/libboostasio.h>
 #include <mysql.h>
-#include <my_sys.h>
+// #include <my_sys.h>
 #include <mongoc.h>
 #include <librdkafka/rdkafka.h>
