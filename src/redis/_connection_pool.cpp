@@ -5,7 +5,7 @@ namespace flame::redis
 {
 
     _connection_pool::_connection_pool(url u)
-        : url_(std::move(u)), min_(3), max_(6), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
+        : url_(std::move(u)), min_(1), max_(3), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
     {
         if(url_.port < 10) url_.port = 6379;
     }
@@ -71,7 +71,7 @@ namespace flame::redis
         // 恢复, 已经填充连接
         return conn;
     }
-    
+
     php::value _connection_pool::exec(std::shared_ptr<redisContext> rc, php::string &name, php::array &argv, reply_type rt, coroutine_handler& ch)
     {
         std::string ss = format(name, argv);

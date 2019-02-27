@@ -3,9 +3,9 @@
 
 namespace flame::mysql
 {
-        
+
     _connection_pool::_connection_pool(url u)
-        : url_(std::move(u)), min_(3), max_(6), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
+        : url_(std::move(u)), min_(2), max_(4), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
         , charset_(boost::logic::indeterminate)
     {
         if(url_.port < 10) url_.port = 3306;
@@ -13,7 +13,7 @@ namespace flame::mysql
             url_.query["charset"] = "utf8";
         }
     }
-    
+
     _connection_pool::~_connection_pool()
     {
         while (!conn_.empty())
@@ -22,7 +22,7 @@ namespace flame::mysql
             conn_.pop_front();
         }
     }
-    
+
     std::shared_ptr<MYSQL> _connection_pool::acquire(coroutine_handler& ch)
     {
         std::shared_ptr<MYSQL> conn;

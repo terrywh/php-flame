@@ -6,11 +6,11 @@ namespace flame
 {
     controller_worker::controller_worker()
     {
-        
+
     }
     void controller_worker::initialize(const php::array &options)
     {
-        
+
     }
     void controller_worker::await_signal() {
         signal_->async_wait([this] (const boost::system::error_code &error, int sig)
@@ -42,7 +42,7 @@ namespace flame
 
         // 子进程的启动过程:
         // 2. 启动线程池, 并使用线程池运行 context_y
-        thread_.resize(8);
+        thread_.resize(4);
         for (int i = 0; i < thread_.size(); ++i)
         {
             thread_[i] = new std::thread([this] {
