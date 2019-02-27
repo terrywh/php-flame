@@ -16,12 +16,42 @@ namespace flame::mongodb
                 {"data", php::TYPE::ARRAY},
                 {"ordered", php::TYPE::BOOLEAN, false, true} // true
             })
+            .method<&collection::insert>("insert_many",
+            {
+                {"data", php::TYPE::ARRAY},
+                {"ordered", php::TYPE::BOOLEAN, false, true} // true
+            })
+            .method<&collection::insert>("insert_one",
+            {
+                {"data", php::TYPE::ARRAY},
+            })
             .method<&collection::delete_>("delete",
             {
                 {"query", php::TYPE::ARRAY},
                 {"limit", php::TYPE::INTEGER, false, true}, // 0
             })
+            .method<&collection::delete_>("delete_many",
+            {
+                {"query", php::TYPE::ARRAY},
+                {"limit", php::TYPE::INTEGER, false, true}, // 0
+            })
+            .method<&collection::delete_>("delete_one",
+            {
+                {"query", php::TYPE::ARRAY},
+            })
             .method<&collection::update>("update",
+            {
+                {"query", php::TYPE::ARRAY},
+                {"update", php::TYPE::ARRAY},
+                {"upsert", php::TYPE::BOOLEAN, false, true}, // false
+            })
+            .method<&collection::update>("update_many",
+            {
+                {"query", php::TYPE::ARRAY},
+                {"update", php::TYPE::ARRAY},
+                {"upsert", php::TYPE::BOOLEAN, false, true}, // false
+            })
+            .method<&collection::update_one>("update_one",
             {
                 {"query", php::TYPE::ARRAY},
                 {"update", php::TYPE::ARRAY},
@@ -34,7 +64,12 @@ namespace flame::mongodb
                 {"sort", php::TYPE::ARRAY, false, true},
                 {"limit", php::TYPE::UNDEFINED, false, true},
             })
-            .method<&collection::one>("one",
+            .method<&collection::find_one>("one", // 兼容原 API 名称定义
+            {
+                {"filter", php::TYPE::ARRAY},
+                {"sort", php::TYPE::ARRAY, false, true},
+            })
+            .method<&collection::find_one>("find_one",
             {
                 {"filter", php::TYPE::ARRAY},
                 {"sort", php::TYPE::ARRAY, false, true},
@@ -52,6 +87,22 @@ namespace flame::mongodb
             .method<&collection::aggregate>("aggregate",
             {
                 {"pipeline", php::TYPE::ARRAY},
+            })
+            .method<&collection::find_and_delete>("find_and_delete",
+            {
+                {"query", php::TYPE::ARRAY},
+                {"sort", php::TYPE::ARRAY, false, true},
+                {"upsert", php::TYPE::BOOLEAN, false, true},
+                {"fields", php::TYPE::ARRAY, false, true},
+            })
+            .method<&collection::find_and_update>("find_and_update",
+            {
+                {"query", php::TYPE::ARRAY},
+                {"update", php::TYPE::ARRAY},
+                {"sort", php::TYPE::ARRAY, false, true},
+                {"upsert", php::TYPE::BOOLEAN, false, true},
+                {"fields", php::TYPE::ARRAY, false, true},
+                {"new", php::TYPE::BOOLEAN, false, true},
             });
         ext.add(std::move(class_collection));
     }
@@ -72,7 +123,7 @@ namespace flame::mongodb
         }
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        return cp_->exec(conn_, cmd, true, ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_WRITE, ch);
     }
     php::value collection::delete_(php::parameters &params)
     {
@@ -92,7 +143,10 @@ namespace flame::mongodb
         cmd.set("deletes", deletes);
         coroutine_handler ch{coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        return cp_->exec(conn_, cmd, true, ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_WRITE, ch);
+    }
+    php::value collection::delete_one(php::parameters& params) {
+        return call("delete", {params[0], 1});
     }
     php::value collection::update(php::parameters &params)
     {
@@ -110,7 +164,24 @@ namespace flame::mongodb
         cmd.set("updates", updates);
         coroutine_handler ch{coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        return cp_->exec(conn_, cmd, true, ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_WRITE, ch);
+    }
+    php::value collection::update_one(php::parameters &params) {
+        php::array cmd(8);
+        cmd.set("update", name_);
+        php::array updates(2), updateo(4);
+        updateo.set("q", params[0]);
+        updateo.set("u", params[1]);
+        if (params.size() > 2)
+        {
+            updateo.set("upsert", params[2].to_boolean());
+        }
+        // updateo.set("multi", false);
+        updates.set(0, updateo);
+        cmd.set("updates", updates);
+        coroutine_handler ch{coroutine::current};
+        auto conn_ = cp_->acquire(ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_WRITE, ch);
     }
     php::value collection::find(php::parameters &params)
     {
@@ -176,9 +247,9 @@ namespace flame::mongodb
         }
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        return cp_->exec(conn_, cmd, false, ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
     }
-    php::value collection::one(php::parameters &params)
+    php::value collection::find_one(php::parameters &params)
     {
         php::array cmd(8);
         cmd.set("find", name_);
@@ -190,7 +261,7 @@ namespace flame::mongodb
         cmd.set("limit", 1);
         coroutine_handler ch{coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        php::object cs = cp_->exec(conn_, cmd, true, ch);
+        php::object cs = cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
         assert(cs.instanceof(php::class_entry<cursor>::entry()));
         return cs.call("fetch_row");
     }
@@ -211,7 +282,7 @@ namespace flame::mongodb
 
         coroutine_handler ch{coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        php::object cs = cp_->exec(conn_, cmd, true, ch);
+        php::object cs = cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
         assert(cs.instanceof (php::class_entry<cursor>::entry()));
         php::array row = cs.call("fetch_row");
         if(row.empty()) {
@@ -228,7 +299,7 @@ namespace flame::mongodb
 
         coroutine_handler ch{coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        php::array cs = cp_->exec(conn_, cmd, true, ch);
+        php::array cs = cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
         return cs.get("n");
     }
     php::value collection::aggregate(php::parameters &params)
@@ -243,6 +314,50 @@ namespace flame::mongodb
 
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        return cp_->exec(conn_, cmd, false, ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
+    }
+    php::value collection::find_and_delete(php::parameters& params) {
+        php::array cmd(8);
+        cmd.set("query", params[0]);
+        cmd.set("remove", true);
+        if(params.size() > 1) {
+            php::value f = params[1];
+            if(f.typeof(php::TYPE::ARRAY)) cmd.set("sort", f);
+        }
+        if(params.size() > 2) {
+            cmd.set("upsert", params[2].to_boolean());
+        }
+        if(params.size() > 3) {
+            php::value f = params[3];
+            if(f.typeof(php::TYPE::ARRAY)) cmd.set("fields", f);
+        }
+        coroutine_handler ch {coroutine::current};
+        auto conn_ = cp_->acquire(ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_READ_WRITE, ch);
+    }
+    php::value collection::find_and_update(php::parameters& params) {
+        php::array cmd(8);
+        cmd.set("query", params[0]);
+        if(params.size() > 1) {
+            php::value f = params[1];
+            if(f.typeof(php::TYPE::ARRAY)) cmd.set("update", f);
+        }
+        if(params.size() > 2) {
+            php::value f = params[2];
+            if(f.typeof(php::TYPE::ARRAY)) cmd.set("sort", f);
+        }
+        if(params.size() > 3) {
+            cmd.set("upsert", params[3].to_boolean());
+        }
+        if(params.size() > 4) {
+            php::value f = params[4];
+            if(f.typeof(php::TYPE::ARRAY)) cmd.set("fields", f);
+        }
+        if(params.size() > 5) {
+            cmd.set("new", params[5].to_boolean());
+        }
+        coroutine_handler ch {coroutine::current};
+        auto conn_ = cp_->acquire(ch);
+        return cp_->exec(conn_, cmd, _connection_base::COMMAND_READ_WRITE, ch);
     }
 } // namespace flame::mongodb

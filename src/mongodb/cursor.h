@@ -9,6 +9,9 @@ namespace flame::mongodb {
 		php::value __construct(php::parameters& params) { // 私有
 			return nullptr;
 		}
+		php::value __destruct(php::parameters& params) {
+			return nullptr;
+		}
 		php::value fetch_row(php::parameters& params);
 		php::value fetch_all(php::parameters& params);
 	private:

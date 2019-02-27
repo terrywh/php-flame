@@ -10,6 +10,10 @@ namespace flame::mongodb
     {
         php::class_entry<client> class_client("flame\\mongodb\\client");
         class_client
+            .constant({"COMMAND_RAW", _connection_base::COMMAND_RAW})
+            .constant({"COMMAND_READ", _connection_base::COMMAND_READ})
+            .constant({"COMMAND_READ_WRITE", _connection_base::COMMAND_READ_WRITE})
+            .constant({"COMMAND_WRITE", _connection_base::COMMAND_WRITE})
             .method<&client::__construct>("__construct", {}, php::PRIVATE)
             .method<&client::dump>("dump", {
                 {"data", php::TYPE::ARRAY},
@@ -17,7 +21,7 @@ namespace flame::mongodb
             .method<&client::execute>("execute",
             {
                 {"command", php::TYPE::ARRAY},
-                {"write", php::TYPE::BOOLEAN, false, true},
+                {"write", php::TYPE::INTEGER, false, true},
             })
             .method<&client::__get>("collection",
             {
@@ -44,8 +48,8 @@ namespace flame::mongodb
     }
     php::value client::execute(php::parameters &params)
     {
-        bool write = false;
-        if (params.size() > 1) write = params[1].to_boolean();
+        int write = _connection_base::COMMAND_RAW;
+        if (params.size() > 1) write = params[1].to_integer();
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
 

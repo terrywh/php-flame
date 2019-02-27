@@ -8,9 +8,11 @@ namespace flame::mongodb
     {
     public:
         _connection_lock(std::shared_ptr<mongoc_client_t> c);
+        ~_connection_lock();
         std::shared_ptr<mongoc_client_t> acquire(coroutine_handler &ch) override;
         php::array fetch(std::shared_ptr<mongoc_cursor_t> cs, coroutine_handler &ch);
     private:
+        boost::asio::io_context::strand guard_; // 防止对 cursor 的并行访问
         std::shared_ptr<mongoc_client_t> conn_;
     };
 } // namespace flame::mongodb

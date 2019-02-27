@@ -9,6 +9,7 @@ namespace flame::mongodb
         php::class_entry<cursor> class_cursor("flame\\mongodb\\cursor");
         class_cursor
             .method<&cursor::__construct>("__construct", {}, php::PRIVATE)
+            .method<&cursor::__destruct>("__destruct")
             .method<&cursor::fetch_row>("fetch_row")
             .method<&cursor::fetch_all>("fetch_all");
         ext.add(std::move(class_cursor));
