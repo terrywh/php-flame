@@ -1,3 +1,50 @@
+### FLAME
+最初开发 FLAME 是为了给咱 PHP 争口气，开发者不能总是因为 “并行处理能力不足” 被各方高玩鄙视；最初试用了 [Swoole](https://www.swoole.com/) 但被其进程模型搞得一头雾水，而且可能也是因为早期版本，还有出现了各式各样的问题；于是在各方支持下，自行开发了 FLAME 框架；
+
+FLAME 能够在很大程度上提高 PHP 处理并行能力, 其定位在于简化高性能常见互联网相关业务程序开发的难度和代价：
+* 网络底层异步化；
+* 同步驱动连接池挂接线程池；
+* 使用 PHP 内置协程 (Generator) 机制；
+* 对等多进程工作模式；
+
+陆续接入了 MySQL / Kafka / Redis / MongoDB / RabbitMQ 等第三方驱动，满足日常大多数接口型开发需求；
+
+为了简化框架的学习成本、使用难度，在后期使用内置协程机制代替 `yield` 显式协程，并补充完善了很多功能：
+* 协程队列，协程管道；
+* 协程、异步错误捕获；
+* 异步进程；网卡地址读取；毫秒、标准时间；...
+* 平滑起停控制；
+* 多进程日志、重载；
+* ...
+
+在适配到 PHP 7.2 版本以后，陆陆续续已经使用在了公司内各种业务线；在稳定性方面已经有了一定的底子；
+
+当然说的很高大上、白富美，但实在能力有限，同时各种业务压力，没有时间详尽的测试整个框架的各项组合功能，框架可能存在各类问题、缺陷；迫切期望大家能帮忙发现和完善，在此感谢~ 大礼参拜~
+
+以下代码实现了几个简单的 HTTP 接口：
+``` PHP
+flame\init("http_server_demo");
+flame\go(function() {
+    $server = new flame\http\server(":::56101");
+    $server->before(function($req, $res) {
+            $req->data["before"] = flame\time\now();
+        })->get("/hello", function($req, $res) {
+            $res->body = "world";
+        })->post("/path", function($req, $res) {
+            $res->write("CHUNKED RESPONSE:")
+            $res->write($res->body);
+            $res->end();
+        })->after(function($req, $res, $r) {
+            if(!$r) {
+                $res->status = 404;
+                $res->file(__DIR__."/404.html");
+            }
+        });
+    $server->run();
+});
+flame\run();
+```
+
 ### 功能项
 
 * **core** - 核心，框架初始化设置，协程启动，协程队列，协程锁等；
@@ -11,8 +58,11 @@
 * **mongodb** - 简单 MongoDB 客户端（连接池），提供部分简化方法，如 `insert/delete/one/count` 等；
 * **rabbitmq** - 简单 RabbitMQ 生产消费支持；
 * **kafka** - 简单 Kafka 生产消费支持（仅支持 Kafka 0.10+ 群组消费）；
+* **hash** - 提供了若干哈希算法, 例如 murmur2 / crc64 / xxhash64 等；
+* **encoding** - 提供了若干编码、序列化函数，例如 bson 等；
+* **compress** - 提供了若干压缩算法，例如 snappy 等；
 
-请参看 `/doc` 目录下相关 PHP 文件的文档注释，或将该目录挂接再 IDE 内提供**自动完成**；
+请参看 `/doc` `/test` 目录下相关 PHP 文件的文档注释；也可将 `/doc` 挂接在 IDE 内方便提供 **自动完成** 等；
 
 ### 常见问题
 
