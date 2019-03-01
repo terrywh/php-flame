@@ -27,7 +27,7 @@ https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98
 #### Boost
 
 ``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.69.0~/
+./bootstrap.sh --prefix=/data/vendor/boost-1.69.0
 ./b2 -j4 --prefix=/data/vendor/boost-1.69.0 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
 
@@ -42,7 +42,7 @@ make install
 make install
 ```
 
-#### mysql-connector-c v8.0.15
+#### mysql-connector-c
 ``` Bash
 mkdir -p /data/vendor/mysqlc-8.0.15/lib
 cp -R mysql-8.0.15-linux-glibc2.12-x86_64/include /data/vendor/mysqlc-8.0.15
@@ -53,7 +53,7 @@ cp mysql-8.0.15-linux-glibc2.12-x86_64/lib/libmysqlclient.a /data/vendor/mysqlc-
 ``` Bash
 mkdir stage && cd stage
 CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
-# with openssl 1.0 in another path
+# 由于 mysql-connector-c 官方提供的版本需要 openssl-1.0 此处也须统一版本
 # -DOPENSSL_INCLUDE_DIR=/usr/include/openssl-1.0 -DOPENSSL_SSL_LIBRARY=/usr/lib/openssl-1.0/libssl.so -DOPENSSL_CRYPTO_LIBRARY=/usr/lib/openssl-1.0/libcrypto.so
 make
 make install
@@ -74,6 +74,9 @@ make install
 make
 make install
 rm /data/vendor/rdkafka-1.0.0/lib/*.so*
+cp src/snappy.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
+cp src/rdmurmur2.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
+cp src/xxhash.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
 ```
 
 #### HttpParser

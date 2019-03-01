@@ -12,6 +12,7 @@ namespace flame::mongodb {
 		php::value unix_ms(php::parameters& params);
 		php::value to_datetime(php::parameters& params);
 		php::value to_json(php::parameters& params);
+		php::value iso(php::parameters& params);
 	private:
 		std::int64_t tm_;
 		friend php::value iter2value(bson_iter_t *i);

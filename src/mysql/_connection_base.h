@@ -13,7 +13,9 @@ namespace flame::mysql
         virtual std::shared_ptr<MYSQL> acquire(coroutine_handler& ch) = 0;
         php::object query(std::shared_ptr<MYSQL> conn, std::string sql, coroutine_handler& ch);
         php::array fetch(std::shared_ptr<MYSQL> conn, std::shared_ptr<MYSQL_RES> rst, MYSQL_FIELD *f, unsigned int n, coroutine_handler &ch);
-
-      protected:
+        const std::string& last_query();
+    protected:
+    private:
+        std::string last_query_;
     };
 } // namespace flame::mysql

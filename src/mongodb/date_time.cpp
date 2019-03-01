@@ -16,7 +16,8 @@ namespace mongodb {
 			.method<&date_time::unix>("unix")
 			.method<&date_time::unix_ms>("unix_ms")
 			.method<&date_time::to_json>("jsonSerialize")
-			.method<&date_time::to_json>("__debugInfo");
+			.method<&date_time::to_json>("__debugInfo")
+			.method<&date_time::iso>("iso");
 		ext.add(std::move(class_date_time));
 	}
 	php::value date_time::__construct(php::parameters& params) {
@@ -49,6 +50,9 @@ namespace mongodb {
 		num.set("$numberLong", std::to_string(tm_));
 		ret.set("$date", num);
 		return std::move(ret);
+	}
+	php::value date_time::iso(php::parameters& params) {
+		return time::iso(std::chrono::system_clock::time_point( std::chrono::milliseconds(tm_) ));
 	}
 }
 }

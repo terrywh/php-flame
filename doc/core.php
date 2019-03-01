@@ -23,13 +23,18 @@ namespace flame;
  */
 function init($process_name, $options = []) {}
 /**
- *  启动协程(运行对应回调函数)
+ * 启动协程(运行对应回调函数)
+ * 注意：框架使用 固定栈大小 方式进行协程调度（相对效率较高）；但为满足大部分需求，栈空间占用相对（初始值）较高；不应启动过多的协程；
  */
 function go(callable $cb) {}
 /**
  * 获取一个当前协程 ID 标识
  */
 function co_id():int {}
+/**
+ * 获取运行中的协程数量
+ */
+function co_count():int {}
 /**
  * 框架调度, 上述协程会在框架开始调度运行后启动
  * 注意：协程异步调度需要 run() 才能启动执行；
@@ -73,6 +78,10 @@ class queue {
      * 原则上仅能在生产者方向关闭队列;
      */
     function close() {}
+    /**
+     * 队列是否已关闭
+     */
+    function is_closed(): boolean {}
 }
 /**
  * 协程互斥量（锁）

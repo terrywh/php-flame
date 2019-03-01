@@ -16,11 +16,12 @@ namespace flame
                 {"value", php::TYPE::UNDEFINED}
             })
             .method<&queue::pop>("pop")
-            .method<&queue::close>("close");
+            .method<&queue::close>("close")
+            .method<&queue::is_closed>("is_closed");
         ext.add(std::move(class_queue));
     }
     php::value queue::__construct(php::parameters& params)
-    {   
+    {
         if(params.size() > 0)
         {
             q_.reset(new coroutine_queue<php::value>(static_cast<int>(params[0])));
@@ -52,5 +53,8 @@ namespace flame
     {
         q_->close();
         return nullptr;
+    }
+    php::value queue::is_closed(php::parameters& params) {
+        return q_->is_closed();
     }
 }

@@ -8,7 +8,7 @@
 #include "tx.h"
 
 namespace flame::mysql {
-    
+
     void declare(php::extension_entry &ext)
     {
         gcontroller
@@ -393,7 +393,7 @@ namespace flame::mysql {
         }
         else
         {
-            throw php::exception(zend_ce_type_error, "failed to build 'LIMIT' clause: unsupported type");
+            throw php::exception(zend_ce_type_error, "failed to build 'LIMIT' clause: unsupported type specified for `limit`");
         }
     }
     static void insert_row(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::array &row)
@@ -493,10 +493,7 @@ namespace flame::mysql {
                 _connection_base::escape(cc, buf, i->second);
             }
         }
-        else
-        {
-            throw php::exception(zend_ce_type_error, "failed to build 'UPDATE' clause: unsupported type");
-        }
+        else throw php::exception(zend_ce_type_error, "failed to build 'UPDATE' clause: unsupported type specified for `update`");
         // 条件
         build_where(cc, buf, params[1]);
         // 排序
@@ -511,12 +508,8 @@ namespace flame::mysql {
         buf.append("SELECT ", 7);
         // 字段
         php::value fields = params[1];
-        if (fields.typeof(php::TYPE::STRING))
-        {
-            buf.append(fields);
-        }
-        else if (fields.typeof(php::TYPE::ARRAY))
-        {
+        if (fields.typeof(php::TYPE::STRING)) buf.append(fields);
+        else if (fields.typeof(php::TYPE::ARRAY)) {
             php::array a = fields;
             int j = -1;
             for (auto i = a.begin(); i != a.end(); ++i)
@@ -536,10 +529,8 @@ namespace flame::mysql {
                 }
             }
         }
-        else
-        {
-            throw php::exception(zend_ce_type_error, "failed to build 'SELECT' clause: unsupported type");
-        }
+        else if(fields.typeof(php::TYPE::NULLABLE)) buf.push_back('*');
+        else throw php::exception(zend_ce_type_error, "failed to build 'SELECT' clause: unsupported type specified for `fields`");
         // 表名
         buf.append(" FROM ", 6);
         _connection_base::escape(cc, buf, params[0], '`');
@@ -555,7 +546,7 @@ namespace flame::mysql {
     }
     void build_one(std::shared_ptr<MYSQL> cc, php::buffer &buf, php::parameters &params)
     {
-        buf.append("SELECT *  FROM ", 15);
+        buf.append("SELECT * FROM ", 15);
         // 表名
         _connection_base::escape(cc, buf, params[0], '`');
         // 条件
@@ -570,14 +561,8 @@ namespace flame::mysql {
     {
         buf.append("SELECT ", 7);
         // 字段
-        if (params[1].typeof(php::TYPE::STRING))
-        {
-            _connection_base::escape(cc, buf, params[1], '`');
-        }
-        else
-        {
-            throw php::exception(zend_ce_type_error, "failed to build 'SELECT' clause: unsupported type");
-        }
+        if (params[1].typeof(php::TYPE::STRING)) _connection_base::escape(cc, buf, params[1], '`');
+        else throw php::exception(zend_ce_type_error, "failed to build 'SELECT' clause: unsupported type specified for `field`");
         // 表名
         buf.append(" FROM ", 6);
         _connection_base::escape(cc, buf, params[0], '`');

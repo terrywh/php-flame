@@ -14,7 +14,6 @@ namespace flame::rabbitmq
         php::value confirm(php::parameters &params);
         php::value reject(php::parameters &params);
         php::value close(php::parameters &params);
-
     private:
         // 实际的客户端对象可能超过当前对象的生存期
         std::shared_ptr<_client> cc_;

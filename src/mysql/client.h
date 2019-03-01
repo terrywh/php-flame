@@ -22,7 +22,8 @@ namespace flame::mysql
         php::value select(php::parameters &params);
         php::value one(php::parameters &params);
         php::value get(php::parameters &params);
-        php::value version(php::parameters& params);
+        php::value server_version(php::parameters& params);
+        php::value last_query(php::parameters& params);
     protected:
         std::shared_ptr<_connection_pool> cp_;
         friend php::value connect(php::parameters &params);

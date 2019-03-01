@@ -22,11 +22,12 @@ namespace flame::kafka
         consumer::declare(ext);
 		producer::declare(ext);
     }
+    
     php::value consume(php::parameters& params)
     {
         php::array config = params[0];
         php::array topics = params[1];
-        
+
         php::object obj(php::class_entry<consumer>::entry());
         consumer* ptr = static_cast<consumer*>(php::native(obj));
         if (config.exists("concurrent"))
@@ -47,14 +48,9 @@ namespace flame::kafka
     {
         php::array config = params[0];
         php::array topics = params[1];
-        
+
         php::object obj(php::class_entry<producer>::entry());
         producer* ptr = static_cast<producer*>(php::native(obj));
-        if (config.exists("concurrent"))
-        {
-            // ptr->cc_ = std::min(std::min(std::max(static_cast<int>(config.get("concurrent")), 1), 8), 256);
-            config.erase("concurrent");
-        }
         if (!config.exists("log.connection.close")) {
             config.set("log.connection.close", "false");
         }
@@ -64,21 +60,17 @@ namespace flame::kafka
     }
 
 
-    rd_kafka_conf_t* array2conf(const php::array &config)
-    {
+    rd_kafka_conf_t* array2conf(const php::array &config) {
         if(config.empty()) return nullptr;
         char err[256];
         rd_kafka_conf_t *conf = rd_kafka_conf_new();
-        for (auto i = config.begin(); i != config.end(); ++i)
-        {
+        for (auto i = config.begin(); i != config.end(); ++i) {
             php::string key = i->first.to_string();
             php::string val = i->second.to_string();
 
             if(RD_KAFKA_CONF_OK != rd_kafka_conf_set(conf, key.data(), val.data(), err, sizeof(err)))
-            {
                 throw php::exception(zend_ce_type_error,
                         (boost::format("unable to set Kafka config: %1%") % err).str(), -1);
-            }
         }
         return conf;
     }
@@ -100,11 +92,8 @@ namespace flame::kafka
         return hdrs;
     }
     php::array hdrs2array(rd_kafka_headers_t* hdrs)
-    {   
-        if(hdrs == nullptr)
-        {
-            return php::array(0);
-        }
+    {
+        if(hdrs == nullptr) return php::array(0);
         php::array header(rd_kafka_header_cnt(hdrs));
         const char *key;
         const void *val;

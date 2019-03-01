@@ -88,12 +88,13 @@ ESCAPE_FINISHED:;
     }
 
     php::object _connection_base::query(std::shared_ptr<MYSQL> conn, std::string sql, coroutine_handler& ch) {
+        last_query_ = std::move(sql);
         MYSQL_RES* rst = nullptr;
         int err = 0;
-        boost::asio::post(gcontroller->context_y, [&err, &conn, &ch, query = std::move(sql), &rst] ()
+        boost::asio::post(gcontroller->context_y, [&err, &conn, &ch, query=&last_query_, &rst] ()
         {
             // 在工作线程执行查询
-            err = mysql_real_query(conn.get(), query.c_str(), query.size());
+            err = mysql_real_query(conn.get(), query->c_str(), query->size());
             if (err == 0)
             {
                 // 防止锁表, 均使用 store 方式
@@ -133,7 +134,9 @@ ESCAPE_FINISHED:;
             return std::move(data);
         }
     }
-
+    const std::string& _connection_base::last_query() {
+        return last_query_;
+    }
     php::array _connection_base::fetch(std::shared_ptr<MYSQL> conn, std::shared_ptr<MYSQL_RES> rst, MYSQL_FIELD *f, unsigned int n, coroutine_handler &ch)
     {
         MYSQL_ROW row;

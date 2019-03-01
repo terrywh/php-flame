@@ -5,6 +5,7 @@
  * 1. 同一协程中连续进行 MySQL 查询操作, 且结果集数据不读取且不销毁(或不读取完且不销毁)可能导致进程死锁; (请将结果集读取完 或 主动 unset 释放结果集对象)
  * 2. MySQL 读取数据时数值型字段读取映射为 PHP 对应数值类型；`DATETIME` 映射为 PHP 内置类型 `DateTime`;
  * 3. 客户端提供的简化方法如 `insert()` `update()` 也同时支持与上述反向的映射;
+ * 4. 单客户端内连接池上限大小为 4（单进程）；
  */
 namespace flame\mysql;
 /**
@@ -20,7 +21,7 @@ function connect($url): client {}
 
 /**
  * WHERE 字句语法规则:
- * 
+ *
  * @example
  *  $where = ["a"=>"1", "b"=>[2,"3","4"], "c"=>null, "d"=>["{!=}"=>5]];
  *  // " WHERE (`a`='1' AND `b`  IN ('2','3','4') AND `c` IS NULL AND `d`!='5')"
@@ -30,7 +31,7 @@ function connect($url): client {}
  * @example
  *  $where = "`a`=1";
  *  // $sql == " WHERE `a`=1";
- * 
+ *
  * @param 特殊的符号均以 "{}" 进行包裹, 存在以下可用项:
  *  * `{NOT}` / `{!}` - 逻辑非, 对逻辑子句取反, 生成形式: `NOT (.........)`;
  *  * `{OR}` / `{||}` - 逻辑或, 对逻辑子句进行逻辑或拼接, 生成形式: `... OR ... OR ...`;
@@ -54,7 +55,7 @@ function connect($url): client {}
  * @example
  *  $order = ["a"=>1, "b"=>-1, "c"=>true, "d"=>false, "e"=>"ASC", "f"=>"DESC"];
  *  // $sql == " ORDER BY `a` ASC, `b` DESC, `c` ASC, `d` DESC, `e` ASC, `f` DESC"
- * 
+ *
  * @param
  *  * 当 value 位正数或 `true` 时, 生成 `ASC`; 否则生成 `DESC`;
  *  * 当 value 为文本时, 直接拼接;
@@ -77,11 +78,13 @@ function connect($url): client {}
  *  * 当 $limit 为数组时, 拼接前两个值;
  */
 
-
 /**
  * MySQL 客户端（内部使用连接池）
  */
 class client {
+    /**
+     * 将数据进行转移，防止可能出现的 SQL 注入等问题；
+     */
     function escape($value):string {}
     /**
      * 返回事务对象 (绑定在一个连接上)
@@ -89,23 +92,28 @@ class client {
     function begin_tx(): ?tx {}
     /**
      * 执行制定的 SQL 查询, 并返回结果
-     * @param string $sql 
+     * @param string $sql
      * @return mixed SELECT 型语句返回结果集对象 `result`; 否则返回关联数组, 一般包含 affected_rows / insert_id 两项;
      */
     function query(string $sql): result {}
     /**
-     * 向指定表插入一行或多行数据
+     * 返回最近一次执行的 SQL 语句
+     * 注意：由于协程的“并行”（穿插）执行，本函数返回的语句可能与当前上下问代码不对应；
+     */
+    function last_query(): string {}
+    /**
+     * 向指定表插入一行或多行数据 (自动进行 ESCAPE 转义)
      * @param string $table 表名
      * @param array $data 待插入数据, 多行关联数组插入多行数据(以首行 KEY 做字段名); 普通关联数组插入一行数据;
      * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
     function insert(string $table, array $data): result {}
     /**
-     * 从指定表格删除数
-     * @param string $table 表明
-     * @param mixed $where WHERE 子句, 请参考上文;
-     * @param mixed $order ORDER 子句, 请参考上文;
-     * @param mixed $limit LIMIT 子句, 请参考上文;
+     * 从指定表格删除匹配的数据
+     * @param string $table 表名
+     * @param mixed $where WHERE 子句, 请参考上文;（数组形式描述将自动进行 ESCAPE 转义)
+     * @param mixed $order ORDER 子句, 请参考上文;（数组形式描述将自动进行 ESCAPE 转义)
+     * @param mixed $limit LIMIT 子句, 请参考上文;（数组形式描述将自动进行 ESCAPE 转义)
      * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
     function delete(string $table, mixed $where, mixed $order, mixed $limit): result {}
@@ -122,7 +130,7 @@ class client {
     /**
      * 从指定表筛选获取数据
      * @param string $table 表名
-     * @param mixed $fields 待选取字段, 为数组时其元素表示各个字段; 文本时直接拼接在 "SELECT $fields FROM $table"; 
+     * @param mixed $fields 待选取字段, 为数组时其元素表示各个字段; 文本时直接拼接在 "SELECT $fields FROM $table";
      *  关联数组的 KEY 表示对应函数, 仅可用于简单函数调用, 例如:
      *      "SUM" => "a"
      *  表示:
@@ -140,7 +148,10 @@ class client {
      * 从指定表获取一行数据的指定字段值
      */
     function get(string $table, string $field, array $where, mixed $order): mixed {}
-    
+    /**
+     * 获取服务端版本
+     */
+    function server_version():string {}
 };
 
 /**
@@ -200,7 +211,7 @@ class result {
     function fetch_row():?array {}
     /**
      * 读取 (剩余) 全部行
-     * @return 二维数组, 可能为空数组; 
+     * @return 二维数组, 可能为空数组;
      *  若读取已完成, 返回 NULL
      */
     function fetch_all():?array {}

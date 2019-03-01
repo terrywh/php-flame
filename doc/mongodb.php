@@ -1,10 +1,11 @@
 <?php
 /**
- * 提供基本的 MongoDB 基本客户端封装
+ * 提供基本的 MongoDB 基本客户端封装，使用连接池维护与服务器连接
  * 注意:
  * 1. 同一协程中连续进行 MongoDB 查询操作, 且游标不读取数据不销毁 (或 不读取完不销毁) 可能导致进程死锁; (请将游标读取完毕 或 主动 unset 释放游标对象)
  * 2. 对应 MongoDB ObjectID 映射类型 class flame\mongodb\object_id;
  * 3. 对应 MongoDB DateTime 映射类型 class flame\mongodb\date_time;
+ * 4. 单客户端内连接池上限大小为 8（单进程）；
  */
 namespace flame\mongodb;
 
@@ -52,6 +53,8 @@ class collection {
      *  )
      */
     function insert(array $data, bool $ordered = true):array {}
+    function insert_many(array $data, bool $ordered = true):array {}
+    function insert_one(array $data):array {}
     /**
      * 执行删除
      * @return array 形式同 insert() 类似：
@@ -62,6 +65,8 @@ class collection {
      *  )
      */
     function delete(array $query, int $limit = 0):array {}
+    function delete_many(array $query, int $limit = 0):array {}
+    function delete_one(array $query):array {}
     /**
      * 执行更新动作
      * @param array $update 一般使用类似如下形式进行更新设置：
@@ -74,18 +79,23 @@ class collection {
      *  )
      */
     function update(array $query, array $update, $upsert = false):array {}
+    function update_many(array $query, array $update, $upsert = false):array {}
+    function update_one(array $query, array $update, $upsert = false):array {}
     /**
      * 执行指定查询，返回游标对象
      * @param array $sort 一般使用如下形式表达排序：
      *  ['a'=>1,'b'=>-1] // a 字段升序，b 字段降序
-     * @param mixed $limit 可以为 int 设置 `limit` 值，或 array 设置 `[$skip, $limit]` 
+     * @param mixed $limit 可以为 int 设置 `limit` 值，或 array 设置 `[$skip, $limit]`
      */
     function find(array $query, array $projection = null, array $sort = null, mixed $limit = null):cursor {}
+    function find_many(array $query, array $projection = null, array $sort = null, mixed $limit = null):cursor {}
+
     /**
      * 查询并返回单个文档
      * @param array $sort 一般使用如下形式表达排序：
      *  ['a'=>1,'b'=>-1] // a 字段升序，b 字段降序
      */
+    function find_one(array $query, array $sort = null): array {}
     function one(array $query, array $sort = null): array {}
     /**
      * 查询并返回单个文档的指定字段值
@@ -102,6 +112,15 @@ class collection {
      * 请参考 https://docs.mongodb.com/master/reference/operator/aggregation-pipeline/ 编写；
      */
     function aggregate(array $pipeline): cursor {}
+    /**
+     * 查找满足条件的第一个文档，删除并将其返回
+     */
+    function find_and_delete(array $query, array $sort = null, $upsert = false, $fields = null) {}
+    /**
+     * 查找满足条件的第一个文档，对其进行更新，并返回
+     * @param $new boolean 返回更新后的文档
+     */
+    function find_and_update(array $query, array $update, array $sort = null, $upsert = false, array $fields = null, $new = false) {}
 }
 /**
  * 游标对象
@@ -137,6 +156,10 @@ class date_time implements \JsonSerializable {
      * 返回毫秒级时间戳
      */
     function unix_ms(): int {}
+    /**
+     * 返回标准的 YYYY-MM-DD hh:mm:ss 文本形式的时间
+     */
+    function iso(): string {}
 }
 /**
  * 对应 MongoDB 对象ID

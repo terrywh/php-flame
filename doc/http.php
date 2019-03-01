@@ -1,7 +1,9 @@
 <?php
 /**
  * 提供基本的 HTTP 客户端、服务端封装；
- * 注意：暂不支持作为 HTTPS 客户端、服务端；
+ * 注意：
+ * 1. 暂不支持作为 HTTPS 客户端、服务端；请使用 CURL 库或 NGINX 反向代理；
+ * 2. 默认状态客户端对请求连接进行 KeepAlive 复用；若需要使用短连接，请自行制定 Connection: close 头；
  */
 namespace flame\http;
 
@@ -74,6 +76,7 @@ class client_request {
      */
     public $url;
     /**
+     * 请求头；可通过指定 "Connection" => "close" 防止连接复用；
      * @property array
      */
     public $header;
@@ -179,7 +182,6 @@ class server {
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
     function options(string $path, callable $cb):server {}
-    
     /**
      * 启动服务器, 监听请求并执行对应回调
      * 注意: 运行服务器将阻塞当前协程;
@@ -212,7 +214,7 @@ class server_request {
     public $query;
     /**
      * 请求头; 所有头信息字段名被转换为**小写**形式;
-     * 暂不支持多项同名 Header 字段;
+     * 注意：暂不支持多项同名 Header 字段;
      * @property array
      */
     public $header;
@@ -292,7 +294,7 @@ class server_response {
     /**
      * 返回响应头, 用于启用 Transfer-Encoding: chunked 模式, 准备持续响应数据;
      * @param int $status 当参数存在时, 覆盖上述 $res->status 属性响应码;
-     * 
+     *
      * Transfer-Encoding: chunked 模式可用于 EventSource 等持续响应;
      */
     function write_header($status = 0) {}

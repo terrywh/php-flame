@@ -8,7 +8,7 @@ namespace flame
     {
         php::value select(php::parameters &params);
     }
-    class queue: public php::class_base 
+    class queue: public php::class_base
     {
     public:
         static void declare(php::extension_entry &ext);
@@ -16,6 +16,7 @@ namespace flame
         php::value push(php::parameters &params);
         php::value pop(php::parameters &params);
         php::value close(php::parameters &params);
+        php::value is_closed(php::parameters &params);
     private:
         std::shared_ptr<coroutine_queue<php::value>> q_;
 

@@ -57,7 +57,8 @@ namespace flame::mysql
                 {"where", php::TYPE::UNDEFINED},
                 {"order", php::TYPE::UNDEFINED, false, true},
             })
-            .method<&client::version>("version");
+            .method<&client::last_query>("last_query")
+            .method<&client::server_version>("server_version");
         ext.add(std::move(class_client));
     }
     php::value client::__construct(php::parameters& params) {
@@ -72,7 +73,7 @@ namespace flame::mysql
     {
         coroutine_handler ch {coroutine::current};
         std::shared_ptr<MYSQL> conn = cp_->acquire(ch);
-        
+
         php::buffer buffer;
         char quote = '\'';
         if (params.size() > 1 && params[1].typeof(php::TYPE::STRING))
@@ -155,7 +156,10 @@ namespace flame::mysql
             return nullptr;
         }
     }
-    php::value client::version(php::parameters &params)
+    php::value client::last_query(php::parameters& params) {
+        return cp_->last_query();
+    }
+    php::value client::server_version(php::parameters &params)
     {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);

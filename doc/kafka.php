@@ -3,15 +3,14 @@
  * 提供 Kafka 基本生产消费功能封装
  */
 namespace flame\kafka;
-
 /**
- * @param array $config 基本 Kafka 配置, 一下两个选项必要:
+ * @param array $config 基本 Kafka 配置, 以下两个选项必要:
  *  * "bootstrap.servers" - string 服务器地址(9092);
  *  * "group.id" - string 消费组名称(同一消费组共享消费进度);
  * 可以使用一个自定义的的参数:
- *  * "concurrent" - 控制并行消费协程数量, 默认为 8 (数值类型);
- * @see 其他可配置选项均为字符串类型(非字符串会被强制转换), 请参考: 
- *  https://github.com/edenhill/librdkafka/blob/v0.11.6/CONFIGURATION.md
+ *  * "concurrent" - 控制并行消费协程数量, 默认为 8 (数值类型)，上限为 256;
+ * @see 其他可配置选项均为字符串类型(非字符串会被强制转换), 请参考:
+ *  https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
  * @param array $topics 待消费的数据源 TOPIC 名称列表
  */
 function consume(array $config, array $topics) {}
@@ -20,8 +19,8 @@ function consume(array $config, array $topics) {}
  * @param array $config 基本 Kafka 配置, 一下两个选项必要:
  *  * "bootstrap.servers" - 服务器地址(9092);
  *  * "group.id" - 消费组名称(同一消费组共享消费进度);
- * @see 其他可配置选项请参考: 
- *  https://github.com/edenhill/librdkafka/blob/v0.11.6/CONFIGURATION.md
+ * @see 其他可配置选项请参考:
+ *  https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
  * @param array $topics 待生产的目标 TOPIC 名称列表
  */
 function produce(array $config, array $topics) {}
@@ -36,7 +35,7 @@ class consumer {
      */
     function run(callable $cb) {}
     /**
-     * 手动提交消息(的偏移), 一般需要将 "enable.auto.commit" 设为 "false" 
+     * 手动提交消息(的偏移), 一般需要将 "enable.auto.commit" 设为 "false"
      * @see consume();
      */
     function commit(message $msg) {}
@@ -52,15 +51,15 @@ class consumer {
 class producer {
     /**
      * 生产消息
-     * 注意: 此函数会将消息放入"生产队列", 并通过后台线程传输; 
+     * 注意: 此函数会将消息放入"生产队列", 并通过后台线程传输;
      * (为保证完成, 请使用 `flush()`)
      * @see producer::flush()
      * @param string $topic 生成目标 TOPIC 名称, 必须是 待生产 $topics 数组中的一个;
      * @see produce()
-     * @param mixed $mssage 若为 message 类型的对象, 则后续参数无效; 
+     * @param mixed $mssage 若为 message 类型的对象, 则后续参数无效;
      *  否则为现场 message 对象的 payload 数据;
      * @see class message;
-     * @param string $key 
+     * @param string $key
      * @param array $header
      */
     function publish(string $topic, mixed $message, string $key = null, array $header = []) {}

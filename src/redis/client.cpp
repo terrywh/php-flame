@@ -59,7 +59,7 @@ namespace flame::redis {
 			.method<&client::unimplement>("psubscribe")
             .method<&client::unimplement>("unsubscribe")
 			.method<&client::unimplement>("punsubscribe");
-        
+
 		ext.add(std::move(class_client));
 	}
 
@@ -124,7 +124,7 @@ namespace flame::redis {
 		{
 			return cp_->exec(rc, name, params, reply_type::SIMPLE, ch);
 		}
-	} 
+	}
 	php::value client::zrevrange(php::parameters& params) {
 		coroutine_handler ch{coroutine::current};
 		auto rc = cp_->acquire(ch);

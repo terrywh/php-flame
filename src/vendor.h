@@ -3,12 +3,11 @@
 #define EXTENSION_NAME "flame"
 #define EXTENSION_VERSION "0.12.12"
 
-#include <cstdio>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
 #include <netdb.h>
-
+#include <cstdio>
 #include <limits>
 #include <algorithm>
 #include <functional> // for std::functional
@@ -44,9 +43,15 @@ namespace ssl = boost::asio::ssl;
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/websocket.hpp>
+#include <boost/crc.hpp>
 #include <amqpcpp.h>
 #include <amqpcpp/libboostasio.h>
 #include <mysql.h>
 // #include <my_sys.h>
 #include <mongoc.h>
 #include <librdkafka/rdkafka.h>
+extern "C" {
+    #include <librdkafka/snappy.h>
+    #include <librdkafka/rdmurmur2.h>
+    #include <librdkafka/xxhash.h>
+}

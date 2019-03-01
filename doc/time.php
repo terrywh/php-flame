@@ -15,7 +15,6 @@ function sleep(int $ms) {}
 function now():int {}
 /**
  * 获取标准时间 "YYYY-mm-dd HH:ii:ss"
- * (格式话输出上述 `now()` 函数输出)
+ * (按标准格式输出上述 `now()` 对应时间)
  */
 function iso():string {}
-

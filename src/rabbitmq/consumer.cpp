@@ -39,7 +39,7 @@ namespace flame::rabbitmq
     php::value consumer::run(php::parameters &params)
     {
         cb_ = params[0];
-        
+
         coroutine_handler ch {coroutine::current};
         // 下述 q 需要在堆分配, 否则当 cc_->consume() 结束后可能与被提前销毁 (协程销毁稍晚)
         coroutine_queue<php::object> q(cc_->pf_);
@@ -76,7 +76,7 @@ namespace flame::rabbitmq
         return nullptr;
     }
     php::value consumer::confirm(php::parameters &params)
-    {   
+    {
         php::object obj = params[0];
         message *ptr = static_cast<message *>(php::native(obj));
         coroutine_handler ch {coroutine::current};
@@ -99,5 +99,4 @@ namespace flame::rabbitmq
         cc_->close_consumer(ch);
         return nullptr;
     }
-
 } // namespace flame::rabbitmq

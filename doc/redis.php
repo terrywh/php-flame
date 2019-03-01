@@ -1,12 +1,15 @@
 <?php
 /**
- * 提供 Redis 基本客户端封装
+ * 提供 Redis 基本客户端封装，内部使用连接池：
+ * 注意：
+ * 1. 暂未实现 SUBSCRIBE 相关命令；
+ * 2. 单客户端内连接池大小上限为 3 （单进程）；
  */
 namespace flame\redis;
 
 function connect(string $url):client {}
 /**
- * 
+ * Redis 客户端
  */
 class client {
     /**
@@ -22,11 +25,11 @@ class client {
     }
     /**
      * 支持 Redis 大部分指令:
-     * 
+     *
      * @method get()
      * @method set()
      * @method incr()
-     * @method zincr()   
+     * @method zincr()
      * @method mset()
      * @method mget()
      * @method hmset()

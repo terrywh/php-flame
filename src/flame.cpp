@@ -14,6 +14,9 @@
 #include "rabbitmq/rabbitmq.h"
 #include "tcp/tcp.h"
 #include "http/http.h"
+#include "hash/hash.h"
+#include "encoding/encoding.h"
+#include "compress/compress.h"
 
 namespace flame
 {
@@ -159,6 +162,9 @@ extern "C"
             flame::tcp::declare(ext);
             // flame::udp::declare(ext);
             flame::http::declare(ext);
+            flame::hash::declare(ext);
+            flame::encoding::declare(ext);
+            flame::compress::declare(ext);
         }
         else
         {

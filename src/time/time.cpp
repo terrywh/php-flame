@@ -26,10 +26,9 @@ namespace flame::time
             std::chrono::steady_clock::now() - time_steady);
         return time_system + diff;
     }
-    std::string iso()
-    {
-        std::string data(19, '\0');
-        std::time_t t = std::chrono::system_clock::to_time_t(now());
+    php::string iso(const std::chrono::time_point<std::chrono::system_clock>& now) {
+        php::string data(19);
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
         struct tm *m = std::localtime(&t);
         sprintf(data.data(), "%04d-%02d-%02d %02d:%02d:%02d",
                 1900 + m->tm_year,
@@ -38,7 +37,11 @@ namespace flame::time
                 m->tm_hour,
                 m->tm_min,
                 m->tm_sec);
-        return data;
+        return std::move(data);
+    }
+    php::string iso()
+    {
+        return iso(now());
     }
 
     static php::value now(php::parameters &params)

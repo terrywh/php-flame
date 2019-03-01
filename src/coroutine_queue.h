@@ -22,6 +22,10 @@ namespace flame
                 ch.resume();
             }
         }
+        bool is_closed()
+        {
+            return q_.empty() && closed_;
+        }
         void push(const T& t, coroutine_handler& ch)
         {
             if(closed_)
@@ -48,7 +52,7 @@ namespace flame
                     // 有数据消费
                     break;
                 }
-                else if(closed_) 
+                else if(closed_)
                 {
                     // 无数据关闭
                     return std::optional<T>();
@@ -71,7 +75,7 @@ namespace flame
 
             return std::optional<T>(t);
         }
-    
+
     /* private: */
         std::size_t                 n_;
         std::list<T>                q_;

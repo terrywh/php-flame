@@ -28,6 +28,9 @@ namespace flame::core {
     php::value co_id(php::parameters& params) {
         return reinterpret_cast<uintptr_t>(coroutine::current.get());
     }
+    php::value co_count(php::parameters& params) {
+        return coroutine::count;
+    }
     void declare(php::extension_entry &ext) {
         ext
             .on_request_shutdown([] (php::extension_entry& ext) -> bool
@@ -40,11 +43,12 @@ namespace flame::core {
                 return true;
             })
             .function<select>("flame\\select")
-            .function<co_id>("flame\\co_id");
+            .function<co_id>("flame\\co_id")
+            .function<co_count>("flame\\co_count");
 
         queue::declare(ext);
         mutex::declare(ext);
         guard::declare(ext);
     }
-    
+
 }
