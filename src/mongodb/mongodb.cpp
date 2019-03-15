@@ -15,8 +15,7 @@ namespace flame::mongodb
     {
         gcontroller->on_init([] (const php::array& options) {
                 mongoc_init();
-            })
-            ->on_stop([]() {
+            })->on_stop([]() {
                 mongoc_cleanup();
             });
         ext

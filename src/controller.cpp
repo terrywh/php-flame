@@ -13,7 +13,7 @@ namespace flame {
 		, status(STATUS_UNKNOWN)
 		, cbmap(new std::multimap<std::string, php::callable>())
 	{
-		
+
 		worker_size = std::atoi(env["FLAME_MAX_WORKERS"].to_string().c_str());
 		worker_size = std::min(std::max((int)worker_size, 1), 512);
 		// FLAME_MAX_WORKERS 环境变量会被继承, 故此处顺序须先检测子进程
@@ -24,7 +24,7 @@ namespace flame {
 		else if (env.count("FLAME_MAX_WORKERS") > 0)
 		{
 			type = process_type::MASTER;
-		} 
+		}
 		else
 		{
 			worker_size = 0;
@@ -43,11 +43,11 @@ namespace flame {
 		return this;
 	}
 	void controller::initialize(const std::string& title, const php::array& options) {
-		// 多进程模式退出超时时间
+		// 多进程模式退出超时时间，默认 1s 超时强制退出
 		if(options.exists("timeout")) {
 			worker_quit = std::max(static_cast<int>(options.get("timeout")), 64);
 		}else{
-			worker_quit = 10;
+			worker_quit = 1;
 		}
 		status |= STATUS_INITIALIZED;
 		for (auto fn : init_cb)

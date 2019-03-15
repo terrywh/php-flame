@@ -15,7 +15,7 @@ namespace flame;
  *      "warning"
  *      "error"
  *      "fatal"
- *  * "timeout" - 多进程退出超时（超时后会被强制杀死）
+ *  * "timeout" - 多进程退出超时（超时后会被强制杀死）(v0.12.12+ 默认 1s 超时 / v0.12.11- 默认 10s 超时）
  *  @see flame\log
  *
  * 使用环境变量 FLAME_MAX_WORKERS=X 启动多进程模式
@@ -48,7 +48,7 @@ function select(queue $q1, $q2/*, ...*/):queue {}
 /**
  * 监听框架的通知
  * @param string $event 目前消息存在以下两种:
- *  * "exception" - 未捕获的异常通知;
+ *  * "exception" - 当协程发生未捕获异常, 执行对应的回调，并记录错误信息（随后进程会退出）;
  *  * "quit" - 退出消息, 一般用于平滑停止各种服务;
  * @param callable 回调函数
  */
