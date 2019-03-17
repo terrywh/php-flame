@@ -126,7 +126,7 @@ extern "C"
             .desc({"vendor/libphpext", PHPEXT_LIB_VERSION})
             .desc({"vendor/hiredis", VERSION_MACRO(HIREDIS_MAJOR, HIREDIS_MINOR, HIREDIS_PATCH)})
             .desc({"vendor/mysqlc", mysql_get_client_info()})
-            .desc({"vendor/amqpcpp", "4.1.3"})
+            .desc({"vendor/amqpcpp", "4.1.4"})
             .desc({"vendor/librdkafka", rd_kafka_version_str()})
             .desc({"vendor/mongoc", MONGOC_VERSION_S});
 

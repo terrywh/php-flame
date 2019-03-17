@@ -28,7 +28,7 @@ set(VENDOR_BOOST /data/vendor/boost-1.69.0)
 set(VENDOR_MYSQL /data/vendor/mysqlc-8.0.15)
 set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
 set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
-set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.3)
+set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.4)
 set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.0)
 set(VENDOR_HTTPPARSER /data/vendor/http-parser-2.9.0)
 # -----------------------------------------------------------------------------
