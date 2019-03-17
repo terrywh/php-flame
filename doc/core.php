@@ -51,6 +51,7 @@ function select(queue $q1, $q2/*, ...*/):queue {}
  *  * "exception" - 当协程发生未捕获异常, 执行对应的回调，并记录错误信息（随后进程会退出）;
  *  * "quit" - 退出消息, 一般用于平滑停止各种服务;
  * @param callable 回调函数
+ * 一般在 exception 中进行错误报告或报警，在 quit 中进行退出清理工作；
  */
 function on(string $event, callable $cb) {}
 /**
