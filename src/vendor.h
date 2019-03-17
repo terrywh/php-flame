@@ -17,7 +17,6 @@
 #include <stack>
 #include <optional>
 #include <unordered_set>
-#include <tuple>
 #include <phpext/phpext.h>
 #include <http_parser.h>
 #include <hiredis/hiredis.h>
