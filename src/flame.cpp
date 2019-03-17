@@ -34,36 +34,28 @@ namespace flame
     static php::value go(php::parameters& params)
     {
         php::callable fn = params[0];
-        coroutine::start(php::callable([fn] (php::parameters& params) -> php::value
-        {
+        coroutine::start(php::callable([fn] (php::parameters& params) -> php::value {
             php::value rv;
-            try{
+            try {
                 rv = fn.call();
-            }
-            catch (const php::exception &ex)
-            {
+            }catch (const php::exception &ex) {
                 int x = 0;
                 auto ft = gcontroller->cbmap->equal_range("exception");
-                for(auto i=ft.first; i!=ft.second; ++i)
-                {
+                for(auto i=ft.first; i!=ft.second; ++i) {
                     ++x;
                     i->second.call({ex});
                 }
                 php::object obj = ex;
-                if(x==0)
-                {
+                if(x==0) {
                     std::cerr << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
-                    // std::cerr << "[" << time::iso() << "] (FATAL) " << ex.what() << "\n";
-                    boost::asio::post(gcontroller->context_x, [] () {
-                        gcontroller->status |= controller::controller_status::STATUS_EXCEPTION;
-                        gcontroller->context_x.stop();
-                        gcontroller->context_y.stop();
-                    });
-                }else
-                {
+                }else {
                     std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
-                    // std::cerr << "[" << time::iso() << "] (ERROR) " << ex.what() << "\n";
                 }
+                boost::asio::post(gcontroller->context_x, [] () {
+                    gcontroller->status |= controller::controller_status::STATUS_EXCEPTION;
+                    gcontroller->context_x.stop();
+                    gcontroller->context_y.stop();
+                });
             }
             return rv;
         }));

@@ -16,8 +16,9 @@ flame\go(function() {
 
 // 可选
 flame\on("exception", function($ex) {
-    // echo $ex, "\n";
-    flame\quit();
+    echo "uncaught exception: ", $ex->getMessage() , ", you can do something with it.\n";
+    flame\time\sleep(1000);
+    echo "quit\n";
 });
 
 flame\run();
