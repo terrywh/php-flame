@@ -55,7 +55,10 @@ function select(queue $q1, $q2/*, ...*/):queue {}
  */
 function on(string $event, callable $cb) {}
 /**
- * 用于在用户异常处理流程中退出整个框架
+ * 用于在用户处理流程中退出
+ * 注意：
+ * 使用 PHP 内置 exit() 进行退出可能导致框架提供的清理、退出机制无效；
+ * 请示用本函数代替；
  */
 function quit() {}
 /**
