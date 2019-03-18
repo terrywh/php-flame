@@ -1,6 +1,6 @@
 #include "../controller.h"
 #include "../coroutine.h"
-#include "../tcp/tcp.h"
+#include "../udp/udp.h"
 #include "server.h"
 #include "_handler.h"
 
@@ -72,11 +72,8 @@ namespace flame::http
     php::value server::__construct(php::parameters &params)
     {
         php::string str = params[0];
-        auto pair = tcp::addr2pair(str);
-        if (pair.first.empty() || pair.second.empty())
-        {
-            throw php::exception(zend_ce_type_error, "failed to bind tcp socket: address malformed");
-        }
+        auto pair = udp::addr2pair(str);
+        if (pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error, "failed to bind tcp socket: address malformed");
         boost::asio::ip::address addr = boost::asio::ip::make_address(pair.first);
         addr_.address(addr);
         addr_.port(std::atoi(pair.second.c_str()));

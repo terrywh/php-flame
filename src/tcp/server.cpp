@@ -1,9 +1,10 @@
 #include "../controller.h"
 #include "../coroutine.h"
+#include "../udp/udp.h"
+#include "../time/time.h"
 #include "server.h"
 #include "tcp.h"
 #include "socket.h"
-#include "../time/time.h"
 
 namespace flame::tcp
 {
@@ -33,7 +34,7 @@ namespace flame::tcp
     php::value server::__construct(php::parameters &params)
     {
         std::string str_addr = params[0];
-        auto pair = addr2pair(str_addr);
+        auto pair = udp::addr2pair(str_addr);
         if(pair.first.empty() || pair.second.empty())
         {
             throw php::exception(zend_ce_type_error, "failed to bind tcp socket: address malformed");
@@ -53,7 +54,7 @@ namespace flame::tcp
         acceptor_.bind(addr_, err);
         if(err)
         {
-            throw php::exception(zend_ce_error, 
+            throw php::exception(zend_ce_error,
                 (boost::format("failed to bind tcp socket: (%1%) %2%") % err.value() % err.message()).str(), err.value());
         }
         acceptor_.listen(boost::asio::socket_base::max_listen_connections, err);
