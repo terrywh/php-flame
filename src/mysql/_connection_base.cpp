@@ -88,35 +88,29 @@ ESCAPE_FINISHED:;
     }
 
     php::object _connection_base::query(std::shared_ptr<MYSQL> conn, std::string sql, coroutine_handler& ch) {
-        last_query_ = std::move(sql);
         MYSQL_RES* rst = nullptr;
         int err = 0;
-        boost::asio::post(gcontroller->context_y, [&err, &conn, &ch, query=&last_query_, &rst] ()
-        {
+        boost::asio::post(gcontroller->context_y, [&err, &conn, &ch, &rst, &sql] () {
             // 在工作线程执行查询
-            err = mysql_real_query(conn.get(), query->c_str(), query->size());
-            if (err == 0)
-            {
+            err = mysql_real_query(conn.get(), sql.c_str(), sql.size());
+            if (err == 0) {
                 // 防止锁表, 均使用 store 方式
                 rst = mysql_store_result(conn.get());
-                if (!rst && mysql_field_count(conn.get()) > 0)
-                {
+                if (!rst && mysql_field_count(conn.get()) > 0) {
                     err = -1;
                 }
             }
             ch.resume();
         });
         ch.suspend();
-        if(err != 0)
-        {
+        last_query_ = sql;
+        if(err != 0) {
             int err = mysql_errno(conn.get());
             throw php::exception(zend_ce_exception,
                                  (boost::format("failed to query MySQL server: (%1%) %2%") % err % mysql_error(conn.get())).str(),
                                  err);
         }
-
-        if(rst) // 存在结果集
-        {
+        if(rst) { // 存在结果集
             php::object obj(php::class_entry<result>::entry());
             result* ptr = static_cast<result*>(php::native(obj));
             ptr->cl_.reset(new _connection_lock(conn));
@@ -126,8 +120,7 @@ ESCAPE_FINISHED:;
             obj.set("stored_rows", static_cast<std::int64_t>(mysql_num_rows(rst)));
             return std::move(obj);
         }
-        else // 更新型操作
-        {
+        else { // 更新型操作
             php::array data(2);
             data.set(php::string("affected_rows", 13), static_cast<std::int64_t>(mysql_affected_rows(conn.get())));
             data.set(php::string("insert_id", 9), static_cast<std::int64_t>(mysql_insert_id(conn.get())));

@@ -85,12 +85,9 @@ namespace flame::mysql
 
     void _connection_pool::release(MYSQL *c)
     {
-        if (await_.empty())
-        { // 无等待分配的请求
+        if (await_.empty()) { // 无等待分配的请求
             conn_.push_back({c, std::chrono::steady_clock::now()});
-        }
-        else
-        { // 立刻分配使用
+        }else { // 立刻分配使用
             // 每次连接复用前，需要清理状态;
             // 这里兼容不支持 mysql_reset_connection() 新 API 的情况
             // （不支持自动切换到 mysql_change_user() 兼容老版本或变异版本）
@@ -140,18 +137,14 @@ namespace flame::mysql
         tm_.async_wait(boost::asio::bind_executor(guard_, [this] (const boost::system::error_code &error) {
             if(error) return; // 当前对象销毁时会发生对应的 abort 错误
             auto now = std::chrono::steady_clock::now();
-            for (auto i = conn_.begin(); i != conn_.end() && size_ > min_;)
-            {
+            for (auto i = conn_.begin(); i != conn_.end() && size_ > min_;) {
                 // 超低水位，关闭不活跃或已丢失的连接
                 auto duration = now - (*i).ttl;
-                if (duration > std::chrono::seconds(60) || mysql_ping((*i).conn) != 0)
-                {
+                if (duration > std::chrono::seconds(60) || mysql_ping((*i).conn) != 0) {
                     mysql_close((*i).conn);
                     --size_;
                     i = conn_.erase(i);
-                }
-                else
-                {
+                } else {
                     ++i;
                 } // 所有连接还活跃（即使超过低水位）
             }

@@ -546,7 +546,7 @@ namespace flame::mysql {
     }
     void build_one(std::shared_ptr<MYSQL> cc, php::buffer &buf, php::parameters &params)
     {
-        buf.append("SELECT * FROM ", 15);
+        buf.append("SELECT * FROM ", 14);
         // 表名
         _connection_base::escape(cc, buf, params[0], '`');
         // 条件
