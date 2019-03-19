@@ -32,10 +32,11 @@ namespace flame::mysql
 
         boost::logic::tribool reset_;
         boost::logic::tribool charset_;
-        
+
         MYSQL* create();
         void release(MYSQL *c);
         void query_charset(MYSQL* c);
+        void query_version(MYSQL* c);
     };
 
 } // namespace flame::mysql

@@ -103,15 +103,13 @@ namespace flame::mysql
             // 每次连接复用前，需要清理状态;
             // 这里兼容不支持 mysql_reset_connection() 新 API 的情况
             // （不支持自动切换到 mysql_change_user() 兼容老版本或变异版本）
-            if(boost::logic::indeterminate(reset_)) {
-                if(mysql_reset_connection(c) == 0) reset_ = true;
-                else reset_ = false;
-            }else if(reset_) {
+            if(boost::logic::indeterminate(reset_)) query_version(c);
+            if(reset_) {
                 mysql_reset_connection(c);
             }else{
-                // FIXME: 策略上 fallback 使用下面流程进行连接重置，但此处逻辑可能发生故障异常
+                // FIXME: 8.0.15 驱动使用下面函数回出现错误
                 // (Access denied for user 'abc'@'172.30.20.2' (using password: NO)
-                // int r = mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
+                mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
             }
             // 由于上述 reset 动作，会导致字符集被重置为服务端字符集，确认字符集是否匹配
             if(boost::logic::indeterminate(charset_)) query_charset(c);
@@ -142,6 +140,10 @@ namespace flame::mysql
         }else{ // 这里忽略了 charset 查询的错误
             charset_ = false;
         }
+    }
+
+    void _connection_pool::query_version(MYSQL* c) {
+        reset_ = mysql_get_server_version(c) >= 50700;
     }
 
     void _connection_pool::sweep() {
