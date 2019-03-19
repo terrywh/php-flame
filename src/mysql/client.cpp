@@ -163,6 +163,6 @@ namespace flame::mysql
     {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
-        return php::string(mysql_get_host_info(conn.get()));
+        return php::string(mysql_get_server_info(conn.get()));
     }
 } // namespace flame::mysql

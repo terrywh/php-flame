@@ -25,7 +25,7 @@ execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
 set(VENDOR_PHPEXT /data/vendor/phpext-1.1.3)
 set(VENDOR_PARSER /data/vendor/parser-1.0.0)
 set(VENDOR_BOOST /data/vendor/boost-1.69.0)
-set(VENDOR_MYSQL /data/vendor/mysqlc-6.1.11)
+set(VENDOR_MYSQL /data/vendor/mysqlc-8.0.15)
 set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
 set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
 set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.4)

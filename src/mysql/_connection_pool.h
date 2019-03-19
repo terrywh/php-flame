@@ -30,8 +30,15 @@ namespace flame::mysql
         std::list<connection_t> conn_;
         boost::asio::steady_timer tm_;
 
-        boost::logic::tribool reset_;
-        boost::logic::tribool charset_;
+        int flag_;
+        enum {
+            FLAG_UNKNOWN        = 0x00,
+            FLAG_REUSE_BY_RESET = 0x01,
+            FLAG_REUSE_BY_CUSER = 0x02,
+            FLAG_REUSE_BY_PROXY = 0x04,
+            FLAG_CHARSET_EQUAL  = 0x10,
+            FLAG_CHARSET_DIFFER = 0x20,
+        };
 
         MYSQL* create();
         void release(MYSQL *c);
