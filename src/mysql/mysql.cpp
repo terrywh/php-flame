@@ -33,6 +33,14 @@ namespace flame::mysql {
     php::value connect(php::parameters& params)
     {
         url u(params[0]);
+        if(u.port < 10) u.port = 3306;
+        if(!u.query.count("charset")) {
+            u.query["charset"] = "utf8";
+        }
+        if(!u.query.count("ssl")) {
+            u.query["ssl"] = "disabled";
+        }
+
         php::object obj(php::class_entry<client>::entry());
         client *ptr = static_cast<client *>(php::native(obj));
         ptr->cp_.reset(new _connection_pool(u));

@@ -5,12 +5,10 @@ namespace flame::mysql
 {
     _connection_pool::_connection_pool(url u)
         : url_(std::move(u)), min_(2), max_(6), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
+        , reset_(boost::logic::indeterminate)
         , charset_(boost::logic::indeterminate)
     {
-        if(url_.port < 10) url_.port = 3306;
-        if(!url_.query.count("charset")) {
-            url_.query["charset"] = "utf8";
-        }
+
     }
 
     _connection_pool::~_connection_pool()
@@ -33,9 +31,9 @@ namespace flame::mysql
                 // RESUME 需要在主线程进行
                 ch.resume();
             });
-            while (!conn_.empty())
-            {
-                if (mysql_ping(conn_.front().conn) == 0)
+            auto now = std::chrono::steady_clock::now();
+            while (!conn_.empty()) {
+                if (now - conn_.front().ttl < std::chrono::seconds(15) || mysql_ping(conn_.front().conn) == 0)
                 { // 可用连接
                     MYSQL *c = conn_.front().conn;
                     conn_.pop_front();
@@ -74,10 +72,24 @@ namespace flame::mysql
         MYSQL* c = mysql_init(nullptr);
         // 这里的 CHARSET 设定会被 reset_connection 重置为系统值
         mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
+        unsigned int ssl = SSL_MODE_DISABLED;
+        if(url_.query.count("ssl") > 0) {
+            std::string sstr = url_.query["ssl"];
+            if(strncasecmp(sstr.c_str(), "preferred", 9) == 0) {
+                ssl = SSL_MODE_PREFERRED;
+            }else if(strncasecmp(sstr.c_str(), "required", 8) == 0) {
+                ssl = SSL_MODE_REQUIRED;
+            }else if(strncasecmp(sstr.c_str(), "verify_ca", 9) == 0) {
+                ssl = SSL_MODE_VERIFY_CA;
+            }else if(strncasecmp(sstr.c_str(), "verify_identity", 15) == 0) {
+                ssl = SSL_MODE_VERIFY_IDENTITY;
+            }
+        }
+        mysql_options(c, MYSQL_OPT_SSL_MODE, &ssl);
         unsigned int timeout = 5; // 连接超时
         mysql_options(c, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
-        if (!mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0))
-        {
+        if (!mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0)) {
+            mysql_close(c);
             return nullptr;
         }
         return c;
@@ -92,12 +104,14 @@ namespace flame::mysql
             // 这里兼容不支持 mysql_reset_connection() 新 API 的情况
             // （不支持自动切换到 mysql_change_user() 兼容老版本或变异版本）
             if(boost::logic::indeterminate(reset_)) {
-                if(mysql_reset_connection(c)) reset_ = true;
+                if(mysql_reset_connection(c) == 0) reset_ = true;
                 else reset_ = false;
             }else if(reset_) {
                 mysql_reset_connection(c);
             }else{
-                mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
+                // FIXME: 策略上 fallback 使用下面流程进行连接重置，但此处逻辑可能发生故障异常
+                // (Access denied for user 'abc'@'172.30.20.2' (using password: NO)
+                // int r = mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
             }
             // 由于上述 reset 动作，会导致字符集被重置为服务端字符集，确认字符集是否匹配
             if(boost::logic::indeterminate(charset_)) query_charset(c);
@@ -117,10 +131,7 @@ namespace flame::mysql
 
     void _connection_pool::query_charset(MYSQL* c) {
         // 使用 mysql_get_charactor_set_name() 获取到的字符集与下述查询不同
-        int err = mysql_real_query(c, "SHOW VARIABLES WHERE `Variable_name`='character_set_client'", 59);
-        charset_ = false; // 乐观
-        if (err == 0)
-        {
+        if(0 == mysql_real_query(c, "SHOW VARIABLES WHERE `Variable_name`='character_set_client'", 59)) {
             std::unique_ptr<MYSQL_RES, void (*)(MYSQL_RES*)> rst(mysql_store_result(c), mysql_free_result);
             if (!rst) return;
             MYSQL_ROW row = mysql_fetch_row(rst.get());
@@ -128,6 +139,8 @@ namespace flame::mysql
             unsigned long* len = mysql_fetch_lengths(rst.get());
             std::string charset(row[1], len[1]);
             charset_ = charset != url_.query["charset"];
+        }else{ // 这里忽略了 charset 查询的错误
+            charset_ = false;
         }
     }
 

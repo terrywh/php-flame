@@ -5,7 +5,8 @@
  * 1. 同一协程中连续进行 MySQL 查询操作, 且结果集数据不读取且不销毁(或不读取完且不销毁)可能导致进程死锁; (请将结果集读取完 或 主动 unset 释放结果集对象)
  * 2. MySQL 读取数据时数值型字段读取映射为 PHP 对应数值类型；`DATETIME` 映射为 PHP 内置类型 `DateTime`;
  * 3. 客户端提供的简化方法如 `insert()` `update()` 也同时支持与上述反向的映射;
- * 4. 单客户端内连接池上限大小为 4（单进程）；
+ * 4. 单客户端内连接池上限大小为 6（单进程）；
+ * 5. 对 MySQL < 5.7 版本特定用法可能发生连接复用前后干扰的情况；
  */
 namespace flame\mysql;
 /**
@@ -14,6 +15,7 @@ namespace flame\mysql;
  *  mysql://{user}:{pass}@{host}:{port}/{database}?opt1=val1
  *  目前可用的选项如下:
  *      * "charset" => 字符集
+ *      * "ssl" => SSL 模式，可用值 "disabled" (默认) / "preferred" / "verify_ca" / "verify_identity"
  * 注意：若服务端配置默认字符集与上述字符集不同，每次连接使用（复用）均会进行字符集设置，这里可能会产生部分额外消耗；
  * @return client 客户端对象
  */

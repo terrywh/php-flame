@@ -5,7 +5,7 @@
  * 1. 同一协程中连续进行 MongoDB 查询操作, 且游标不读取数据不销毁 (或 不读取完不销毁) 可能导致进程死锁; (请将游标读取完毕 或 主动 unset 释放游标对象)
  * 2. 对应 MongoDB ObjectID 映射类型 class flame\mongodb\object_id;
  * 3. 对应 MongoDB DateTime 映射类型 class flame\mongodb\date_time;
- * 4. 单客户端内连接池上限大小为 8（单进程）；
+ * 4. 单客户端内连接池上限大小为 6（单进程）；
  */
 namespace flame\mongodb;
 
