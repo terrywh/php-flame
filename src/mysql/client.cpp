@@ -11,7 +11,6 @@ namespace flame::mysql
     {
         php::class_entry<client> class_client("flame\\mysql\\client");
         class_client
-            .constant({"AAAA",123})
             .method<&client::__construct>("__construct", {}, php::PRIVATE)
             .method<&client::__destruct>("__destruct")
             .method<&client::escape>("escape",

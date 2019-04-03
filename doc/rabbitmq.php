@@ -11,11 +11,15 @@ namespace flame\rabbitmq;
  * 可使用参数:
  *  * `prefetch` - int - 用于指定未 ack 时最大读取数量
  */
-function consume(string $url, string $queue): consumer {}
+function consume(string $url, string $queue): consumer {
+    return new consumer();
+}
 /**
  * 通过 RabbitMQ 连接地址连接并启动生产
  */
-function produce(string $url): producer {}
+function produce(string $url): producer {
+    return new producer();
+}
 
 /**
  * 生产者
@@ -25,6 +29,7 @@ class consumer {
      * 开始消费, 框架将按照一定数量启动并行消费协程, 并使用消息对象调用 $cb 回调函数;
      * @param callable $cb 消费回调, 形如:
      *  function callback($message) {}
+     * 当消费过程失败，将抛出异常（结束消费）
      */
     function run(callable $cb) {}
     /**
@@ -92,9 +97,13 @@ class message implements JsonSerializable {
     /**
      * 返回消息体
      */
-    function __toString() {}
+    function __toString(): string {
+        return "body of message";
+    }
     /**
      * 自定义 JSON 序列化, 返回包含 routing_key / body / timestamp 字段的数组;
      */
-    function jsonSerialize() {}
+    function jsonSerialize(): array {
+        return [];
+    }
 }

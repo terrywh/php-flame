@@ -9,7 +9,9 @@ namespace flame\udp;
  * @param string $address 连接地址, 例如: "127.0.0.1:8687"
  * 注意: UDP "链接" 能在一定程度上提高效率;
  */
-function connect(string $address):socket {}
+function connect(string $address):socket {
+    return new socket();
+}
 
 class socket {
     /**
@@ -48,7 +50,9 @@ class socket {
      * 接收并返回一个 UDP 包
      * @return mixed 返回接收到的数据包(文本 string); 若 socket 被关闭则返回 null;
      */
-    function recv():mixed {}
+    function recv():string {
+        return "payload from udp packet";
+    }
     /**
      * 关闭连接
      * 注意: 正在进行的发送 send(_to) 或 recv(_from) 接收动作将被终止;

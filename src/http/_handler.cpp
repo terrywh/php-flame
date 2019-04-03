@@ -117,8 +117,9 @@ HANDLE_BREAK:
                     //     res_ptr->set("status", 404);
                     //     res_ptr->set("body", nullptr);
                     // }
-                    if(gcontroller->status & controller::controller_status::STATUS_SHUTDOWN) {
+                    if(gcontroller->status & controller::controller_status::STATUS_SHUTDOWN || svr_ptr->closed_) {
                         res_->keep_alive(false);
+                        res_->set(boost::beast::http::field::connection, "close");
                     }
                     res_ptr->build_ex(*res_);
                     // Content 方式, 待结束
@@ -163,9 +164,11 @@ HANDLE_BREAK:
         res_ptr->build_ex(*res_);
         res_->chunked(true);
         res_->set(boost::beast::http::field::transfer_encoding, "chunked");
-        if (gcontroller->status & controller::controller_status::STATUS_SHUTDOWN)
+        
+        if (gcontroller->status & controller::controller_status::STATUS_SHUTDOWN || svr_ptr->closed_)
         {
             res_->keep_alive(false);
+            res_->set(boost::beast::http::field::connection, "close");
         }
         boost::system::error_code error;
 

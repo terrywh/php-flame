@@ -18,7 +18,7 @@ namespace flame::rabbitmq
         // 实际的客户端对象可能超过当前对象的生存期
         std::shared_ptr<_client> cc_;
         php::callable            cb_;
-        std::string              cq_;
+        std::string              qn_;
         int              concurrent_;
 
         friend php::value consume(php::parameters &params);

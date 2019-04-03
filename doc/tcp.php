@@ -8,7 +8,9 @@ namespace flame\tcp;
  * 连接指定地址, 并返回 socket 对象
  * @param string $address 连接地址, 例如: "127.0.0.1:8687"
  */
-function connect(string $address):socket {}
+function connect(string $address):socket {
+    return new socket();
+}
 
 class socket {
     /**

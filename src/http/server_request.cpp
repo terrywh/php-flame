@@ -15,7 +15,7 @@ namespace http {
 			.property({"header", nullptr})
 			.property({"cookie", nullptr})
 			.property({"body", nullptr})
-			.property({"rawBody", ""})
+			.property({"raw_body", ""})
 			.property({"file", nullptr})
 			.property({"data", nullptr})
 			.method<&server_request::__construct>("__construct", {}, php::PRIVATE);
@@ -73,13 +73,13 @@ namespace http {
 		if(body.typeof(php::TYPE::STRING)) {
 			auto ctype = ctr_.find(boost::beast::http::field::content_type);
 			if(ctype == ctr_.end() || ctype->value().compare(0, 19, "multipart/form-data") != 0) {
-				set("rawBody", body); // 不在 multipart 时保留原始数据
+				set("raw_body", body); // 不在 multipart 时保留原始数据
 			}
 			if(ctype != ctr_.end()) { // 存在时按照类型进行解析
 				php::array files(4);
 				set("body", ctype_decode(ctype->value(), body, &files));
 				set("file", files);
-			}else{ // 不存在与 rawBody 相同
+			}else{ // 不存在与 raw_body 相同
 				set("body", body);
 			}
 		}

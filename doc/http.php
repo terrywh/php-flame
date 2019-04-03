@@ -10,23 +10,33 @@ namespace flame\http;
 /**
  * 使用默认客户端, 执行请求
  */
-function exec(client_request $req): client_response {}
+function exec(client_request $req): client_response {
+    return new client_response();
+}
 /**
  * 使用默认客户端, 构建并执行一个 GET 请求
  */
-function get(string $url, int $timeout = 3000): client_response {}
+function get(string $url, int $timeout = 3000): client_response {
+    return new client_response();
+}
 /**
  * 使用默认客户端, 构建并执行一个 POST 请求
  */
-function post(string $url, mixed $data, int $timeout = 3000): client_response {}
+function post(string $url, mixed $data, int $timeout = 3000): client_response {
+    return new client_response();
+}
 /**
  * 使用默认客户端, 构建并执行一个 PUT 请求
  */
-function put(string $url, mixed $data, int $timeout = 3000): client_response {}
+function put(string $url, mixed $data, int $timeout = 3000): client_response {
+    return new client_response();
+}
 /**
  * 使用默认客户端, 构建并执行一个 DELETE 请求
  */
-function delete(string $url, int $timeout = 3000): client_response {}
+function delete(string $url, int $timeout = 3000): client_response {
+    return new client_response();
+}
 
 /**
  * 客户端，用于执行请求
@@ -41,23 +51,33 @@ class client {
     /**
      * 执行请求, 返回响应
      */
-    function exec(client_request $req): client_response {}
+    function exec(client_request $req): client_response {
+        return new client_response();
+    }
     /**
      * 构建并执行一个 GET 请求
      */
-    function get(string $url, int $timeout = 3000): client_response {}
+    function get(string $url, int $timeout = 3000): client_response {
+        return new client_response();
+    }
     /**
      * 构建并执行一个 POST 请求
      */
-    function post(string $url, mixed $data, int $timeout = 3000) {}
+    function post(string $url, mixed $data, int $timeout = 3000): client_response {
+        return new client_response();
+    }
     /**
      * 构建并执行一个 PUT 请求
      */
-    function put(string $url, mixed $data, int $timeout = 3000): client_response {}
+    function put(string $url, mixed $data, int $timeout = 3000): client_response {
+        return new client_response();
+    }
     /**
      * 构建并执行一个 DELETE 请求
      */
-    function delete(string $url, int $timeout = 3000): client_response {}
+    function delete(string $url, int $timeout = 3000): client_response {
+        return new client_response();
+    }
 }
 /**
  * 客户端请求对象，用于拼装生成一个客户端请求（待执行）
@@ -112,14 +132,14 @@ class client_response {
      *  * "application/json"
      *  * "application/x-www-form-urlencoded"
      *  * "multipart/form-data"
-     * 其他类型保持文本的原始数据(与 $rawBody 相同);
+     * 其他类型保持文本的原始数据(与 $raw_body 相同);
      */
     public $body;
     /**
      * 原始请求体数据
      * @property string
      */
-    public $rawBody;
+    public $raw_body;
 }
 /**
  * HTTP 服务器
@@ -140,48 +160,66 @@ class server {
      * 其中 $match 参数标识此请求是否匹配了定义的 path 处理器;
      * 当 callback 函数返回 false 时, 将**不再**执行后续处理器
      */
-    function before(callable $cb):server {}
+    function before(callable $cb):server {
+        return $this;
+    }
     /**
      * 每次 HTTP 请求在执行对应 path 处理器后, 会执行下述设置的回调;
      * 回调形式同 before();
      * 注意: 若 before 回调或 path 回调返回了 false, 此 after 回调将不再执行;
      */
-    function after(callable $cb):server {}
+    function after(callable $cb):server {
+        return $this;
+    }
     /**
      * 设置一个处理 "PUT $path HTTP/1.1" 请求的路径 path 处理器;
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
-    function put(string $path, callable $cb):server {}
+    function put(string $path, callable $cb):server {
+        return $this;
+    }
     /**
      * 设置一个处理 "DELETE $path HTTP/1.1" 请求的路径 path 处理器;
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
-    function delete(string $path, callable $cb):server {}
+    function delete(string $path, callable $cb):server {
+        return $this;
+    }
     /**
      * 设置一个处理 "POST $path HTTP/1.1" 请求的路径 path 处理器;
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
-    function post(string $path, callable $cb):server {}
+    function post(string $path, callable $cb):server {
+        return $this;
+    }
     /**
      * 设置一个处理 "PATCH $path HTTP/1.1" 请求的路径 path 处理器;
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
-    function patch(string $path, callable $cb):server {}
+    function patch(string $path, callable $cb):server {
+        return $this;
+    }
     /**
      * 设置一个处理 "GET $path HTTP/1.1" 请求的路径 path 处理器;
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
-    function get(string $path, callable $cb):server {}
+    function get(string $path, callable $cb):server {
+        return $this;
+    }
     /**
      * 设置一个处理 "HEAD $path HTTP/1.1" 请求的路径 path 处理器;
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
-    function head(string $path, callable $cb):server {}
+    function head(string $path, callable $cb):server {
+        return $this;
+    }
     /**
      * 设置一个处理 "OPTIONS $path HTTP/1.1" 请求的路径 path 处理器;
      * 注意: 当 before 回调返回 false 时, 此处理器将不再被执行;
      */
-    function options(string $path, callable $cb):server {}
+    function options(string $path, callable $cb):server {
+        return $this;
+    }
     /**
      * 启动服务器, 监听请求并执行对应回调
      * 注意: 运行服务器将阻塞当前协程;

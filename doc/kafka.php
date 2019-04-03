@@ -13,7 +13,9 @@ namespace flame\kafka;
  *  https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
  * @param array $topics 待消费的数据源 TOPIC 名称列表
  */
-function consume(array $config, array $topics) {}
+function consume(array $config, array $topics):consumer {
+    return new consumer();
+}
 
 /**
  * @param array $config 基本 Kafka 配置, 一下两个选项必要:
@@ -23,7 +25,9 @@ function consume(array $config, array $topics) {}
  *  https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
  * @param array $topics 待生产的目标 TOPIC 名称列表
  */
-function produce(array $config, array $topics) {}
+function produce(array $config, array $topics):producer {
+    return new producer();
+}
 /**
  * 消费者
  */

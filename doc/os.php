@@ -50,12 +50,16 @@ const SIGUSR2 = 12;
  *      }
  *      }
  */
-function interfaces():array {}
+function interfaces():array {
+    return [];
+}
 /**
  * 异步启动进程
  * @return 进程对象
  */
-function spawn(string $command, array $argv = [], array $options = []):process {}
+function spawn(string $command, array $argv = [], array $options = []):process {
+    return new process();
+}
 /**
  * 调用上述 spawn() 异步启动进程, 并等待其结束, 返回进程标准输出
  * @param array $options 目前可用的选项如下：
@@ -63,7 +67,9 @@ function spawn(string $command, array $argv = [], array $options = []):process {
  *  * "env" - array - 环境变量，K/V 结构文本;
  * @return string 进程标准输出内容
  */
-function exec(string $command, array $argv, array $options = []):string {}
+function exec(string $command, array $argv, array $options = []):string {
+    return "output of the process";
+}
 
 /**
  * 进程对象
@@ -80,9 +86,13 @@ class process {
     /**
      * 获取进程标准输出（若进程还未结束需要等待）
      */
-    function stdout():string {}
+    function stdout():string {
+        return "stdout output";
+    }
     /**
      * 获取进程错误输出（若进程还未结束需要等待）
      */
-    function stderr():string {}
+    function stderr():string {
+        return "stderr output";
+    }
 }

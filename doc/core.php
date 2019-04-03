@@ -30,11 +30,15 @@ function go(callable $cb) {}
 /**
  * 获取一个当前协程 ID 标识
  */
-function co_id():int {}
+function co_id():int {
+    return 123456;
+}
 /**
  * 获取运行中的协程数量
  */
-function co_count():int {}
+function co_count():int {
+    return 8;
+}
 /**
  * 框架调度, 上述协程会在框架开始调度运行后启动
  * 注意：协程异步调度需要 run() 才能启动执行；
@@ -44,7 +48,9 @@ function run() {}
  * 从若干个队列中选择(等待)一个有数据队列
  * @return 若所有通道已关闭, 返回 null; 否则返回一个有数据的通道, 即: 可以无等待 pop()
  */
-function select(queue $q1, $q2/*, ...*/):queue {}
+function select(queue $q1, $q2/*, ...*/):queue {
+    return new queue();
+}
 /**
  * 监听框架的通知
  * @param string $event 目前消息存在以下两种:
@@ -85,7 +91,9 @@ class queue {
     /**
      * 队列是否已关闭
      */
-    function is_closed(): boolean {}
+    function is_closed(): bool {
+        return false;
+    }
 }
 /**
  * 协程互斥量（锁）

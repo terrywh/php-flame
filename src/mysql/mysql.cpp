@@ -35,7 +35,7 @@ namespace flame::mysql {
         url u(params[0]);
         if(u.port < 10) u.port = 3306;
         if(!u.query.count("charset")) {
-            u.query["charset"] = "utf8";
+            u.query["charset"] = "utf8mb4";
         }
         if(!u.query.count("ssl")) {
             u.query["ssl"] = "disabled";

@@ -309,12 +309,21 @@ namespace flame::mongodb
         php::array pipeline = params[0];
         if (!pipeline.exists(0))
             throw php::exception(zend_ce_type_error, "aggregate pipeline must be a array of stages (array)");
-        cmd.set("pipeline", params[0]);
+        cmd.set("pipeline", pipeline);
         cmd.set("cursor", php::object(php::CLASS(zend_standard_class_def)));
-
+        if(params.size() > 1) {
+            php::array options = params[1];
+            for(auto i=options.begin(); i!=options.end(); ++i) {
+                cmd.set(i->first.to_string(), i->second);
+            }
+        }
+        int execute_type = _connection_base::COMMAND_READ;
+        if(params.size() > 2) {
+            execute_type = params[2].to_integer();
+        }
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
-        return cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
+        return cp_->exec(conn_, cmd, execute_type, ch);
     }
     php::value collection::find_and_delete(php::parameters& params) {
         php::array cmd(8);

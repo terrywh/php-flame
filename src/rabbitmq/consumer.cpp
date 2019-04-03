@@ -65,14 +65,15 @@ namespace flame::rabbitmq
                 }
                 if(--count == 0)
                 {
-                    ch.resume();
+                    ch.resume(); // ----> 1
                 }
                 return nullptr;
             }));
         }
-        cc_->consume(cq_, q, ch);
-        ch.suspend();
+        cc_->consume(qn_, q, ch);
+        ch.suspend(); // 1 <----
         cb_ = nullptr;
+        if(cc_->has_error()) throw php::exception(zend_ce_exception, (boost::format("failed to consume RabbitMQ queue: %1%") % cc_->error()).str());
         return nullptr;
     }
     php::value consumer::confirm(php::parameters &params)
@@ -96,7 +97,7 @@ namespace flame::rabbitmq
     php::value consumer::close(php::parameters &params)
     {
         coroutine_handler ch {coroutine::current};
-        cc_->close_consumer(ch);
+        cc_->consumer_close(ch);
         return nullptr;
     }
 } // namespace flame::rabbitmq

@@ -12,13 +12,11 @@ namespace flame::rabbitmq
     void declare(php::extension_entry &ext)
     {
         ext
-            .function<consume>("flame\\rabbitmq\\consume",
-            {
+            .function<consume>("flame\\rabbitmq\\consume", {
                 {"address", php::TYPE::STRING},
                 {"queue", php::TYPE::STRING},
             })
-            .function<produce>("flame\\rabbitmq\\produce",
-            {
+            .function<produce>("flame\\rabbitmq\\produce", {
                 {"address", php::TYPE::STRING},
             });
 
@@ -39,7 +37,7 @@ namespace flame::rabbitmq
         php::object obj(php::class_entry<consumer>::entry());
         consumer* ptr = static_cast<consumer*>(php::native(obj));
         ptr->cc_ = cc;
-        ptr->cq_ = static_cast<std::string>(params[1]);
+        ptr->qn_ = static_cast<std::string>(params[1]);
         return std::move(obj);
     }
     php::value produce(php::parameters &params)

@@ -20,7 +20,9 @@ namespace flame\mysql;
  * 注意：若服务端配置默认字符集与上述字符集不同，每次连接使用（复用）均会进行字符集设置，这里可能会产生部分额外消耗；
  * @return client 客户端对象
  */
-function connect($url): client {}
+function connect($url): client {
+    return new client();
+}
 
 /**
  * WHERE 字句语法规则:
@@ -88,29 +90,39 @@ class client {
     /**
      * 将数据进行转移，防止可能出现的 SQL 注入等问题；
      */
-    function escape($value):string {}
+    function escape($value):string {
+        return "escaped string";
+    }
     /**
      * 返回事务对象 (绑定在一个连接上)
      */
-    function begin_tx(): ?tx {}
+    function begin_tx(): ?tx {
+        return new tx();
+    }
     /**
      * 执行制定的 SQL 查询, 并返回结果
      * @param string $sql
      * @return mixed SELECT 型语句返回结果集对象 `result`; 否则返回关联数组, 一般包含 affected_rows / insert_id 两项;
      */
-    function query(string $sql): result {}
+    function query(string $sql): result {
+        return new result();
+    }
     /**
      * 返回最近一次执行的 SQL 语句
      * 注意：由于协程的“并行”（穿插）执行，本函数返回的语句可能与当前上下问代码不对应；
      */
-    function last_query(): string {}
+    function last_query(): string {
+        return "last executed sql";
+    }
     /**
      * 向指定表插入一行或多行数据 (自动进行 ESCAPE 转义)
      * @param string $table 表名
      * @param array $data 待插入数据, 多行关联数组插入多行数据(以首行 KEY 做字段名); 普通关联数组插入一行数据;
      * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
-    function insert(string $table, array $data): result {}
+    function insert(string $table, array $data): result {
+        return new result();
+    }
     /**
      * 从指定表格删除匹配的数据
      * @param string $table 表名
@@ -119,7 +131,9 @@ class client {
      * @param mixed $limit LIMIT 子句, 请参考上文;（数组形式描述将自动进行 ESCAPE 转义)
      * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
-    function delete(string $table, mixed $where, mixed $order, mixed $limit): result {}
+    function delete(string $table, mixed $where, mixed $order, mixed $limit): result {
+        return new result();
+    }
     /**
      * 更新指定表
      * @param string $table 表名
@@ -129,7 +143,9 @@ class client {
      * @param mixed $limit LIMIT 子句, 请参考上文;
      * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
-    function update(string $table, mixed $where, mixed $modify, mixed $order, mixed $limit): result {}
+    function update(string $table, mixed $where, mixed $modify, mixed $order, mixed $limit): result {
+        return new result();
+    }
     /**
      * 从指定表筛选获取数据
      * @param string $table 表名
@@ -142,19 +158,28 @@ class client {
      * @param mixed $order ORDER 子句, 请参考上文;
      * @param mixed $limit LIMIT 子句, 请参考上文;
      */
-    function select(string $table, mixed $fields, array $where, mixed $order, mixed $limit): result {}
+    function select(string $table, mixed $fields, array $where, mixed $order, mixed $limit): result {
+        return new result();
+    }
     /**
      * 从指定表筛选获取一条数据, 并立即返回该行数据
      */
-    function one(string $table, mixed $where, mixed $order): array {}
+    function one(string $table, mixed $where, mixed $order): array {
+        return [];
+    }
     /**
      * 从指定表获取一行数据的指定字段值
+     * @return mixed 字段类型映射请参见顶部说明
      */
-    function get(string $table, string $field, array $where, mixed $order): mixed {}
+    function get(string $table, string $field, array $where, mixed $order) {
+        return null;
+    }
     /**
      * 获取服务端版本
      */
-    function server_version():string {}
+    function server_version():string {
+        return "5.5.5";
+    }
 };
 
 /**
@@ -171,32 +196,46 @@ class tx {
     function rollback() {}
     /**
      * @see client::query()
+     * @return mixed cursor/array
      */
-    function query(string $sql): mixed {}
+    function query(string $sql) {}
     /**
      * @see client::insert()
      */
-    function insert(string $table, array $data): array {}
+    function insert(string $table, array $data): array {
+        return [];
+    }
     /**
      * @see client::delete()
      */
-    function delete(string $table, mixed $where, mixed $order, mixed $limit): array {}
+    function delete(string $table, mixed $where, mixed $order, mixed $limit): array {
+        return [];
+    }
     /**
      * @see client::update()
      */
-    function update(string $table, array $where, mixed $modify, mixed $order = null, mixed $limit = null): array {}
+    function update(string $table, array $where, mixed $modify, mixed $order = null, mixed $limit = null): array {
+        return [];
+    }
     /**
      * @see client::select()
      */
-    function select(string $table, mixed $fields, array $where, mixed $order = null, mixed $limit = null): result {}
+    function select(string $table, mixed $fields, array $where, mixed $order = null, mixed $limit = null): result {
+        return new result();
+    }
     /**
      * @see client::one()
      */
-    function one(string $table, array $where, mixed $order = null): array {}
+    function one(string $table, array $where, mixed $order = null): array {
+        return [];
+    }
     /**
      * @see client::get()
+     * @return mixed 字段类型映射参见顶部说明；
      */
-    function get(string $table, string $field, array $where, mixed $order = null): mixed {}
+    function get(string $table, string $field, rray $where, mixed $order = null) {
+        return null;
+    }
 };
 /**
  * 结果集
@@ -211,11 +250,15 @@ class result {
      * @return 下一行数据关联数组;
      *  若读取已完成, 返回 NULL
      */
-    function fetch_row():?array {}
+    function fetch_row():?array {
+        return [];
+    }
     /**
      * 读取 (剩余) 全部行
      * @return 二维数组, 可能为空数组;
      *  若读取已完成, 返回 NULL
      */
-    function fetch_all():?array {}
+    function fetch_all():?array {
+        return [];
+    }
 };

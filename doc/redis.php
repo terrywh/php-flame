@@ -7,7 +7,9 @@
  */
 namespace flame\redis;
 
-function connect(string $url):client {}
+function connect(string $url):client {
+    return new client();
+}
 /**
  * Redis 客户端
  */
@@ -45,7 +47,9 @@ class client {
     /**
      * 批量执行
      */
-    function multi(): tx {}
+    function multi(): tx {
+        return new tx();
+    }
     /**
      * @uimplement 暂未实现
      */
@@ -79,5 +83,7 @@ class tx {
      * 执行目前提交的命令并带回所有响应返回
      * @return array 返回数据项与命令一一对应
      */
-    function exec():array {}
+    function exec():array {
+        return [];
+    }
 }
