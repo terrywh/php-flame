@@ -33,7 +33,7 @@ namespace flame::redis
         boost::asio::steady_timer tm_;
 
         bool ping(redisContext* c);
-        redisContext *create();
+        redisContext *create(std::string& err);
         void release(redisContext *c);
     };
 

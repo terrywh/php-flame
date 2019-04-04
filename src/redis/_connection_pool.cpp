@@ -22,8 +22,9 @@ namespace flame::redis
     std::shared_ptr<redisContext> _connection_pool::acquire(coroutine_handler &ch)
     {
         std::shared_ptr<redisContext> conn;
+        std::string err;
         // 提交异步任务
-        boost::asio::post(guard_, [this, &conn, &ch]() {
+        boost::asio::post(guard_, [this, &conn, &err, &ch]() {
             // 设置对应的回调, 在获取连接后恢复协程
             await_.push_back([&conn, &ch](std::shared_ptr<redisContext> c) {
                 conn = c;
@@ -33,16 +34,13 @@ namespace flame::redis
             auto now = std::chrono::steady_clock::now();
             while (!conn_.empty())
             {
-                if(now - conn_.front().ttl < std::chrono::seconds(15) || ping(conn_.front().conn))
-                {
+                if(now - conn_.front().ttl < std::chrono::seconds(15) || ping(conn_.front().conn)) {
                     // 可用连接
                     redisContext *c = conn_.front().conn;
                     conn_.pop_front();
                     release(c);
                     return;
-                }
-                else
-                { // 连接已丢失，回收资源
+                } else { // 连接已丢失，回收资源
                     redisFree(conn_.front().conn);
                     conn_.pop_front();
                     --size_;
@@ -51,24 +49,19 @@ namespace flame::redis
             if (size_ >= max_)
                 return; // 已建立了足够多的连接, 需要等待已分配连接释放
 
-            redisContext *c = create();
-            if (c == nullptr) // 创建新连接失败
-            {
+            redisContext *c = create(err);
+            if (c == nullptr) { // 创建新连接失败
                 await_.pop_back();
                 ch.resume();
-            }
-            else
-            {
+            } else {
                 ++size_; // 当前还存在的连接数量
                 release(c);
             }
         });
         // 暂停, 等待连接获取(异步任务)
         ch.suspend();
-        if (!conn)
-        {
-            throw php::exception(zend_ce_exception, "failed to connect to Redis server", -1);
-        }
+        if (!conn) throw php::exception(zend_ce_exception,
+            (boost::format("failed to connect to Redis server: %1%") % err).str());
         // 恢复, 已经填充连接
         return conn;
     }
@@ -99,17 +92,23 @@ namespace flame::redis
         return exec(rc, name, data, rt, ch);
     }
 
-    redisContext *_connection_pool::create()
+    redisContext *_connection_pool::create(std::string& err)
     {
         struct timeval tv {5, 0};
         redisContext* c = redisConnectWithTimeout(url_.host.c_str(), url_.port, tv);
-        if(!c || c->err) {
+        if(!c) {
+            err.assign("connection failed");
+            return nullptr;
+        }else if(c->err) {
+            err.assign(c->errstr);
+            redisFree(c);
             return nullptr;
         }
         if(!url_.pass.empty()) { // 认证
             std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply*)redisCommand(c, "AUTH %s", url_.pass.c_str()),
                 (void (*)(redisReply*))freeReplyObject);
             if(!rp || rp->type == REDIS_REPLY_ERROR) {
+                err.assign(rp->str, rp->len);
                 redisFree(c);
                 return nullptr;
             }
@@ -118,6 +117,7 @@ namespace flame::redis
             std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "SELECT %d", std::atoi(url_.path.c_str() + 1)),
                 (void (*)(redisReply*))freeReplyObject);
             if(!rp || rp->type == REDIS_REPLY_ERROR) {
+                err.assign(rp->str, rp->len);
                 redisFree(c);
                 return nullptr;
             }
