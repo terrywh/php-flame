@@ -118,6 +118,7 @@ namespace flame::http {
         curl_multi_setopt(c_multi_, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX | CURLPIPE_HTTP1);
         curl_multi_setopt(c_multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
         curl_multi_setopt(c_multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 16);
+        curl_multi_setopt(c_multi_, CURLMOPT_MAXCONNECTS, 4);
     }
 
     client::~client() {
@@ -129,8 +130,11 @@ namespace flame::http {
             php::array opts = params[0];
             if(opts.exists("connection_per_host")) {
                 int connection_per_host = opts.get("connection_per_host");
-                if(connection_per_host < 1 || connection_per_host > 512) 
+                if(connection_per_host < 1 || connection_per_host > 512) {
                     curl_multi_setopt(c_multi_, CURLMOPT_MAX_HOST_CONNECTIONS, connection_per_host);
+                    int keepalive = std::ceil(connection_per_host / 4.0);
+                    curl_multi_setopt(c_multi_, CURLMOPT_MAXCONNECTS, keepalive);
+                }
             }
         }
         return nullptr;
