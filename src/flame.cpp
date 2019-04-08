@@ -122,7 +122,7 @@ extern "C"
             .desc({"vendor/rdkafka", rd_kafka_version_str()})
             .desc({"vendor/mongoc", MONGOC_VERSION_S})
             .desc({"vendor/nghttp2", NGHTTP2_VERSION})
-            .desc({"vendor/curl", curl_version()});
+            .desc({"vendor/curl", LIBCURL_VERSION});
 
         flame::gcontroller.reset(new flame::controller());
         ext

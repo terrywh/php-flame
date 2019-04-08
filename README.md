@@ -71,22 +71,26 @@ https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98
 
 ### 依赖库
 
-> 注意：由于 mysqlc 驱动使用官方预编译版本，其对应 openssl 版本为 1.0.x ；故，其他依赖需对其版本依赖；
-
-#### PHP
+#### openssl
 ``` Bash
-./configure --prefix=/data/vendor/php-7.2.16 --with-config-file-path=/data/vendor/php-7.2.16/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --host=x86_64-linux-gnu --target=x86_64-linux-gnu
+CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1.1 linux-x86_64
+make && make install
 ```
-#### Boost
 
+#### boost
 ``` Bash
 ./bootstrap.sh --prefix=/data/vendor/boost-1.69.0
 ./b2 -j4 --prefix=/data/vendor/boost-1.69.0 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
 
+#### PHP
+``` Bash
+CC=gcc CXX=g++ ./configure --prefix=/data/vendor/php-7.2.16 --with-config-file-path=/data/vendor/php-7.2.16/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --host=x86_64-linux-gnu --target=x86_64-linux-gnu
+```
+
 #### libphpext
 ``` Bash
-CXXFLAGS="-O2" make -j4
+CXXFLAGS="-O2" make
 make install
 ```
 
@@ -95,38 +99,25 @@ make install
 make install
 ```
 
-#### mysql-connector-c
-``` Bash
-
-mkdir -p /data/vendor/mysqlc-8.0.15/lib
-cp -R mysql-8.0.15-linux-glibc2.12-x86_64/include /data/vendor/mysqlc-8.0.15
-cp mysql-8.0.15-linux-glibc2.12-x86_64/lib/libmysqlclient.a /data/vendor/mysqlc-8.0.15/lib
-```
-
 #### mongoc-driver
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
-# -DOPENSSL_INCLUDE_DIR=/usr/include/openssl-1.0 -DOPENSSL_SSL_LIBRARY=/usr/lib/openssl-1.0/libssl.so -DOPENSSL_CRYPTO_LIBRARY=/usr/lib/openssl-1.0/libcrypto.so
-make
-make install
-rm /data/vendor/mongoc-1.14.0/lib/*.so*
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+make && make install
+# rm /data/vendor/mongoc-1.14.0/lib/*.so*
 ```
 
 #### AMQP-CPP
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.4 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
-make
-make install
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.4 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=ON ../
+make && make install
 ```
 
 #### rdkafka
 ``` Bash
-./configure --prefix=/data/vendor/rdkafka-1.0.0
-make
-make install
-rm /data/vendor/rdkafka-1.0.0/lib/*.so*
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.0.0
+# rm /data/vendor/rdkafka-1.0.0/lib/*.so*
 cp src/snappy.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
 cp src/rdmurmur2.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
 cp src/xxhash.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
@@ -145,23 +136,25 @@ cp http_parser.h /data/vendor/http-parser-2.9.0/include
 ``` Bash
 CC=gcc make
 PREFIX=/data/vendor/hiredis-0.14.0 make install
-rm /data/vendor/hiredis-0.14.0/lib/*.so*
+# rm /data/vendor/hiredis-0.14.0/lib/*.so*
 ```
 
 #### nghttp2
-```
-# 需要统一 openssl 版本
-# PKG_CONFIG_PATH=/usr/lib/openssl-1.0/pkgconfig/
-CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/nghttp2-1.37.0 --enable-shared=no --enable-lib-only --with-boost=/data/vendor/boost-1.69.0 --enable-asio-lib
-make
-make install
+``` Bash
+PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/nghttp2-1.37.0 --enable-shared=no --enable-lib-only --with-boost=/data/vendor/boost-1.69.0 --enable-asio-lib
+make && make install
 ```
 
 #### curl
+``` Bash
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=/data/vendor/curl-7.64.1 --with-nghttp2=/data/vendor/nghttp2-1.37.0 --with-ssl=/data/vendor/openssl-1.1.1 --with-pic=pic --enable-ipv6 --enable-shared=no --without-libidn2 --disable-ldap --without-libpsl --without-lber --enable-ares
+make && make install
 ```
-# 需要统一 openssl 版本
-# PKG_CONFIG_PATH=/usr/lib/openssl-1.0/pkgconfig/
-CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=/data/vendor/curl-7.64.1 --with-nghttp2=/data/vendor/nghttp2-1.37.0 --with-pic=pic --enable-ipv6 --enable-shared=no
-make
-make install
+
+#### mysql-connector-c
+``` Bash
+mkdir stage && cd stage
+CC=gcc CXX=g++ cmake3 -DCMAKE_BUILD_TYPE=Release -DWITHOUT_SERVER=ON -DWITH_BOOST=../boost/boost_1_68_0 -DWITH_SSL=/data/vendor/openssl-1.1.1 -DOPENSSL_EXECUTABLE=/data/vendor/openssl-1.1.1/bin/openssl -DWITH_CURL=/data/vendor/curl-7.64.1 -DCMAKE_C_FLAGS=-pthread -DCMAKE_CXX_FLAGS=-pthread ../
+make && make install
 ```
+注意：需要下载内含 boost 头文件的版本（与框架依赖版本不同）；

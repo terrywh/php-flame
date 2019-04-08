@@ -33,6 +33,7 @@ set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.0)
 set(VENDOR_HTTPPARSER /data/vendor/http-parser-2.9.0)
 set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.37.0)
 set(VENDOR_CURL /data/vendor/curl-7.64.1)
+set(VENDOR_OPENSSL /data/vendor/openssl-1.1.1)
 # -----------------------------------------------------------------------------
 # 编译选项
 # -----------------------------------------------------------------------------
@@ -42,9 +43,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND WITH_GCC_TOOLCHAIN)
 endif()
 target_compile_options(FLAME BEFORE
 	PRIVATE "-std=c++17"
+    PRIVATE "-pthread"
 	PRIVATE "${CLANG_EXTRA_COMPILE_FLAGS}")
 target_link_options(FLAME BEFORE
 	PRIVATE "-static-libstdc++"
+    PRIVATE "-pthread"
 	PRIVATE "${CLANG_EXTRA_COMPILE_FLAGS}")
 set_target_properties(FLAME PROPERTIES
     PREFIX ""
@@ -64,9 +67,8 @@ target_include_directories(FLAME SYSTEM PRIVATE
     ${VENDOR_HTTPPARSER}/include
     ${VENDOR_NGHTTP2}/include
     ${VENDOR_CURL}/include
-    /usr/include/openssl-1.0
+    ${VENDOR_OPENSSL}/include
 )
-target_link_directories(FLAME PUBLIC /usr/lib/openssl-1.0)
 # 链接库
 target_link_libraries(FLAME
     ${VENDOR_HTTPPARSER}/lib/libhttp_parser.o
@@ -84,14 +86,11 @@ target_link_libraries(FLAME
     ${VENDOR_BOOST}/lib/libboost_filesystem.a
     ${VENDOR_CURL}/lib/libcurl.a
     ${VENDOR_NGHTTP2}/lib/libnghttp2.a
-    ldap
     sasl2
-    lber
-    brotlidec
-    crypto
-    ssl
+    cares
+    ${VENDOR_OPENSSL}/lib/libssl.a
+    ${VENDOR_OPENSSL}/lib/libcrypto.a
     z
     dl
-    pthread
     rt
 )
