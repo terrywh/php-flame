@@ -10,6 +10,17 @@ namespace http {
 		php::class_entry<client_request> class_client_request(
 			"flame\\http\\client_request");
 		class_client_request
+			.constant({"HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0})
+			.constant({"HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1})
+			.constant({"HTTP_VERSION_2", CURL_HTTP_VERSION_2})
+			.constant({"HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0})
+			.constant({"HTTP_VERSION_2_TLS", CURL_HTTP_VERSION_2TLS})
+			.constant({"HTTP_VERSION_2_PRI", CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE})
+			.constant({"SSL_VERIFY_NONE",   0})
+			.constant({"SSL_VERIFY_PEER",   1}) // CURLOPT_SSL_VERIFYPEER
+			.constant({"SSL_VERIFY_HOST",   2}) // CURLOPT_SSL_VERIFYHOST
+			.constant({"SSL_VERIFY_STATUS", 4}) // CURLOPT_SSL_VERIFYSTATUS
+			.constant({"SSL_VERIFY_ALL",    7})
 			.property({"timeout", 3000})
 			.property({"method", "GET"})
 			.property({"url", nullptr})
@@ -20,6 +31,16 @@ namespace http {
 				{"url", php::TYPE::STRING},
 				{"body", php::TYPE::UNDEFINED, false, true},
 				{"timeout", php::TYPE::INTEGER, false, true},
+			})
+			.method<&client_request::__construct>("http_version", {
+				{"version", php::TYPE::INTEGER},
+			})
+			.method<&client_request::ssl_pem>("ssl_pem", {
+				{"cert", php::TYPE::STRING},
+				{"pkey", php::TYPE::STRING, false, true},
+			})
+			.method<&client_request::ssl_verify>("ssl_verify", {
+				{"verify", php::TYPE::INTEGER},
 			})
 			.method<&client_request::__destruct>("__destruct");
 
@@ -47,6 +68,47 @@ namespace http {
 	php::value client_request::__destruct(php::parameters &params) {
 		if(c_head_) curl_slist_free_all(c_head_);
 		if(c_easy_) curl_easy_cleanup(c_easy_);
+		return nullptr;
+	}
+
+	php::value client_request::http_version(php::parameters& params) {
+		long v = static_cast<int>(params[0]);
+		if(v <= CURL_HTTP_VERSION_NONE || v >= CURL_HTTP_VERSION_LAST) {
+			throw php::exception("failed to set http version: illegal version");
+		}
+		curl_easy_setopt(c_easy_, CURLOPT_HTTP_VERSION, v);
+		return nullptr;
+	}
+
+	php::value client_request::ssl_pem(php::parameters& params) {
+		curl_easy_setopt(c_easy_, CURLOPT_SSLCERTTYPE, "PEM");
+		php::string cert = params[0];
+		curl_easy_setopt(c_easy_, CURLOPT_SSLCERT, cert.c_str());
+		if(params.size() > 1 && params[1].typeof(php::TYPE::STRING)) {
+			php::string pkey = params[1];
+			curl_easy_setopt(c_easy_, CURLOPT_SSLKEY, pkey.c_str());
+		}
+		if(params.size() > 2 && params[2].typeof(php::TYPE::STRING)) {
+			php::string pass = params[2];
+			curl_easy_setopt(c_easy_, CURLOPT_KEYPASSWD, pass.c_str());
+		}
+		return nullptr;
+	}
+
+	php::value client_request::ssl_verify(php::parameters& params) {
+		long v = static_cast<int>(params[0]), YES = 1, NO = 0;
+		if(v | CURLOPT_SSL_VERIFYPEER) 
+			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, YES);
+		else
+			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, NO);
+		if(v | CURLOPT_SSL_VERIFYHOST)
+			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, YES);
+		else
+			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, NO);
+		if(v | CURLOPT_SSL_VERIFYSTATUS) 
+			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, YES);
+		else 
+			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, NO);
 		return nullptr;
 	}
 

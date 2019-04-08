@@ -83,6 +83,48 @@ class client {
  */
 class client_request {
     /**
+     * 由框架自行选择版本
+     */
+    const HTTP_VERSION_NONE = 0;
+    /**
+     * 强制使用 HTTP/1.0 协议
+     */
+    const HTTP_VERSION_1_0   = 1;
+    /**
+     * 强制使用 HTTP/1.1 协议
+     */
+    const HTTP_VERSION_1_1   = 2;
+    /**
+     * 尝试使用 HTTP/2 协议，自动退回 HTTP/1.1 版本
+     */
+    const HTTP_VERSION_2     = 3;
+    /**
+     * 尝试在 TLS (HTTPS) 使用 HTTP/2 协议，自动退化 HTTP/1.1 版本
+     */
+    const HTTP_VERSION_2_TLS = 4;
+    /**
+     * 强制在 non-TLS 状态进行 HTTP/2 请求，TLS (HTTPS) 时同 HTTP_VERSION_2_TLS
+     */
+    const HTTP_VERSION_2_PRI = 5;
+
+    const SSL_VERIFY_NONE    = 0;
+    /**
+     * 验证对端证书
+     */
+    const SSL_VERIFY_PEER    = 1;
+    /**
+     * 验证证书域名
+     */
+    const SSL_VERIFY_HOST    = 2;
+    /*
+     * 验证证书状态
+     */
+    const SSL_VERIFY_STATUS  = 4;
+    /**
+     * 相当于 SSL_VERIFY_PEER | SSL_VERIFY_HOST | SSL_VERIFY_STATUS
+     */
+    const SSL_VERIFY_ALL     = 7;
+    /**
      * @var int
      */
     public $timeout;
@@ -111,6 +153,20 @@ class client_request {
      * 构建请求, 可选的指定请求体 `$body` (将自动设置为 POST 请求方法)及超时时间 `$timeout`
      */
     function __construct(string $url, mixed $body = null, int $timeout = 3000) {}
+    /**
+     * @param string $cert_file 证书文件路径
+     * @param string $pkey_file 密钥文件路径
+     * @param string $pkey_pass 密钥密码
+     */
+    function ssl_pem(string $cert_file, string $pkey_file = "", string $pkey_pass = "") {}
+    /**
+     * 请使用 client_request::SSL_VERIFY_* 相关常量进行设置（可按位组合）
+     */
+    function ssl_verify(int $verify) {}
+    /**
+     * 请选择使用 client_request::HTTP_VERSION_* 常量设置版本
+     */
+    function http_version(int $version) {}
 }
 /**
  * 客户端响应对象，执行请求后得到

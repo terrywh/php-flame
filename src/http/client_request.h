@@ -9,6 +9,9 @@ namespace flame::http {
 		static void declare(php::extension_entry& ext);
 		php::value __construct(php::parameters& params);
 		php::value __destruct(php::parameters& params);
+		php::value http_version(php::parameters& params);
+		php::value ssl_pem(php::parameters& params);
+		php::value ssl_verify(php::parameters& params);
 	private:
 		void build_ex();
 		CURL*       c_easy_ = nullptr;
