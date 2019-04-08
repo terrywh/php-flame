@@ -1,7 +1,7 @@
 #pragma once
+#include "../vendor.h"
 
-namespace flame {
-namespace http {
+namespace flame::http {
     class _connection_pool;
 	class client;
 	extern client* client_;
@@ -14,7 +14,6 @@ namespace http {
 	php::value delete_(php::parameters& params);
 	php::value exec(php::parameters& params);
 
-	php::string ctype_encode(boost::string_view ctype, const php::value& v);
-	php::value ctype_decode(boost::string_view ctype, const php::string& v, php::array* file = nullptr);
-}
+	php::string ctype_encode(std::string_view ctype, const php::value& v);
+	php::value ctype_decode(std::string_view ctype, const php::string& v, php::array* file = nullptr);
 }

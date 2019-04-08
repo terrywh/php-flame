@@ -186,7 +186,7 @@ namespace flame::http {
 			for(auto i=headers.begin(); i!=headers.end(); ++i) {
 				php::string key { i->first };
 				php::string val { i->second };
-				ctr_.set(boost::string_view(key.c_str(), key.size()), val);
+				ctr_.set(std::string_view(key.c_str(), key.size()), val);
 			}
 		}
 		php::array cookies = get("cookie", true);

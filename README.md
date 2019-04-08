@@ -71,9 +71,11 @@ https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98
 
 ### 依赖库
 
+> 注意：由于 mysqlc 驱动使用官方预编译版本，其对应 openssl 版本为 1.0.x ；故，其他依赖需对其版本依赖；
+
 #### PHP
 ``` Bash
-./configure --prefix=/data/vendor/php-7.2.15 --with-config-file-path=/data/vendor/php-7.2.15/etc --disable-fpm --disable-phar --disable-dom --disable-libxml --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-openssl --with-readline --enable-mbstring --without-pear --with-curl --enable-mbstring --host=x86_64-linux-gnu --target=x86_64-linux-gnu
+./configure --prefix=/data/vendor/php-7.2.16 --with-config-file-path=/data/vendor/php-7.2.16/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --host=x86_64-linux-gnu --target=x86_64-linux-gnu
 ```
 #### Boost
 
@@ -95,6 +97,7 @@ make install
 
 #### mysql-connector-c
 ``` Bash
+
 mkdir -p /data/vendor/mysqlc-8.0.15/lib
 cp -R mysql-8.0.15-linux-glibc2.12-x86_64/include /data/vendor/mysqlc-8.0.15
 cp mysql-8.0.15-linux-glibc2.12-x86_64/lib/libmysqlclient.a /data/vendor/mysqlc-8.0.15/lib
@@ -104,7 +107,6 @@ cp mysql-8.0.15-linux-glibc2.12-x86_64/lib/libmysqlclient.a /data/vendor/mysqlc-
 ``` Bash
 mkdir stage && cd stage
 CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
-# 由于 mysql-connector-c 官方提供的版本需要 openssl-1.0 此处也须统一版本
 # -DOPENSSL_INCLUDE_DIR=/usr/include/openssl-1.0 -DOPENSSL_SSL_LIBRARY=/usr/lib/openssl-1.0/libssl.so -DOPENSSL_CRYPTO_LIBRARY=/usr/lib/openssl-1.0/libcrypto.so
 make
 make install
@@ -114,12 +116,12 @@ rm /data/vendor/mongoc-1.14.0/lib/*.so*
 #### AMQP-CPP
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.3 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.4 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=on ../
 make
 make install
 ```
 
-#### Rdkafka
+#### rdkafka
 ``` Bash
 ./configure --prefix=/data/vendor/rdkafka-1.0.0
 make
@@ -130,7 +132,7 @@ cp src/rdmurmur2.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
 cp src/xxhash.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
 ```
 
-#### HttpParser
+#### http-parser
 ``` Bash
 mkdir -p /data/vendor/http-parser-2.9.0/lib
 mkdir -p /data/vendor/http-parser-2.9.0/include
@@ -139,9 +141,27 @@ cp libhttp_parser.o /data/vendor/http-parser-2.9.0/lib
 cp http_parser.h /data/vendor/http-parser-2.9.0/include
 ```
 
-#### HiRedis
+#### hiredis
 ``` Bash
 CC=gcc make
 PREFIX=/data/vendor/hiredis-0.14.0 make install
 rm /data/vendor/hiredis-0.14.0/lib/*.so*
+```
+
+#### nghttp2
+```
+# 需要统一 openssl 版本
+# PKG_CONFIG_PATH=/usr/lib/openssl-1.0/pkgconfig/
+CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/nghttp2-1.37.0 --enable-shared=no --enable-lib-only --with-boost=/data/vendor/boost-1.69.0 --enable-asio-lib
+make
+make install
+```
+
+#### curl
+```
+# 需要统一 openssl 版本
+# PKG_CONFIG_PATH=/usr/lib/openssl-1.0/pkgconfig/
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=/data/vendor/curl-7.64.1 --with-nghttp2=/data/vendor/nghttp2-1.37.0 --with-pic=pic --enable-ipv6 --enable-shared=no
+make
+make install
 ```

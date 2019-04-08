@@ -76,7 +76,7 @@ class message implements JsonSerializable {
     public $priority;
     public $delivery_mode;
     /**
-     * @property array
+     * @var array
      */
     public $header;
     public $content_encoding;

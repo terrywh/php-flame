@@ -115,12 +115,14 @@ extern "C"
 
         ext
             .desc({"vendor/boost", BOOST_LIB_VERSION})
-            .desc({"vendor/libphpext", PHPEXT_LIB_VERSION})
+            .desc({"vendor/phpext", PHPEXT_LIB_VERSION})
             .desc({"vendor/hiredis", VERSION_MACRO(HIREDIS_MAJOR, HIREDIS_MINOR, HIREDIS_PATCH)})
             .desc({"vendor/mysqlc", mysql_get_client_info()})
             .desc({"vendor/amqpcpp", "4.1.4"})
-            .desc({"vendor/librdkafka", rd_kafka_version_str()})
-            .desc({"vendor/mongoc", MONGOC_VERSION_S});
+            .desc({"vendor/rdkafka", rd_kafka_version_str()})
+            .desc({"vendor/mongoc", MONGOC_VERSION_S})
+            .desc({"vendor/nghttp2", NGHTTP2_VERSION})
+            .desc({"vendor/curl", curl_version()});
 
         flame::gcontroller.reset(new flame::controller());
         ext

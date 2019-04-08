@@ -15,6 +15,7 @@
 #include <utility>
 #include <memory>
 #include <stack>
+#include <string_view>
 #include <optional>
 #include <unordered_set>
 #include <phpext/phpext.h>
@@ -39,6 +40,7 @@
 using boost::asio::ip::tcp;
 using boost::asio::ip::udp;
 namespace ssl = boost::asio::ssl;
+#define BOOST_BEAST_USE_STD_STRING_VIEW
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/websocket.hpp>
@@ -54,3 +56,5 @@ extern "C" {
     #include <librdkafka/rdmurmur2.h>
     #include <librdkafka/xxhash.h>
 }
+#include <nghttp2/nghttp2ver.h>
+#include <curl/curl.h>

@@ -31,6 +31,8 @@ set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
 set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.4)
 set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.0)
 set(VENDOR_HTTPPARSER /data/vendor/http-parser-2.9.0)
+set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.37.0)
+set(VENDOR_CURL /data/vendor/curl-7.64.1)
 # -----------------------------------------------------------------------------
 # 编译选项
 # -----------------------------------------------------------------------------
@@ -60,6 +62,9 @@ target_include_directories(FLAME SYSTEM PRIVATE
     ${VENDOR_AMQP}/include
     ${VENDOR_RDKAFKA}/include
     ${VENDOR_HTTPPARSER}/include
+    ${VENDOR_NGHTTP2}/include
+    ${VENDOR_CURL}/include
+    /usr/include/openssl-1.0
 )
 target_link_directories(FLAME PUBLIC /usr/lib/openssl-1.0)
 # 链接库
@@ -77,9 +82,16 @@ target_link_libraries(FLAME
     ${VENDOR_BOOST}/lib/libboost_system.a
     ${VENDOR_BOOST}/lib/libboost_thread.a
     ${VENDOR_BOOST}/lib/libboost_filesystem.a
+    ${VENDOR_CURL}/lib/libcurl.a
+    ${VENDOR_NGHTTP2}/lib/libnghttp2.a
+    ldap
     sasl2
-    ssl
+    lber
+    brotlidec
     crypto
+    ssl
+    z
+    dl
     pthread
     rt
 )

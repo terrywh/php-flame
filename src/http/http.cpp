@@ -5,7 +5,7 @@
 #include "value_body.h"
 #include "client_request.h"
 #include "client_response.h"
-#include "_connection_pool.h"
+#include "client_body.h"
 #include "server.h"
 #include "server_request.h"
 #include "server_response.h"
@@ -39,6 +39,7 @@ namespace flame::http {
 
 		client_request::declare(ext);
 		client_response::declare(ext);
+		client_body::declare(ext);
 		client::declare(ext);
 		server::declare(ext);
 		server_request::declare(ext);
@@ -69,7 +70,7 @@ namespace flame::http {
 		init_guard();
 		return client_->exec(params);
 	}
-	php::string ctype_encode(boost::string_view ctype, const php::value& v) {
+	php::string ctype_encode(std::string_view ctype, const php::value& v) {
 		if(v.typeof(php::TYPE::STRING)) return v;
 
 		php::value r = v;
@@ -86,7 +87,7 @@ namespace flame::http {
 		}
 		return r;
 	}
-	php::value ctype_decode(boost::string_view ctype, const php::string& v, php::array* files) {
+	php::value ctype_decode(std::string_view ctype, const php::string& v, php::array* files) {
 		if(ctype.compare(0, 16, "application/json") == 0) {
 			return php::json_decode(v);
 		}else if(ctype.compare(0, 33, "application/x-www-form-urlencoded") == 0) {
@@ -130,7 +131,7 @@ namespace flame::http {
 					meta = php::array(4);
 				}else{ // Part Header
 					php::lowercase_inplace(entry.first.data(), entry.first.size());
-					std::size_t end = boost::string_view(entry.second.data(), entry.second.size()).find_first_of(';');
+					std::size_t end = std::string_view(entry.second.data(), entry.second.size()).find_first_of(';');
 					if(end == std::string::npos) {
 						meta[entry.first] = std::move(entry.second);
 					}else if(entry.first == "content-disposition") {

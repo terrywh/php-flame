@@ -242,7 +242,7 @@ class tx {
  */
 class result {
     /**
-     * @property 结果集包含的记录行数
+     * @var 结果集包含的记录行数
      */
     public $fetched_rows;
     /**

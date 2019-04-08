@@ -15,12 +15,12 @@ function connect(string $address):socket {
 class socket {
     /**
      * 本地地址（含端口）
-     * @property string
+     * @var string
      */
     public $local_address;
     /**
      * 远端地址（含端口）
-     * @property string
+     * @var string
      */
     public $remote_address;
     /**

@@ -1,4 +1,3 @@
-#include "../coroutine.h"
 #include "http.h"
 #include "value_body.h"
 #include "client_response.h"
@@ -8,10 +7,11 @@ namespace http {
 	void client_response::declare(php::extension_entry& ext) {
 		php::class_entry<client_response>  class_client_response("flame\\http\\client_response");
 		class_client_response
+			.property({"version", "HTTP/1.0"})
 			.property({"status", 3000})
 			.property({"header", nullptr})
 			.property({"body", nullptr})
-			.property({"rawBody", ""})
+			.property({"raw_body", ""})
 			.method<&client_response::__construct>("__construct", {}, php::PRIVATE)
 			.method<&client_response::to_string>("__toString");
 		ext.add(std::move(class_client_response));
@@ -21,32 +21,51 @@ namespace http {
 		return nullptr;	
 	}
 	php::value client_response::to_string(php::parameters& params) {
-		return get("rawBody");
+		return get("raw_body");
 	}
-	void client_response::build_ex(boost::beast::http::message<false, value_body<false>>& ctr_) {
-		set("status", ctr_.result_int());
-		php::array header = get("header", true);
-		if(header.typeof(php::TYPE::NULLABLE)) {
-			header = php::array(4);
+	void client_response::build_ex() {
+		// 响应码
+		long rv = 0;
+		curl_easy_getinfo(c_easy_, CURLINFO_HTTP_VERSION, &rv);
+        set("version", rv == 3 ? "HTTP/2" : rv == 2 ? "HTTP/1.1" : "HTTP/1.0");
+		curl_easy_getinfo(c_easy_, CURLINFO_RESPONSE_CODE, &rv);
+		set("status", rv);
+		// 响应头
+		set("header", c_head_);
+		// 响应体
+		php::string rbody = std::move(c_body_);
+		set("raw_body", rbody);
+		if(c_head_.exists("content_type")) {
+			php::string ctype = c_head_.get("content-type");
+			std::string_view sv {ctype.c_str(), ctype.size()};
+			set("body", ctype_decode(sv, rbody));
+		}else{
+			set("body", rbody);
 		}
-		for(auto i=ctr_.begin(); i!=ctr_.end(); ++i) {
-			php::string key {i->name_string().data(), i->name_string().size()};
-			php::string val {i->value().data(), i->value().size()};
+	}
 
-			// TODO 多个同名 HEADER 的处理
-			php::lowercase_inplace(key.data(), key.size());
-			header.set(key, val);
-		}
-		php::string body = ctr_.body();
-		if(body.typeof(php::TYPE::STRING)) {
-			set("rawBody", body);
-			auto ctype = ctr_.find(boost::beast::http::field::content_type);
-			if(ctype == ctr_.end()) {
-				set("body", body);
+	size_t client_response::c_write_cb(char *ptr, size_t size, size_t nmemb, void *data) {
+		client_response* self = static_cast<client_response*>(data);
+		// assert(size == 1);
+		self->c_body_.append(ptr, nmemb);
+		return size;
+	}
+	size_t client_response::c_header_cb(char *buffer, size_t size, size_t nitems, void *data) {
+		client_response* self = static_cast<client_response*>(data);
+		size = size * nitems;		
+
+		std::string_view sv{ buffer, size };
+		auto psep = sv.find_first_of(':', 1);
+		if(psep != sv.npos) {
+			auto pval = sv.find_first_not_of(' ', psep + 1);
+			php::lowercase_inplace(buffer, psep);
+			if(pval == sv.npos) {
+				self->c_head_.set( php::string(buffer, psep), php::string(0) );
 			}else{
-				set("body", ctype_decode(ctype->value(), body));
-			}	
+				self->c_head_.set( php::string(buffer, psep), php::string( buffer + pval, size - pval - 2)); // trailing \r\n
+			}
 		}
+		return size;
 	}
 }
 }

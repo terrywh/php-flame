@@ -1,4 +1,6 @@
 #pragma once
+#include "../vendor.h"
+#include "../coroutine.h"
 #include "../url.h"
 
 namespace flame::http {
@@ -6,10 +8,12 @@ namespace flame::http {
 	public:
 		static void declare(php::extension_entry& ext);
 		php::value __construct(php::parameters& params);
+		php::value __destruct(php::parameters& params);
 	private:
-		void build_url();
-		void build_ex(boost::beast::http::message<true, value_body<true>>& ctr_);
-		std::shared_ptr<url> url_;
+		void build_ex();
+		CURL*       c_easy_ = nullptr;
+		curl_slist* c_head_ = nullptr;
+		
 		friend class client;
 		friend class _connection_pool;
     };

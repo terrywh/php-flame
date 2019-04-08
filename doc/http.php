@@ -1,9 +1,8 @@
 <?php
 /**
- * 提供基本的 HTTP 客户端、服务端封装；
+ * 提供基本的 HTTP(S) 客户端、服务端封装；
  * 注意：
- * 1. 暂不支持作为 HTTPS 客户端、服务端；请使用 CURL 库或 NGINX 反向代理；
- * 2. 默认状态客户端对请求连接进行 KeepAlive 复用；若需要使用短连接，请自行制定 Connection: close 头；
+ * * 默认状态客户端对请求连接进行 KeepAlive 复用；若需要使用短连接，请自行制定 Connection: close 头；
  */
 namespace flame\http;
 
@@ -84,28 +83,28 @@ class client {
  */
 class client_request {
     /**
-     * @property int
+     * @var int
      */
     public $timeout;
     /**
-     * @property string
+     * @var string
      */
     public $method;
     /**
-     * @property string
+     * @var string
      */
     public $url;
     /**
      * 请求头；可通过指定 "Connection" => "close" 防止连接复用；
-     * @property array
+     * @var array
      */
     public $header;
     /**
-     * @property array
+     * @var array
      */
     public $cookie;
     /**
-     * @property mixed
+     * @var mixed
      */
     public $body;
     /**
@@ -118,17 +117,22 @@ class client_request {
  */
 class client_response {
     /**
+     * 对应请求实际的 HTTP 版本
+     * @var string
+     */
+    public $version;
+    /**
      * 响应码
-     * @property int
+     * @var int
      */
     public $status;
     /**
      * 注意: 目前使用了数组形式, 切暂不支持多个同名 Header 数据的访问;
-     * @property array
+     * @var array
      */
     public $header;
     /**
-     * @property mixed 以下几种 Content-Type 将自动进行解析并生成关联数组:
+     * @var mixed 以下几种 Content-Type 将自动进行解析并生成关联数组:
      *  * "application/json"
      *  * "application/x-www-form-urlencoded"
      *  * "multipart/form-data"
@@ -137,7 +141,7 @@ class client_response {
     public $body;
     /**
      * 原始请求体数据
-     * @property string
+     * @var string
      */
     public $raw_body;
 }
@@ -237,28 +241,28 @@ class server {
 class server_request {
     /**
      * 请求方法
-     * @property string
+     * @var string
      */
     public $method = "GET";
     /**
      * 请求路径
-     * @property string
+     * @var string
      */
     public $path = "/";
     /**
      * 请求参数, 使用 PHP 内置 parse_str() 函数解析得到;
-     * @property array
+     * @var array
      */
     public $query;
     /**
      * 请求头; 所有头信息字段名被转换为**小写**形式;
      * 注意：暂不支持多项同名 Header 字段;
-     * @property array
+     * @var array
      */
     public $header;
     /**
      * 请求 Cookie
-     * @property array
+     * @var array
      */
     public $cookie;
     /**
@@ -267,12 +271,12 @@ class server_request {
      *  * "application/x-www-form-urlencoded"
      *  * "multipart/form-data"
      * 其他类型时与 $rawBody 相同;
-     * @property mixed
+     * @var mixed
      */
     public $body;
     /**
      * 原始请求体
-     * @property string
+     * @var string
      */
     public $rawBody;
     /**
@@ -290,13 +294,13 @@ class server_request {
      *      ...
      *  ]
      * 若无上传文件时可能为空
-     * @property array
+     * @var array
      */
     public $file;
     /**
      * 用户可设置的请求关联数据;
      * 例如: 在 before 回调中从 Cookie 中提取用户信息放在 $req->data["user"] 中, 后续处理器即可访问 $req->data["user"] 获取户信息;
-     * @property array
+     * @var array
      */
     public $data;
 }
@@ -307,18 +311,18 @@ class server_request {
 class server_response {
     /**
      * 响应状态码, 可以直接设置; 也可以在 Transfer-Encoding: chunked 模式时使用 write_header 指定;
-     * @property int
+     * @var int
      */
     public $status = 200;
     /**
      * 响应头信息, Key/Val 形式
-     * @property array
+     * @var array
      */
     public $header;
     // public $cookie;
     /**
      * 响应体, 用于在 Content-Length: xxx 响应模式下返回数据;
-     * @property mixed 任意数据, 实际响应会序列化此数据; 以下几种 Content-Type 存在内置的序列化:
+     * @var mixed 任意数据, 实际响应会序列化此数据; 以下几种 Content-Type 存在内置的序列化:
      *  * "application/json" - 使用 json_encode 进行序列化;
      *  * "application/x-www-form-urlencoded" - 使用 http_build_query 进行序列化;
      * 其他类型强制转换为文本类型后响应;

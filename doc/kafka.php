@@ -77,31 +77,31 @@ class producer {
  */
 class message implements \JsonSerializable {
     /**
-     * @property string $topic
+     * @var string $topic
      */
     public $topic;
     /**
-     * @property int $partition
+     * @var int $partition
      */
     public $partition;
     /**
-     * @property string $key
+     * @var string $key
      */
     public $key;
     /**
-     * @property int $offset
+     * @var int $offset
      */
     public $offset;
     /**
-     * @property array $header
+     * @var array $header
      */
     public $header;
     /**
-     * @property string $payload 消息内容
+     * @var string $payload 消息内容
      */
     public $payload;
     /**
-     * @property $timestamp 消息时间戳(一般为毫秒)
+     * @var $timestamp 消息时间戳(一般为毫秒)
      */
     public $timestamp;
     /**
