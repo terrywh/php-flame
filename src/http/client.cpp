@@ -1,7 +1,7 @@
 #include "../controller.h"
 #include "../coroutine.h"
 #include "client.h"
-#include "value_body.h"
+#include "client_poll.h"
 #include "client_request.h"
 #include "client_response.h"
 #include "../time/time.h"
@@ -50,45 +50,31 @@ namespace flame::http {
         }
     }
 
-    void client::c_socket_ready_cb(const boost::system::error_code& error, curl_socket_t fd, int action, int* expect) {
-        if(error == boost::asio::error::operation_aborted || action != *expect) return; // 取消监听或已设置新的监听
-        // 不在处理已经关闭的等待
-        auto i = c_socks_.find(fd);
-        if(i == c_socks_.end()) return;
-        // 本次 SOCKET 动作执行
-        if(error) action = CURL_CSELECT_ERR;
-        curl_multi_socket_action(c_multi_, fd, action, &c_still_);
-        check_done();
-        if(c_still_ <= 0) c_timer_.cancel();
-        if(error || action != *expect) return; // 发生错误或监听被变更
-        action = *expect;
-        // 未变更时继续监听
-        if(action == CURL_POLL_IN || action == CURL_POLL_INOUT) 
-            i->second->async_wait(boost::asio::ip::tcp::socket::wait_read, std::bind(&client::c_socket_ready_cb, this, std::placeholders::_1, fd, action, expect));
-        if(action == CURL_POLL_OUT || action == CURL_POLL_INOUT) 
-            i->second->async_wait(boost::asio::ip::tcp::socket::wait_write, std::bind(&client::c_socket_ready_cb, this, std::placeholders::_1, fd, action, expect));
-    }
+    static const char* action_str[] = { "UNKNOWN", "CURL_POLL_IN", "CURL_POLL_OUT" , "CURL_POLL_INOUT", "CURL_POLL_REMOVE" };
 
+    void client::c_socket_ready_cb(const boost::system::error_code& error, client_poll* poll, curl_socket_t fd, int action) {
+        client* self = reinterpret_cast<client*>(poll->data);
+        std::cout << "client_on_ready: " << poll << " action: " << action_str[action] << "\n";
+        if(error) action = CURL_CSELECT_ERR;
+        curl_multi_socket_action(self->c_multi_, fd, action, &self->c_still_);
+        self->check_done();
+        if(self->c_still_ <= 0) self->c_timer_.cancel();
+    }
+    
     int client::c_socket_cb(CURL* e, curl_socket_t fd, int action, void* data, void* sock_data) {
+        std::cout << "POLL: " << fd << " action: " << action_str[action] << "\n"; 
         client* self = reinterpret_cast<client*>(data);
+        client_poll* poll = reinterpret_cast<client_poll*>(sock_data);
+
         if(action == CURL_POLL_REMOVE) {
-            delete (int*)sock_data;
             curl_multi_assign(self->c_multi_, fd, nullptr);
-            return 0;
-        }
-        int* expect = reinterpret_cast<int*>(sock_data);
-        boost::asio::ip::tcp::socket* sock = self->c_socks_[fd];
-        if(!sock_data) {
-            expect = new int { action };
-            curl_multi_assign(self->c_multi_, fd, expect);
+        }else if(poll == nullptr) {
+            poll = client_poll::create_poll(gcontroller->context_x, fd, c_socket_ready_cb, self);
+            curl_multi_assign(self->c_multi_, fd, poll);
         }else{
-            *expect = action;
+            // 
         }
-        // 根据新设置重新设置监听
-        if(action == CURL_POLL_IN || action == CURL_POLL_INOUT)
-            sock->async_wait(boost::asio::ip::tcp::socket::wait_read, std::bind(&client::c_socket_ready_cb, self, std::placeholders::_1, fd, action, expect));
-        if(action == CURL_POLL_OUT || action == CURL_POLL_INOUT)
-            sock->async_wait(boost::asio::ip::tcp::socket::wait_write, std::bind(&client::c_socket_ready_cb, self, std::placeholders::_1, fd, action, expect));
+        poll->async_wait(action);
         return 0;
     }
 
@@ -96,7 +82,8 @@ namespace flame::http {
         client* self = reinterpret_cast<client*>(data);
 
         self->c_timer_.cancel();
-        if(timeout_ms >= 0) {
+        if(timeout_ms == 0) timeout_ms = 1;
+        if(timeout_ms > 0) {
             self->c_timer_.expires_after(std::chrono::milliseconds(timeout_ms));
             self->c_timer_.async_wait([self] (const boost::system::error_code& err) {
                 if(err) return;
@@ -109,19 +96,23 @@ namespace flame::http {
 
     client::client()
     : c_timer_(gcontroller->context_x) {
+        std::cout << "+client\n";
         c_multi_ = curl_multi_init();
+
         curl_multi_setopt(c_multi_, CURLMOPT_SOCKETDATA, this);
         curl_multi_setopt(c_multi_, CURLMOPT_SOCKETFUNCTION, client::c_socket_cb);
         curl_multi_setopt(c_multi_, CURLMOPT_TIMERDATA, this);
         curl_multi_setopt(c_multi_, CURLMOPT_TIMERFUNCTION, client::c_timer_cb);
 
-        curl_multi_setopt(c_multi_, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX | CURLPIPE_HTTP1);
-        curl_multi_setopt(c_multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4);
-        curl_multi_setopt(c_multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 16);
-        curl_multi_setopt(c_multi_, CURLMOPT_MAXCONNECTS, 4);
+        curl_multi_setopt(c_multi_, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX/* | CURLPIPE_HTTP1*/);
+        // curl_multi_setopt(c_multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4L);
+        curl_multi_setopt(c_multi_, CURLMOPT_MAX_TOTAL_CONNECTIONS, 64L);
+        curl_multi_setopt(c_multi_, CURLMOPT_MAXCONNECTS, 32L);
+        curl_multi_setopt(c_multi_, CURLMOPT_MAX_HOST_CONNECTIONS, 16L);
     }
 
     client::~client() {
+        std::cout << "~client\n";
         curl_multi_cleanup(c_multi_);
     }
 
@@ -129,52 +120,39 @@ namespace flame::http {
         if(params.size() > 0) {
             php::array opts = params[0];
             if(opts.exists("connection_per_host")) {
-                int connection_per_host = opts.get("connection_per_host");
-                if(connection_per_host < 1 || connection_per_host > 512) {
-                    curl_multi_setopt(c_multi_, CURLMOPT_MAX_HOST_CONNECTIONS, connection_per_host);
-                    int keepalive = std::ceil(connection_per_host / 4.0);
-                    curl_multi_setopt(c_multi_, CURLMOPT_MAXCONNECTS, keepalive);
+                long c = opts.get("connection_per_host");
+                if(c < 1 || c > 512) {
+                    curl_multi_setopt(c_multi_, CURLMOPT_MAX_TOTAL_CONNECTIONS, c * 4);
+                    curl_multi_setopt(c_multi_, CURLMOPT_MAXCONNECTS, c * 2);
+                    curl_multi_setopt(c_multi_, CURLMOPT_MAX_HOST_CONNECTIONS, c);
                 }
             }
         }
         return nullptr;
     }
 
-    curl_socket_t client::c_socket_open_cb(void* data, curlsocktype purpose, struct curl_sockaddr* address) {
-        boost::system::error_code error;
-        boost::asio::ip::tcp::socket* sock = new boost::asio::ip::tcp::socket(gcontroller->context_x);
-        if(purpose == CURLSOCKTYPE_IPCXN && address->family == AF_INET) {
-            sock->open(boost::asio::ip::tcp::v4(), error);
-        }else if(purpose == CURLSOCKTYPE_IPCXN && address->family == AF_INET6) {
-            sock->open(boost::asio::ip::tcp::v6(), error);
-        }
-        if(error) {
-            std::cerr << "[" << flame::time::iso() << "] (ERROR) failed to open socket: " << error.message() << "\n";
-            return CURL_SOCKET_BAD;
-        }
-        curl_socket_t fd = sock->native_handle();
-        client* self = reinterpret_cast<client*>(data);
-        self->c_socks_.insert({fd, sock});
-        return fd;
-    }
+    // curl_socket_t client::c_socket_open_cb(void* data, curlsocktype purpose, struct curl_sockaddr* addr) {
+    //     client* self = reinterpret_cast<client*>(data);
+    //     curl_socket_t fd = ::socket(addr->family, addr->socktype, addr->protocol);
+    //     std::cout << time::iso() << " > c_socket_open_cb: " << fd << " purpose: " << purpose << " addr->family: " << addr->family << "\n";
+    //     return fd;
+    // }
 
-    int client::c_socket_close_cb(void* data, curl_socket_t fd) {
-        client* self = reinterpret_cast<client*>(data);
-        auto i = self->c_socks_.find(fd);
-        if(i != self->c_socks_.end()) {
-            delete i->second;
-            self->c_socks_.erase(i);
-        }
-        return 0;
-    }
+    // int client::c_socket_close_cb(void* data, curl_socket_t fd) {
+    //     client* self = reinterpret_cast<client*>(data);
+    //     std::cout << time::iso() << " > c_socket_close_cb: " << fd << "\n";
+    //     return ::close(fd);
+    //     return 0;
+    // }
 
     php::value client::exec_ex(const php::object& req) {
         auto req_ = static_cast<client_request*>(php::native(req));
         if(req_->c_easy_ == nullptr) req_->c_easy_ = curl_easy_init();
-        curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETFUNCTION, c_socket_open_cb);
-        curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETDATA, this);
-        curl_easy_setopt(req_->c_easy_, CURLOPT_CLOSESOCKETFUNCTION, c_socket_close_cb);
-        curl_easy_setopt(req_->c_easy_, CURLOPT_CLOSESOCKETDATA, this);
+        // curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETFUNCTION, c_socket_open_cb);
+        // curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETDATA, this);
+        // curl_easy_setopt(req_->c_easy_, CURLOPT_CLOSESOCKETFUNCTION, c_socket_close_cb);
+        // curl_easy_setopt(req_->c_easy_, CURLOPT_CLOSESOCKETDATA, this);
+        curl_easy_setopt(req_->c_easy_, CURLOPT_PIPEWAIT, 1);
         req_->build_ex();
 
         php::object res(php::class_entry<client_response>::entry());

@@ -46,10 +46,11 @@ namespace http {
 
 	size_t client_response::c_write_cb(char *ptr, size_t size, size_t nmemb, void *data) {
 		client_response* self = static_cast<client_response*>(data);
-		// assert(size == 1);
+		assert(size == 1);
 		self->c_body_.append(ptr, nmemb);
-		return size;
+		return nmemb;
 	}
+	
 	size_t client_response::c_header_cb(char *buffer, size_t size, size_t nitems, void *data) {
 		client_response* self = static_cast<client_response*>(data);
 		size = size * nitems;		
@@ -58,11 +59,11 @@ namespace http {
 		auto psep = sv.find_first_of(':', 1);
 		if(psep != sv.npos) {
 			auto pval = sv.find_first_not_of(' ', psep + 1);
-			php::lowercase_inplace(buffer, psep);
+			php::string key = php::lowercase(buffer, psep);
 			if(pval == sv.npos) {
-				self->c_head_.set( php::string(buffer, psep), php::string(0) );
+				self->c_head_.set( key, php::string(0) );
 			}else{
-				self->c_head_.set( php::string(buffer, psep), php::string( buffer + pval, size - pval - 2)); // trailing \r\n
+				self->c_head_.set( key, php::string( buffer + pval, size - pval - 2)); // trailing \r\n
 			}
 		}
 		return size;

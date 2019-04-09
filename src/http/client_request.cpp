@@ -113,6 +113,8 @@ namespace http {
 	}
 
 	void client_request::build_ex() {
+		long timeout = static_cast<long>(get("timeout"));
+		curl_easy_setopt(c_easy_, CURLOPT_TIMEOUT_MS, timeout);
 		// 目标请求地址
 		// ---------------------------------------------------------------------------
         php::string u = get("url", true);
@@ -121,21 +123,26 @@ namespace http {
 		}
 		curl_easy_setopt(c_easy_, CURLOPT_URL, u.c_str());
 		php::string m = get("method", true);
-		curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
+		// curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
 		// 头
 		// ---------------------------------------------------------------------------
 		if(c_head_ != nullptr) curl_slist_free_all(c_head_);
 		std::string ctype;
+		long keepalive = 1;
 		php::array header = get("header");
 		for(auto i=header.begin(); i!=header.end(); ++i) {
 			std::string key = i->first;
 			std::string val = i->second;
 			if(strncasecmp(key.c_str(), "content-type", 12) == 0) {
 				ctype = val;
+			}else if(strncasecmp(key.c_str(), "connection", 10) == 0 && strncasecmp(val.c_str(), "close", 5) == 0) {
+				keepalive = 0;
 			}
 			c_head_ = curl_slist_append(c_head_, (boost::format("%s: %s") % key % val).str().c_str());
 		}
+		c_head_ = curl_slist_append(c_head_, "Expect: ");
 		curl_easy_setopt(c_easy_, CURLOPT_HTTPHEADER, c_head_);
+		curl_easy_setopt(c_easy_, CURLOPT_TCP_KEEPALIVE, keepalive);
 		// COOKIE
 		// ---------------------------------------------------------------------------
 		php::array cookie = get("cookie");
@@ -151,7 +158,7 @@ namespace http {
 			cookies.push_back(' ');
 		}
 		php::string cookie_str = std::move(cookies);
-		curl_easy_setopt(c_easy_, CURLOPT_COOKIE, cookie_str.c_str());
+		if(cookie_str.size() > 0) curl_easy_setopt(c_easy_, CURLOPT_COOKIE, cookie_str.c_str());
 		// 体
 		// ---------------------------------------------------------------------------
 		php::string body = get("body");
@@ -164,6 +171,8 @@ namespace http {
 			body = ctype_encode(ctype, body);
 			// 注意: CURLOPT_POSTFIELDS 仅"引用" body 数据
 			set("body", body);
+			// curl_easy_setopt(c_easy_, CURLOPT_POST, 1);
+			curl_easy_setopt(c_easy_, CURLOPT_POSTFIELDSIZE, body.size());
 			curl_easy_setopt(c_easy_, CURLOPT_POSTFIELDS, body.c_str());
 		}
 	}
