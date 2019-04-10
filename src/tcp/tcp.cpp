@@ -9,16 +9,13 @@ namespace flame::tcp {
 	static std::unique_ptr<boost::asio::ip::tcp::resolver> resolver_;
 	void declare(php::extension_entry& ext)
     {
-		gcontroller->on_init([] (const php::array& options)
-        {
+		gcontroller->on_init([] (const php::array& options) {
             resolver_.reset(new boost::asio::ip::tcp::resolver(gcontroller->context_x));
-        })->on_stop([] ()
-        {
+        })->on_stop([] () {
             resolver_.reset();
         });
 		ext
-			.function<connect>("flame\\tcp\\connect",
-            {
+			.function<connect>("flame\\tcp\\connect", {
 				{"address", php::TYPE::STRING},
 			});
 		socket::declare(ext);
@@ -31,7 +28,9 @@ namespace flame::tcp {
 
         std::string str = params[0];
         auto pair = udp::addr2pair(str);
-        if(pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error, "failed to connect tcp socket: illegal address format");
+        if(pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
+        	, "Failed to connect TCP socket: illegal address format"
+        	, -1);
 
 		coroutine_handler ch{coroutine::current};
         boost::system::error_code err;
@@ -43,21 +42,27 @@ namespace flame::tcp {
             ch.resume();
 		});
 		ch.suspend();
-		if(err) throw php::exception(zend_ce_exception,
-                (boost::format("failed to resolve address: (%1%) %2%") % err.value() % err.message()).str(), err.value());
+		if(err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to resolve address: %s") % err.message()).str()
+            , err.value());
 
 		// 连接
         boost::asio::async_connect(ptr->socket_, eps, [&err, &obj, &ptr, &ch](const boost::system::error_code &error, const boost::asio::ip::tcp::endpoint &edp) {
             if (error) err = error;
 			else {
-	            obj.set("local_address", (boost::format("%s:%d") % ptr->socket_.local_endpoint().address().to_string() % ptr->socket_.local_endpoint().port()).str());
-				obj.set("remote_address", (boost::format("%s:%d") % ptr->socket_.remote_endpoint().address().to_string() % ptr->socket_.remote_endpoint().port()).str());
+	            obj.set("local_address", (boost::format("%s:%d")
+	            	% ptr->socket_.local_endpoint().address().to_string()
+	            	% ptr->socket_.local_endpoint().port() ).str());
+				obj.set("remote_address", (boost::format("%s:%d")
+					% ptr->socket_.remote_endpoint().address().to_string()
+					% ptr->socket_.remote_endpoint().port() ).str());
 			}
             ch.resume();
         });
         ch.suspend();
-        if(err) throw php::exception(zend_ce_exception,
-                (boost::format("failed to connect tcp socket: (%1%) %2%") % err.value() % err.message()).str(), err.value());
+        if(err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to connect TCP socket: %s") % err.message()).str()
+            , err.value());
         return std::move(obj);
 	}
 } // namespace flame::tcp

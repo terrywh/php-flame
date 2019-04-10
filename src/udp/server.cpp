@@ -6,8 +6,8 @@
 #include "server.h"
 
 namespace flame::udp {
-    void server::declare(php::extension_entry& ext)
-    {
+    
+    void server::declare(php::extension_entry& ext) {
 		php::class_entry<server> class_server("flame\\udp\\server");
 		class_server
 			.method<&server::__construct>("__construct", {
@@ -31,14 +31,16 @@ namespace flame::udp {
     , max_(64 * 1024) {
 
 	}
+
     typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
 
     php::value server::__construct(php::parameters& params) {
         auto pair = addr2pair(params[0]);
 		boost::system::error_code err;
 		boost::asio::ip::address address = boost::asio::ip::make_address(std::string_view(pair.first.data(), pair.first.size()), err);
-		if(err) throw php::exception(zend_ce_exception,
-            (boost::format("failed to bind: (%1%) %2%") % err.value() % err.message()).str(), err.value());
+		if(err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to bind: %s") % err.message()).str()
+            , err.value());
 		std::uint16_t port = std::stoi(pair.second);
         addr_.address(address);
         addr_.port(port);
@@ -49,17 +51,16 @@ namespace flame::udp {
         reuse_port opt2(true);
         socket_.set_option(opt2);
 		socket_.bind(addr_, err);
-		if(err) throw php::exception(zend_ce_exception,
-            (boost::format("failed to bind: (%1%) %2%") % err.value() % err.message()).str(), err.value());
+		if(err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to bind: %s") % err.message()).str()
+            , err.value());
 
         if(params.size() > 1) {
             php::array options = params[1];
-            if(options.exists("concurrent")) {
+            if(options.exists("concurrent"))
                 concurrent_ = std::max(std::min(static_cast<int>(options.get("concurrent")), 256), 1);
-            }
-            if(options.exists("max")) {
-                max_ = std::min(std::max(static_cast<int>(options.get("concurrent")) , 1), 64 * 1024);
-            }
+            if(options.exists("max"))
+                max_ = std::min(std::max(static_cast<int>(options.get("max")) , 1), 64 * 1024);
         }
         return nullptr;
     }
@@ -80,7 +81,7 @@ namespace flame::udp {
                         cb_.call({x->first, x->second});
                     } catch(const php::exception& ex) {
                         php::object obj = ex;
-                        std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
+                        std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in UDP handler: " << obj.call("__toString") << "\n";
                         // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                 }
@@ -94,7 +95,9 @@ namespace flame::udp {
 		boost::asio::ip::udp::endpoint ep;
         php::buffer buffer;
         while(!closed_) {
-    		socket_.async_receive_from(boost::asio::buffer(buffer.prepare(max_), max_), ep, [&len, &err, &ch] (const boost::system::error_code& error, std::size_t nread) {
+    		socket_.async_receive_from(boost::asio::buffer(buffer.prepare(max_), max_), ep
+                , [&len, &err, &ch] (const boost::system::error_code& error, std::size_t nread) {
+
                 if(error) err = error;
                 else len = nread;
                 ch.resume();
@@ -102,10 +105,12 @@ namespace flame::udp {
             ch.suspend();
             // 存在可能被关闭, 直接返回
             if(err == boost::asio::error::operation_aborted) goto CLOSING;
-            else if(err) throw php::exception(zend_ce_exception,
-                                     (boost::format("failed to read tcp socket: (%1%) %2%") % err.value() % err.message()).str(), err.value());
+            else if(err) throw php::exception(zend_ce_exception
+                , (boost::format("Failed to read TCP socket: %s") % err.message()).str()
+                , err.value());
             buffer.commit(len);
-            q.push(std::make_pair<php::string, php::string>(php::string(std::move(buffer)), (boost::format("%s:%d") % ep.address().to_string(err) % ep.port()).str()), ch);
+            q.push(std::make_pair<php::string, php::string>(php::string(std::move(buffer))
+                , (boost::format("%s:%d") % ep.address().to_string(err) % ep.port()).str()), ch);
         }
 CLOSING:
         q.close();
@@ -119,18 +124,23 @@ CLOSING:
         boost::system::error_code err;
 		php::string data = params[0];
 		auto pair = addr2pair(params[1]);
-		if(pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error, "failed to send udp packet: illegal address format");
+		if(pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
+            , "Failed to send udp packet: illegal address format"
+            , -1);
 
 		boost::asio::ip::udp::resolver::results_type eps;
-		resolver_->async_resolve(pair.first, pair.second, [&ch, &eps, &err] (const boost::system::error_code& error, boost::asio::ip::udp::resolver::results_type results) {
+		resolver_->async_resolve(pair.first, pair.second
+            , [&ch, &eps, &err] (const boost::system::error_code& error, boost::asio::ip::udp::resolver::results_type results) {
+
 			if(error) err = error;
 			else eps = results;
 			ch.resume();
 		});
 		ch.suspend();
 		if (err == boost::asio::error::operation_aborted) return nullptr;
-		else if(err) throw php::exception(zend_ce_exception,
-			(boost::format("failed to resolve address: (%1%) %2%") % err.value() % err.message()).str(), err.value());
+		else if(err) throw php::exception(zend_ce_exception
+			, (boost::format("Failed to resolve address: %s") % err.message()).str()
+            , err.value());
 
 		// 发送
 		int sent = 0;
@@ -139,8 +149,9 @@ CLOSING:
 			if(!err) return nullptr;
 		}
 
-		throw php::exception(zend_ce_exception,
-			(boost::format("failed to send: (%1%) %2%") % err.value() % err.message()).str(), err.value());
+		throw php::exception(zend_ce_exception
+			, (boost::format("Failed to send UDP packet: %s") % err.message()).str()
+            , err.value());
 	}
 
     php::value server::close(php::parameters& params) {

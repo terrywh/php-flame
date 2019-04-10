@@ -2,25 +2,24 @@
 #include "redis.h"
 #include "_connection_pool.h"
 
-namespace flame::redis
-{
+namespace flame::redis {
 
     _connection_pool::_connection_pool(url u)
-        : url_(std::move(u)), min_(1), max_(6), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
-    {
+    : url_(std::move(u)), min_(1), max_(6)
+    , size_(0)
+    , guard_(gcontroller->context_y)
+    , tm_(gcontroller->context_y) {
         if(url_.port < 10) url_.port = 6379;
     }
-    _connection_pool::~_connection_pool()
-    {
-        while (!conn_.empty())
-        {
+
+    _connection_pool::~_connection_pool() {
+        while (!conn_.empty()) {
             redisFree(conn_.front().conn);
             conn_.pop_front();
         }
     }
 
-    std::shared_ptr<redisContext> _connection_pool::acquire(coroutine_handler &ch)
-    {
+    std::shared_ptr<redisContext> _connection_pool::acquire(coroutine_handler &ch) {
         std::shared_ptr<redisContext> conn;
         std::string err;
         // 提交异步任务
@@ -32,8 +31,7 @@ namespace flame::redis
                 ch.resume();
             });
             auto now = std::chrono::steady_clock::now();
-            while (!conn_.empty())
-            {
+            while (!conn_.empty())  {
                 if(now - conn_.front().ttl < std::chrono::seconds(15) || ping(conn_.front().conn)) {
                     // 可用连接
                     redisContext *c = conn_.front().conn;
@@ -46,8 +44,7 @@ namespace flame::redis
                     --size_;
                 }
             }
-            if (size_ >= max_)
-                return; // 已建立了足够多的连接, 需要等待已分配连接释放
+            if (size_ >= max_) return; // 已建立了足够多的连接, 需要等待已分配连接释放
 
             redisContext *c = create(err);
             if (c == nullptr) { // 创建新连接失败
@@ -60,14 +57,14 @@ namespace flame::redis
         });
         // 暂停, 等待连接获取(异步任务)
         ch.suspend();
-        if (!conn) throw php::exception(zend_ce_exception,
-            (boost::format("failed to connect to Redis server: %1%") % err).str());
+        if (!conn) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to connect to Redis server: %s") % err).str()
+            , -1);
         // 恢复, 已经填充连接
         return conn;
     }
 
-    php::value _connection_pool::exec(std::shared_ptr<redisContext> rc, php::string &name, php::array &argv, reply_type rt, coroutine_handler& ch)
-    {
+    php::value _connection_pool::exec(std::shared_ptr<redisContext> rc, php::string &name, php::array &argv, reply_type rt, coroutine_handler& ch) {
         std::string ss = format(name, argv);
         redisReply *rp = nullptr;
         boost::asio::post(gcontroller->context_y, [&rc, &ss, &ch, &rp]() {
@@ -80,20 +77,18 @@ namespace flame::redis
             php::value rv = reply2value(rp, argv, rt);
             freeReplyObject(rp);
             return std::move(rv);
-        }else if(rc->err) {
-            throw php::exception(zend_ce_exception, (boost::format("failed to exec Redis command: (%d) %s") % rc->err % rc->errstr).str(), rc->err);
-        }else{
-            return nullptr;
-        }
+        } else if(rc->err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to exec Redis command: %s") % rc->errstr).str()
+            , rc->err);
+        else return nullptr;
     }
-    php::value _connection_pool::exec(std::shared_ptr<redisContext> rc, php::string &name, php::parameters &argv, reply_type rt, coroutine_handler& ch)
-    {
+
+    php::value _connection_pool::exec(std::shared_ptr<redisContext> rc, php::string &name, php::parameters &argv, reply_type rt, coroutine_handler& ch) {
         php::array data {argv};
         return exec(rc, name, data, rt, ch);
     }
 
-    redisContext *_connection_pool::create(std::string& err)
-    {
+    redisContext *_connection_pool::create(std::string& err) {
         struct timeval tv {5, 0};
         redisContext* c = redisConnectWithTimeout(url_.host.c_str(), url_.port, tv);
         if(!c) {
@@ -124,65 +119,44 @@ namespace flame::redis
         }
         return c;
     }
-    void _connection_pool::release(redisContext *c)
-    {
-        if(c->err)
-        {
-            // 出现上下文异常的连接直接抛弃
-            --size_;
-        }
+
+    void _connection_pool::release(redisContext *c) {
+        if(c->err) --size_;  // 出现上下文异常的连接直接抛弃
         else if (await_.empty())
-        { // 无等待分配的请求
-            conn_.push_back({c, std::chrono::steady_clock::now()});
-        }
-        else
-        { // 立刻分配使用
+            conn_.push_back({c, std::chrono::steady_clock::now()}); // 无等待分配的请求
+        else { // 立刻分配使用
             std::function<void(std::shared_ptr<redisContext> c)> cb = await_.front();
             await_.pop_front();
             auto self = this->shared_from_this();
-            cb(
-                // 释放回调函数须持有当前对象引用 self
-                // (否则连接池可能先于连接归还被销毁)
-                std::shared_ptr<redisContext>(c, [this, self](redisContext *c)
-                {
-                    boost::asio::post(guard_, std::bind(&_connection_pool::release, self, c));
-                }));
+            // 释放回调函数须持有当前对象引用 self (否则连接池可能先于连接归还被销毁)
+            cb(std::shared_ptr<redisContext>(c, [this, self](redisContext *c) {
+                boost::asio::post(guard_, std::bind(&_connection_pool::release, self, c));
+            }));
         }
-    }
-    bool _connection_pool::ping(redisContext* c) {
-        std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "PING"), (void (*)(redisReply*))freeReplyObject);
-        if (!rp || rp->type == REDIS_REPLY_ERROR)
-        {
-            return false;
-        }
-        return true;
     }
 
-    void _connection_pool::sweep()
-    {
+    bool _connection_pool::ping(redisContext* c) {
+        std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "PING"), (void (*)(redisReply*))freeReplyObject);
+        if (!rp || rp->type == REDIS_REPLY_ERROR) return false;
+        else return true;
+    }
+
+    void _connection_pool::sweep() {
         tm_.expires_from_now(std::chrono::seconds(60));
         // 注意, 实际的清理流程需要保证 guard_ 串行流程
         tm_.async_wait(boost::asio::bind_executor(guard_, [this](const boost::system::error_code &error) {
-            if (error)
-                return; // 当前对象销毁时会发生对应的 abort 错误
+            if (error) return; // 当前对象销毁时会发生对应的 abort 错误
             auto now = std::chrono::steady_clock::now();
-            for (auto i = conn_.begin(); i != conn_.end() && size_ > min_;)
-            {
+            for (auto i = conn_.begin(); i != conn_.end() && size_ > min_;)  {
                 // 超低水位，关闭不活跃连接
                 auto duration = now - (*i).ttl;
-                if (duration > std::chrono::seconds(60) || !ping((*i).conn))
-                {
+                if (duration > std::chrono::seconds(60) || !ping((*i).conn)) {
                     redisFree((*i).conn);
                     --size_;
                     i = conn_.erase(i);
-                }
-                else
-                {
-                    ++i;
-                } // 所有连接还活跃（即使超过低水位）
+                } else ++i;
             }
-            // 再次启动
-            sweep();
+            sweep(); // 再次启动
         }));
     }
 

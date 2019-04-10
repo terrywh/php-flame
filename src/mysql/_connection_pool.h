@@ -40,7 +40,7 @@ namespace flame::mysql
             FLAG_CHARSET_DIFFER = 0x20,
         };
 
-        MYSQL* create();
+        void init_options(MYSQL *c);
         void release(MYSQL *c);
         void query_charset(MYSQL* c);
         void query_version(MYSQL* c);

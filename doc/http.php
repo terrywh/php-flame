@@ -326,7 +326,7 @@ class server_request {
      *  * "application/json"
      *  * "application/x-www-form-urlencoded"
      *  * "multipart/form-data"
-     * 其他类型时与 $rawBody 相同;
+     * 其他类型时与 $raw_body 相同;
      * @var mixed
      */
     public $body;
@@ -334,7 +334,7 @@ class server_request {
      * 原始请求体
      * @var string
      */
-    public $rawBody;
+    public $raw_body;
     /**
      * 上传文件，形如：
      *  [

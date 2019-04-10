@@ -6,9 +6,9 @@ namespace flame::encoding {
         if(params[0].typeof(php::TYPE::ARRAY)) {
             auto doc = flame::mongodb::array2bson(params[0]);
             return php::string((const char*)bson_get_data(doc.get()), doc->len);
-        }else{
-            throw php::exception(zend_ce_exception, "Unable to encode type other than Array");
-        }
+        }else throw php::exception(zend_ce_type_error
+            , "Failed to encode: typeof 'array' required"
+            , -1);
     }
     static php::value bson_decode(php::parameters &params) {
         php::string data = params[0].to_string();

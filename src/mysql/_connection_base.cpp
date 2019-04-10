@@ -3,12 +3,9 @@
 #include "_connection_lock.h"
 #include "result.h"
 
-namespace flame::mysql
-{
-    void _connection_base::escape(std::shared_ptr<MYSQL> conn, php::buffer &b, const php::value &v, char quote)
-    {
-        switch (Z_TYPE_P(static_cast<zval *>(v)))
-        {
+namespace flame::mysql {
+    void _connection_base::escape(std::shared_ptr<MYSQL> conn, php::buffer &b, const php::value &v, char quote) {
+        switch (Z_TYPE_P(static_cast<zval *>(v))) {
         case IS_NULL:
             b.append("NULL", 4);
             break;
@@ -25,17 +22,13 @@ namespace flame::mysql
         // 	b.append(str);
         // 	break;
         // }
-        case IS_STRING:
-        {
+        case IS_STRING: {
             php::string str = v;
             // 支持字段名 aaa.bbb 进行 ESCAPE 变为 `aaa`.`bbb`
-            if (quote == '`')
-            {
+            if (quote == '`') {
                 const char *s = str.c_str(), *c, *e = str.c_str() + str.size();
-                for (c = s; c < e; ++c)
-                {
-                    if (*c == '.')
-                    {
+                for (c = s; c < e; ++c) {
+                    if (*c == '.') {
                         escape(conn, b, php::string(s, c - s), quote);
                         b.push_back('.');
                         escape(conn, b, php::string(c + 1, e - c - 1), quote);
@@ -51,15 +44,12 @@ namespace flame::mysql
             b.commit(n);
             break;
         }
-        case IS_ARRAY:
-        {
+        case IS_ARRAY: {
             php::array arr = v;
             int index = 0;
             b.push_back('(');
-            for (auto i = arr.begin(); i != arr.end(); ++i)
-            {
-                if (++index > 1)
-                    b.push_back(',');
+            for (auto i = arr.begin(); i != arr.end(); ++i) {
+                if (++index > 1) b.push_back(',');
                 escape(conn, b, i->second, quote);
             }
             b.push_back(')');
@@ -68,17 +58,13 @@ namespace flame::mysql
         case IS_OBJECT: {
             php::object obj = v;
             php::string str;
-            if(obj.instanceof(php_date_get_date_ce())) {
-                // DateTime 类型的 SQL 拼接
+            if (obj.instanceof(php_date_get_date_ce()))  // DateTime 类型的 SQL 拼接
                 str = obj.call("format", {php::string("Y-m-d H:i:s")});
-            }else{
-                str = obj.to_string();
-            }
+            else str = obj.to_string();
             escape(conn, b, str, quote);
             break;
         }
-        default:
-        {
+        default: {
             php::string str = v;
             str.to_string();
             escape(conn, b, str, quote);
@@ -106,9 +92,9 @@ ESCAPE_FINISHED:;
         last_query_ = sql;
         if(err != 0) {
             int err = mysql_errno(conn.get());
-            throw php::exception(zend_ce_exception,
-                                 (boost::format("failed to query MySQL server: (%1%) %2%") % err % mysql_error(conn.get())).str(),
-                                 err);
+            throw php::exception(zend_ce_exception
+                , (boost::format("Failed to query MySQL server: %s") % mysql_error(conn.get())).str()
+                , err);
         }
         if(rst) { // 存在结果集
             php::object obj(php::class_entry<result>::entry());
@@ -127,30 +113,29 @@ ESCAPE_FINISHED:;
             return std::move(data);
         }
     }
+
     const std::string& _connection_base::last_query() {
         return last_query_;
     }
-    php::array _connection_base::fetch(std::shared_ptr<MYSQL> conn, std::shared_ptr<MYSQL_RES> rst, MYSQL_FIELD *f, unsigned int n, coroutine_handler &ch)
-    {
+
+    php::array _connection_base::fetch(std::shared_ptr<MYSQL> conn, std::shared_ptr<MYSQL_RES> rst
+        , MYSQL_FIELD *f, unsigned int n, coroutine_handler &ch) {
+
         MYSQL_ROW row;
         unsigned long* len;
         boost::asio::post(gcontroller->context_y, [&rst, &ch, &row, &len] () {
             row = mysql_fetch_row(rst.get());
-            if(row) {
-                len = mysql_fetch_lengths(rst.get());
-            }
+            if(row) len = mysql_fetch_lengths(rst.get());
             ch.resume();
         });
         ch.suspend();
-        if(!row) {
+        if (!row) {
             int err = mysql_errno(conn.get());
-            if(err != 0) {
-                throw php::exception(zend_ce_error,
-                                     (boost::format("failed to fetch MySQL row: (%1%) %2%") % err % mysql_error(conn.get())).str(),
-                                     err);
-            }else{
-                return nullptr;
-            }
+            if (err != 0) 
+                throw php::exception(zend_ce_error
+                    , (boost::format("Failed to fetch MySQL row: %s") % mysql_error(conn.get())).str()
+                    , err);
+            else return nullptr;
         }
         php::array php_row {std::size_t(n)};
         for(int i=0;i<n;++i) {

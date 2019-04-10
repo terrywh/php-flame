@@ -105,26 +105,25 @@ namespace flame::http {
 	}
 	// chunked encoding 用法
 	php::value server_response::write_header(php::parameters& params) {
-		if((status_ & STATUS_HEAD_SENT) || (status_ & STATUS_BODY_SENT)) {
-			throw php::exception(zend_ce_exception, "header already sent");
-		}
+		if((status_ & STATUS_HEAD_SENT) || (status_ & STATUS_BODY_SENT))
+			throw php::exception(zend_ce_error_exception
+				, "Failed to write header: already sent"
+				, -1);
+		
 		status_ |= STATUS_HEAD_SENT;
-
-		if(params.size() > 0) {
-			set("status", params[0].to_integer());
-		}
+		if(params.size() > 0) set("status", params[0].to_integer());
 		coroutine_handler ch{coroutine::current};
 		handler_->write_head(this, ch);
 		return nullptr;
 	}
 	php::value server_response::write(php::parameters& params) {
 		if(status_ & STATUS_BODY_END)
-		{
-			throw php::exception(zend_ce_exception, "response already done");
-		}
+			throw php::exception(zend_ce_error_exception
+				, "Failed to write body: response already done"
+				, -1);
+
 		coroutine_handler ch{coroutine::current};
-		if (!(status_ & STATUS_HEAD_SENT))
-		{
+		if (!(status_ & STATUS_HEAD_SENT)) {
 			status_ |= STATUS_HEAD_SENT;
 			handler_->write_head(this, ch);
 		}
@@ -135,20 +134,20 @@ namespace flame::http {
 	}
 	php::value server_response::end(php::parameters& params) {
 		if (status_ & STATUS_BODY_END)
-		{
-			throw php::exception(zend_ce_exception, "response already done");
-		}
+			throw php::exception(zend_ce_error_exception
+				, "Failed to write body: response already done"
+				, -1);
+		
 		coroutine_handler ch{coroutine::current};
-		if (!(status_ & STATUS_HEAD_SENT))
-		{
+		if (!(status_ & STATUS_HEAD_SENT)) {
 			status_ |= STATUS_HEAD_SENT;
 			handler_->write_head(this, ch);
 		}
-		if(params.size() > 0) {
+		if (params.size() > 0) {
 			status_ |= STATUS_BODY_SENT;
 			php::string chunk = params[0].to_string();
 			handler_->write_body(this, chunk, ch);
-		}else{
+		} else {
 			status_ |= STATUS_BODY_END;
 			handler_->write_end(this, ch);
 			handler_.reset();
@@ -157,12 +156,12 @@ namespace flame::http {
 	}
 	php::value server_response::file(php::parameters& params) {
 		if ((status_ & STATUS_BODY_END) || (status_ & STATUS_BODY_SENT))
-		{
-			throw php::exception(zend_ce_exception, "response already done");
-		}
+			throw php::exception(zend_ce_error_exception
+				, "Failed to write file: response already done"
+				, -1);
+
 		coroutine_handler ch{coroutine::current};
-		if (!(status_ & STATUS_HEAD_SENT))
-		{
+		if (!(status_ & STATUS_HEAD_SENT)) {
 			status_ |= STATUS_HEAD_SENT;
 			handler_->write_head(this, ch);
 		}
@@ -226,12 +225,8 @@ namespace flame::http {
 					buffer.append("; Domain=", 9);
 					buffer.append(cookie.get("domain"));
 				}
-				if(!cookie.get("secure").empty()) {
-					buffer.append("; Secure", 8);
-				}
-				if(!cookie.get("http_only").empty()) {
-					buffer.append("; HttpOnly", 10);
-				}
+				if(!cookie.get("secure").empty()) buffer.append("; Secure", 8);
+				if(!cookie.get("http_only").empty()) buffer.append("; HttpOnly", 10);
 				ctr_.insert("Set-Cookie", buffer);
 			}
 		}

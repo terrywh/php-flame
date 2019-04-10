@@ -6,16 +6,13 @@
 #include "mutex.h"
 
 namespace flame::core {
-    php::value select(php::parameters& params)
-    {
+    php::value select(php::parameters& params) {
         std::vector< std::shared_ptr<coroutine_queue<php::value>> > qs;
         std::map< std::shared_ptr<coroutine_queue<php::value>>, php::object > mm;
-        for (auto i = 0; i < params.size(); ++i)
-        {
-            if(!params[i].instanceof(php::class_entry<queue>::entry()))
-            {
-                throw php::exception(zend_ce_type_error, "only flame\\queue can be selected", -1);
-            }
+        for (auto i = 0; i < params.size(); ++i) {
+            if(!params[i].instanceof(php::class_entry<queue>::entry())) throw php::exception(zend_ce_type_error
+                , "Failed to select: instanceof flame\\queue required"
+                , -1);
             php::object obj = params[i];
             queue* ptr = static_cast<queue*>(php::native(obj));
             qs.push_back( ptr->q_ );
@@ -25,17 +22,20 @@ namespace flame::core {
         std::shared_ptr<coroutine_queue<php::value>> q = select_queue(qs, ch);
         return mm[q];
     }
+
     php::value co_id(php::parameters& params) {
         return reinterpret_cast<uintptr_t>(coroutine::current.get());
     }
+
     php::value co_count(php::parameters& params) {
         return coroutine::count;
     }
+
     void declare(php::extension_entry &ext) {
         ext
             .on_request_shutdown([] (php::extension_entry& ext) -> bool {
                 if(coroutine::count > 0 && (gcontroller->status & controller::controller_status::STATUS_RUN) == 0) {
-                    if(!php::error::exists()) std::cerr << "[FATAL] process exited prematurely (missing 'flame\\run();'?)\n";
+                    if(!php::error::exists()) std::cerr << "[FATAL] process exited prematurely: exception or missing 'flame\\run();' ?\n";
                     _exit(-1);
                 }
                 return true;

@@ -12,52 +12,43 @@ namespace flame::kafka {
 		php::class_entry<consumer> class_consumer("flame\\kafka\\consumer");
 		class_consumer
 			.method<&consumer::__construct>("__construct", {}, php::PRIVATE)
-			.method<&consumer::run>("run",
-            {
+			.method<&consumer::run>("run", {
 				{"callable", php::TYPE::CALLABLE},
 			})
-            .method<&consumer::commit>("commit",
-            {
+            .method<&consumer::commit>("commit", {
                 {"message", "flame\\kafka\\message"}
             })
 			.method<&consumer::close>("close");
 		ext.add(std::move(class_consumer));
 	}
 
-	php::value consumer::__construct(php::parameters& params)
-    {
+	php::value consumer::__construct(php::parameters& params) {
 		return nullptr;
 	}
-	php::value consumer::run(php::parameters& params)
-    {
+
+	php::value consumer::run(php::parameters& params) {
         cb_ = params[0];
         coroutine_handler ch_run {coroutine::current};
         coroutine_queue<php::object> q;
         // 启动若干协程, 然后进行"并行"消费
         int count = cc_;
-        for (int i = 0; i < count; ++i)
-        {
+        for (int i = 0; i < count; ++i) {
             // 启动协程开始消费
             coroutine::start(php::value([this, &ch_run, &q, &count](php::parameters &params) -> php::value {
                 coroutine_handler ch {coroutine::current};
-                while(true)
-                {
-                    try
-                    {
+                while(true) {
+                    try {
                         // consume 本身可能出现异常，不应导致进程停止
                         std::optional<php::object> m = q.pop(ch);
                         if(m) cb_.call({m.value()});
                         else break;
-                    }
-                    catch(const php::exception& ex)
-                    {
+                    } catch(const php::exception& ex) {
                         php::object obj = ex;
-                        std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
+                        std::cerr << "[" << time::iso() << "] (ERROR) Uncaught exception in Kafka consumer: " << obj.call("__toString") << "\n";
                         // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                 }
                 if(--count == 0) ch_run.resume();
-
                 return nullptr;
             }));
         }
@@ -65,14 +56,15 @@ namespace flame::kafka {
         ch_run.suspend();
         return nullptr;
 	}
-    php::value consumer::commit(php::parameters& params)
-    {
+
+    php::value consumer::commit(php::parameters& params) {
         php::object obj = params[0];
         coroutine_handler ch {coroutine::current};
 
         cs_->commit(obj, ch);
         return nullptr;
     }
+
 	php::value consumer::close(php::parameters& params) {
         coroutine_handler ch {coroutine::current};
         cs_->close(ch);

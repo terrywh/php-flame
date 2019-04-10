@@ -19,38 +19,26 @@
 #include "encoding/encoding.h"
 #include "compress/compress.h"
 
-namespace flame
-{
-    static php::value init(php::parameters& params)
-    {
+namespace flame {
+    static php::value init(php::parameters& params) {
         php::array options(0);
-        if(params.size() > 1 && params[1].typeof(php::TYPE::ARRAY))
-        {
-            options = params[1];
-        }
+        if(params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) options = params[1];
         gcontroller->initialize(params[0], options);
         return nullptr;
     }
-    static php::value go(php::parameters& params)
-    {
+
+    static php::value go(php::parameters& params) {
         php::callable fn = params[0];
         coroutine::start(php::callable([fn] (php::parameters& params) -> php::value {
             php::value rv;
             try {
                 rv = fn.call();
-            }catch (const php::exception &ex) {
-                int x = 0;
+            } catch (const php::exception &ex) {
                 auto ft = gcontroller->cbmap->equal_range("exception");
-                for(auto i=ft.first; i!=ft.second; ++i) {
-                    ++x;
-                    i->second.call({ex});
-                }
+                for(auto i=ft.first; i!=ft.second; ++i) i->second.call({ex});
                 php::object obj = ex;
-                if(x==0) {
-                    std::cerr << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
-                }else {
-                    std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
-                }
+                std::cerr << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
+
                 boost::asio::post(gcontroller->context_x, [] () {
                     gcontroller->status |= controller::controller_status::STATUS_EXCEPTION;
                     gcontroller->context_x.stop();
@@ -61,33 +49,31 @@ namespace flame
         }));
         return nullptr;
     }
-    static php::value fake_fn(php::parameters& params)
-    {
+
+    static php::value fake_fn(php::parameters& params) {
         return nullptr;
     }
-    static php::value on(php::parameters &params)
-    {
+
+    static php::value on(php::parameters &params) {
         std::string event = params[0].to_string();
-        if (!params[1].typeof(php::TYPE::CALLABLE))
-        {
-            throw php::exception(zend_ce_type_error, "callable is required", -1);
-        }
+        if (!params[1].typeof(php::TYPE::CALLABLE)) throw php::exception(zend_ce_type_error
+            , "Failed to set callback: callable required"
+            , -1);
         gcontroller->cbmap->insert({event, params[1]});
         return nullptr;
     }
-    static php::value run(php::parameters& params)
-    {
-        if(gcontroller->status & controller::STATUS_INITIALIZED)
-        {
+
+    static php::value run(php::parameters& params) {
+        if(gcontroller->status & controller::STATUS_INITIALIZED) {
             gcontroller->default_execute_data = EG(current_execute_data);
             gcontroller->run();
-        }else{
-            throw php::exception(zend_ce_type_error, "failed to run flame: not yet initialized (forget to call 'flame\\init()' ?)");
-        }
+        }else throw php::exception(zend_ce_error_exception
+            , "Failed to run flame: exception or missing 'flame\\init()' ?"
+            , -1);
         return nullptr;
     }
-    static php::value quit(php::parameters& params)
-    {
+
+    static php::value quit(php::parameters& params) {
         gcontroller->context_x.stop();
         gcontroller->context_y.stop();
         return nullptr;
@@ -97,15 +83,12 @@ namespace flame
 #define VERSION_MACRO(major, minor, patch) VERSION_JOIN(major, minor, patch)
 #define VERSION_JOIN(major, minor, patch) #major"."#minor"."#patch
 
-extern "C"
-{
-    ZEND_DLEXPORT zend_module_entry *get_module()
-    {
+extern "C" {
+    ZEND_DLEXPORT zend_module_entry *get_module()  {
         static php::extension_entry ext(EXTENSION_NAME, EXTENSION_VERSION);
         std::string sapi = php::constant("PHP_SAPI");
-        if (sapi != "cli")
-        {
-            std::cerr << "Flame can only be using in SAPI='cli' mode\n";
+        if (sapi != "cli") {
+            std::cerr << "[WARNING] FLAME disabled: SAPI='cli' mode only\n";
             return ext;
         }
 
@@ -126,25 +109,22 @@ extern "C"
 
         flame::gcontroller.reset(new flame::controller());
         ext
-            .function<flame::init>("flame\\init",
-            {
+            .function<flame::init>("flame\\init", {
                 {"process_name", php::TYPE::STRING},
                 {"options", php::TYPE::ARRAY, false, true},
             })
             .function<flame::run>("flame\\run");
-        if(flame::gcontroller->type == flame::controller::process_type::WORKER)
-        {
+        if(flame::gcontroller->type == flame::controller::process_type::WORKER) {
             ext
-            .function<flame::go>("flame\\go",
-            {
+            .function<flame::go>("flame\\go", {
                 {"coroutine", php::TYPE::CALLABLE},
             })
-            .function<flame::on>("flame\\on",
-            {
+            .function<flame::on>("flame\\on", {
                 {"event", php::TYPE::STRING},
                 {"callback", php::TYPE::CALLABLE},
             })
             .function<flame::quit>("flame\\quit");
+
             flame::core::declare(ext);
             flame::log::declare(ext);
             flame::os::declare(ext);
@@ -160,12 +140,10 @@ extern "C"
             flame::hash::declare(ext);
             flame::encoding::declare(ext);
             flame::compress::declare(ext);
-        }
-        else
-        {
+        } else {
             ext
-            .function<flame::fake_fn>("flame\\go")
-            .function<flame::fake_fn>("flame\\on");
+                .function<flame::fake_fn>("flame\\go")
+                .function<flame::fake_fn>("flame\\on");
         }
         return ext;
     }

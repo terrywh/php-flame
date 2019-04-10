@@ -39,12 +39,13 @@ namespace flame::rabbitmq
 
         if(!error_.empty()) {
             std::string err = std::move(error_);
-            throw php::exception(zend_ce_exception,
-                (boost::format("failed to connect RabbitMQ server: %1%") % err).str(), -1);
+            throw php::exception(zend_ce_exception
+                , (boost::format("Failed to connect RabbitMQ server: %s") % err).str()
+                , -1);
         }
 
         auto i = u.query.find("prefetch");
-        if(i == u.query.end()) {
+        if (i == u.query.end()) {
             pf_ = 8;
         }else{
             pf_ = std::min(std::max(std::atoi(i->second.c_str()), 1), 256);
@@ -97,10 +98,9 @@ namespace flame::rabbitmq
                 ch.resume(); // ----> 2
             });
         ch.suspend();
-        if(err) {
-            throw php::exception(zend_ce_error,
-                (boost::format("failed to consume RabbitMQ queue: %1%") % err).str(), -1);
-        }
+        if(err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to consume RabbitMQ queue: %s") % err).str()
+            , -1);
         consumer_ch_ = ch;
         ch.suspend();
         // 非关闭恢复执行, 消息对象一定存在
@@ -108,18 +108,21 @@ namespace flame::rabbitmq
             q.push(std::move(obj), ch);
             ch.suspend(); // 2 <----
         }
-        if(err) {
-            std::cerr << "[rabbitmq] error: " << err << std::endl;
-        }
+        if(err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to consume RabbitMQ queue: %s") % err).str()
+            , -1);
         q.close();
         consumer_ch_.reset();
     }
+
     void _client::confirm(std::uint64_t tag, coroutine_handler &ch) {
         chn_.ack(tag, 0);
     }
+
     void _client::reject(std::uint64_t tag, int flags, coroutine_handler &ch) {
         chn_.reject(tag, flags);
     }
+
     void _client::consumer_close() {
         const char* err = nullptr;
         chn_.cancel(consumer_tg_);
@@ -127,6 +130,7 @@ namespace flame::rabbitmq
         // 标记结束后，消费流程队将自行关闭
         if(consumer_ch_) consumer_ch_.resume();
     }
+
     void _client::consumer_close(coroutine_handler& ch) {
         const char* err = nullptr;
         chn_.cancel(consumer_tg_)
@@ -140,16 +144,19 @@ namespace flame::rabbitmq
         ch.suspend();
         consumer_tg_.clear();
         if(consumer_ch_) consumer_ch_.resume(); // ----> 2  标记结束后，消费流程队将自行关闭
-        if (err) throw php::exception(zend_ce_error,
-                                 (boost::format("failed to close RabbitMQ consumer: %1%") % err).str(), -1);
+        if (err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to close RabbitMQ consumer: %s") % err).str()
+            , -1);
     }
+
     void _client::publish(const std::string &ex, const std::string &rk, const AMQP::Envelope &env, coroutine_handler& ch) {
         /*auto& defer = */chn_.publish(ex, rk, env, fl_);
         // producer_cb(defer, ch);
         if(!error_.empty()) {
             std::string err = std::move(error_);
-            throw php::exception(zend_ce_error,
-                (boost::format("failed to publish to RabbitMQ: %1%") % err).str(), -1);
+            throw php::exception(zend_ce_exception
+                , (boost::format("Failed to publish to RabbitMQ: %s") % err).str()
+                , -1);
         }
     }
 
@@ -173,14 +180,16 @@ namespace flame::rabbitmq
     //                         (boost::format("failed to publish RabbitMQ message: %1%") % err).str(), -1);
     //     }
     // }
+
     void _client::publish(const std::string &ex, const std::string &rk, const char *msg, size_t len, coroutine_handler& ch)
     {
         /*auto& defer = */chn_.publish(ex, rk, msg, len, fl_);
         // producer_cb(defer, ch);
         if(!error_.empty()) {
             std::string err = std::move(error_);
-            throw php::exception(zend_ce_error,
-                (boost::format("failed to publish to RabbitMQ: %1%") % err).str(), -1);
+            throw php::exception(zend_ce_exception
+                , (boost::format("Failed to publish RabbitMQ message: %s") % err).str()
+                , -1);
         }
     }
 }

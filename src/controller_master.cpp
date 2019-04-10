@@ -50,26 +50,18 @@ namespace flame
             boost::process::std_err > *eout_[i],
             // boost::process::std_out > boost::process::null,
             boost::process::on_exit = [this, i](int exit_code, const std::error_code &error) {
-                if (error.value() == static_cast<int>(std::errc::no_child_process))
-                {
-                    return;
-                }
-                if (exit_code != 0)
-                {
+                if (error.value() == static_cast<int>(std::errc::no_child_process)) return;
+
+                if (exit_code != 0) {
                     // 日志记录
                     int sec = std::rand() % 3 + 3;
-                    std::cerr << "(FATAL) worker unexpected exit (" << exit_code << "), restart in " << sec << " ...\n";
+                    std::cerr << "(FATAL) worker unexpected exit: (" << exit_code << "), restart in " << sec << " ...\n";
 
                     auto tm = std::make_shared<boost::asio::steady_timer>(gcontroller->context_x, std::chrono::seconds(sec));
                     tm->async_wait([this, tm, i](const boost::system::error_code &error) {
                         if (error)
-                        {
                             std::cerr << "(FATAL) failed to restart worker: (" << error.value() << ") " << error.message() << std::endl;
-                        }
-                        else
-                        {
-                            spawn_worker(i);
-                        }
+                        else spawn_worker(i);
                     });
                 }
                 worker_[i].reset();
@@ -79,19 +71,14 @@ namespace flame
         redirect_sout(i);
         redirect_eout(i);
     }
-    void controller_master::redirect_sout(int i)
-    {
+
+    void controller_master::redirect_sout(int i) {
         boost::asio::async_read_until(*sout_[i], sbuf_[i], '\n', [this, i](const boost::system::error_code &error, std::size_t nread) {
-            if (error == boost::asio::error::operation_aborted || error == boost::asio::error::eof)
-            {
+            if (error == boost::asio::error::operation_aborted || error == boost::asio::error::eof) ;
                 // std::cerr << "(INFO) IGNORE sout\n";
-            }
             else if(error)
-            {
                 std::cerr << "(ERROR) failed to read from worker process: (" << error.value() << ") " << error.message() << std::endl;
-            }
-            else
-            {
+            else  {
                 auto y = sbuf_[i].data();
                 *offile_ << std::string(boost::asio::buffers_begin(y), boost::asio::buffers_begin(y) + nread);
                 sbuf_[i].consume(nread);
@@ -101,19 +88,13 @@ namespace flame
             }
         });
     }
-    void controller_master::redirect_eout(int i)
-    {
+
+    void controller_master::redirect_eout(int i) {
         boost::asio::async_read_until(*eout_[i], ebuf_[i], '\n', [this, i](const boost::system::error_code &error, std::size_t nread) {
-            if (error == boost::asio::error::operation_aborted || error == boost::asio::error::eof)
-            {
-                // std::cerr << "(INFO) IGNORE eout\n";
-            }
+            if (error == boost::asio::error::operation_aborted || error == boost::asio::error::eof) ;
             else if (error)
-            {
                 std::cerr << "(ERROR) failed to read from worker process: (" << error.value() << ") " << error.message() << std::endl;
-            }
-            else
-            {
+            else {
                 auto y = ebuf_[i].data();
                 *offile_ << std::string(boost::asio::buffers_begin(y), boost::asio::buffers_begin(y) + nread);
                 ebuf_[i].consume(nread);
@@ -123,35 +104,25 @@ namespace flame
             }
         });
     }
-    void controller_master::await_signal()
-    {
+
+    void controller_master::await_signal() {
         signal_->async_wait([this](const boost::system::error_code &error, int sig) {
             if (error) return;
             await_signal();
             boost::asio::post(gcontroller->context_x, [this, sig]() {
-                if (sig == SIGUSR2)
-                {
-                    reload_output();
-                }
-                else
-                {
-                    close_worker();
-                    // 似乎主进程与子进程 signal 处理之间有干扰
-                    // 需要后置清理
-                    // signal_.reset();
-                }
+                if (sig == SIGUSR2) reload_output();
+                else close_worker();
+                // 似乎主进程与子进程 signal 处理之间有干扰
+                // 需要后置清理
+                // signal_.reset();
             });
         });
     }
     // !!! run 实际上是在 initialize 中执行 (防止实际启用了功能)
-    void controller_master::run()
-    {
+    void controller_master::run() {
         // 主进程的启动过程:
         // 1. 新增环境变量及命令行参数, 启动子进程;
-        for(int i=0;i<gcontroller->worker_size;++i)
-        {
-            spawn_worker(i);
-        }
+        for(int i=0;i<gcontroller->worker_size;++i) spawn_worker(i);
         // 2. 监听信号进行日志重载或停止
         signal_.reset(new boost::asio::signal_set(gcontroller->context_y, SIGINT, SIGTERM, SIGUSR2));
         await_signal();
@@ -166,42 +137,33 @@ namespace flame
         thread_.join();
         // 5. 强制进程结束
         for(auto i=worker_.begin();i!=worker_.end();++i) {
-            if(*i) {
-                (*i)->terminate();
-            }
+            if(*i) (*i)->terminate();
         }
         // if(!group_.wait_for(std::chrono::seconds(1))) group_.terminate();
     }
-    void controller_master::reload_output()
-    {
+
+    void controller_master::reload_output() {
         if(ofpath_[0] == '/') {
             offile_.reset(new std::ofstream(ofpath_, std::ios_base::out | std::ios_base::app));
             // 文件打开失败时不会抛出异常，需要额外的状态检查
-			if(!(*offile_)) {
-                std::cerr << "(ERROR) failed to create/open logger target file, fallback to standard output\n";
-            }else{
-                return;
-            }
+			if(!(*offile_))
+                std::cerr << "(ERROR) failed to create/open logger target file: fallback to standard output\n";
+            else return;
 		}
         offile_.reset(&std::clog, boost::null_deleter());
     }
-    void controller_master::close_worker()
-    {
+
+    void controller_master::close_worker() {
         // 第二次进行 “强制关闭”
-        if(close_)
-        {
+        if(close_) {
             timer_.reset();
             gcontroller->context_x.stop();
             return;
         }
         // 第一次设置超时
         close_ = true;
-        for (auto i = worker_.begin(); i != worker_.end(); ++i)
-        {
-            if (*i)
-            {
-                ::kill((*i)->id(), SIGTERM);
-            }
+        for (auto i = worker_.begin(); i != worker_.end(); ++i) {
+            if (*i) ::kill((*i)->id(), SIGTERM);
         }
         timer_.reset(new boost::asio::steady_timer(gcontroller->context_y));
         timer_->expires_after(std::chrono::seconds(gcontroller->worker_quit));

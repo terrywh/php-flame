@@ -4,40 +4,36 @@
 #include "message.h"
 #include "../time/time.h"
 
-namespace flame::rabbitmq
+namespace flame::rabbitmq 
 {
-    void consumer::declare(php::extension_entry &ext)
-    {
+    void consumer::declare(php::extension_entry &ext) {
         php::class_entry<consumer> class_consumer("flame\\rabbitmq\\consumer");
         class_consumer
             .method<&consumer::__construct>("__construct", {}, php::PRIVATE)
             .method<&consumer::__destruct>("__destruct")
-            .method<&consumer::run>("run",
-            {
+            .method<&consumer::run>("run", {
                 {"callable", php::TYPE::CALLABLE},
             })
-            .method<&consumer::confirm>("confirm",
-            {
+            .method<&consumer::confirm>("confirm", {
                 {"message", "flame\\rabbitmq\\message"}
             })
-            .method<&consumer::reject>("reject",
-            {
+            .method<&consumer::reject>("reject", {
                 {"message", "flame\\rabbitmq\\message"},
                 {"requeue", php::TYPE::BOOLEAN, false, true},
             })
             .method<&consumer::close>("close");
         ext.add(std::move(class_consumer));
     }
-    php::value consumer::__construct(php::parameters &params)
-    {
+
+    php::value consumer::__construct(php::parameters &params) {
         return nullptr;
     }
-    php::value consumer::__destruct(php::parameters& params)
-    {
+
+    php::value consumer::__destruct(php::parameters& params) {
         return nullptr;
     }
-    php::value consumer::run(php::parameters &params)
-    {
+
+    php::value consumer::run(php::parameters &params) {
         cb_ = params[0];
 
         coroutine_handler ch {coroutine::current};
@@ -45,47 +41,40 @@ namespace flame::rabbitmq
         coroutine_queue<php::object> q(cc_->pf_);
         // 启动若干协程, 然后进行"并行>"消费
         int count = (int)std::ceil(cc_->pf_ / 2.0);
-        for (int i = 0; i < count; ++i)
-        {
+        for (int i = 0; i < count; ++i) {
             // 启动协程开始消费
             coroutine::start(php::value([this, &q, &count, &ch, i] (php::parameters &params) -> php::value {
                 coroutine_handler cch {coroutine::current};
-                while(auto x = q.pop(cch))
-                {
-                    try
-                    {
+                while(auto x = q.pop(cch)) {
+                    try {
                         cb_.call( {x.value()} );
-                    }
-                    catch(const php::exception& ex)
-                    {
+                    } catch(const php::exception& ex) {
                         php::object obj = ex;
-                        std::cerr << "[" << time::iso() << "] (ERROR) " << obj.call("__toString") << "\n";
-                        // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
+                        std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in RabbitMQ consumer: " << obj.call("__toString") << "\n";
                     }
                 }
-                if(--count == 0)
-                {
-                    ch.resume(); // ----> 1
-                }
+                if(--count == 0)  ch.resume(); // ----> 1
                 return nullptr;
             }));
         }
         cc_->consume(qn_, q, ch);
         ch.suspend(); // 1 <----
         cb_ = nullptr;
-        if(cc_->has_error()) throw php::exception(zend_ce_exception, (boost::format("failed to consume RabbitMQ queue: %1%") % cc_->error()).str());
+        if(cc_->has_error()) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to consume RabbitMQ queue: %s") % cc_->error()).str()
+            , -1);
         return nullptr;
     }
-    php::value consumer::confirm(php::parameters &params)
-    {
+
+    php::value consumer::confirm(php::parameters &params) {
         php::object obj = params[0];
         message *ptr = static_cast<message *>(php::native(obj));
         coroutine_handler ch {coroutine::current};
         cc_->confirm(ptr->tag_, ch);
         return nullptr;
     }
-    php::value consumer::reject(php::parameters &params)
-    {
+
+    php::value consumer::reject(php::parameters &params) {
         php::object obj = params[0];
         message *ptr = static_cast<message *>(php::native(obj));
         int flags = 0;
@@ -94,8 +83,8 @@ namespace flame::rabbitmq
         cc_->reject(ptr->tag_, flags, ch);
         return nullptr;
     }
-    php::value consumer::close(php::parameters &params)
-    {
+
+    php::value consumer::close(php::parameters &params) {
         coroutine_handler ch {coroutine::current};
         cc_->consumer_close(ch);
         return nullptr;

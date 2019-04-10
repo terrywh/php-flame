@@ -74,7 +74,9 @@ namespace http {
 	php::value client_request::http_version(php::parameters& params) {
 		long v = static_cast<int>(params[0]);
 		if(v <= CURL_HTTP_VERSION_NONE || v >= CURL_HTTP_VERSION_LAST)
-			throw php::exception(zend_ce_type_error, "Failed to set http version: illegal HTTP version", -1);
+			throw php::exception(zend_ce_error_exception
+				, "Failed to set HTTP version: value out of range"
+				, -1);
 		
 		curl_easy_setopt(c_easy_, CURLOPT_HTTP_VERSION, v);
 		return nullptr;
@@ -119,7 +121,9 @@ namespace http {
 		// ---------------------------------------------------------------------------
         php::string u = get("url", true);
 		if(!u.typeof(php::TYPE::STRING)) 
-			throw php::exception(zend_ce_type_error, "request 'url' must be a string");
+			throw php::exception(zend_ce_type_error
+				, "Failed to build client request: 'url' typeof 'string' required"
+				, -1);
 		
 		curl_easy_setopt(c_easy_, CURLOPT_URL, u.c_str());
 		php::string m = get("method", true);

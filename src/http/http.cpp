@@ -46,9 +46,10 @@ namespace flame::http {
 		server_response::declare(ext);
 	}
 	static void init_guard() {
-		if(!client_) {
-			throw php::exception(zend_ce_parse_error, "flame not initialized");
-		}
+		if(!client_)
+			throw php::exception(zend_ce_error_exception
+				, "Failed to execute HTTP request: exception or missing 'flame\\init()' ?"
+				, -1);
 	}
 	php::value get(php::parameters& params) {
 		init_guard();
