@@ -23,8 +23,8 @@ function connect(string $url):client {
  */
 class client {
     const COMMAND_RAW        = 0;
-    const COMMAND_READ       = 1;
-    const COMMAND_WRITE      = 2;
+    const COMMAND_WRITE      = 1;
+    const COMMAND_READ       = 2;
     const COMMAND_READ_WRITE = 3;
     /**
      * 执行以 $command 描述的命令;

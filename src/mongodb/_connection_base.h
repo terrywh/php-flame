@@ -8,8 +8,8 @@ namespace flame::mongodb {
     public:
         enum command_type_t {
             COMMAND_RAW,
-            COMMAND_READ,
             COMMAND_WRITE,
+            COMMAND_READ,
             COMMAND_READ_WRITE,
         };
         virtual std::shared_ptr<mongoc_client_t> acquire(coroutine_handler& ch) = 0;
