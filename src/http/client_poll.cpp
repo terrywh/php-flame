@@ -9,7 +9,6 @@ namespace flame::http {
 		struct sockaddr addr;
 		int x = ::getsockopt(fd, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&type), &size);
 		assert(x == 0);
-		// std::cout << "socket_type: " << "x=" << x << " type=" << type << "(" << size << " SOCK_STREAM="<<SOCK_STREAM << " SOCK_DGRAM=" << SOCK_DGRAM << ")\n";
 		::getsockname(fd, &addr, &size);
 		client_poll* poll;
 		if(type == SOCK_STREAM) {
@@ -27,16 +26,13 @@ namespace flame::http {
 
 	client_poll::client_poll()
 	: action_(CURL_POLL_NONE) {
-		// std::cout << "+client_poll: " << this << " action: " << action_ << "\n";
 	}
 
 	client_poll::~client_poll() {
-		// std::cout << "~client_poll: " << this << "\n";
 	}
 
 	void client_poll::on_ready(const boost::system::error_code& error, int action) {
 		if(error == boost::asio::error::operation_aborted) return; // 取消监听（销毁）或设置了新的监听
-		// std::cout << "on_ready: " << this << "\n";
 		cb_(error, this, fd_, action);
 		if(action_ == CURL_POLL_REMOVE) delete this;
 		else if(action_ == action) async_wait();
@@ -58,7 +54,6 @@ namespace flame::http {
 	}
 
 	void client_poll_tcp::async_wait() {
-		std::cout << "async_wait: " << this << " action: " << action_ << "\n";
 		sock_.cancel();
 		// 重新监听
 		if(action_ == CURL_POLL_IN || action_ == CURL_POLL_INOUT) 
@@ -69,15 +64,12 @@ namespace flame::http {
 	
 	client_poll_udp::client_poll_udp(boost::asio::io_context &io, boost::asio::ip::udp proto, curl_socket_t fd)
 	: client_poll(), sock_(io, proto, fd) {
-		// sock_.assign(proto, fd);
 	}
 
 	client_poll_udp::~client_poll_udp() {
-		// sock_.release();
 	}
 
 	void client_poll_udp::async_wait() {
-		std::cout << "async_wait: " << this << " action: " << action_ << "\n";
 		sock_.cancel();
 		// 重新监听
 		if(action_ == CURL_POLL_IN || action_ == CURL_POLL_INOUT) 

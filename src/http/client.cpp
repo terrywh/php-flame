@@ -54,7 +54,6 @@ namespace flame::http {
 
     void client::c_socket_ready_cb(const boost::system::error_code& error, client_poll* poll, curl_socket_t fd, int action) {
         client* self = reinterpret_cast<client*>(poll->data);
-        std::cout << "client_on_ready: " << poll << " action: " << action_str[action] << "\n";
         if(error) action = CURL_CSELECT_ERR;
         curl_multi_socket_action(self->c_multi_, fd, action, &self->c_still_);
         self->check_done();
@@ -62,7 +61,6 @@ namespace flame::http {
     }
     
     int client::c_socket_cb(CURL* e, curl_socket_t fd, int action, void* data, void* sock_data) {
-        std::cout << "POLL: " << fd << " action: " << action_str[action] << "\n"; 
         client* self = reinterpret_cast<client*>(data);
         client_poll* poll = reinterpret_cast<client_poll*>(sock_data);
 
@@ -96,14 +94,13 @@ namespace flame::http {
 
     client::client()
     : c_timer_(gcontroller->context_x) {
-        std::cout << "+client\n";
         c_multi_ = curl_multi_init();
 
         curl_multi_setopt(c_multi_, CURLMOPT_SOCKETDATA, this);
         curl_multi_setopt(c_multi_, CURLMOPT_SOCKETFUNCTION, client::c_socket_cb);
         curl_multi_setopt(c_multi_, CURLMOPT_TIMERDATA, this);
         curl_multi_setopt(c_multi_, CURLMOPT_TIMERFUNCTION, client::c_timer_cb);
-
+        // 7.62.x + HTTP1 PIPELINE 功能已无效
         curl_multi_setopt(c_multi_, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX/* | CURLPIPE_HTTP1*/);
         // curl_multi_setopt(c_multi_, CURLMOPT_MAX_PIPELINE_LENGTH, 4L);
         curl_multi_setopt(c_multi_, CURLMOPT_MAX_TOTAL_CONNECTIONS, 64L);
@@ -112,7 +109,6 @@ namespace flame::http {
     }
 
     client::~client() {
-        std::cout << "~client\n";
         curl_multi_cleanup(c_multi_);
     }
 
@@ -134,15 +130,12 @@ namespace flame::http {
     // curl_socket_t client::c_socket_open_cb(void* data, curlsocktype purpose, struct curl_sockaddr* addr) {
     //     client* self = reinterpret_cast<client*>(data);
     //     curl_socket_t fd = ::socket(addr->family, addr->socktype, addr->protocol);
-    //     std::cout << time::iso() << " > c_socket_open_cb: " << fd << " purpose: " << purpose << " addr->family: " << addr->family << "\n";
     //     return fd;
     // }
 
     // int client::c_socket_close_cb(void* data, curl_socket_t fd) {
     //     client* self = reinterpret_cast<client*>(data);
-    //     std::cout << time::iso() << " > c_socket_close_cb: " << fd << "\n";
     //     return ::close(fd);
-    //     return 0;
     // }
 
     php::value client::exec_ex(const php::object& req) {
@@ -169,7 +162,6 @@ namespace flame::http {
 
         curl_multi_add_handle(c_multi_, res_->c_easy_);
         res_->c_coro_.suspend(); // <----- check_done
-
         res_->build_ex();
         curl_multi_remove_handle(c_multi_, res_->c_easy_);
         return std::move(res);

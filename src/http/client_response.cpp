@@ -24,6 +24,9 @@ namespace http {
 		return get("raw_body");
 	}
 	void client_response::build_ex() {
+		if(c_final_ != 0) throw php::exception(zend_ce_exception
+			, (boost::format("Failed to execute HTTP request: %s") % c_final_ % c_error_).str()
+			, c_final_);
 		// 响应码
 		long rv = 0;
 		curl_easy_getinfo(c_easy_, CURLINFO_HTTP_VERSION, &rv);
@@ -50,7 +53,7 @@ namespace http {
 		self->c_body_.append(ptr, nmemb);
 		return nmemb;
 	}
-	
+
 	size_t client_response::c_header_cb(char *buffer, size_t size, size_t nitems, void *data) {
 		client_response* self = static_cast<client_response*>(data);
 		size = size * nitems;		

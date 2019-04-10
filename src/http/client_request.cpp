@@ -73,9 +73,9 @@ namespace http {
 
 	php::value client_request::http_version(php::parameters& params) {
 		long v = static_cast<int>(params[0]);
-		if(v <= CURL_HTTP_VERSION_NONE || v >= CURL_HTTP_VERSION_LAST) {
-			throw php::exception("failed to set http version: illegal version");
-		}
+		if(v <= CURL_HTTP_VERSION_NONE || v >= CURL_HTTP_VERSION_LAST)
+			throw php::exception(zend_ce_type_error, "Failed to set http version: illegal HTTP version", -1);
+		
 		curl_easy_setopt(c_easy_, CURLOPT_HTTP_VERSION, v);
 		return nullptr;
 	}
@@ -118,9 +118,9 @@ namespace http {
 		// 目标请求地址
 		// ---------------------------------------------------------------------------
         php::string u = get("url", true);
-		if(!u.typeof(php::TYPE::STRING)) {
-			throw php::exception(zend_ce_exception, "request 'url' must be a string");
-		}
+		if(!u.typeof(php::TYPE::STRING)) 
+			throw php::exception(zend_ce_type_error, "request 'url' must be a string");
+		
 		curl_easy_setopt(c_easy_, CURLOPT_URL, u.c_str());
 		php::string m = get("method", true);
 		// curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
