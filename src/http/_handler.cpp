@@ -122,6 +122,10 @@ HANDLE_BREAK:
             } catch(const php::exception& ex) {
                 res_.reset();
                 req_.reset();
+                
+                auto ft = gcontroller->cbmap->equal_range("exception");
+                for(auto i=ft.first; i!=ft.second; ++i) i->second.call({ex});
+
                 php::object obj = ex;
                 std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in HTTP handler: " << obj.call("__toString") << "\n";
             }

@@ -84,6 +84,9 @@ namespace flame::tcp {
                     try {
                         cb.call({obj});
                     } catch(const php::exception& ex) {
+                        auto ft = gcontroller->cbmap->equal_range("exception");
+                        for(auto i=ft.first; i!=ft.second; ++i) i->second.call({ex});
+
                         php::object obj = ex;
                         std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in TCP handler: "<< obj.call("__toString") << "\n";
                     }

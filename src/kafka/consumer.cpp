@@ -1,3 +1,4 @@
+#include "../controller.h"
 #include "../coroutine.h"
 #include "../time/time.h"
 #include "consumer.h"
@@ -43,9 +44,11 @@ namespace flame::kafka {
                         if(m) cb_.call({m.value()});
                         else break;
                     } catch(const php::exception& ex) {
+                        auto ft = gcontroller->cbmap->equal_range("exception");
+                        for(auto i=ft.first; i!=ft.second; ++i) i->second.call({ex});
+
                         php::object obj = ex;
                         std::cerr << "[" << time::iso() << "] (ERROR) Uncaught exception in Kafka consumer: " << obj.call("__toString") << "\n";
-                        // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                 }
                 if(--count == 0) ch_run.resume();

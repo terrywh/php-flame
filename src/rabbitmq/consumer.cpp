@@ -1,3 +1,4 @@
+#include "../controller.h"
 #include "../coroutine.h"
 #include "consumer.h"
 #include "_client.h"
@@ -49,6 +50,9 @@ namespace flame::rabbitmq
                     try {
                         cb_.call( {x.value()} );
                     } catch(const php::exception& ex) {
+                        auto ft = gcontroller->cbmap->equal_range("exception");
+                        for(auto i=ft.first; i!=ft.second; ++i) i->second.call({ex});
+
                         php::object obj = ex;
                         std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in RabbitMQ consumer: " << obj.call("__toString") << "\n";
                     }

@@ -80,9 +80,11 @@ namespace flame::udp {
                     try {
                         cb_.call({x->first, x->second});
                     } catch(const php::exception& ex) {
+                        auto ft = gcontroller->cbmap->equal_range("exception");
+                        for(auto i=ft.first; i!=ft.second; ++i) i->second.call({ex});
+
                         php::object obj = ex;
                         std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in UDP handler: " << obj.call("__toString") << "\n";
-                        // std::clog << "[" << time::iso() << "] (ERROR) " << ex.what() << std::endl;
                     }
                 }
                 if(--count == 0) ch.resume();
