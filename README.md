@@ -49,19 +49,38 @@ flame\run();
 
 * **core** - 核心，框架初始化设置，协程启动，协程队列，协程锁等；
 * **time** - 时间相关，协程休眠，当前时间等；
-* **log** - 简单日志记录功能，多进程支持，支持日志登记过滤设置；
+> 毫秒级时间戳及缓存机制;  
+* **log** - 简单日志记录功能:
+> 多进程统一日志记录;  
+> 支持日志登记过滤设置;  
+> 支持通过信号进行日志重载;  
 * **os** - 操作系统相关信息获取，异步进程启停操作等；
+> 获取本地网卡地址;
 * **tcp** - 封装 TCP 相关服务端客户端功能；
 * **udp** - 封装 UDP 相关服务端客户端功能；
-* **http** - 简单的 HTTP 客户端，支持长连 Keep-Alive 及相关连接数控制；HTTP 服务端，简单 PATH 处理器；（暂不支持 HTTPS 相关）
-* **mysql** - 简单 MySQL 客户端（连接池），提供部分简化方法，如 `insert/delete/one` 等；
-* **redis** - 简单 Redis 客户端（连接池）；
-* **mongodb** - 简单 MongoDB 客户端（连接池），提供部分简化方法，如 `insert/delete/one/count` 等；
-* **rabbitmq** - 简单 RabbitMQ 生产消费支持；
-* **kafka** - 简单 Kafka 生产消费支持（仅支持 Kafka 0.10+ 群组消费）；
-* **hash** - 提供了若干哈希算法, 例如 murmur2 / crc64 / xxhash64 等；
-* **encoding** - 提供了若干编码、序列化函数，例如 bson 等；
-* **compress** - 提供了若干压缩算法，例如 snappy 等；
+* **http** - 简单的 HTTP 客户端/服务端封装;
+> 客户端支持长连 Keep-Alive 及相关连接数控制;  
+> 客户端支持 HTTPS 及 HTTP/2 协议部分功能;  
+> 客户端暂不支持 form-data/multipart 形式的请求;  
+> 服务器**不支持** HTTPS 可考虑使用 NGINX 等进行反向代理;  
+* **mysql** - 简单 MySQL 客户端:
+> 提供部分简化方法，如 `insert/delete/one` 等, 自动进行 ESCAPE 转义;  
+> 内部使用连接池形式自动连接复用;  
+> 支持事务;  
+* **redis** - 简单 Redis 客户端:
+> 内部使用连接池形式自动连接复用;  
+> 暂不支持 SUBSCRIBE 相关指令;  
+* **mongodb** - 简单 MongoDB 客户端:
+> 提供部分简化方法，如 `insert/delete/one/count` 等;  
+> 内部使用连接池自动连接复用;  
+* **rabbitmq** - 简单 RabbitMQ 生产消费支持:
+> 支持使用协程进行"并行"消费;
+* **kafka** - 简单 Kafka 生产消费支持:
+> 仅支持 Kafka 0.10+ 群组消费形式;  
+> 支持使用协程进行"并行"消费;  
+* **hash** - 提供了若干哈希算法；
+* **encoding** - 提供了若干编码、序列化函数；
+* **compress** - 提供了若干压缩算法；
 
 请参看 `/doc` `/test` 目录下相关 PHP 文件的文档注释；也可将 `/doc` 挂接在 IDE 内方便提供 **自动完成** 等；
 
