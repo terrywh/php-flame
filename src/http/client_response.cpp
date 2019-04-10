@@ -25,7 +25,7 @@ namespace http {
 	}
 	void client_response::build_ex() {
 		if(c_final_ != 0) throw php::exception(zend_ce_exception
-			, (boost::format("Failed to execute HTTP request: %s") % c_final_ % c_error_).str()
+			, (boost::format("Failed to execute HTTP request: %s") % c_error_).str()
 			, c_final_);
 		// 响应码
 		long rv = 0;

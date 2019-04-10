@@ -77,7 +77,7 @@ RETURN_DATA:
 
         if (!err || err == boost::asio::error::operation_aborted) return nullptr;
         else throw php::exception(zend_ce_exception
-            , (boost::format("Failed to write TCP socket: %S") % err.message()).str()
+            , (boost::format("Failed to write TCP socket: %s") % err.message()).str()
             , err.value());
 	}
 

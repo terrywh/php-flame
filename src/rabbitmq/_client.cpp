@@ -176,8 +176,9 @@ namespace flame::rabbitmq
     //     producer_ch_.reset();
     //     if (!error_.empty()) {
     //         std::string err = std::move(error_);
-    //         throw php::exception(zend_ce_error,
-    //                         (boost::format("failed to publish RabbitMQ message: %1%") % err).str(), -1);
+    //         throw php::exception(zend_ce_error
+    //             , (boost::format("Failed to publish RabbitMQ message: %s") % err).str()
+    //             , -1);
     //     }
     // }
 

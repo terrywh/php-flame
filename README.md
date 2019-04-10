@@ -90,6 +90,8 @@ https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98
 
 ### 依赖库
 
+> 需要基础编译组建, 及 c-ares / sasl2 等库;
+
 #### openssl
 ``` Bash
 CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1.1 linux-x86_64
@@ -175,5 +177,6 @@ make && make install
 mkdir stage && cd stage
 CC=gcc CXX=g++ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/mysqlc-8.0.15 -DWITHOUT_SERVER=ON -DWITH_BOOST=../boost/boost_1_68_0 -DWITH_SSL=/data/vendor/openssl-1.1.1 -DOPENSSL_EXECUTABLE=/data/vendor/openssl-1.1.1/bin/openssl -DWITH_CURL=/data/vendor/curl-7.64.1 -DCMAKE_C_FLAGS=-pthread -DCMAKE_CXX_FLAGS=-pthread ../
 make && make install
+# rm /data/vendor/mysqlc-8.0.15/lib/*.so*
 ```
 注意：需要下载内含 boost 头文件的版本（与框架依赖版本不同）；

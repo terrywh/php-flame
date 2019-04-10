@@ -80,6 +80,17 @@ namespace flame {
     }
 }
 
+static std::string openssl_version_str() {
+    std::string version = (boost::format("%d.%d.%d")
+        % ((OPENSSL_VERSION_NUMBER & 0xff0000000L) >> 28)
+        % ((OPENSSL_VERSION_NUMBER & 0x00ff00000L) >> 20)
+        % ((OPENSSL_VERSION_NUMBER & 0x0000ff000L) >> 12) ).str();
+    char status = (OPENSSL_VERSION_NUMBER & 0x000000ff0L) >>  4;
+    if(status > 0) {
+        version.push_back('a' + status - 1);
+    }
+    return version;
+}
 #define VERSION_MACRO(major, minor, patch) VERSION_JOIN(major, minor, patch)
 #define VERSION_JOIN(major, minor, patch) #major"."#minor"."#patch
 
@@ -97,6 +108,7 @@ extern "C" {
         ext.add(std::move(class_closure));
 
         ext
+            .desc({"vendor/openssl", openssl_version_str()})
             .desc({"vendor/boost", BOOST_LIB_VERSION})
             .desc({"vendor/phpext", PHPEXT_LIB_VERSION})
             .desc({"vendor/hiredis", VERSION_MACRO(HIREDIS_MAJOR, HIREDIS_MINOR, HIREDIS_PATCH)})
