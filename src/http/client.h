@@ -2,6 +2,7 @@
 #include "../vendor.h"
 
 namespace flame::http {
+    
     class client_poll;
     class client: public php::class_base {
     public:

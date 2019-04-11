@@ -1,11 +1,10 @@
 #pragma once
 #include "../vendor.h"
 
-namespace flame::redis
-{
+namespace flame::redis {
+
     class _connection_lock;
-    class tx : public php::class_base
-    {
+    class tx : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params); // 私有
@@ -28,7 +27,6 @@ namespace flame::redis
         php::value multi(php::parameters &params);
         // 用于标记不实现的功能
         php::value unimplement(php::parameters &params);
-
     private:
         std::shared_ptr<_connection_lock> cl_;
         friend class client;

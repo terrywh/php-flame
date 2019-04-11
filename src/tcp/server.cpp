@@ -10,15 +10,15 @@ namespace flame::tcp {
 
     void server::declare(php::extension_entry &ext) {
         php::class_entry<server> class_server("flame\\tcp\\server");
-		class_server
-			.method<&server::__construct>("__construct", {
-				{"bind", php::TYPE::STRING},
-			})
-			.method<&server::run>("run", {
-				{"cb", php::TYPE::CALLABLE},
-			})
-			.method<&server::close>("close");
-		ext.add(std::move(class_server));
+        class_server
+            .method<&server::__construct>("__construct", {
+                {"bind", php::TYPE::STRING},
+            })
+            .method<&server::run>("run", {
+                {"cb", php::TYPE::CALLABLE},
+            })
+            .method<&server::close>("close");
+        ext.add(std::move(class_server));
     }
 
     server::server()

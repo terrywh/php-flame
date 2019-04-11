@@ -8,17 +8,17 @@
 namespace flame::kafka {
     void declare(php::extension_entry &ext) {
         ext
-			.function<consume>("flame\\kafka\\consume", {
-				{"options", php::TYPE::ARRAY},
+            .function<consume>("flame\\kafka\\consume", {
+                {"options", php::TYPE::ARRAY},
                 {"topics", php::TYPE::ARRAY},
-			})
+            })
             .function<produce>("flame\\kafka\\produce", {
-				{"options", php::TYPE::ARRAY},
+                {"options", php::TYPE::ARRAY},
                 {"topics", php::TYPE::ARRAY},
-			});;
-		message::declare(ext);
+            });;
+        message::declare(ext);
         consumer::declare(ext);
-		producer::declare(ext);
+        producer::declare(ext);
     }
     
     php::value consume(php::parameters& params) {

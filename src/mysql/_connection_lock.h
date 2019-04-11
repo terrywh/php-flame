@@ -3,10 +3,8 @@
 #include "../coroutine.h"
 #include "_connection_base.h"
 
-namespace flame::mysql
-{
-    class _connection_lock : public _connection_base, public std::enable_shared_from_this<_connection_lock>
-    {
+namespace flame::mysql {
+    class _connection_lock : public _connection_base, public std::enable_shared_from_this<_connection_lock> {
     public:
         _connection_lock(std::shared_ptr<MYSQL> c);
         ~_connection_lock();

@@ -2,16 +2,14 @@
 #include "../vendor.h"
 #include "../coroutine.h"
 
-namespace flame::http
-{
+namespace flame::http {
     class server_response;
     class server_request;
 
     template <bool isRequest>
     class value_body;
     class server;
-    class _handler : public std::enable_shared_from_this<_handler>
-    {
+    class _handler : public std::enable_shared_from_this<_handler> {
     public:
         _handler(server *svr, boost::asio::ip::tcp::socket &&sock);
         ~_handler();

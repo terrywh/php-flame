@@ -5,8 +5,8 @@
 #include "message.h"
 #include "../time/time.h"
 
-namespace flame::rabbitmq 
-{
+namespace flame::rabbitmq  {
+    
     void consumer::declare(php::extension_entry &ext) {
         php::class_entry<consumer> class_consumer("flame\\rabbitmq\\consumer");
         class_consumer

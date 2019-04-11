@@ -4,11 +4,9 @@
 #include "../url.h"
 #include "_connection_base.h"
 
+namespace flame::mysql {
 
-namespace flame::mysql
-{
-    class _connection_pool : public _connection_base, public std::enable_shared_from_this<_connection_pool>
-    {
+    class _connection_pool : public _connection_base, public std::enable_shared_from_this<_connection_pool> {
     public:
         _connection_pool(url u);
         ~_connection_pool();
@@ -22,8 +20,7 @@ namespace flame::mysql
 
         boost::asio::io_context::strand guard_; // 防止对下面队列操作发生多线程问题;
         std::list<std::function<void(std::shared_ptr<MYSQL>)>> await_;
-        struct connection_t
-        {
+        struct connection_t {
             MYSQL *conn;
             std::chrono::time_point<std::chrono::steady_clock> ttl;
         };
@@ -45,5 +42,4 @@ namespace flame::mysql
         void query_charset(MYSQL* c);
         void query_version(MYSQL* c);
     };
-
 } // namespace flame::mysql

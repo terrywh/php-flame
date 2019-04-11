@@ -6,10 +6,10 @@ namespace flame {
     template <class T>
     class coroutine_queue;
 }
-namespace flame::kafka
-{
-    class _consumer
-    {
+
+namespace flame::kafka {
+
+    class _consumer {
     public:
         _consumer(php::array& config, php::array& topics);
         ~_consumer();

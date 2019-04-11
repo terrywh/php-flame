@@ -1,11 +1,10 @@
 #pragma once
 #include "../vendor.h"
 
-namespace flame::mongodb
-{
+namespace flame::mongodb {
+
     class _connection_pool;
-    class client : public php::class_base
-    {
+    class client : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params);

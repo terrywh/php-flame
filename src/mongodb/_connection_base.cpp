@@ -4,9 +4,10 @@
 #include "mongodb.h"
 #include "cursor.h"
 
-namespace flame::mongodb
-{
+namespace flame::mongodb {
+
     void _connection_base::fake_deleter(bson_t *doc) {}
+    
     php::value _connection_base::exec(std::shared_ptr<mongoc_client_t> conn, php::array& pcmd, int type, coroutine_handler &ch) {
         std::shared_ptr<bson_t> cmd = array2bson(pcmd);
         // 此处不能使用 bson_new 创建 bson_t 否则会导致内存泄漏

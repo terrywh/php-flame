@@ -1,11 +1,10 @@
 #pragma once
 #include "../vendor.h"
 
-namespace flame::kafka
-{
+namespace flame::kafka {
+    
     class _producer;
-    class producer : public php::class_base
-    {
+    class producer : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params); // 私有

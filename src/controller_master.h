@@ -21,19 +21,19 @@ namespace flame {
     };
 
     class controller_master {
-	public:
-		controller_master();
+    public:
+        controller_master();
         void initialize(const php::array& options);
-		void run();
+        void run();
     private:
-		std::vector<controller_master_worker*>   worker_spawn_;
+        std::vector<controller_master_worker*>   worker_spawn_;
         std::vector<controller_master_worker*>   worker_close_;
         int                                      worker_spawn_count_;
         int                                      worker_count_;
-		std::unique_ptr<boost::asio::signal_set> signal_;
+        std::unique_ptr<boost::asio::signal_set> signal_;
         boost::asio::steady_timer tm_inter_;
         boost::asio::steady_timer tm_force_;
-		std::thread                        thread_;
+        std::thread                        thread_;
 
         std::string                        ofpath_;
         std::shared_ptr<std::ostream>      offile_;

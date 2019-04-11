@@ -1,8 +1,7 @@
 #pragma once
 #include "../vendor.h"
 
-namespace flame::kafka
-{
+namespace flame::kafka {
     void declare(php::extension_entry &ext);
     php::value consume(php::parameters& params);
     php::value produce(php::parameters& params);

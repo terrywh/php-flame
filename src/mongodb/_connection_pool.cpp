@@ -9,10 +9,10 @@ namespace flame::mongodb {
         std::unique_ptr<mongoc_uri_t, void (*)(mongoc_uri_t *)> uri(mongoc_uri_new(url.c_str()), mongoc_uri_destroy);
         const bson_t* options = mongoc_uri_get_options(uri.get());
         if (!bson_has_field(options, MONGOC_URI_READPREFERENCE)) {
-			mongoc_read_prefs_t* pref = mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED); // secondaryPreferred
-			mongoc_uri_set_read_prefs_t(uri.get(), pref);
-			mongoc_read_prefs_destroy(pref);
-		}
+            mongoc_read_prefs_t* pref = mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED); // secondaryPreferred
+            mongoc_uri_set_read_prefs_t(uri.get(), pref);
+            mongoc_read_prefs_destroy(pref);
+        }
         mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_CONNECTTIMEOUTMS, 5000);
         mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_MAXPOOLSIZE, 6);
 

@@ -2,8 +2,8 @@
 #include "../vendor.h"
 #include "../coroutine.h"
 
-namespace flame::kafka
-{
+namespace flame::kafka {
+    
     class _producer {
     public:
         _producer(php::array& config, php::array& topics);

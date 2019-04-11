@@ -1,7 +1,8 @@
 #pragma once
+#include "../vendor.h"
 
-namespace flame {
-namespace http {
+namespace flame::http {
+
     class value_body_reader;
     class value_body_writer;
     template <bool isRequest>
@@ -15,6 +16,7 @@ namespace http {
         // BodyWriter (Body)
         using writer = value_body_writer;
     };
+
     class value_body_reader {
     public:
         template <bool isRequest, class Fields>
@@ -27,6 +29,7 @@ namespace http {
         php::value& v_;
         php::buffer b_;
     };
+
     class value_body_writer {
     public:
         using const_buffers_type = boost::asio::const_buffer;
@@ -38,6 +41,6 @@ namespace http {
         // const boost::beast::http::header<true>& h_;
         const php::value& v_;
     };
-} // http
-} // flame
+} // namnespace flame::http
+
 #include "value_body.ipp"

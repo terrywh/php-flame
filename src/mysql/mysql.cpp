@@ -38,7 +38,7 @@ namespace flame::mysql {
         ptr->cp_->sweep(); // 启动自动清理扫描
         // TODO 优化: 确认第一个连接建立 ?
         return std::move(obj);
-	}
+    }
     // 相等
     static void where_eq(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond) {
         if (cond.typeof(php::TYPE::NULLABLE)) buf.append(" IS NULL", 8);
@@ -156,8 +156,7 @@ namespace flame::mysql {
 
             if (i->first.typeof(php::TYPE::INTEGER))  {
                 if (i->second.typeof(php::TYPE::ARRAY)) where_ex(cc, buf, i->second, i->first, " AND ");
-                else
-                {
+                else {
                     php::string str = i->second;
                     str.to_string();
                     buf.append(str);

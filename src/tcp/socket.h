@@ -3,10 +3,9 @@
 #include "../coroutine.h"
 #include "../coroutine_mutex.h"
 
-namespace flame::tcp
-{
-    class socket : public php::class_base
-    {
+namespace flame::tcp {
+
+    class socket : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         socket();

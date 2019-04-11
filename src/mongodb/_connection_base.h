@@ -3,8 +3,8 @@
 #include "../coroutine.h"
 
 namespace flame::mongodb {
-    class _connection_base
-    {
+    
+    class _connection_base {
     public:
         enum command_type_t {
             COMMAND_RAW,

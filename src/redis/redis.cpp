@@ -3,20 +3,17 @@
 #include "client.h"
 #include "tx.h"
 
-namespace flame::redis
-{
-    void declare(php::extension_entry& ext)
-    {
-		ext.function<connect>("flame\\redis\\connect",
-        {
-			{"uri", php::TYPE::STRING}
-		});
-		client::declare(ext);
-		tx::declare(ext);
-	}
+namespace flame::redis {
+    
+    void declare(php::extension_entry& ext) {
+        ext.function<connect>("flame\\redis\\connect", {
+            {"uri", php::TYPE::STRING}
+        });
+        client::declare(ext);
+        tx::declare(ext);
+    }
 
-    php::value connect(php::parameters &params)
-    {
+    php::value connect(php::parameters &params) {
         url u(params[0]);
         php::object obj {php::class_entry<client>::entry()};
         client *ptr = static_cast<client *>(php::native(obj));
@@ -25,6 +22,4 @@ namespace flame::redis
         // TODO 优化: 确认第一个连接建立 ?
         return std::move(obj);
     }
-
-
 }

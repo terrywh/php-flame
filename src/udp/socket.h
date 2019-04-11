@@ -4,8 +4,8 @@
 #include "../coroutine_mutex.h"
 
 namespace flame::udp {
-    class socket : public php::class_base
-    {
+    
+    class socket : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         socket();

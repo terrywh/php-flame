@@ -1,16 +1,13 @@
 #pragma once
+#include "../vendor.h"
 
-namespace flame::mongodb
-{
+namespace flame::mongodb {
+
     class _connection_pool;
-    class collection : public php::class_base
-    {
+    class collection : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
-        php::value __construct(php::parameters &params)
-        { // 私有
-            return nullptr;
-        }
+        php::value __construct(php::parameters &params);
         php::value insert(php::parameters &params);
         php::value delete_(php::parameters &params);
         php::value delete_one(php::parameters& params);

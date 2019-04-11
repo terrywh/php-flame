@@ -88,6 +88,10 @@ namespace flame::mongodb {
         ext.add(std::move(class_collection));
     }
 
+    php::value collection::__construct(php::parameters &params) { // 私有
+        return nullptr;
+    }
+
     php::value collection::insert(php::parameters &params) {
         php::array cmd(8);
         cmd.set("insert", name_);
@@ -215,8 +219,8 @@ namespace flame::mongodb {
         assert(cs.instanceof(php::class_entry<cursor>::entry()));
         return cs.call("fetch_row");
     }
-    php::value collection::get(php::parameters &params)
-    {
+    
+    php::value collection::get(php::parameters &params) {
         php::array cmd(8);
         cmd.set("find", name_);
         php::array project(2);

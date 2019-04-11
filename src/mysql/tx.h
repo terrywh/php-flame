@@ -1,12 +1,10 @@
 #pragma once
 #include "../vendor.h"
 
-namespace flame::mysql
-{
+namespace flame::mysql {
 
     class _connection_lock;
-    class tx : public php::class_base
-    {
+    class tx : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params); // 私有
@@ -27,5 +25,4 @@ namespace flame::mysql
         std::shared_ptr<_connection_lock> cl_;
         friend class client;
     };
-
 } // namespace flame::mysql

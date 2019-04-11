@@ -2,8 +2,8 @@
 #include "_producer.h"
 #include "kafka.h"
 
-namespace flame::kafka
-{
+namespace flame::kafka {
+    
     _producer::_producer(php::array& config, php::array& topics) {
         if (!config.exists("bootstrap.servers") && !config.exists("metadata.broker.list"))
             throw php::exception(zend_ce_type_error

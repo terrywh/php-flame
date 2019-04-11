@@ -1,7 +1,8 @@
 #pragma once
+#include "../vendor.h"
 
-namespace flame::mysql
-{
+namespace flame::mysql {
+
     void declare(php::extension_entry &ext);
     php::value connect(php::parameters& params);
 

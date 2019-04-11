@@ -4,8 +4,7 @@
 
 namespace flame::mongodb {
 
-    class _connection_pool: public _connection_base, public std::enable_shared_from_this<_connection_pool>
-    {
+    class _connection_pool: public _connection_base, public std::enable_shared_from_this<_connection_pool> {
     public:
         _connection_pool(const std::string& url);
         ~_connection_pool();

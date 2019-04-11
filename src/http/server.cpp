@@ -4,10 +4,9 @@
 #include "server.h"
 #include "_handler.h"
 
-namespace flame::http
-{
-    void server::declare(php::extension_entry &ext)
-    {
+namespace flame::http {
+    
+    void server::declare(php::extension_entry &ext)  {
         php::class_entry<server> class_server("flame\\http\\server");
         class_server
             .property({"address", "127.0.0.1:7678"})

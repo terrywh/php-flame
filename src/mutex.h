@@ -1,11 +1,10 @@
 #pragma once
 #include "vendor.h"
 
-namespace flame
-{
+namespace flame {
+
     class coroutine_mutex;
-    class mutex: public php::class_base
-    {
+    class mutex: public php::class_base {
     public:
         static void declare(php::extension_entry& ext);
         php::value __construct(php::parameters& params);
@@ -17,8 +16,7 @@ namespace flame
         friend class guard;
     };
 
-    class guard: public php::class_base
-    {
+    class guard: public php::class_base {
     public:
         static void declare(php::extension_entry& ext);
         php::value __construct(php::parameters& params);

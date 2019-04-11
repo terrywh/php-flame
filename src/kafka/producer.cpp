@@ -11,8 +11,7 @@ namespace flame::kafka {
         class_producer
             .method<&producer::__construct>("__construct", {}, php::PRIVATE)
             .method<&producer::__destruct>("__destruct")
-            .method<&producer::publish>("publish",
-            {
+            .method<&producer::publish>("publish", {
                 {"topic", php::TYPE::STRING},
             })
             .method<&producer::flush>("flush");
@@ -39,19 +38,12 @@ namespace flame::kafka {
             key = msg.get("key").to_string();
             payload = msg.get("payload").to_string();
             header = msg.get("header");
-            if (!header.typeof(php::TYPE::ARRAY))
-            {
-                header = php::array(0);
-            }
+            if (!header.typeof(php::TYPE::ARRAY)) header = php::array(0);
         }
         else {
             payload = params[1].to_string();
-            if (params.size() > 2) {
-                key = params[2].to_string();
-            }
-            else {
-                key = php::string(0);
-            }
+            if (params.size() > 2) key = params[2].to_string();
+            else key = php::string(0);
             if (params.size() > 3) {
                 if (params[3].typeof(php::TYPE::ARRAY)) header = params[4];
                 else header = php::array(0);

@@ -1,10 +1,10 @@
 #pragma once
+#include "../vendor.h"
 
-namespace flame::mysql
-{
+namespace flame::mysql {
+
     class _connection_lock;
-    class result: public php::class_base
-    {
+    class result: public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         php::value fetch_row(php::parameters &params);

@@ -3,8 +3,8 @@
 #include "_client.h"
 #include "message.h"
 
-namespace flame::rabbitmq
-{
+namespace flame::rabbitmq {
+    
     static bool str2bool(const char *str){
         return strncasecmp(str, "1", 1) == 0 || strncasecmp(str, "yes", 3) == 0 ||
             strncasecmp(str, "yes", 3) == 0 || strncasecmp(str, "true", 4);
@@ -179,8 +179,7 @@ namespace flame::rabbitmq
     //     }
     // }
 
-    void _client::publish(const std::string &ex, const std::string &rk, const char *msg, size_t len, coroutine_handler& ch)
-    {
+    void _client::publish(const std::string &ex, const std::string &rk, const char *msg, size_t len, coroutine_handler& ch) {
         /*auto& defer = */chn_.publish(ex, rk, msg, len, fl_);
         // producer_cb(defer, ch);
         if (!error_.empty()) {

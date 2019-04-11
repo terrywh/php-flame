@@ -2,14 +2,13 @@
 #include "vendor.h"
 #include "coroutine_queue.h"
 
-namespace flame
-{
-    namespace core
-    {
+namespace flame {
+
+    namespace core {
         php::value select(php::parameters &params);
     }
-    class queue: public php::class_base
-    {
+
+    class queue: public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters& params);

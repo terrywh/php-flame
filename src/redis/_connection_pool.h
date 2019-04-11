@@ -5,10 +5,8 @@
 #include "_connection_base.h"
 
 
-namespace flame::redis
-{
-    class _connection_pool : public _connection_base, public std::enable_shared_from_this<_connection_pool>
-    {
+namespace flame::redis {
+    class _connection_pool : public _connection_base, public std::enable_shared_from_this<_connection_pool> {
     public:
         _connection_pool(url u);
         ~_connection_pool();
@@ -24,8 +22,7 @@ namespace flame::redis
 
         boost::asio::io_context::strand guard_; // 防止对下面队列操作发生多线程问题;
         std::list<std::function<void(std::shared_ptr<redisContext>)>> await_;
-        struct connection_t
-        {
+        struct connection_t {
             redisContext *conn;
             std::chrono::time_point<std::chrono::steady_clock> ttl;
         };
@@ -36,5 +33,4 @@ namespace flame::redis
         redisContext *create(std::string& err);
         void release(redisContext *c);
     };
-
 } // namespace flame::mysql

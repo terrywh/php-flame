@@ -1,10 +1,9 @@
 #pragma once
+#include "../vendor.h"
 
-namespace flame::rabbitmq
-{
+namespace flame::rabbitmq {
 
-    class message : public php::class_base
-    {
+    class message : public php::class_base {
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params); // 私有
@@ -15,5 +14,4 @@ namespace flame::rabbitmq
         void build_ex(AMQP::Envelope &env);
         std::uint64_t tag_;
     };
-    
 } // namespace flame::rabbitmq

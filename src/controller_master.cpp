@@ -248,10 +248,10 @@ namespace flame {
         if (ofpath_[0] == '/') {
             offile_.reset(new std::ofstream(ofpath_, std::ios_base::out | std::ios_base::app));
             // 文件打开失败时不会抛出异常，需要额外的状态检查
-			if (!(*offile_))
+            if (!(*offile_))
                 std::cerr << "(ERROR) failed to create/open logger target file: fallback to standard output\n";
             else return;
-		}
+        }
         offile_.reset(&std::clog, boost::null_deleter());
     }
 

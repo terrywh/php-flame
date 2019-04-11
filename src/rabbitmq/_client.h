@@ -4,10 +4,9 @@
 #include "../url.h"
 #include "../coroutine_queue.h"
 
-namespace flame::rabbitmq
-{
-    class _client
-    {
+namespace flame::rabbitmq {
+
+    class _client {
     public:
         _client(url u, coroutine_handler& ch);
         

@@ -4,15 +4,12 @@
 #include "message.h"
 #include "../coroutine_queue.h"
 
-namespace flame::kafka
-{
+namespace flame::kafka {
     static rd_kafka_topic_partition_list_t *array2topics(const php::array &topics) {
         // 目标订阅的 TOPIC
         rd_kafka_topic_partition_list_t *t = rd_kafka_topic_partition_list_new(topics.size());
         for (auto i = topics.begin(); i != topics.end(); ++i)
-        {
             rd_kafka_topic_partition_list_add(t, i->second.to_string().c_str(), RD_KAFKA_PARTITION_UA);
-        }
         return t;
     }
 
@@ -77,8 +74,7 @@ namespace flame::kafka
 POLL_MESSAGE:
         // 由于 poll 动作本身阻塞, 为防止所有工作线被占用, 这里绑定到 strd_ 执行
         // (理论上仅占用一个协程)
-        boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]()
-        {
+        boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]() {
             msg = rd_kafka_consumer_poll(conn_, 500);
             if (!msg) err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
             else if (msg->err) {

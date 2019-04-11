@@ -7,6 +7,7 @@
 #include "../time/time.h"
 
 namespace flame::http {
+    
     void client::declare(php::extension_entry& ext) {
         php::class_entry<client> class_client("flame\\http\\client");
         class_client
@@ -171,7 +172,7 @@ namespace flame::http {
     php::value client::exec(php::parameters& params) {
         return exec_ex(params[0]);
     }
-	php::value client::get(php::parameters& params) {
+    php::value client::get(php::parameters& params) {
         php::object req(php::class_entry<client_request>::entry());
         req.set("method", "GET");
         req.set("url", params[0]);

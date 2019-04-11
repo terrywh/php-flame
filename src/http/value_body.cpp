@@ -1,8 +1,8 @@
 #include "../coroutine.h"
 #include "value_body.h"
 
-namespace flame {
-namespace http {
+namespace flame::http {
+
     void value_body_reader::init(boost::optional<std::uint64_t> n, boost::system::error_code& error) {
         error.assign(0, error.category());
     }
@@ -26,5 +26,4 @@ namespace http {
             return {{boost::asio::const_buffer(data.data(), data.size()), false}};
         }
     }
-} // http
-} // flame
+} // namespace flame::http

@@ -12,8 +12,7 @@ namespace flame::mysql {
         class_client
             .method<&client::__construct>("__construct", {}, php::PRIVATE)
             .method<&client::__destruct>("__destruct")
-            .method<&client::escape>("escape",
-            {
+            .method<&client::escape>("escape", {
                 {"data", php::TYPE::UNDEFINED},
             })
             .method<&client::begin_tx>("begin_tx")

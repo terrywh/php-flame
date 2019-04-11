@@ -10,24 +10,24 @@
 namespace flame::kafka {
 
     void consumer::declare(php::extension_entry& ext) {
-		php::class_entry<consumer> class_consumer("flame\\kafka\\consumer");
-		class_consumer
-			.method<&consumer::__construct>("__construct", {}, php::PRIVATE)
-			.method<&consumer::run>("run", {
-				{"callable", php::TYPE::CALLABLE},
-			})
+        php::class_entry<consumer> class_consumer("flame\\kafka\\consumer");
+        class_consumer
+            .method<&consumer::__construct>("__construct", {}, php::PRIVATE)
+            .method<&consumer::run>("run", {
+                {"callable", php::TYPE::CALLABLE},
+            })
             .method<&consumer::commit>("commit", {
                 {"message", "flame\\kafka\\message"}
             })
-			.method<&consumer::close>("close");
-		ext.add(std::move(class_consumer));
-	}
+            .method<&consumer::close>("close");
+        ext.add(std::move(class_consumer));
+    }
 
-	php::value consumer::__construct(php::parameters& params) {
-		return nullptr;
-	}
+    php::value consumer::__construct(php::parameters& params) {
+        return nullptr;
+    }
 
-	php::value consumer::run(php::parameters& params) {
+    php::value consumer::run(php::parameters& params) {
         cb_ = params[0];
         coroutine_handler ch_run {coroutine::current};
         coroutine_queue<php::object> q;
@@ -58,7 +58,7 @@ namespace flame::kafka {
         cs_->consume(q, ch_run);
         ch_run.suspend();
         return nullptr;
-	}
+    }
 
     php::value consumer::commit(php::parameters& params) {
         php::object obj = params[0];
@@ -68,9 +68,9 @@ namespace flame::kafka {
         return nullptr;
     }
 
-	php::value consumer::close(php::parameters& params) {
+    php::value consumer::close(php::parameters& params) {
         coroutine_handler ch {coroutine::current};
         cs_->close(ch);
         return nullptr;
-	}
+    }
 } // namespace

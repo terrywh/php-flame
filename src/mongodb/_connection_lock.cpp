@@ -2,12 +2,10 @@
 #include "_connection_lock.h"
 #include "mongodb.h"
 
-namespace flame::mongodb
-{
+namespace flame::mongodb {
     _connection_lock::_connection_lock(std::shared_ptr<mongoc_client_t> c)
     : conn_(c)
     , guard_(gcontroller->context_y) {
-
     }
 
     _connection_lock::~_connection_lock() {
