@@ -119,11 +119,17 @@ make install
 ``` Bash
 make install
 ```
-
+<!--
+#### sasl2
+``` Bash
+PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/sasl2 --with-openssl=/data/vendor/openssl-1.1.1 --without-ldap --enable-shared=no
+make && make install
+```
+-->
 #### mongoc-driver
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SASL=OFF -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
 make && make install
 # rm /data/vendor/mongoc-1.14.0/lib/*.so*
 ```
@@ -175,7 +181,7 @@ make && make install
 #### mysql-connector-c
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/mysqlc-8.0.15 -DWITHOUT_SERVER=ON -DWITH_BOOST=../boost/boost_1_68_0 -DWITH_SSL=/data/vendor/openssl-1.1.1 -DOPENSSL_EXECUTABLE=/data/vendor/openssl-1.1.1/bin/openssl -DWITH_CURL=/data/vendor/curl-7.64.1 -DCMAKE_C_FLAGS=-pthread -DCMAKE_CXX_FLAGS=-pthread ../
+CC=gcc CXX=g++ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/mysqlc-8.0.15 -DWITHOUT_SERVER=ON -DWITH_BOOST=../boost/boost_1_68_0 -DWITH_SSL=/data/vendor/openssl-1.1.1 -DOPENSSL_EXECUTABLE=/data/vendor/openssl-1.1.1/bin/openssl -DWITH_CURL=/data/vendor/curl-7.64.1 -DWITH_SASL=OFF -DSASL_SYSTEM_LIBRARY=OFF -DCMAKE_C_FLAGS=-pthread -DCMAKE_CXX_FLAGS=-pthread ../
 make && make install
 # rm /data/vendor/mysqlc-8.0.15/lib/*.so*
 ```

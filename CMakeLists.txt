@@ -86,7 +86,7 @@ target_link_libraries(FLAME
     ${VENDOR_BOOST}/lib/libboost_filesystem.a
     ${VENDOR_CURL}/lib/libcurl.a
     ${VENDOR_NGHTTP2}/lib/libnghttp2.a
-    sasl2
+#    sasl2
     cares
     ${VENDOR_OPENSSL}/lib/libssl.a
     ${VENDOR_OPENSSL}/lib/libcrypto.a
