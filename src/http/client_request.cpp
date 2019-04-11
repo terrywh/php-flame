@@ -32,7 +32,7 @@ namespace http {
 				{"body", php::TYPE::UNDEFINED, false, true},
 				{"timeout", php::TYPE::INTEGER, false, true},
 			})
-			.method<&client_request::__construct>("http_version", {
+			.method<&client_request::http_version>("http_version", {
 				{"version", php::TYPE::INTEGER},
 			})
 			.method<&client_request::ssl_pem>("ssl_pem", {
@@ -54,9 +54,8 @@ namespace http {
 		if (params.length() > 1 && !params[1].empty()) {
 			set("body", params[1]);
 			set("method", "POST");
-		}else{
-			set("method", "GET");
 		}
+		else set("method", "GET");
 		set("url", params[0]);
 		set("header", php::array(0));
 		set("cookie", php::array(0));
@@ -66,14 +65,14 @@ namespace http {
 	}
 
 	php::value client_request::__destruct(php::parameters &params) {
-		if(c_head_) curl_slist_free_all(c_head_);
-		if(c_easy_) curl_easy_cleanup(c_easy_);
+		if (c_head_) curl_slist_free_all(c_head_);
+		if (c_easy_) curl_easy_cleanup(c_easy_);
 		return nullptr;
 	}
 
 	php::value client_request::http_version(php::parameters& params) {
 		long v = static_cast<int>(params[0]);
-		if(v <= CURL_HTTP_VERSION_NONE || v >= CURL_HTTP_VERSION_LAST)
+		if (v <= CURL_HTTP_VERSION_NONE || v >= CURL_HTTP_VERSION_LAST)
 			throw php::exception(zend_ce_error_exception
 				, "Failed to set HTTP version: value out of range"
 				, -1);
@@ -86,11 +85,11 @@ namespace http {
 		curl_easy_setopt(c_easy_, CURLOPT_SSLCERTTYPE, "PEM");
 		php::string cert = params[0];
 		curl_easy_setopt(c_easy_, CURLOPT_SSLCERT, cert.c_str());
-		if(params.size() > 1 && params[1].typeof(php::TYPE::STRING)) {
+		if (params.size() > 1 && params[1].typeof(php::TYPE::STRING)) {
 			php::string pkey = params[1];
 			curl_easy_setopt(c_easy_, CURLOPT_SSLKEY, pkey.c_str());
 		}
-		if(params.size() > 2 && params[2].typeof(php::TYPE::STRING)) {
+		if (params.size() > 2 && params[2].typeof(php::TYPE::STRING)) {
 			php::string pass = params[2];
 			curl_easy_setopt(c_easy_, CURLOPT_KEYPASSWD, pass.c_str());
 		}
@@ -99,15 +98,15 @@ namespace http {
 
 	php::value client_request::ssl_verify(php::parameters& params) {
 		long v = static_cast<int>(params[0]), YES = 1, NO = 0;
-		if(v | CURLOPT_SSL_VERIFYPEER) 
+		if (v | CURLOPT_SSL_VERIFYPEER) 
 			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, YES);
 		else
 			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, NO);
-		if(v | CURLOPT_SSL_VERIFYHOST)
+		if (v | CURLOPT_SSL_VERIFYHOST)
 			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, YES);
 		else
 			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, NO);
-		if(v | CURLOPT_SSL_VERIFYSTATUS) 
+		if (v | CURLOPT_SSL_VERIFYSTATUS) 
 			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, YES);
 		else 
 			curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, NO);
@@ -119,29 +118,27 @@ namespace http {
 		curl_easy_setopt(c_easy_, CURLOPT_TIMEOUT_MS, timeout);
 		// 目标请求地址
 		// ---------------------------------------------------------------------------
-        php::string u = get("url", true);
-		if(!u.typeof(php::TYPE::STRING)) 
+        php::string u = get("url");
+		if (!u.typeof(php::TYPE::STRING)) 
 			throw php::exception(zend_ce_type_error
 				, "Failed to build client request: 'url' typeof 'string' required"
 				, -1);
 		
 		curl_easy_setopt(c_easy_, CURLOPT_URL, u.c_str());
-		php::string m = get("method", true);
-		// curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
+		php::string m = get("method");
+		curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
 		// 头
 		// ---------------------------------------------------------------------------
-		if(c_head_ != nullptr) curl_slist_free_all(c_head_);
+		if (c_head_ != nullptr) curl_slist_free_all(c_head_);
 		std::string ctype;
 		long keepalive = 1;
 		php::array header = get("header");
-		for(auto i=header.begin(); i!=header.end(); ++i) {
+		for (auto i=header.begin(); i!=header.end(); ++i) {
 			std::string key = i->first;
 			std::string val = i->second;
-			if(strncasecmp(key.c_str(), "content-type", 12) == 0) {
-				ctype = val;
-			}else if(strncasecmp(key.c_str(), "connection", 10) == 0 && strncasecmp(val.c_str(), "close", 5) == 0) {
-				keepalive = 0;
-			}
+			if (strncasecmp(key.c_str(), "content-type", 12) == 0) ctype = val;
+			else if (strncasecmp(key.c_str(), "connection", 10) == 0
+				&& strncasecmp(val.c_str(), "close", 5) == 0) keepalive = 0;
 			c_head_ = curl_slist_append(c_head_, (boost::format("%s: %s") % key % val).str().c_str());
 		}
 		c_head_ = curl_slist_append(c_head_, "Expect: ");
@@ -151,7 +148,7 @@ namespace http {
 		// ---------------------------------------------------------------------------
 		php::array cookie = get("cookie");
 		php::buffer cookies;
-		for(auto i=cookie.begin(); i!=cookie.end(); ++i) {
+		for (auto i=cookie.begin(); i!=cookie.end(); ++i) {
 			php::string key = i->first;
 			php::string val = i->second.to_string();
 			val = php::url_encode(val.c_str(), val.size());
@@ -162,16 +159,18 @@ namespace http {
 			cookies.push_back(' ');
 		}
 		php::string cookie_str = std::move(cookies);
-		if(cookie_str.size() > 0) curl_easy_setopt(c_easy_, CURLOPT_COOKIE, cookie_str.c_str());
+		if (cookie_str.size() > 0) curl_easy_setopt(c_easy_, CURLOPT_COOKIE, cookie_str.c_str());
 		// 体
 		// ---------------------------------------------------------------------------
 		php::string body = get("body");
-		if(ctype.empty()) ctype.assign("application/x-www-form-urlencoded", 33);
-		if(body.empty()) {
-
-		}else if(body.instanceof(php::class_entry<client_body>::entry())) {
+		if (ctype.empty()) ctype.assign("application/x-www-form-urlencoded", 33);
+		if (body.empty()) {
+			// TODO 空 BODY 的处理流程？
+		}
+		else if (body.instanceof(php::class_entry<client_body>::entry())) {
 			// TODO multipart support
-		}else{
+		}
+		else {
 			body = ctype_encode(ctype, body);
 			// 注意: CURLOPT_POSTFIELDS 仅"引用" body 数据
 			set("body", body);

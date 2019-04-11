@@ -22,7 +22,7 @@ namespace flame::mongodb
         auto err = std::make_shared<bson_error_t>();
         const bson_t *doc;
         boost::asio::post(guard_, [this, &cs, &ch, &has, &err, &doc]() {
-            if(!mongoc_cursor_next(cs.get(), &doc)) has = mongoc_cursor_error(cs.get(), err.get());
+            if (!mongoc_cursor_next(cs.get(), &doc)) has = mongoc_cursor_error(cs.get(), err.get());
             ch.resume();
         });
         ch.suspend();

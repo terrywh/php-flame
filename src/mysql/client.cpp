@@ -5,10 +5,9 @@
 #include "mysql.h"
 #include "tx.h"
 
-namespace flame::mysql
-{
-    void client::declare(php::extension_entry &ext)
-    {
+namespace flame::mysql {
+    
+    void client::declare(php::extension_entry &ext) {
         php::class_entry<client> class_client("flame\\mysql\\client");
         class_client
             .method<&client::__construct>("__construct", {}, php::PRIVATE)
@@ -60,31 +59,31 @@ namespace flame::mysql
             .method<&client::server_version>("server_version");
         ext.add(std::move(class_client));
     }
+
     php::value client::__construct(php::parameters& params) {
         return nullptr;
     }
-    php::value client::__destruct(php::parameters &params)
-    {
+
+    php::value client::__destruct(php::parameters &params) {
         // std::cout << "client destruct\n";
         return nullptr;
     }
-    php::value client::escape(php::parameters &params)
-    {
+
+    php::value client::escape(php::parameters &params) {
         coroutine_handler ch {coroutine::current};
         std::shared_ptr<MYSQL> conn = cp_->acquire(ch);
 
         php::buffer buffer;
         char quote = '\'';
-        if (params.size() > 1 && params[1].typeof(php::TYPE::STRING))
-        {
+        if (params.size() > 1 && params[1].typeof(php::TYPE::STRING)) {
             php::string q = params[1];
             if (q.data()[0] == '`') quote = '`';
         }
         _connection_base::escape(conn, buffer, params[0], quote);
         return std::move(buffer);
     }
-    php::value client::begin_tx(php::parameters &params)
-    {
+
+    php::value client::begin_tx(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         auto cl = std::make_shared<_connection_lock>(conn);
@@ -95,45 +94,45 @@ namespace flame::mysql
         ptr->cl_ = cl; // 继续持有当前连接
         return std::move(obj);
     }
-    php::value client::query(php::parameters &params)
-    {
+
+    php::value client::query(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         return cp_->query(cp_->acquire(ch), params[0], ch);
     }
-    php::value client::insert(php::parameters &params)
-    {
+
+    php::value client::insert(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         php::buffer buf;
         build_insert(conn, buf, params);
         return cp_->query(conn, std::string(buf.data(), buf.size()), ch);
     }
-    php::value client::delete_(php::parameters &params)
-    {
+
+    php::value client::delete_(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         php::buffer buf;
         build_delete(conn, buf, params);
         return cp_->query(conn, std::string(buf.data(), buf.size()), ch);
     }
-    php::value client::update(php::parameters &params)
-    {
+
+    php::value client::update(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         php::buffer buf;
         build_update(conn, buf, params);
         return cp_->query(conn, std::string(buf.data(), buf.size()), ch);
     }
-    php::value client::select(php::parameters &params)
-    {
+
+    php::value client::select(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         php::buffer buf;
         build_select(conn, buf, params);
         return cp_->query(conn, std::string(buf.data(), buf.size()), ch);
     }
-    php::value client::one(php::parameters &params)
-    {
+
+    php::value client::one(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         php::buffer buf;
@@ -141,25 +140,23 @@ namespace flame::mysql
         php::object rst = cp_->query(conn, std::string(buf.data(), buf.size()), ch);
         return rst.call("fetch_row");
     }
-    php::value client::get(php::parameters &params)
-    {
+
+    php::value client::get(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         php::buffer buf;
         build_get(conn, buf, params);
         php::object rst = cp_->query(conn, std::string(buf.data(), buf.size()), ch);
         php::array row = rst.call("fetch_row");
-        if(!row.empty()) {
-            return row.get( static_cast<php::string>(params[1]) );
-        }else{
-            return nullptr;
-        }
+        if (!row.empty()) return row.get( static_cast<php::string>(params[1]) );
+        else return nullptr;
     }
+
     php::value client::last_query(php::parameters& params) {
         return cp_->last_query();
     }
-    php::value client::server_version(php::parameters &params)
-    {
+
+    php::value client::server_version(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         auto conn = cp_->acquire(ch);
         return php::string(mysql_get_server_info(conn.get()));

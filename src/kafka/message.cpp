@@ -27,7 +27,7 @@ namespace flame::kafka {
     }
     message::~message()
     {
-        if(msg_) rd_kafka_message_destroy(msg_);
+        if (msg_) rd_kafka_message_destroy(msg_);
     }
     void message::build_ex(rd_kafka_message_t* msg)
     {
@@ -39,7 +39,7 @@ namespace flame::kafka {
         set("key", php::string((const char*)msg->key, msg->key_len));
         set("offset", msg->offset);
         rd_kafka_headers_t* hdrs;
-        if(rd_kafka_message_headers(msg, &hdrs) == RD_KAFKA_RESP_ERR_NO_ERROR)
+        if (rd_kafka_message_headers(msg, &hdrs) == RD_KAFKA_RESP_ERR_NO_ERROR)
         {
             set("header", hdrs2array(hdrs));
         }
@@ -49,11 +49,11 @@ namespace flame::kafka {
     }
     php::value message::__construct(php::parameters& params)
     {
-        if(params.size() > 0)
+        if (params.size() > 0)
         {
             set("payload", params[0].to_string());
         }
-        if(params.size() > 1)
+        if (params.size() > 1)
         {
             set("key", params[1].to_string());
         }

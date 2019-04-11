@@ -28,7 +28,7 @@ namespace flame::tcp {
 
         std::string str = params[0];
         auto pair = udp::addr2pair(str);
-        if(pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
+        if (pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
         	, "Failed to connect TCP socket: illegal address format"
         	, -1);
 
@@ -37,12 +37,12 @@ namespace flame::tcp {
 		boost::asio::ip::tcp::resolver::results_type eps;
 		// DNS 地址解析
 		resolver_->async_resolve(pair.first, pair.second, [&err, &eps, &ch] (const boost::system::error_code& error, boost::asio::ip::tcp::resolver::results_type results) {
-			if(error) err = error;
+			if (error) err = error;
 			else eps = results;
             ch.resume();
 		});
 		ch.suspend();
-		if(err) throw php::exception(zend_ce_exception
+		if (err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to resolve address: %s") % err.message()).str()
             , err.value());
 
@@ -60,7 +60,7 @@ namespace flame::tcp {
             ch.resume();
         });
         ch.suspend();
-        if(err) throw php::exception(zend_ce_exception
+        if (err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to connect TCP socket: %s") % err.message()).str()
             , err.value());
         return std::move(obj);

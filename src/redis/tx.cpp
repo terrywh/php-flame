@@ -143,9 +143,9 @@ namespace flame::redis {
 		php::string name("ZRANGEBYSCORE", 13);
 
 		for(int i=3; i<params.size(); ++i) {
-			if(params[i].typeof(php::TYPE::STRING) && params[i].size() == 10) {
+			if (params[i].typeof(php::TYPE::STRING) && params[i].size() == 10) {
 				php::string arg = params[i];
-				if(strncasecmp("WITHSCORES", arg.c_str(), 10) == 0) {
+				if (strncasecmp("WITHSCORES", arg.c_str(), 10) == 0) {
                     cl_->push(name, params, reply_type::ASSOC_ARRAY_1);
                     return this;
                 }
@@ -158,9 +158,9 @@ namespace flame::redis {
 		php::string name("ZREVRANGEBYSCORE", 16);
 
 		for(int i=3; i<params.size(); ++i) {
-			if(params[i].typeof(php::TYPE::STRING) && params[i].size() == 10) {
+			if (params[i].typeof(php::TYPE::STRING) && params[i].size() == 10) {
 				php::string arg = params[i];
-				if(strncasecmp("WITHSCORES", arg.c_str(), 10) == 0) {
+				if (strncasecmp("WITHSCORES", arg.c_str(), 10) == 0) {
                     cl_->push(name, params, reply_type::ASSOC_ARRAY_1);
                     return this;
                 }

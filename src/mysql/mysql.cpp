@@ -28,9 +28,9 @@ namespace flame::mysql {
 
     php::value connect(php::parameters& params) {
         url u(params[0]);
-        if(u.port < 10) u.port = 3306;
-        if(!u.query.count("charset")) u.query["charset"] = "utf8mb4";
-        if(!u.query.count("ssl")) u.query["ssl"] = "disabled";
+        if (u.port < 10) u.port = 3306;
+        if (!u.query.count("charset")) u.query["charset"] = "utf8mb4";
+        if (!u.query.count("ssl")) u.query["ssl"] = "disabled";
 
         php::object obj(php::class_entry<client>::entry());
         client *ptr = static_cast<client *>(php::native(obj));
@@ -73,7 +73,8 @@ namespace flame::mysql {
     static void where_lt(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond) {
         if (cond.typeof(php::TYPE::NULLABLE)) {
             buf.append("<0", 2);
-        } else {
+        } 
+        else {
             php::string str = cond;
             str.to_string();
             buf.push_back('<');
@@ -143,6 +144,7 @@ namespace flame::mysql {
         buf.append(" NOT LIKE ", 10);
         _connection_base::escape(cc, buf, cond);
     }
+
     static void where_ex(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::array &cond
         , const php::string &field, const php::string &separator) {
 
@@ -160,7 +162,8 @@ namespace flame::mysql {
                     str.to_string();
                     buf.append(str);
                 }
-            } else {
+            }
+            else {
                 php::string key = i->first;
                 if (key.c_str()[0] == '{') { // OPERATOR (php::TYPE::STRING)
                     if ((key.size() == 5 && strncasecmp(key.c_str(), "{NOT}", 5) == 0) 
@@ -169,52 +172,66 @@ namespace flame::mysql {
                         assert(i->second.typeof(php::TYPE::ARRAY));
                         buf.append(" NOT ", 5);
                         where_ex(cc, buf, i->second, php::string(nullptr), " AND ");
-                    } else if (key.size() == 4 && (strncasecmp(key.c_str(), "{OR}", 4) == 0
+                    }
+                    else if (key.size() == 4 && (strncasecmp(key.c_str(), "{OR}", 4) == 0
                         || strncasecmp(key.c_str(), "{||}", 4) == 0)) {
 
                         assert(i->second.typeof(php::TYPE::ARRAY));
                         where_ex(cc, buf, i->second, php::string(nullptr), " OR ");
-                    } else if ((key.size() == 5 && strncasecmp(key.c_str(), "{AND}", 5) == 0)
+                    }
+                    else if ((key.size() == 5 && strncasecmp(key.c_str(), "{AND}", 5) == 0)
                         || (key.size() == 4 && strncasecmp(key.c_str(), "{&&}", 4) == 0)) {
                         assert(i->second.typeof(php::TYPE::ARRAY));
                         where_ex(cc, buf, i->second, php::string(nullptr), " AND ");
-                    } else if (key.size() == 4 && strncasecmp(key.c_str(), "{!=}", 4) == 0) {
+                    }
+                    else if (key.size() == 4 && strncasecmp(key.c_str(), "{!=}", 4) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_ne(cc, buf, i->second);
-                    } else if (key.size() == 3 && strncasecmp(key.c_str(), "{>}", 3) == 0) {
+                    }
+                    else if (key.size() == 3 && strncasecmp(key.c_str(), "{>}", 3) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_gt(cc, buf, i->second);
-                    } else if (key.size() == 3 && strncasecmp(key.c_str(), "{<}", 2) == 0) {
+                    }
+                    else if (key.size() == 3 && strncasecmp(key.c_str(), "{<}", 2) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_lt(cc, buf, i->second);
-                    } else if (key.size() == 4 && strncasecmp(key.c_str(), "{>=}", 4) == 0) {
+                    }
+                    else if (key.size() == 4 && strncasecmp(key.c_str(), "{>=}", 4) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_gte(cc, buf, i->second);
-                    } else if (key.size() == 4 && strncasecmp(key.c_str(), "{<=}", 4) == 0) {
+                    }
+                    else if (key.size() == 4 && strncasecmp(key.c_str(), "{<=}", 4) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_lte(cc, buf, i->second);
-                    } else if (key.size() == 4 && strncasecmp(key.c_str(), "{<>}", 4) == 0) {
+                    }
+                    else if (key.size() == 4 && strncasecmp(key.c_str(), "{<>}", 4) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_wir(cc, buf, i->second);
-                    } else if (key.size() == 4 && strncasecmp(key.c_str(), "{><}", 4) == 0) {
+                    }
+                    else if (key.size() == 4 && strncasecmp(key.c_str(), "{><}", 4) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_oor(cc, buf, i->second);
-                    } else if (key.size() == 3 && strncasecmp(key.c_str(), "{~}", 3) == 0) {
+                    }
+                    else if (key.size() == 3 && strncasecmp(key.c_str(), "{~}", 3) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_lk(cc, buf, i->second);
-                    } else if (key.size() == 4 && strncasecmp(key.c_str(), "{!~}", 4) == 0) {
+                    }
+                    else if (key.size() == 4 && strncasecmp(key.c_str(), "{!~}", 4) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_nlk(cc, buf, i->second);
                     }
-                } else { // php::TYPE::STRING
+                }
+                else { // php::TYPE::STRING
                     if (i->second.typeof(php::TYPE::ARRAY)) {
                         php::array cond = i->second;
                         if (cond.exists(0)) {
                             _connection_base::escape(cc, buf, key, '`');
                             buf.push_back(' ');
                             where_in(cc, buf, i->second);
-                        } else where_ex(cc, buf, cond, key, " AND ");
-                    } else {
+                        }
+                        else where_ex(cc, buf, cond, key, " AND ");
+                    }
+                    else {
                         _connection_base::escape(cc, buf, key, '`');
                         where_eq(cc, buf, i->second);
                     }
@@ -229,16 +246,19 @@ namespace flame::mysql {
         if (data.typeof(php::TYPE::STRING) || data.typeof(php::TYPE::INTEGER)) {
             buf.push_back(' ');
             buf.append(data);
-        } else if (data.typeof(php::TYPE::ARRAY)) {
+        }
+        else if (data.typeof(php::TYPE::ARRAY)) {
             where_ex(cc, buf, data, php::string(0), " AND ");
-        } else buf.push_back('1');
+        }
+        else buf.push_back('1');
     }
 
     void build_order(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &data) {
         if (data.typeof(php::TYPE::STRING)) {
             buf.append(" ORDER BY ", 10);
             buf.append(data);
-        } else if (data.typeof(php::TYPE::ARRAY)) {
+        }
+        else if (data.typeof(php::TYPE::ARRAY)) {
             buf.append(" ORDER BY", 9);
             php::array order = data;
             int j = -1;
@@ -249,26 +269,30 @@ namespace flame::mysql {
                         buf.push_back(' ');
                         buf.append(i->second);
                     }
-                } else {
+                }
+                else {
                     buf.push_back(' ');
                     _connection_base::escape(cc, buf, i->first, '`');
                     if (i->second.typeof(php::TYPE::STRING)) {
                         buf.push_back(' ');
                         buf.append(i->second);
-                    } else if (i->second.typeof(php::TYPE::YES)
+                    }
+                    else if (i->second.typeof(php::TYPE::YES)
                         || (i->second.typeof(php::TYPE::INTEGER) && static_cast<int>(i->second) >= 0))
                         buf.append(" ASC", 4);
                     else buf.append(" DESC", 5);
                 }
             }
-        } else ; // throw php::exception(zend_ce_type_error, "Failed to build 'ORDER BY' clause: unsupported type specified for 'order'", -1);
+        }
+        else ; // throw php::exception(zend_ce_type_error, "Failed to build 'ORDER BY' clause: unsupported type specified for 'order'", -1);
     }
 
     void build_limit(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &data) {
         if (data.typeof(php::TYPE::STRING) || data.typeof(php::TYPE::INTEGER)) {
             buf.append(" LIMIT ", 7);
             buf.append(data);
-        } else if (data.typeof(php::TYPE::ARRAY)) {
+        }
+        else if (data.typeof(php::TYPE::ARRAY)) {
             buf.append(" LIMIT", 6);
             php::array limit = data;
             int j = -1;
@@ -278,7 +302,8 @@ namespace flame::mysql {
                 buf.append(i->second);
                 if (j > 0) break;
             }
-        } else throw php::exception(zend_ce_type_error
+        }
+        else throw php::exception(zend_ce_type_error
             , "Failed to build 'LIMIT' clause: unsupported type specified for `limit`"
             , -1);
     }
@@ -301,7 +326,8 @@ namespace flame::mysql {
         if (rows.exists(0)) {
             row = rows.get(0);
             assert(!row.exists(0) && "二级行无字段");
-        } else {
+        }
+        else {
             row = rows;
             rows = nullptr;
         }
@@ -321,7 +347,8 @@ namespace flame::mysql {
                 insert_row(cc, buf, i->second);
             }
             buf.push_back(')');
-        } else {
+        }
+        else {
             buf.push_back('(');
             insert_row(cc, buf, row);
             buf.push_back(')');
@@ -350,7 +377,8 @@ namespace flame::mysql {
         if (data.typeof(php::TYPE::STRING)) {
             buf.push_back(' ');
             buf.append(data);
-        } else if (data.typeof(php::TYPE::ARRAY)) {
+        }
+        else if (data.typeof(php::TYPE::ARRAY)) {
             int j = -1;
             for (auto i = data.begin(); i != data.end(); ++i) {
                 if (++j > 0) buf.push_back(',');
@@ -359,7 +387,8 @@ namespace flame::mysql {
                 buf.push_back('=');
                 _connection_base::escape(cc, buf, i->second);
             }
-        }else throw php::exception(zend_ce_type_error
+        }
+        else throw php::exception(zend_ce_type_error
             , "Failed to build 'UPDATE' clause: unsupported type specified for `update`"
             , -1);
         // 条件

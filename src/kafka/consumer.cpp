@@ -41,7 +41,7 @@ namespace flame::kafka {
                     try {
                         // consume 本身可能出现异常，不应导致进程停止
                         std::optional<php::object> m = q.pop(ch);
-                        if(m) cb_.call({m.value()});
+                        if (m) cb_.call({m.value()});
                         else break;
                     } catch(const php::exception& ex) {
                         auto ft = gcontroller->cbmap->equal_range("exception");
@@ -51,7 +51,7 @@ namespace flame::kafka {
                         std::cerr << "[" << time::iso() << "] (ERROR) Uncaught exception in Kafka consumer: " << obj.call("__toString") << "\n";
                     }
                 }
-                if(--count == 0) ch_run.resume();
+                if (--count == 0) ch_run.resume();
                 return nullptr;
             }));
         }

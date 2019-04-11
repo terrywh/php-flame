@@ -27,7 +27,7 @@ namespace flame::log {
     static int level = 0;
     
     static void write_ex(int lv, php::parameters& params) {
-        if(lv < level) return;
+        if (lv < level) return;
         std::ostream& os = lv > LEVEL_WARNING ? std::cout : std::cerr;
         os << '[' << time::iso() << "] (";
         os << LEVEL_S[lv];
@@ -70,7 +70,7 @@ namespace flame::log {
 
     void declare(php::extension_entry &ext) {
         gcontroller->on_init([] (const php::array& options) {
-            if(options.exists("level")) level = options.get("level").to_integer();
+            if (options.exists("level")) level = options.get("level").to_integer();
             else level = 0;
         });
         ext

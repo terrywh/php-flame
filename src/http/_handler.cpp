@@ -19,35 +19,30 @@ namespace flame::http {
     }
 
     void _handler::start() {
+        req_.reset();
+        res_.reset();
+        if ((req_ && !req_->keep_alive()) || (res_ && !res_->keep_alive()))  return;
         // 第一次请求或允许复用
-        if ((gcontroller->status & controller::controller_status::STATUS_SHUTDOWN)
-                || svr_ptr->closed_
-                || (req_ && !req_->keep_alive()) || (res_ && !res_->keep_alive())) {
-            req_.reset();
-            res_.reset();
-            return;
-        }else{
-            req_.reset();
-            res_.reset();
-            read_request();
-        }
+        read_request();
     }
 
     void _handler::read_request() {
         // 读取请求
         req_.reset(new boost::beast::http::request_parser<value_body<true>>());
+        req_->header_limit(16 * 1024);
         req_->body_limit(body_max_size);
         boost::beast::http::async_read(socket_, buffer_, *req_
-            , [self = shared_from_this(), this] (const boost::system::error_code &error, std::size_t n)
-        {
-            if(error == boost::beast::http::error::end_of_stream
+            , [self = shared_from_this(), this] (const boost::system::error_code &error, std::size_t n) {
+
+            if (error == boost::beast::http::error::end_of_stream
                 || error == boost::asio::error::operation_aborted
                 || error == boost::asio::error::connection_reset) {
 
                 res_.reset();
                 req_.reset();
                 return;
-            } else if (error) {
+            }
+            else if (error) {
                 res_.reset();
                 req_.reset();
                 // std::cerr << "[" << time::iso() << "] (WARNING) Failed to read http request: (" << error.value() << ") " << error.message() << std::endl;
@@ -83,18 +78,19 @@ namespace flame::http {
 
             try {
                 php::value rv = true;
-                if(ib != svr_ptr->cb_.end()) rv = ib->second.call({req, res, ih != svr_ptr->cb_.end()});
-                if(rv.typeof(php::TYPE::NO)) goto HANDLE_BREAK;
-                if(ih != svr_ptr->cb_.end()) rv = ih->second.call({req, res});
-                if(rv.typeof(php::TYPE::NO)) 
+                if (ib != svr_ptr->cb_.end()) rv = ib->second.call({req, res, ih != svr_ptr->cb_.end()});
+                if (rv.typeof(php::TYPE::NO)) goto HANDLE_BREAK;
+                if (ih != svr_ptr->cb_.end()) rv = ih->second.call({req, res});
+                if (rv.typeof(php::TYPE::NO)) goto HANDLE_BREAK;
                 if (ia != svr_ptr->cb_.end()) rv = ia->second.call({req, res, ih != svr_ptr->cb_.end()});
 HANDLE_BREAK:
-                if(!res_->chunked()/* && !(res_ptr->status_ & server_response::STATUS_BODY_SENT)*/) {
-                    // if(!(res_ptr->status_ & server_response::STATUS_HEAD_SENT)) {
+                if (!res_->chunked()/* && !(res_ptr->status_ & server_response::STATUS_BODY_SENT)*/) {
+                    // if (!(res_ptr->status_ & server_response::STATUS_HEAD_SENT)) {
                     //     res_ptr->set("status", 404);
                     //     res_ptr->set("body", nullptr);
                     // }
-                    if(gcontroller->status & controller::controller_status::STATUS_SHUTDOWN || svr_ptr->closed_) {
+                    // 服务及将停止或服务器以进行关闭后，禁止连接复用
+                    if (gcontroller->status & controller::controller_status::STATUS_SHUTDOWN || svr_ptr->closed_) {
                         res_->keep_alive(false);
                         res_->set(boost::beast::http::field::connection, "close");
                     }
@@ -108,15 +104,16 @@ HANDLE_BREAK:
 
                     boost::system::error_code error;
                     boost::beast::http::async_write(socket_, *res_, ch[error]);
-                    if(error) {
+                    if (error) {
                         res_.reset();
                         req_.reset();
                         throw php::exception(zend_ce_exception
                             , (boost::format("Failed to write response: %s") % error.message()).str()
                             , error.value());
-                    } else start();
-                }/*else
-                {
+                    }
+                    else start();
+                }
+                /*else {
                     // Chunked 未结束 -> server_response::__destruct() -> finish()
                 }*/
             } catch(const php::exception& ex) {
@@ -134,11 +131,11 @@ HANDLE_BREAK:
     }
 
     void _handler::write_head(server_response *res_ptr, coroutine_handler &ch) {
-        if(!res_) return;
+        if (!res_) return;
         res_ptr->build_ex(*res_);
         res_->chunked(true);
         res_->set(boost::beast::http::field::transfer_encoding, "chunked");
-        
+        // 服务及将停止或服务器以进行关闭后，禁止连接复用
         if (gcontroller->status & controller::controller_status::STATUS_SHUTDOWN || svr_ptr->closed_) {
             res_->keep_alive(false);
             res_->set(boost::beast::http::field::connection, "close");
@@ -147,7 +144,7 @@ HANDLE_BREAK:
 
         boost::beast::http::serializer<false, value_body<false>> sr(*res_);
         boost::beast::http::async_write_header(socket_, sr, ch[error]);
-        if(error) {
+        if (error) {
             res_.reset();
             req_.reset();
             throw php::exception(zend_ce_exception
@@ -157,8 +154,8 @@ HANDLE_BREAK:
     }
 
     void _handler::write_body(server_response *res_ptr, php::string data, coroutine_handler &ch) {
-        if(!res_) return;
-        if(!res_->chunked())
+        if (!res_) return;
+        if (!res_->chunked())
             throw php::exception(zend_ce_error_exception
                 , "Failed to write_body: 'chunked' encoding required"
                 , -1);
@@ -176,7 +173,7 @@ HANDLE_BREAK:
     }
 
     void _handler::write_end(server_response* res_ptr, coroutine_handler &ch) {
-        if(!res_) return;
+        if (!res_) return;
         if (!res_->chunked()) throw php::exception(zend_ce_error_exception
             , "Failed to write body: 'chunked' encoding required"
             , -1);
@@ -193,6 +190,10 @@ HANDLE_BREAK:
 
     void _handler::write_file(server_response *res_ptr, std::string path, coroutine_handler &ch) {
         if (!res_) return;
+        if (!res_->chunked())
+            throw php::exception(zend_ce_error_exception
+                , "Failed to write_body: 'chunked' encoding required"
+                , -1);
         std::ifstream file(path);
         char buffer[2048];
         std::size_t size;

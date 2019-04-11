@@ -26,7 +26,7 @@ namespace flame::rabbitmq
             // ch_.onError([] (const char* message) {});
             chn_.onError([this] (const char* message) {
                 error_.assign(message);
-                if(!consumer_tg_.empty()) consumer_close();
+                if (!consumer_tg_.empty()) consumer_close();
             });
             ch.resume();
         });
@@ -37,7 +37,7 @@ namespace flame::rabbitmq
         });
         ch.suspend();
 
-        if(!error_.empty()) {
+        if (!error_.empty()) {
             std::string err = std::move(error_);
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to connect RabbitMQ server: %s") % err).str()
@@ -45,11 +45,8 @@ namespace flame::rabbitmq
         }
 
         auto i = u.query.find("prefetch");
-        if (i == u.query.end()) {
-            pf_ = 8;
-        }else{
-            pf_ = std::min(std::max(std::atoi(i->second.c_str()), 1), 256);
-        }
+        if (i == u.query.end()) pf_ = 8;
+        else pf_ = std::min(std::max(std::atoi(i->second.c_str()), 1), 256);
         chn_.setQos(pf_);
 
         CHECK_AND_SET_FLAG(nolocal, AMQP::nolocal);
@@ -65,7 +62,7 @@ namespace flame::rabbitmq
     void _client::heartbeat() {
         tm_.expires_after(std::chrono::seconds(45));
         tm_.async_wait([this] (const boost::system::error_code& error) {
-            if(error) return;
+            if (error) return;
             con_.heartbeat();
             heartbeat();
         });
@@ -98,7 +95,7 @@ namespace flame::rabbitmq
                 ch.resume(); // ----> 2
             });
         ch.suspend();
-        if(err) throw php::exception(zend_ce_exception
+        if (err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to consume RabbitMQ queue: %s") % err).str()
             , -1);
         consumer_ch_ = ch;
@@ -108,7 +105,7 @@ namespace flame::rabbitmq
             q.push(std::move(obj), ch);
             ch.suspend(); // 2 <----
         }
-        if(err) throw php::exception(zend_ce_exception
+        if (err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to consume RabbitMQ queue: %s") % err).str()
             , -1);
         q.close();
@@ -128,7 +125,7 @@ namespace flame::rabbitmq
         chn_.cancel(consumer_tg_);
         consumer_tg_.clear();
         // 标记结束后，消费流程队将自行关闭
-        if(consumer_ch_) consumer_ch_.resume();
+        if (consumer_ch_) consumer_ch_.resume();
     }
 
     void _client::consumer_close(coroutine_handler& ch) {
@@ -143,7 +140,7 @@ namespace flame::rabbitmq
             });
         ch.suspend();
         consumer_tg_.clear();
-        if(consumer_ch_) consumer_ch_.resume(); // ----> 2  标记结束后，消费流程队将自行关闭
+        if (consumer_ch_) consumer_ch_.resume(); // ----> 2  标记结束后，消费流程队将自行关闭
         if (err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to close RabbitMQ consumer: %s") % err).str()
             , -1);
@@ -152,7 +149,7 @@ namespace flame::rabbitmq
     void _client::publish(const std::string &ex, const std::string &rk, const AMQP::Envelope &env, coroutine_handler& ch) {
         /*auto& defer = */chn_.publish(ex, rk, env, fl_);
         // producer_cb(defer, ch);
-        if(!error_.empty()) {
+        if (!error_.empty()) {
             std::string err = std::move(error_);
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to publish to RabbitMQ: %s") % err).str()
@@ -162,14 +159,14 @@ namespace flame::rabbitmq
 
     // void _client::producer_cb(AMQP::DeferredPublisher& defer, coroutine_handler& ch) {
     //     producer_ch_ = ch;
-    //     if(!producer_cb_) {
+    //     if (!producer_cb_) {
     //         producer_cb_ = true;
     //         const char* err = nullptr;
     //         defer.onSuccess([this]() {
-    //             if(producer_ch_) producer_ch_.resume();
+    //             if (producer_ch_) producer_ch_.resume();
     //         }).onError([this](const char *message) {
     //             error_ = message;
-    //             if(producer_ch_) producer_ch_.resume();
+    //             if (producer_ch_) producer_ch_.resume();
     //         });
     //     }
     //     ch.suspend();
@@ -186,7 +183,7 @@ namespace flame::rabbitmq
     {
         /*auto& defer = */chn_.publish(ex, rk, msg, len, fl_);
         // producer_cb(defer, ch);
-        if(!error_.empty()) {
+        if (!error_.empty()) {
             std::string err = std::move(error_);
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to publish RabbitMQ message: %s") % err).str()

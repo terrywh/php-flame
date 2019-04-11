@@ -41,7 +41,7 @@ namespace flame::udp {
 		if (params.size() > 0 && params[0].typeof(php::TYPE::STRING)) {
 			auto pair = addr2pair(params[0]);
 			boost::asio::ip::address address = boost::asio::ip::make_address(std::string_view(pair.first.data(), pair.first.size()), err);
-			if(err) throw php::exception(zend_ce_exception
+			if (err) throw php::exception(zend_ce_exception
 	            , (boost::format("Failed to bind: %s") % err.message()).str()
 	            , err.value());
 			std::uint16_t port = std::stoi(pair.second);
@@ -52,33 +52,34 @@ namespace flame::udp {
 	        reuse_port opt2(true);
 	        socket_.set_option(opt2);
 			socket_.bind(ep, err);
-			if(err) throw php::exception(zend_ce_exception
+			if (err) throw php::exception(zend_ce_exception
 	            , (boost::format("failed to bind: %s") % err.message()).str()
 	            , err.value());
-			if(params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) {
+			if (params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) {
 				option = params[0];
 				goto PARSE_OPTION;
 			}
-		} else {
+		}
+		else {
 			socket_.open(boost::asio::ip::udp::v6(), err);
 			if (err) socket_.open(boost::asio::ip::udp::v4(), err);
 			if (err) throw php::exception(zend_ce_exception
 				, (boost::format("Failed to bind: %s") % err.message()).str()
 				, err.value());
-			if(params.size() > 0 && params[0].typeof(php::TYPE::ARRAY)) {
+			if (params.size() > 0 && params[0].typeof(php::TYPE::ARRAY)) {
 				option = params[0];
 				goto PARSE_OPTION;
 			}
 		}
 		return nullptr;
 PARSE_OPTION:
-		if(option.exists("max"))
+		if (option.exists("max"))
 			max_ = std::min(std::max(static_cast<int>(option.get("max")), 64), 64 * 1024);
 		return nullptr;
 	}
 
 	php::value socket::recv(php::parameters& params) {
-		if(!connected_) throw php::exception(zend_ce_error_exception
+		if (!connected_) throw php::exception(zend_ce_error_exception
 			, "Failed to send: socket not connected"
 			, -1);
         coroutine_handler ch{coroutine::current};
@@ -111,12 +112,12 @@ PARSE_OPTION:
         else if (err) throw php::exception(zend_ce_exception
             , (boost::format("failed to read TCP socket: %s") % err.message()).str()
             , err.value());
-		if(params.size() > 0) params[0] = (boost::format("%s:%d") % ep.address().to_string(err) % ep.port()).str();
+		if (params.size() > 0) params[0] = (boost::format("%s:%d") % ep.address().to_string(err) % ep.port()).str();
 		return php::string(std::move(buffer_));
     }
 
 	php::value socket::send(php::parameters& params) {
-		if(!connected_) throw php::exception(zend_ce_error_exception
+		if (!connected_) throw php::exception(zend_ce_error_exception
 			, "Failed to send: connected socket required"
 			, -1);
         coroutine_handler ch{coroutine::current};
@@ -138,7 +139,7 @@ PARSE_OPTION:
         boost::system::error_code err;
 		php::string data = params[0];
 		auto pair = addr2pair(params[1]);
-		if(pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
+		if (pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
 			, "Failed to send udp packet: illegal address format"
 			, -1);
 
@@ -146,13 +147,13 @@ PARSE_OPTION:
 		resolver_->async_resolve(pair.first, pair.second, 
 			[&ch, &eps, &err] (const boost::system::error_code& error, boost::asio::ip::udp::resolver::results_type results) {
 
-			if(error) err = error;
+			if (error) err = error;
 			else eps = results;
 			ch.resume();
 		});
 		ch.suspend();
 		if (err == boost::asio::error::operation_aborted) return nullptr;
-		else if(err) throw php::exception(zend_ce_exception
+		else if (err) throw php::exception(zend_ce_exception
 			, (boost::format("Failed to resolve address: %s") % err.message()).str()
 			, err.value());
 
@@ -160,7 +161,7 @@ PARSE_OPTION:
 		int sent = 0;
 		for(auto i=eps.begin(); i!=eps.end(); ++i) {
 			socket_.async_send_to(boost::asio::buffer(data.c_str(), data.size()), *i, ch[err]);
-			if(!err) return nullptr;
+			if (!err) return nullptr;
 		}
 
 		throw php::exception(zend_ce_exception

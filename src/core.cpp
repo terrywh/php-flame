@@ -10,7 +10,7 @@ namespace flame::core {
         std::vector< std::shared_ptr<coroutine_queue<php::value>> > qs;
         std::map< std::shared_ptr<coroutine_queue<php::value>>, php::object > mm;
         for (auto i = 0; i < params.size(); ++i) {
-            if(!params[i].instanceof(php::class_entry<queue>::entry())) throw php::exception(zend_ce_type_error
+            if (!params[i].instanceof(php::class_entry<queue>::entry())) throw php::exception(zend_ce_type_error
                 , "Failed to select: instanceof flame\\queue required"
                 , -1);
             php::object obj = params[i];
@@ -34,8 +34,8 @@ namespace flame::core {
     void declare(php::extension_entry &ext) {
         ext
             .on_request_shutdown([] (php::extension_entry& ext) -> bool {
-                if(coroutine::count > 0 && (gcontroller->status & controller::controller_status::STATUS_RUN) == 0) {
-                    if(!php::error::exists()) std::cerr << "[FATAL] process exited prematurely: exception or missing 'flame\\run();' ?\n";
+                if (coroutine::count > 0 && (gcontroller->status & controller::controller_status::STATUS_RUN) == 0) {
+                    if (!php::error::exists()) std::cerr << "[FATAL] process exited prematurely: exception or missing 'flame\\run();' ?\n";
                     _exit(-1);
                 }
                 return true;

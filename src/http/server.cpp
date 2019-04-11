@@ -136,7 +136,7 @@ namespace flame::http
             boost::system::error_code err;
             accp_.async_accept(sock_, ch[err]);
             if (err == boost::asio::error::operation_aborted) break; 
-            else if(err) throw php::exception(zend_ce_exception
+            else if (err) throw php::exception(zend_ce_exception
                 , (boost::format("Failed to accept connection: %s") % err.message()).str()
                 , err.value());
             else std::make_shared<_handler>(this, std::move(sock_))->start();
@@ -145,7 +145,7 @@ namespace flame::http
     }
 
     php::value server::close(php::parameters &params) {
-        if(closed_) return nullptr;
+        if (closed_) return nullptr;
         closed_ = true;
         accp_.cancel();
         accp_.close();

@@ -1,15 +1,17 @@
 #include "controller.h"
 #include "coroutine.h"
 
-namespace flame
-{
+namespace flame {
+
     boost::context::fixedsize_stack coroutine::stack_allocator(64 * 1024);
+
     std::size_t coroutine::count = 0;
+
     coroutine::php_context_t coroutine::global_context;
     // 当前协程
     std::shared_ptr<coroutine> coroutine::current(nullptr);
-    void coroutine::save_context(php_context_t &ctx)
-    {
+
+    void coroutine::save_context(php_context_t &ctx) {
         ctx.vm_stack = EG(vm_stack);
         ctx.vm_stack_top = EG(vm_stack_top);
         ctx.vm_stack_end = EG(vm_stack_end);
@@ -19,8 +21,8 @@ namespace flame
         ctx.exception_class = EG(exception_class);
         ctx.error_handling = EG(error_handling);
     }
-    void coroutine::restore_context(php_context_t &ctx)
-    {
+
+    void coroutine::restore_context(php_context_t &ctx) {
         EG(vm_stack) = ctx.vm_stack;
         EG(vm_stack_top) = ctx.vm_stack_top;
         EG(vm_stack_end) = ctx.vm_stack_end;
@@ -31,8 +33,7 @@ namespace flame
         EG(error_handling) = ctx.error_handling;
     }
     // 参考 zend_execute.c 
-    static zend_vm_stack zend_vm_stack_new_page(size_t size, zend_vm_stack prev)
-    {
+    static zend_vm_stack zend_vm_stack_new_page(size_t size, zend_vm_stack prev) {
         zend_vm_stack page = (zend_vm_stack)emalloc(size);
 
         page->top = ZEND_VM_STACK_ELEMENTS(page);
@@ -41,16 +42,14 @@ namespace flame
         return page;
     }
     // 参考 zend_execute.c
-    static void zend_vm_stack_init(void)
-    {
+    static void zend_vm_stack_init(void) {
         EG(vm_stack) = zend_vm_stack_new_page(4 * sizeof(zval) * 1024, NULL);
         EG(vm_stack)->top++;
         EG(vm_stack_top) = EG(vm_stack)->top;
         EG(vm_stack_end) = EG(vm_stack)->end;
     }
-    std::shared_ptr<coroutine> coroutine::start(php::callable fn)
-    {
-        
+
+    std::shared_ptr<coroutine> coroutine::start(php::callable fn) {
         ++coroutine::count;
         auto co_ = std::make_shared<coroutine>(fn);
         // 事实上的协程启动会稍后
@@ -58,53 +57,50 @@ namespace flame
             co_->c1_ = boost::context::fiber(
                 std::allocator_arg, coroutine::stack_allocator,
                 [co_ /*, ag = std::move(ag)*/](boost::context::fiber &&cc) {
-                    co_->c2_ = std::move(cc);
-                    auto work = boost::asio::make_work_guard(gcontroller->context_x);
 
-                    save_context(coroutine::global_context);
-                    // 启动进入协程
-                    coroutine::current = co_;
+                co_->c2_ = std::move(cc);
+                auto work = boost::asio::make_work_guard(gcontroller->context_x);
 
-                    EG(current_execute_data) = nullptr;
-                    EG(error_handling) = EH_NORMAL;
-                    EG(exception_class) = nullptr;
-                    EG(exception) = nullptr;
-                    zend_vm_stack_init();
-                    // 协程运行;
-                    co_->fn_.call(/*ag*/);
-                    // 实际协程销毁可能会较晚, 保证在 Zend 引擎前释放
-                    co_->fn_ = nullptr;
-                    // 协程运行完毕
-                    zend_vm_stack_destroy();
-                    coroutine::current = nullptr;
-                    
-                    restore_context(coroutine::global_context);
-                    boost::asio::post(gcontroller->context_x, [co_]()
-                    {
-                        co_->c1_ = boost::context::fiber();
-                        if (--coroutine::count == 0)
-                        {
-                            // 所有协程结束后退出
-                            gcontroller->stop();
-                        }
-                    });
-                    return std::move(co_->c2_);
+                save_context(coroutine::global_context);
+                // 启动进入协程
+                coroutine::current = co_;
+
+                EG(current_execute_data) = nullptr;
+                EG(error_handling) = EH_NORMAL;
+                EG(exception_class) = nullptr;
+                EG(exception) = nullptr;
+                zend_vm_stack_init();
+                // 协程运行;
+                co_->fn_.call(/*ag*/);
+                // 实际协程销毁可能会较晚, 保证在 Zend 引擎前释放
+                co_->fn_ = nullptr;
+                // 协程运行完毕
+                zend_vm_stack_destroy();
+                coroutine::current = nullptr;
+                
+                restore_context(coroutine::global_context);
+                boost::asio::post(gcontroller->context_x, [co_]() {
+                    co_->c1_ = boost::context::fiber();
+                    if (--coroutine::count == 0) gcontroller->stop(); // 所有协程结束后退出
                 });
+                return std::move(co_->c2_);
+            });
 
             co_->c1_ = std::move(co_->c1_).resume();
         });
         return co_;
     }
+
     coroutine::coroutine(php::callable fn)
-        : fn_(std::move(fn)), c1_(), c2_() {
-            // std::cout << "coroutine\n";
-        }
-    coroutine::~coroutine()
-    {
+    : fn_(std::move(fn)), c1_(), c2_() {
+        // std::cout << "coroutine\n";
+    }
+
+    coroutine::~coroutine() {
         // std::cout << "~coroutine\n";
     }
-    void coroutine::suspend()
-    {
+
+    void coroutine::suspend() {
         // 保存 PHP 堆栈
         coroutine::save_context(php_);
         coroutine::restore_context(coroutine::global_context);
@@ -113,8 +109,7 @@ namespace flame
         c2_ = std::move(c2_).resume();
     }
 
-    void coroutine::resume()
-    {
+    void coroutine::resume() {
         // 恢复 PHP 堆栈
         coroutine::save_context(coroutine::global_context);
         coroutine::restore_context(php_);
@@ -123,61 +118,58 @@ namespace flame
         c1_ = std::move(c1_).resume();
     }
     coroutine_handler::coroutine_handler()
-        : co_(nullptr)
-        , er_(nullptr)
-        , stat_(new std::atomic<int>(0))
-    {
+    : co_(nullptr)
+    , er_(nullptr)
+    , stat_(new std::atomic<int>(0)) {
     }
+
     coroutine_handler::coroutine_handler(std::shared_ptr<coroutine> co)
-        : co_(co)
-        , er_(nullptr)
-        , stat_(new std::atomic<int>(0))
-    {
+    : co_(co)
+    , er_(nullptr)
+    , stat_(new std::atomic<int>(0)) {
     }
-    coroutine_handler::~coroutine_handler()
-    {
+
+    coroutine_handler::~coroutine_handler() {
         // std::cout << "~coroutine_handler\n";
     }
-    void coroutine_handler::reset()
-    {
+
+    void coroutine_handler::reset() {
         co_.reset();
         *stat_ = 0;
     }
-    void coroutine_handler::reset(std::shared_ptr<coroutine> co)
-    {
+
+    void coroutine_handler::reset(std::shared_ptr<coroutine> co) {
         assert(co_ == nullptr);
         co_   = co;
         *stat_ = 0;
     }
-    coroutine_handler::operator bool() const
-    {
+
+    coroutine_handler::operator bool() const {
         return co_ != nullptr;
     }
-    void coroutine_handler::operator() (const boost::system::error_code &e, std::size_t n)
-    {
-        if(er_) *er_ = e;
+
+    void coroutine_handler::operator() (const boost::system::error_code &e, std::size_t n) {
+        if (er_) *er_ = e;
         co_->len_ = n;
 
         resume();
     }
-    coroutine_handler& coroutine_handler::operator [](boost::system::error_code& e)
-    {
+
+    coroutine_handler& coroutine_handler::operator [](boost::system::error_code& e) {
         er_ = &e;
         return *this;
     }
-    void coroutine_handler::resume()
-    {
-        if(--*stat_ == 0)
-            boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
+
+    void coroutine_handler::resume() {
+        if (--*stat_ == 0) boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
     }
-    void coroutine_handler::suspend()
-    {
+
+    void coroutine_handler::suspend() {
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
-        if(++*stat_ == 1)
-            co_->suspend();
+        if (++*stat_ == 1) co_->suspend();
     }
-    bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2)
-    {
+    
+    bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2) {
         return ch1.co_ < ch2.co_;
     }
 }

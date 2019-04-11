@@ -172,11 +172,14 @@ namespace flame::mongodb {
                     project = php::array(8);
                     for (auto i = fields.begin(); i != fields.end(); ++i)
                         project.set(php::string(i->second), 1);
-                } else project = fields;
-            } else if (params[1].typeof(php::TYPE::STRING)) { // 单个字段
+                }
+                else project = fields;
+            }
+            else if (params[1].typeof(php::TYPE::STRING)) { // 单个字段
                 php::array project(2);
                 project.set(php::string(params[1]), 1);
-            } else goto PROJECTION_ALL;
+            }
+            else goto PROJECTION_ALL;
 
             if (!project.exists("_id")) project.set("_id", 0);
             cmd.set("projection", project);
@@ -254,13 +257,13 @@ namespace flame::mongodb {
             , -1);
         cmd.set("pipeline", pipeline);
         cmd.set("cursor", php::object(php::CLASS(zend_standard_class_def)));
-        if(params.size() > 1) {
+        if (params.size() > 1) {
             php::array options = params[1];
             for(auto i=options.begin(); i!=options.end(); ++i)
                 cmd.set(i->first.to_string(), i->second);
         }
         int execute_type = _connection_base::COMMAND_READ;
-        if(params.size() > 2)
+        if (params.size() > 2)
             execute_type = params[2].to_integer();
         
         coroutine_handler ch {coroutine::current};
@@ -272,14 +275,14 @@ namespace flame::mongodb {
         php::array cmd(8);
         cmd.set("query", params[0]);
         cmd.set("remove", true);
-        if(params.size() > 1) {
+        if (params.size() > 1) {
             php::value f = params[1];
-            if(f.typeof(php::TYPE::ARRAY)) cmd.set("sort", f);
+            if (f.typeof(php::TYPE::ARRAY)) cmd.set("sort", f);
         }
-        if(params.size() > 2) cmd.set("upsert", params[2].to_boolean());
-        if(params.size() > 3) {
+        if (params.size() > 2) cmd.set("upsert", params[2].to_boolean());
+        if (params.size() > 3) {
             php::value f = params[3];
-            if(f.typeof(php::TYPE::ARRAY)) cmd.set("fields", f);
+            if (f.typeof(php::TYPE::ARRAY)) cmd.set("fields", f);
         }
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
@@ -289,22 +292,20 @@ namespace flame::mongodb {
     php::value collection::find_and_update(php::parameters& params) {
         php::array cmd(8);
         cmd.set("query", params[0]);
-        if(params.size() > 1) {
+        if (params.size() > 1) {
             php::value f = params[1];
-            if(f.typeof(php::TYPE::ARRAY)) cmd.set("update", f);
+            if (f.typeof(php::TYPE::ARRAY)) cmd.set("update", f);
         }
-        if(params.size() > 2) {
+        if (params.size() > 2) {
             php::value f = params[2];
-            if(f.typeof(php::TYPE::ARRAY)) cmd.set("sort", f);
+            if (f.typeof(php::TYPE::ARRAY)) cmd.set("sort", f);
         }
-        if(params.size() > 3)
-            cmd.set("upsert", params[3].to_boolean());
-        if(params.size() > 4) {
+        if (params.size() > 3) cmd.set("upsert", params[3].to_boolean());
+        if (params.size() > 4) {
             php::value f = params[4];
-            if(f.typeof(php::TYPE::ARRAY)) cmd.set("fields", f);
+            if (f.typeof(php::TYPE::ARRAY)) cmd.set("fields", f);
         }
-        if(params.size() > 5)
-            cmd.set("new", params[5].to_boolean());
+        if (params.size() > 5) cmd.set("new", params[5].to_boolean());
         
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);

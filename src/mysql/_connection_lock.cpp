@@ -25,7 +25,7 @@ namespace flame::mysql
             ch.resume();
         });
         ch.suspend();
-        if(err != 0) {
+        if (err != 0) {
             err = mysql_errno(conn_.get());
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to start transaction: %s") % mysql_error(conn_.get())).str()

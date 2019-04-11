@@ -9,7 +9,7 @@ namespace flame::redis {
     , size_(0)
     , guard_(gcontroller->context_y)
     , tm_(gcontroller->context_y) {
-        if(url_.port < 10) url_.port = 6379;
+        if (url_.port < 10) url_.port = 6379;
     }
 
     _connection_pool::~_connection_pool() {
@@ -32,13 +32,14 @@ namespace flame::redis {
             });
             auto now = std::chrono::steady_clock::now();
             while (!conn_.empty())  {
-                if(now - conn_.front().ttl < std::chrono::seconds(15) || ping(conn_.front().conn)) {
+                if (now - conn_.front().ttl < std::chrono::seconds(15) || ping(conn_.front().conn)) {
                     // 可用连接
                     redisContext *c = conn_.front().conn;
                     conn_.pop_front();
                     release(c);
                     return;
-                } else { // 连接已丢失，回收资源
+                }
+                else { // 连接已丢失，回收资源
                     redisFree(conn_.front().conn);
                     conn_.pop_front();
                     --size_;
@@ -50,7 +51,8 @@ namespace flame::redis {
             if (c == nullptr) { // 创建新连接失败
                 await_.pop_back();
                 ch.resume();
-            } else {
+            }
+            else {
                 ++size_; // 当前还存在的连接数量
                 release(c);
             }
@@ -73,11 +75,12 @@ namespace flame::redis {
             ch.resume();
         });
         ch.suspend();
-        if(rp) {
+        if (rp) {
             php::value rv = reply2value(rp, argv, rt);
             freeReplyObject(rp);
             return std::move(rv);
-        } else if(rc->err) throw php::exception(zend_ce_exception
+        }
+        else if (rc->err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to exec Redis command: %s") % rc->errstr).str()
             , rc->err);
         else return nullptr;
@@ -91,27 +94,32 @@ namespace flame::redis {
     redisContext *_connection_pool::create(std::string& err) {
         struct timeval tv {5, 0};
         redisContext* c = redisConnectWithTimeout(url_.host.c_str(), url_.port, tv);
-        if(!c) {
+        if (!c) {
             err.assign("connection failed");
             return nullptr;
-        }else if(c->err) {
+        }
+        else if (c->err) {
             err.assign(c->errstr);
             redisFree(c);
             return nullptr;
         }
-        if(!url_.pass.empty()) { // 认证
-            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply*)redisCommand(c, "AUTH %s", url_.pass.c_str()),
-                (void (*)(redisReply*))freeReplyObject);
-            if(!rp || rp->type == REDIS_REPLY_ERROR) {
+        if (!url_.pass.empty()) { // 认证
+            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply*)redisCommand(c, "AUTH %s"
+                , url_.pass.c_str())
+                , (void (*)(redisReply*))freeReplyObject);
+
+            if (!rp || rp->type == REDIS_REPLY_ERROR) {
                 err.assign(rp->str, rp->len);
                 redisFree(c);
                 return nullptr;
             }
         }
-        if(url_.path.length() > 1) { // 指定数据库
-            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "SELECT %d", std::atoi(url_.path.c_str() + 1)),
-                (void (*)(redisReply*))freeReplyObject);
-            if(!rp || rp->type == REDIS_REPLY_ERROR) {
+        if (url_.path.length() > 1) { // 指定数据库
+            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "SELECT %d"
+                , std::atoi(url_.path.c_str() + 1))
+                , (void (*)(redisReply*))freeReplyObject);
+
+            if (!rp || rp->type == REDIS_REPLY_ERROR) {
                 err.assign(rp->str, rp->len);
                 redisFree(c);
                 return nullptr;
@@ -121,7 +129,7 @@ namespace flame::redis {
     }
 
     void _connection_pool::release(redisContext *c) {
-        if(c->err) --size_;  // 出现上下文异常的连接直接抛弃
+        if (c->err) --size_;  // 出现上下文异常的连接直接抛弃
         else if (await_.empty())
             conn_.push_back({c, std::chrono::steady_clock::now()}); // 无等待分配的请求
         else { // 立刻分配使用
@@ -154,7 +162,8 @@ namespace flame::redis {
                     redisFree((*i).conn);
                     --size_;
                     i = conn_.erase(i);
-                } else ++i;
+                }
+                else ++i;
             }
             sweep(); // 再次启动
         }));

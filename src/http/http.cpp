@@ -46,7 +46,7 @@ namespace flame::http {
 		server_response::declare(ext);
 	}
 	static void init_guard() {
-		if(!client_)
+		if (!client_)
 			throw php::exception(zend_ce_error_exception
 				, "Failed to execute HTTP request: exception or missing 'flame\\init()' ?"
 				, -1);
@@ -72,43 +72,51 @@ namespace flame::http {
 		return client_->exec(params);
 	}
 	php::string ctype_encode(std::string_view ctype, const php::value& v) {
-		if(v.typeof(php::TYPE::STRING)) return v;
+		if (v.typeof(php::TYPE::STRING)) return v;
 
 		php::value r = v;
-		if(ctype.compare(0, 33, "application/x-www-form-urlencoded") == 0) {
-			if(r.typeof(php::TYPE::ARRAY)) {
+		if (ctype.compare(0, 33, "application/x-www-form-urlencoded") == 0) {
+			if (r.typeof(php::TYPE::ARRAY)) {
 				r = php::callable("http_build_query")({v});
-			}else{
+			}
+			else {
 				r.to_string();
 			}
-		}else if(ctype.compare(0, 16, "application/json") == 0) {
+		}
+		else if (ctype.compare(0, 16, "application/json") == 0) {
 			r = php::json_encode(r);
-		}else{
+		}
+		else {
 			r.to_string();
 		}
 		return r;
 	}
 	php::value ctype_decode(std::string_view ctype, const php::string& v, php::array* files) {
-		if(ctype.compare(0, 16, "application/json") == 0) {
+		if (ctype.compare(0, 16, "application/json") == 0) {
 			return php::json_decode(v);
-		}else if(ctype.compare(0, 33, "application/x-www-form-urlencoded") == 0) {
+		}
+		else if (ctype.compare(0, 33, "application/x-www-form-urlencoded") == 0) {
 			php::array data(4);
 			php::callable("parse_str")({v, data.make_ref()});
 			return data;
-		}else if(ctype.compare(0, 19, "multipart/form-data") == 0) {
+		}
+		else if (ctype.compare(0, 19, "multipart/form-data") == 0) {
 			std::string boundary;
 			std::string field;
 			php::array meta(4);
 			parser::separator_parser<std::string, std::string> p1('\0','\0','=','"','"',';', [&boundary, &field, &meta] (std::pair<std::string, std::string> entry) {
-				if(entry.first == "boundary") {
+				if (entry.first == "boundary") {
 					boundary = std::move(entry.second);
-				}else if(entry.first == "content-disposition") {
+				}
+				else if (entry.first == "content-disposition") {
 					// 此项头信息没有用途
-				}else if(entry.first == "name") {
+				}
+				else if (entry.first == "name") {
 					// 这里可能有不严格的地方存在，即每个 Header 项后可能都存在对应的补充字段，且这些字段名称可能重复
 					// 表单字段名
 					field = std::move(entry.second);
-				}else{
+				}
+				else {
 					meta.set(entry.first, entry.second);
 				}
 			});
@@ -118,31 +126,35 @@ namespace flame::http {
 
 			php::array data(8);
 			parser::multipart_parser<std::string, php::buffer> p2(boundary, [&p1, &field, &meta, &data, &files] (std::pair<std::string, php::buffer> entry) {
-				if(entry.first.size() == 0) { // Part Data
-					if(meta.exists("filename") > 0) {
-						if(files) { // 接收对应文件
+				if (entry.first.size() == 0) { // Part Data
+					if (meta.exists("filename") > 0) {
+						if (files) { // 接收对应文件
 							// 上传文件 meta 
 							meta["size"] = entry.second.size();
 							meta["data"] = std::move(entry.second);
 							files->set(field, meta);
 						}
-					}else{
+					}
+					else {
 						data.set(field, std::move(entry.second));
 					}
 					meta = php::array(4);
-				}else{ // Part Header
+				}
+				else { // Part Header
 					php::lowercase_inplace(entry.first.data(), entry.first.size());
 					std::size_t end = std::string_view(entry.second.data(), entry.second.size()).find_first_of(';');
-					if(end == std::string::npos) {
+					if (end == std::string::npos) {
 						meta[entry.first] = std::move(entry.second);
-					}else if(entry.first == "content-disposition") {
+					}
+					else if (entry.first == "content-disposition") {
 						// 这里可能有不严格的地方存在，即每个 Header 项后可能都存在对应的补充字段，且这些字段名称可能重复
 						std::size_t begin = end + 1;
-						if(entry.second.size() > begin + 2) {
+						if (entry.second.size() > begin + 2) {
 							p1.parse(entry.second.data() + begin, entry.second.size() - begin);
 							p1.parse(";", 1); // 保证一行 K/V 结束，复用 PARSER
 						}
-					}else{
+					}
+					else {
 						meta[entry.first] = php::string(entry.second.data(), end);
 					}
 				}
@@ -150,8 +162,7 @@ namespace flame::http {
 			p2.parse(v.data(), v.size());
 
 			return data;
-		}else{
-			return v;
 		}
+		else return v;
 	}
 }

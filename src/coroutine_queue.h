@@ -23,10 +23,10 @@ namespace flame {
         }
 
         void push(const T& t, coroutine_handler& ch) {
-            if(closed_) throw php::exception(zend_ce_error_exception
+            if (closed_) throw php::exception(zend_ce_error_exception
                 , "Failed to push queue: already closed"
                 , -1);
-            if(q_.size() >= n_) {
+            if (q_.size() >= n_) {
                 p_.insert(ch);
                 ch.suspend();
             }
@@ -38,8 +38,8 @@ namespace flame {
         }
         std::optional<T> pop(coroutine_handler& ch) {
             for(;;) {
-                if(!q_.empty()) break; // 有数据消费
-                else if(closed_) return std::optional<T>();  // 无数据关闭
+                if (!q_.empty()) break; // 有数据消费
+                else if (closed_) return std::optional<T>();  // 无数据关闭
                 else { // 无数据等待
                     c_.insert(ch);
                     ch.suspend();
@@ -68,10 +68,10 @@ namespace flame {
 TRY_ALL:
         bool all_closed = true;
         for(auto i=queues.begin();i!=queues.end();++i) {
-            if(!(*i)->q_.empty()) return *i;
+            if (!(*i)->q_.empty()) return *i;
             else if (!(*i)->closed_) all_closed = false;
         }
-        if(all_closed) return std::shared_ptr< coroutine_queue<T> >(nullptr);
+        if (all_closed) return std::shared_ptr< coroutine_queue<T> >(nullptr);
         for(auto i=queues.begin();i!=queues.end();++i) (*i)->c_.insert(ch);
         ch.suspend();
         for (auto i = queues.begin(); i != queues.end(); ++i) (*i)->c_.erase(ch);

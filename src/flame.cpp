@@ -22,7 +22,7 @@
 namespace flame {
     static php::value init(php::parameters& params) {
         php::array options(0);
-        if(params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) options = params[1];
+        if (params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) options = params[1];
         gcontroller->initialize(params[0], options);
         return nullptr;
     }
@@ -64,10 +64,11 @@ namespace flame {
     }
 
     static php::value run(php::parameters& params) {
-        if(gcontroller->status & controller::STATUS_INITIALIZED) {
+        if (gcontroller->status & controller::STATUS_INITIALIZED) {
             gcontroller->default_execute_data = EG(current_execute_data);
             gcontroller->run();
-        }else throw php::exception(zend_ce_error_exception
+        }
+        else throw php::exception(zend_ce_error_exception
             , "Failed to run flame: exception or missing 'flame\\init()' ?"
             , -1);
         return nullptr;
@@ -86,7 +87,7 @@ static std::string openssl_version_str() {
         % ((OPENSSL_VERSION_NUMBER & 0x00ff00000L) >> 20)
         % ((OPENSSL_VERSION_NUMBER & 0x0000ff000L) >> 12) ).str();
     char status = (OPENSSL_VERSION_NUMBER & 0x000000ff0L) >>  4;
-    if(status > 0) {
+    if (status > 0) {
         version.push_back('a' + status - 1);
     }
     return version;
@@ -126,7 +127,7 @@ extern "C" {
                 {"options", php::TYPE::ARRAY, false, true},
             })
             .function<flame::run>("flame\\run");
-        if(flame::gcontroller->type == flame::controller::process_type::WORKER) {
+        if (flame::gcontroller->type == flame::controller::process_type::WORKER) {
             ext
             .function<flame::go>("flame\\go", {
                 {"coroutine", php::TYPE::CALLABLE},
@@ -152,7 +153,8 @@ extern "C" {
             flame::hash::declare(ext);
             flame::encoding::declare(ext);
             flame::compress::declare(ext);
-        } else {
+        }
+        else {
             ext
                 .function<flame::fake_fn>("flame\\go")
                 .function<flame::fake_fn>("flame\\on");

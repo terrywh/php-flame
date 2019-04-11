@@ -33,7 +33,7 @@ namespace flame::tcp {
         closed_ = false;
         std::string str_addr = params[0];
         auto pair = udp::addr2pair(str_addr);
-        if(pair.first.empty() || pair.second.empty())
+        if (pair.first.empty() || pair.second.empty())
             throw php::exception(zend_ce_error_exception
                 , "Failed to bind TCP socket: address malformed"
                 , -1);
@@ -50,7 +50,7 @@ namespace flame::tcp {
 
         boost::system::error_code err;
         acceptor_.bind(addr_, err);
-        if(err) throw php::exception(zend_ce_exception
+        if (err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to bind TCP socket: %s") % err.message()).str()
             , err.value());
 
@@ -67,8 +67,8 @@ namespace flame::tcp {
         boost::system::error_code err;
         while(!closed_) {
             acceptor_.async_accept(socket_, ch[err]);
-            if(err == boost::asio::error::operation_aborted) break;
-            else if(err) throw php::exception(zend_ce_error_exception
+            if (err == boost::asio::error::operation_aborted) break;
+            else if (err) throw php::exception(zend_ce_error_exception
                 , (boost::format("Failed to accept TCP socket: %s") % err.message()).str()
                 , err.value());
             else{
@@ -99,7 +99,7 @@ namespace flame::tcp {
     }
     
     php::value server::close(php::parameters &params) {
-        if(!closed_) {
+        if (!closed_) {
             closed_ = true;
             acceptor_.cancel();
         }

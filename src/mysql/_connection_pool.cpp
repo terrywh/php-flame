@@ -37,7 +37,8 @@ namespace flame::mysql
                     conn_.pop_front();
                     release(c);
                     return;
-                } else { // 连接已丢失，回收资源
+                }
+                else { // 连接已丢失，回收资源
                     mysql_close(conn_.front().conn);
                     conn_.pop_front();
                     --size_;
@@ -47,10 +48,11 @@ namespace flame::mysql
             MYSQL* c = mysql_init(nullptr);
             init_options(c);
 
-            if(mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0)) {
+            if (mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0)) {
                 ++size_; // 当前还存在的连接数量
                 release(c);
-            }else{
+            }
+            else {
                 errnum = mysql_errno(c);
                 errmsg = mysql_error(c);
                 mysql_close(c);
@@ -61,12 +63,11 @@ namespace flame::mysql
         // 暂停, 等待连接获取(异步任务)
         ch.suspend();
         if (!conn) {
-            if (errnum)
-                throw php::exception(zend_ce_exception
+            if (errnum) throw php::exception(zend_ce_exception
                     , (boost::format("Failed to connect to MySQL server: %s") % errmsg).str()
                     , errnum);
-            else
-                throw php::exception(zend_ce_exception, "Failed to connect to MySQL server", 0);
+            else throw php::exception(zend_ce_exception
+                , "Failed to connect to MySQL server", 0);
         }
         // 恢复, 已经填充连接
         return conn;
@@ -123,16 +124,17 @@ namespace flame::mysql
             std::unique_ptr<MYSQL_RES, void (*)(MYSQL_RES*)> rst(mysql_store_result(c), mysql_free_result);
             if (!rst) return;
             MYSQL_ROW row = mysql_fetch_row(rst.get());
-            if(!row) return;
+            if (!row) return;
             unsigned long* len = mysql_fetch_lengths(rst.get());
             std::string charset(row[1], len[1]);
             flag_ |= charset == url_.query["charset"] ? FLAG_CHARSET_EQUAL : FLAG_CHARSET_DIFFER;
-        } else flag_ |= FLAG_CHARSET_DIFFER; // 这里忽略了 charset 查询的错误
+        }
+        else flag_ |= FLAG_CHARSET_DIFFER; // 这里忽略了 charset 查询的错误
     }
 
     void _connection_pool::query_version(MYSQL* c) {
-        if(url_.query.count("proxy") > 0) {
-            if(std::stoi(url_.query["proxy"]) > 0) {
+        if (url_.query.count("proxy") > 0) {
+            if (std::stoi(url_.query["proxy"]) > 0) {
                 flag_ |= FLAG_REUSE_BY_PROXY;
                 return;
             }
@@ -144,7 +146,7 @@ namespace flame::mysql
         tm_.expires_from_now(std::chrono::seconds(60));
         // 注意, 实际的清理流程需要保证 guard_ 串行流程
         tm_.async_wait(boost::asio::bind_executor(guard_, [this] (const boost::system::error_code &error) {
-            if(error) return; // 当前对象销毁时会发生对应的 abort 错误
+            if (error) return; // 当前对象销毁时会发生对应的 abort 错误
             auto now = std::chrono::steady_clock::now();
             // 超低水位，关闭不活跃或已丢失的连接
             for (auto i = conn_.begin(); i != conn_.end() && size_ > min_;) {
@@ -153,7 +155,8 @@ namespace flame::mysql
                     mysql_close((*i).conn);
                     --size_;
                     i = conn_.erase(i);
-                } else  ++i;
+                }
+                else  ++i;
             }
             // 再次启动
             sweep();

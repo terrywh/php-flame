@@ -51,7 +51,8 @@ namespace flame::kafka
                     RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
                     RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
                     RD_KAFKA_V_END);
-            } else { // 无 KEY 时默认 partitioner 会随机分配
+            }
+            else { // 无 KEY 时默认 partitioner 会随机分配
                 err = rd_kafka_producev(conn_,
                     RD_KAFKA_V_TOPIC(topic.c_str()),
                     RD_KAFKA_V_PARTITION(RD_KAFKA_PARTITION_UA),
@@ -66,7 +67,7 @@ namespace flame::kafka
         });
         ch.suspend();
         if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-            if(hdrs) rd_kafka_headers_destroy(hdrs);  // 发生错误时, 需要手动销毁
+            if (hdrs) rd_kafka_headers_destroy(hdrs);  // 发生错误时, 需要手动销毁
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to publish Kafka message: %s") % rd_kafka_err2str(err)).str()
                 , err);
@@ -74,6 +75,6 @@ namespace flame::kafka
     }
 
     void _producer::flush(coroutine_handler& ch) {
-        if(conn_) rd_kafka_flush(conn_, 10000);
+        if (conn_) rd_kafka_flush(conn_, 10000);
     }
 } // namespace flame::kafka

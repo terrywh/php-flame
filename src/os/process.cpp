@@ -1,10 +1,9 @@
 #include "../coroutine.h"
 #include "process.h"
 
-namespace flame::os
-{
-    void process::declare(php::extension_entry &ext)
-    {
+namespace flame::os {
+
+    void process::declare(php::extension_entry &ext) {
         ext
             .constant({"flame\\os\\SIGTERM", SIGTERM})
             .constant({"flame\\os\\SIGKILL", SIGKILL})
@@ -17,8 +16,7 @@ namespace flame::os
             .property({"pid", 0})
             .method<&process::__construct>("__construct", {}, php::PRIVATE)
             .method<&process::__destruct>("__destruct")
-            .method<&process::kill>("kill",
-            {
+            .method<&process::kill>("kill", {
                 {"signal", php::TYPE::INTEGER, false, true}
             })
             .method<&process::detach>("detach")
@@ -27,32 +25,32 @@ namespace flame::os
             .method<&process::stderr>("stderr");
         ext.add(std::move(class_process));
     }
-    php::value process::__construct(php::parameters& params)
-    {
+
+    php::value process::__construct(php::parameters& params) {
         return nullptr;
     }
-    php::value process::__destruct(php::parameters& params)
-    {
-        if(!detach_) {
-            if(!c_.wait_for(std::chrono::milliseconds(10000))) c_.terminate();
-            if(c_.joinable()) c_.join();
+
+    php::value process::__destruct(php::parameters& params) {
+        if (!detach_) {
+            if (!c_.wait_for(std::chrono::milliseconds(10000))) c_.terminate();
+            if (c_.joinable()) c_.join();
         }
         return nullptr;
     }
-    php::value process::kill(php::parameters &params)
-    {
+
+    php::value process::kill(php::parameters &params) {
         if (params.size() > 0) ::kill(get("pid"), params[0].to_integer());
         else ::kill(get("pid"), SIGTERM);
         return nullptr;
     }
-    php::value process::detach(php::parameters& params) 
-    {
+
+    php::value process::detach(php::parameters& params) {
         detach_ = true;
         c_.detach();
         return nullptr;
     }
-    php::value process::wait(php::parameters &params)
-    {
+
+    php::value process::wait(php::parameters &params) {
         if (!exit_) {
             ch_.reset(coroutine::current);
             ch_.suspend();
@@ -60,13 +58,13 @@ namespace flame::os
         }
         return nullptr;
     }
-    php::value process::stdout(php::parameters &params)
-    {
+
+    php::value process::stdout(php::parameters &params) {
         wait(params);
         return out_.get();
     }
-    php::value process::stderr(php::parameters &params)
-    {
+
+    php::value process::stderr(php::parameters &params) {
         wait(params);
         return out_.get();
     }

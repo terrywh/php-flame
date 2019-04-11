@@ -90,13 +90,13 @@ ESCAPE_FINISHED:;
         });
         ch.suspend();
         last_query_ = sql;
-        if(err != 0) {
+        if (err != 0) {
             int err = mysql_errno(conn.get());
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to query MySQL server: %s") % mysql_error(conn.get())).str()
                 , err);
         }
-        if(rst) { // 存在结果集
+        if (rst) { // 存在结果集
             php::object obj(php::class_entry<result>::entry());
             result* ptr = static_cast<result*>(php::native(obj));
             ptr->cl_.reset(new _connection_lock(conn));
@@ -125,7 +125,7 @@ ESCAPE_FINISHED:;
         unsigned long* len;
         boost::asio::post(gcontroller->context_y, [&rst, &ch, &row, &len] () {
             row = mysql_fetch_row(rst.get());
-            if(row) len = mysql_fetch_lengths(rst.get());
+            if (row) len = mysql_fetch_lengths(rst.get());
             ch.resume();
         });
         ch.suspend();
@@ -141,7 +141,7 @@ ESCAPE_FINISHED:;
         for(int i=0;i<n;++i) {
             php::string field(f[i].name, f[i].name_length);
             php::value  value;
-            if(row[i] == nullptr) {
+            if (row[i] == nullptr) {
                 value = nullptr;
                 php_row.set(field, value);
                 continue;

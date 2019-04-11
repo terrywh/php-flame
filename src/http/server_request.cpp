@@ -22,6 +22,9 @@ namespace http {
 
 		ext.add(std::move(class_server_request));
 	}
+	server_request::server_request() {
+		
+	}
 	server_request::~server_request() {
 
 	}
@@ -34,28 +37,30 @@ namespace http {
 		// 目标请求地址
 		auto target = ctr_.target();
 		std::shared_ptr<php::url> url_ = php::parse_url(target.data(), target.size());
-		if(url_->path) {
+		if (url_->path) {
 			set("path", php::string(url_->path));
-		}else{
+		}
+		else {
 			set("path", php::string("/", 1));
 		}
-		if(url_->query) {
+		if (url_->query) {
 			php::array query(4);
 			php::callable("parse_str")({php::string(url_->query), query.make_ref()});
 			set("query", query);
 		}
 		php::array header(4);
-		for(auto i=ctr_.begin(); i!=ctr_.end(); ++i) {
+		for (auto i=ctr_.begin(); i!=ctr_.end(); ++i) {
 			php::string key {i->name_string().data(), i->name_string().size()};
 			php::string val {i->value().data(), i->value().size()};
 
-			if(key.size() == 6 && strncasecmp(key.c_str(), "cookie", 6) == 0) {
+			if (key.size() == 6 && strncasecmp(key.c_str(), "cookie", 6) == 0) {
 				php::array cookie(4);
 				parser::separator_parser<std::string, php::buffer> p1('\0','\0','=','\0','\0',';', [&cookie] (std::pair<std::string, php::buffer> entry) {
-					if(entry.second.size() > 0) {
+					if (entry.second.size() > 0) {
 						entry.second.shrink( php::url_decode_inplace(entry.second.data(), entry.second.size()) );
 						cookie.set(entry.first, php::string(std::move(entry.second)));
-					}else{
+					}
+					else {
 						cookie.set(entry.first, php::string(0));
 					}
 				});
@@ -70,16 +75,17 @@ namespace http {
 		set("header", header);
 
 		php::string body = ctr_.body();
-		if(body.typeof(php::TYPE::STRING)) {
+		if (body.typeof(php::TYPE::STRING)) {
 			auto ctype = ctr_.find(boost::beast::http::field::content_type);
-			if(ctype == ctr_.end() || ctype->value().compare(0, 19, "multipart/form-data") != 0) {
+			if (ctype == ctr_.end() || ctype->value().compare(0, 19, "multipart/form-data") != 0) {
 				set("raw_body", body); // 不在 multipart 时保留原始数据
 			}
-			if(ctype != ctr_.end()) { // 存在时按照类型进行解析
+			if (ctype != ctr_.end()) { // 存在时按照类型进行解析
 				php::array files(4);
 				set("body", ctype_decode(ctype->value(), body, &files));
 				set("file", files);
-			}else{ // 不存在与 raw_body 相同
+			}
+			else { // 不存在与 raw_body 相同
 				set("body", body);
 			}
 		}

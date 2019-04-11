@@ -28,7 +28,7 @@ namespace flame::udp {
 
         std::string str = params[0];
         auto pair = addr2pair(str);
-        if(pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
+        if (pair.first.empty() || pair.second.empty()) throw php::exception(zend_ce_type_error
             , "Failed to connect UDP socket: illegal address format"
             , -1);
 
@@ -38,12 +38,12 @@ namespace flame::udp {
 		resolver_->async_resolve(pair.first, pair.second
             , [&err, &obj, &ptr, &eps, &ch] (const boost::system::error_code& error, boost::asio::ip::udp::resolver::results_type results) { // DNS 地址解析
 
-			if(error) err = error;
+			if (error) err = error;
 			else eps = results;
 			ch.resume();
 		});
 		ch.suspend();
-		if(err) throw php::exception(zend_ce_exception
+		if (err) throw php::exception(zend_ce_exception
                 , (boost::format("Failed to resolve address: %s") % err.message()).str()
                 , err.value());
 
@@ -58,7 +58,7 @@ namespace flame::udp {
             ch.resume();
         });
         ch.suspend();
-        if(err) throw php::exception(zend_ce_exception
+        if (err) throw php::exception(zend_ce_exception
             , (boost::format("Failed to connect UDP socket: %s") % err.message()).str()
             , err.value());
 		ptr->connected_ = true;

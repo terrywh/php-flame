@@ -68,7 +68,8 @@ namespace flame::mongodb
             // 参考: http://mongoc.org/libmongoc/current/mongoc_cursor_new_from_command_reply_with_opts.html
             *std::get_deleter<void (*)(bson_t*)>(rep) = fake_deleter;
             return std::move(obj);
-        } else {
+        }
+        else {
             php::array r(4);
 
             bson_iter_t i;
@@ -77,7 +78,7 @@ namespace flame::mongodb
             while (bson_iter_next(&i)) {
                 const char* key = bson_iter_key(&i);
                 std::uint32_t len = bson_iter_key_len(&i);
-                if(len > 0 && key[0] == '$') continue;
+                if (len > 0 && key[0] == '$') continue;
                 r.set(php::string(key, len), iter2value(&i));
             }
             return std::move(r);

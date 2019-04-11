@@ -51,7 +51,7 @@ namespace flame::kafka
     }
 
     _consumer::~_consumer() {
-        if(conn_) {
+        if (conn_) {
             // rd_kafka_consumer_close(conn_);
             rd_kafka_topic_partition_list_destroy(tops_);
             rd_kafka_destroy(conn_);
@@ -65,7 +65,7 @@ namespace flame::kafka
             ch.resume();
         });
         ch.suspend();
-        if(err != RD_KAFKA_RESP_ERR_NO_ERROR) 
+        if (err != RD_KAFKA_RESP_ERR_NO_ERROR) 
             throw php::exception(zend_ce_exception
                 , (boost::format("failed to subcribe Kafka topics: %s") % rd_kafka_err2str(err)).str()
                 , err);
@@ -80,7 +80,7 @@ POLL_MESSAGE:
         boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]()
         {
             msg = rd_kafka_consumer_poll(conn_, 500);
-            if(!msg) err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
+            if (!msg) err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
             else if (msg->err) {
                 err = msg->err;
                 rd_kafka_message_destroy(msg);
@@ -95,11 +95,13 @@ POLL_MESSAGE:
                 return;
             } // 消费已被关闭
             else goto POLL_MESSAGE;
-        } else if(err != RD_KAFKA_RESP_ERR_NO_ERROR) {
+        }
+        else if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
             throw php::exception(zend_ce_exception
                 , (boost::format("failed to consume Kafka message: %s") % rd_kafka_err2str(err)).str()
                 , err);
-        } else {
+        }
+        else {
             php::object obj(php::class_entry<message>::entry());
             message* ptr = static_cast<message*>(php::native(obj));
             ptr->build_ex(msg); // msg 交由 message 对象管理

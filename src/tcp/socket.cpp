@@ -41,7 +41,7 @@ namespace flame::tcp {
         }
         else if (params[0].typeof(php::TYPE::INTEGER)) { // 3. 读取指定长度
 			std::size_t want = params[0].to_integer();
-			if(buffer_.size() >= want) {
+			if (buffer_.size() >= want) {
                 len = want;
                 goto RETURN_DATA;
 			}

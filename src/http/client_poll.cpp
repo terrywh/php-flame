@@ -11,11 +11,13 @@ namespace flame::http {
 		assert(x == 0);
 		::getsockname(fd, &addr, &size);
 		client_poll* poll;
-		if(type == SOCK_STREAM) {
+		if (type == SOCK_STREAM) {
 			poll = new client_poll_tcp(io, addr.sa_family == AF_INET6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), ::dup(fd));
-		}else if(type == SOCK_DGRAM) {
+		}
+		else if (type == SOCK_DGRAM) {
 			poll = new client_poll_udp(io, addr.sa_family == AF_INET6 ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4(), ::dup(fd));
-		}else{
+		}
+		else {
 			return nullptr;
 		}
 		poll->data = data;
@@ -32,14 +34,14 @@ namespace flame::http {
 	}
 
 	void client_poll::on_ready(const boost::system::error_code& error, int action) {
-		if(error == boost::asio::error::operation_aborted) return; // 取消监听（销毁）或设置了新的监听
+		if (error == boost::asio::error::operation_aborted) return; // 取消监听（销毁）或设置了新的监听
 		cb_(error, this, fd_, action);
-		if(action_ == CURL_POLL_REMOVE) delete this;
-		else if(action_ == action) async_wait();
+		if (action_ == CURL_POLL_REMOVE) delete this;
+		else if (action_ == action) async_wait();
 	}
 
 	void client_poll::async_wait(int action) {
-		if(action_ != action) {
+		if (action_ != action) {
 			action_ = action;
 			async_wait();
 		}
@@ -56,9 +58,9 @@ namespace flame::http {
 	void client_poll_tcp::async_wait() {
 		sock_.cancel();
 		// 重新监听
-		if(action_ == CURL_POLL_IN || action_ == CURL_POLL_INOUT) 
+		if (action_ == CURL_POLL_IN || action_ == CURL_POLL_INOUT) 
 			sock_.async_wait(boost::asio::ip::tcp::socket::wait_read, std::bind(&client_poll_tcp::on_ready, this, std::placeholders::_1, action_));
-		if(action_ == CURL_POLL_OUT || action_ == CURL_POLL_INOUT) 
+		if (action_ == CURL_POLL_OUT || action_ == CURL_POLL_INOUT) 
 			sock_.async_wait(boost::asio::ip::tcp::socket::wait_write, std::bind(&client_poll_tcp::on_ready, this, std::placeholders::_1, action_));
 	}
 	
@@ -72,9 +74,9 @@ namespace flame::http {
 	void client_poll_udp::async_wait() {
 		sock_.cancel();
 		// 重新监听
-		if(action_ == CURL_POLL_IN || action_ == CURL_POLL_INOUT) 
+		if (action_ == CURL_POLL_IN || action_ == CURL_POLL_INOUT) 
 			sock_.async_wait(boost::asio::ip::tcp::socket::wait_read, std::bind(&client_poll_udp::on_ready, this, std::placeholders::_1, action_));
-		if(action_ == CURL_POLL_OUT || action_ == CURL_POLL_INOUT) 
+		if (action_ == CURL_POLL_OUT || action_ == CURL_POLL_INOUT) 
 			sock_.async_wait(boost::asio::ip::tcp::socket::wait_write, std::bind(&client_poll_udp::on_ready, this, std::placeholders::_1, action_));
 	}
 

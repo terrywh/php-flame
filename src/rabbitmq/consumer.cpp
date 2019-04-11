@@ -57,14 +57,14 @@ namespace flame::rabbitmq
                         std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in RabbitMQ consumer: " << obj.call("__toString") << "\n";
                     }
                 }
-                if(--count == 0)  ch.resume(); // ----> 1
+                if (--count == 0)  ch.resume(); // ----> 1
                 return nullptr;
             }));
         }
         cc_->consume(qn_, q, ch);
         ch.suspend(); // 1 <----
         cb_ = nullptr;
-        if(cc_->has_error()) throw php::exception(zend_ce_exception
+        if (cc_->has_error()) throw php::exception(zend_ce_exception
             , (boost::format("Failed to consume RabbitMQ queue: %s") % cc_->error()).str()
             , -1);
         return nullptr;

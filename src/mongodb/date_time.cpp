@@ -21,7 +21,7 @@ namespace mongodb {
 		ext.add(std::move(class_date_time));
 	}
 	php::value date_time::__construct(php::parameters& params) {
-		if(params.size() > 0)
+		if (params.size() > 0)
         {
 			tm_ = params[0].to_integer();
 		}

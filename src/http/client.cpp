@@ -42,7 +42,7 @@ namespace flame::http {
         int left;
         client_response* res_;
         while((msg = curl_multi_info_read(c_multi_, &left))) {
-            if(msg->msg == CURLMSG_DONE) {
+            if (msg->msg == CURLMSG_DONE) {
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &res_);
                 res_->c_final_ = msg->data.result;
                 res_->c_coro_.resume();
@@ -54,22 +54,24 @@ namespace flame::http {
 
     void client::c_socket_ready_cb(const boost::system::error_code& error, client_poll* poll, curl_socket_t fd, int action) {
         client* self = reinterpret_cast<client*>(poll->data);
-        if(error) action = CURL_CSELECT_ERR;
+        if (error) action = CURL_CSELECT_ERR;
         curl_multi_socket_action(self->c_multi_, fd, action, &self->c_still_);
         self->check_done();
-        if(self->c_still_ <= 0) self->c_timer_.cancel();
+        if (self->c_still_ <= 0) self->c_timer_.cancel();
     }
     
     int client::c_socket_cb(CURL* e, curl_socket_t fd, int action, void* data, void* sock_data) {
         client* self = reinterpret_cast<client*>(data);
         client_poll* poll = reinterpret_cast<client_poll*>(sock_data);
 
-        if(action == CURL_POLL_REMOVE) {
+        if (action == CURL_POLL_REMOVE) {
             curl_multi_assign(self->c_multi_, fd, nullptr);
-        }else if(poll == nullptr) {
+        }
+        else if (poll == nullptr) {
             poll = client_poll::create_poll(gcontroller->context_x, fd, c_socket_ready_cb, self);
             curl_multi_assign(self->c_multi_, fd, poll);
-        }else{
+        }
+        else {
             // 
         }
         poll->async_wait(action);
@@ -80,11 +82,11 @@ namespace flame::http {
         client* self = reinterpret_cast<client*>(data);
 
         self->c_timer_.cancel();
-        if(timeout_ms == 0) timeout_ms = 1;
-        if(timeout_ms > 0) {
+        if (timeout_ms == 0) timeout_ms = 1;
+        if (timeout_ms > 0) {
             self->c_timer_.expires_after(std::chrono::milliseconds(timeout_ms));
             self->c_timer_.async_wait([self] (const boost::system::error_code& err) {
-                if(err) return;
+                if (err) return;
                 curl_multi_socket_action(self->c_multi_, CURL_SOCKET_TIMEOUT, 0, &self->c_still_);
                 self->check_done();
             });
@@ -113,11 +115,11 @@ namespace flame::http {
     }
 
     php::value client::__construct(php::parameters& params) {
-        if(params.size() > 0) {
+        if (params.size() > 0) {
             php::array opts = params[0];
-            if(opts.exists("connection_per_host")) {
+            if (opts.exists("connection_per_host")) {
                 long c = opts.get("connection_per_host");
-                if(c < 1 || c > 512) {
+                if (c < 1 || c > 512) {
                     curl_multi_setopt(c_multi_, CURLMOPT_MAX_TOTAL_CONNECTIONS, c * 4);
                     curl_multi_setopt(c_multi_, CURLMOPT_MAXCONNECTS, c * 2);
                     curl_multi_setopt(c_multi_, CURLMOPT_MAX_HOST_CONNECTIONS, c);
@@ -140,7 +142,7 @@ namespace flame::http {
 
     php::value client::exec_ex(const php::object& req) {
         auto req_ = static_cast<client_request*>(php::native(req));
-        if(req_->c_easy_ == nullptr) req_->c_easy_ = curl_easy_init();
+        if (req_->c_easy_ == nullptr) req_->c_easy_ = curl_easy_init();
         // curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETFUNCTION, c_socket_open_cb);
         // curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETDATA, this);
         // curl_easy_setopt(req_->c_easy_, CURLOPT_CLOSESOCKETFUNCTION, c_socket_close_cb);
@@ -176,9 +178,10 @@ namespace flame::http {
         req.set("header", php::array(0));
         req.set("cookie", php::array(0));
         req.set("body", nullptr);
-        if(params.length() > 1) {
+        if (params.length() > 1) {
             req.set("timeout", params[1]);
-        }else{
+        }
+        else {
             req.set("timeout", 3000);
         }
         return exec_ex(req);
@@ -190,7 +193,7 @@ namespace flame::http {
         req.set("header", php::array(0));
         req.set("cookie", php::array(0));
         req.set("body",       params[1]);
-        if(params.length() > 2) {
+        if (params.length() > 2) {
             req.set("timeout",params[2]);
         }else{
             req.set("timeout",     3000);
@@ -204,9 +207,10 @@ namespace flame::http {
         req.set("header", php::array(0));
         req.set("cookie", php::array(0));
         req.set("body",       params[1]);
-        if(params.length() > 2) {
+        if (params.length() > 2) {
             req.set("timeout",params[2]);
-        }else{
+        }
+        else {
             req.set("timeout",     3000);
         }
         return exec_ex(req);
@@ -218,9 +222,10 @@ namespace flame::http {
         req.set("header", php::array(0));
         req.set("cookie", php::array(0));
         req.set("body",         nullptr);
-        if(params.length() > 1) {
+        if (params.length() > 1) {
             req.set("timeout", params[1]);
-        }else{
+        }
+        else {
             req.set("timeout", 3000);
         }
         return exec_ex(req);

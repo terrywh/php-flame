@@ -35,7 +35,8 @@ namespace flame::os {
         if (data.exists(name)) {
             php::array iface = data.get(name);
             iface.set(iface.size(), info);
-        } else {
+        }
+        else {
             php::array iface(2);
             iface.set(iface.size(), info);
             data.set(name, iface);
