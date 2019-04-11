@@ -17,6 +17,7 @@
 #include <stack>
 #include <string_view>
 #include <optional>
+#include <set>
 #include <unordered_set>
 #include <phpext/phpext.h>
 #include <http_parser.h>

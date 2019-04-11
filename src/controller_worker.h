@@ -1,8 +1,7 @@
 #pragma once
 #include "vendor.h"
 
-namespace flame
-{
+namespace flame {
     class controller_worker {
 	public:
 		controller_worker();

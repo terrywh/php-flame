@@ -15,7 +15,7 @@ namespace flame;
  *      "warning"
  *      "error"
  *      "fatal"
- *  * "timeout" - 多进程退出超时（超时后会被强制杀死）(v0.12.12+ 默认 1s 超时 / v0.12.11- 默认 10s 超时）
+ *  * "timeout" - 多进程退出超时, 单位毫秒( 200 ~ 100000ms ), 默认 3000ms（超时后会被强制杀死）
  *  @see flame\log
  *
  * 使用环境变量 FLAME_MAX_WORKERS=X 启动多进程模式

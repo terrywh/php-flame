@@ -34,23 +34,21 @@ namespace flame {
 	}
 	void controller::initialize(const std::string& title, const php::array& options) {
 		// 多进程模式退出超时时间，默认 1s 超时强制退出
-		if(options.exists("timeout")) {
-			worker_quit = std::min(std::max(static_cast<int>(options.get("timeout")), 1), 128);
-		}else{
-			worker_quit = 1;
-		}
+		if (options.exists("timeout"))
+			worker_quit = std::min(std::max(static_cast<int>(options.get("timeout")), 200), 100000);
+		else worker_quit = 3000;
 		status |= STATUS_INITIALIZED;
 		for (auto fn : init_cb) fn(options);
-		if(type == process_type::WORKER) {
+		if (type == process_type::WORKER) {
 			if (worker_size > 0) {
 				std::string index = env["FLAME_CUR_WORKER"].to_string();
 				php::callable("cli_set_process_title").call({title + " (php-flame/" + index + ")"});
-			}else{
-				php::callable("cli_set_process_title").call({title + " (php-flame/w)"});
 			}
+			else php::callable("cli_set_process_title").call({title + " (php-flame/w)"});
 			worker_.reset(new controller_worker());
 			worker_->initialize(options);
-		}else/* if(type == process_type::MASTER)*/ {
+		}
+		else/* if (type == process_type::MASTER)*/ {
 			php::callable("cli_set_process_title").call({title + " (php-flame/m)"});
 			master_.reset(new controller_master());
 			master_->initialize(options);
@@ -59,11 +57,11 @@ namespace flame {
 
 	void controller::run() {
 		status &= controller_status::STATUS_RUN;
-		if(type == process_type::WORKER) worker_->run();
-		else /* if(type == process_type::MASTER)*/ master_->run();
+		if (type == process_type::WORKER) worker_->run();
+		else /* if (type == process_type::MASTER)*/ master_->run();
 		delete cbmap;
 		// 运行完毕
-		if(status & controller_status::STATUS_EXCEPTION) _exit(-1);
+		if (status & controller_status::STATUS_EXCEPTION) _exit(-1);
 		else _exit(0);
 		// 由于 PHP 自行回收可能导致 C++ 空间中的 PHP 对象被进行二次释放导致异常
 	}
