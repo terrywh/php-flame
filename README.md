@@ -106,7 +106,7 @@ make && make install
 
 #### PHP
 ``` Bash
-CC=gcc CXX=g++ ./configure --prefix=/data/vendor/php-7.2.16 --with-config-file-path=/data/vendor/php-7.2.16/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --host=x86_64-linux-gnu --target=x86_64-linux-gnu
+CC=gcc CXX=g++ ./configure --prefix=/data/vendor/php-7.2.17 --with-config-file-path=/data/vendor/php-7.2.17/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --build=x86_64-linux-gnu
 ```
 
 #### libphpext
