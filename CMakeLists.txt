@@ -17,7 +17,7 @@ add_library(FLAME SHARED ${SOURCES})
 # -----------------------------------------------------------------------------
 # 依赖项目录
 # -----------------------------------------------------------------------------
-set(VENDOR_PHP /data/vendor/php-7.2.15)
+set(VENDOR_PHP /data/vendor/php-7.2.16)
 execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
     COMMAND sed "s/ *-I/;/g"
     OUTPUT_VARIABLE VENDOR_PHP_INCLUDES
