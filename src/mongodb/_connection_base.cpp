@@ -18,18 +18,19 @@ namespace flame::mongodb {
         std::uint32_t server_id;
         int  rok = 0;
 
-        boost::asio::post(gcontroller->context_y, [conn, type, &server_id, &cmd, &rep, &opt, &err, &rok, &ch] () {
+        boost::asio::post(gcontroller->context_y, [conn, type, &cmd, &rep, &opt, &err, &rok, &ch] () {
             mongoc_server_description_t* server;
             switch(type) {
             case COMMAND_READ:
                 server = mongoc_client_select_server(conn.get(), false, nullptr, nullptr);
+                break;
             case COMMAND_RAW:
             case COMMAND_WRITE:
             case COMMAND_READ_WRITE:
             default:
                 server = mongoc_client_select_server(conn.get(), true, nullptr, nullptr);
             }
-            server_id = mongoc_server_description_id(server);
+            uint32_t server_id = mongoc_server_description_id(server);
             mongoc_server_description_destroy(server);
             bson_append_int32(opt.get(), "serverId", 8, server_id);
             switch(type) {

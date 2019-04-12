@@ -7,8 +7,8 @@ namespace flame::mysql {
     void tx::declare(php::extension_entry &ext) {
         php::class_entry<tx> class_tx("flame\\mysql\\tx");
         class_tx
-            .constant({"AAAA", 123})
             .method<&tx::__construct>("__construct", {}, php::PRIVATE)
+            .method<&tx::__destruct>("__destruct")
             .method<&tx::escape>("escape", {
                 {"data", php::TYPE::UNDEFINED},
             })
@@ -59,6 +59,11 @@ namespace flame::mysql {
         return nullptr;
     }
 
+    php::value tx::__destruct(php::parameters &params) {
+        if (!done_) rollback(params);
+        return nullptr;
+    }
+
     php::value tx::escape(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         std::shared_ptr<MYSQL> conn = cl_->acquire(ch);
@@ -74,12 +79,14 @@ namespace flame::mysql {
     }
 
     php::value tx::commit(php::parameters &params) {
+        done_ = true;
         coroutine_handler ch{coroutine::current};
         cl_->commit(ch);
         return nullptr;
     }
 
     php::value tx::rollback(php::parameters &params) {
+        done_ = true;
         coroutine_handler ch{coroutine::current};
         cl_->rollback(ch);
         return nullptr;

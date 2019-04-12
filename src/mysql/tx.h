@@ -8,6 +8,7 @@ namespace flame::mysql {
     public:
         static void declare(php::extension_entry &ext);
         php::value __construct(php::parameters &params); // 私有
+        php::value __destruct(php::parameters& params);
         php::value commit(php::parameters &params);
         php::value rollback(php::parameters &params);
 
@@ -23,6 +24,7 @@ namespace flame::mysql {
 
     protected:
         std::shared_ptr<_connection_lock> cl_;
+        bool done_ = false;
         friend class client;
     };
 } // namespace flame::mysql
