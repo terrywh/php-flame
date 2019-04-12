@@ -25,12 +25,13 @@ execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
 set(VENDOR_PHPEXT /data/vendor/phpext-1.1.3)
 set(VENDOR_PARSER /data/vendor/parser-1.0.0)
 set(VENDOR_BOOST /data/vendor/boost-1.69.0)
-set(VENDOR_MYSQL /data/vendor/mysqlc-6.1.11)
+set(VENDOR_MYSQL /data/vendor/mysqlc-8.0.15)
 set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
 set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
 set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.4)
 set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.0)
 set(VENDOR_HTTPPARSER /data/vendor/http-parser-2.9.0)
+set(VENDOR_OPENSSL /data/vendor/openssl-1.1.1)
 # -----------------------------------------------------------------------------
 # 编译选项
 # -----------------------------------------------------------------------------
@@ -60,8 +61,8 @@ target_include_directories(FLAME SYSTEM PRIVATE
     ${VENDOR_AMQP}/include
     ${VENDOR_RDKAFKA}/include
     ${VENDOR_HTTPPARSER}/include
+    ${VENDOR_OPENSSL}/include
 )
-target_link_directories(FLAME PUBLIC /usr/lib/openssl-1.0)
 # 链接库
 target_link_libraries(FLAME
     ${VENDOR_HTTPPARSER}/lib/libhttp_parser.o
@@ -77,9 +78,8 @@ target_link_libraries(FLAME
     ${VENDOR_BOOST}/lib/libboost_system.a
     ${VENDOR_BOOST}/lib/libboost_thread.a
     ${VENDOR_BOOST}/lib/libboost_filesystem.a
-    sasl2
-    ssl
-    crypto
+    ${VENDOR_OPENSSL}/lib/libssl.a
+    ${VENDOR_OPENSSL}/lib/libcrypto.a
     pthread
     rt
 )
