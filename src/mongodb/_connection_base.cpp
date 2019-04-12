@@ -23,6 +23,7 @@ namespace flame::mongodb
             switch(type) {
             case COMMAND_READ:
                 server = mongoc_client_select_server(conn.get(), false, nullptr, nullptr);
+                break;
             case COMMAND_RAW:
             case COMMAND_WRITE:
             case COMMAND_READ_WRITE:
