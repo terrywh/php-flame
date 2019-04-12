@@ -1,51 +1,66 @@
 ### FLAME
-最初开发 FLAME 是为了给咱 PHP 争口气，开发者不能总是因为 “并行处理能力不足” 被各方高玩鄙视；最初试用了 [Swoole](https://www.swoole.com/) 但被其进程模型搞得一头雾水，而且可能也是因为早期版本，还出现了各式各样的问题；于是在各方支持下，自行开发了 FLAME 框架；
+为解决 PHP 被认为“并发处理能力不足”的问题，我最初在业务中试用 [Swoole](https://www.swoole.com/) 框架；估计由于使用的是 Swoole 相对早期的版本，在实际业务中出现了各式各样的问题（很多都是内存问题）；同时很多同学对 Swoole 中提供的进程使用形式，都感觉把握比较吃力；  
+于是在各方支持下，开发了 FLAME 框架：
 
-FLAME 能够在很大程度上提高 PHP 处理并行能力, 其定位在于简化开发常见互联网业务高性能服务程序的难度和代价：
-* 网络底层异步化；
-* 同步驱动连接池挂接线程池；
-* 使用 PHP 内置协程 (Generator) 机制；
-* 对等多进程工作模式；
+* 基于协程机制的异步化网络底层（ TCP / UDP / HTTP)；
+* 简单的多进程模式 （ SO_REUSEPORT ）；
+* 基于协程的队列机制（ 类似 Go 的 Channel）；
+* 多种驱动异步化支持（ MySQL / Redis / MongoDB / RabbitMQ / Kafka )；
 
-陆续接入了 MySQL / Kafka / Redis / MongoDB / RabbitMQ 等第三方驱动，满足日常大多数接口型开发需求；
+同时为了简化日常应用开发成本，及很多重复性工作，框架还提供了：
+* 平滑起停；
+* 多进程日志、登等级过滤、文件重载；
+* 数据库连接池机制；
+* 异步进程；
+* 等等（BSON / SNAPPY / INTERFACE）...
 
-为了简化框架的学习成本、使用难度，在后期使用内置协程机制代替 `yield` 显式协程，并补充完善了很多功能：
-* 协程队列，协程管道；
-* 协程、异步错误捕获；
-* 异步进程；网卡地址读取；毫秒、标准时间；...
-* 平滑起停控制；
-* 多进程日志、重载；
-* ...
+目前，FLAME 已经使用在了公司内各种业务线；实际使用中，框架在**并行处理性能**方面表现十分**突出**，并在持续的改进、完善下，框架在**稳定性**方面也有了**不错**的表现；  
+不过，由于时间、能力问题，未能详尽的测试整个框架的各项功能，可能还存在一些问题、缺陷；感谢大家的包容、反馈与帮助（大礼参拜）
 
-在适配到 PHP 7.2 版本以后，陆陆续续已经使用在了公司内各种业务线；在稳定性方面已经有了一定的底子；
+### 示例
+以下代码实现了几个简单的 HTTP 接口，展示了框架的基本使用方法：
 
-当然说的很高大上、白富美，但实在能力有限，同时各种业务压力，没有时间详尽的测试整个框架的各项组合功能，框架可能存在各类问题、缺陷；迫切期望大家能帮忙发现和完善，在此感谢~ 大礼参拜~
-
-以下代码实现了几个简单的 HTTP 接口：
 ``` PHP
+<?php
+// 框架初始化
 flame\init("http_server_demo");
+// 第一个（主）协程
 flame\go(function() {
+    // 创建 HTTP 服务器（监听）
     $server = new flame\http\server(":::56101");
-    $server->before(function($req, $res) {
-            $req->data["before"] = flame\time\now();
-        })->get("/hello", function($req, $res) {
+
+    $server
+        ->before(function($req, $res) { // 前置处理器（HOOK）
+            $req->data["before"] = flame\time\now(); // 记录请求开始时间
+        })
+        ->get("/hello", function($req, $res) { // 路径处理器
+            // 简单响应方式
+            $res->status = 200;
             $res->body = "world";
-        })->post("/path", function($req, $res) {
+        })
+        ->post("/hello/world", function($req, $res) { // 路径处理器
+            // Transfer-Encoding: Chunked
+            $res->write_header(200);
             $res->write("CHUNKED RESPONSE:")
             $res->write($res->body);
             $res->end();
-        })->after(function($req, $res, $r) {
+        })
+        ->after(function($req, $res, $r) {
+            // 后置处理器（HOOK）
+            flame\log\trace($req->method, $req->path // 请求时长日志记录
+                , "in", (flame\time\now() - $req->data["before"]), "ms");
             if(!$r) {
                 $res->status = 404;
-                $res->file(__DIR__."/404.html");
+                $res->file(__DIR__."/404.html"); // 响应文件
             }
         });
     $server->run();
 });
+// 启动（调度）
 flame\run();
 ```
 
-### 功能项
+### 功能
 
 * **core** - 核心，框架初始化设置，协程启动，协程队列，协程锁等；
 * **time** - 时间相关，协程休眠，当前时间等；
@@ -82,15 +97,17 @@ flame\run();
 * **encoding** - 提供了若干编码、序列化函数；
 * **compress** - 提供了若干压缩算法；
 
-请参看 `/doc` `/test` 目录下相关 PHP 文件的文档注释；也可将 `/doc` 挂接在 IDE 内方便提供 **自动完成** 等；
 
-### 常见问题
 
-https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98
+### 文档
+* [API 文档](https://github.com/terrywh/php-flame/tree/master/doc)
+* [常见问题](https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 
-### 依赖库
+> 将 `/doc` 挂接在 IDE 内可提供 **自动完成** 等功能
 
-> 需要基础编译组建, 及 c-ares / sasl2 等库;
+### 其他
+<details><summary>依赖项编译安装，仅供参考</summary>
+<p>
 
 #### openssl
 ``` Bash
@@ -129,7 +146,7 @@ make && make install
 #### mongoc-driver
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SASL=OFF -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+CC=gcc CXX=g++ LDFLAGS="-pthread -ldl" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig cmake3 -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SASL=OFF -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
 make && make install
 # rm /data/vendor/mongoc-1.14.0/lib/*.so*
 ```
@@ -143,7 +160,7 @@ make && make install
 
 #### rdkafka
 ``` Bash
-CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.0.0
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.0.0 --disable-sasl
 # rm /data/vendor/rdkafka-1.0.0/lib/*.so*
 cp src/snappy.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
 cp src/rdmurmur2.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
@@ -186,3 +203,6 @@ make && make install
 # rm /data/vendor/mysqlc-8.0.15/lib/*.so*
 ```
 注意：需要下载内含 boost 头文件的版本（与框架依赖版本不同）；
+
+</p>
+</details>
