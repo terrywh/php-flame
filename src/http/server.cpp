@@ -127,7 +127,11 @@ namespace flame::http {
     }
 
     php::value server::run(php::parameters &params) {
-        accp_.bind(addr_);
+        boost::system::error_code err;
+        accp_.bind(addr_, err);
+        if (err) throw php::exception(zend_ce_exception
+            , (boost::format("Failed to bind TCP socket: %s") % err.message()).str()
+            , err.value());
         accp_.listen(boost::asio::socket_base::max_listen_connections);
 
         coroutine_handler ch{coroutine::current};
