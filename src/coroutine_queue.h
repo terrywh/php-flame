@@ -15,7 +15,7 @@ namespace flame {
             closed_ = true;
             while (!c_.empty()) {
                 auto ch = c_.extract(c_.begin()).value();
-                ch.resume();
+                ch->resume();
             }
         }
         bool is_closed() {
@@ -27,13 +27,13 @@ namespace flame {
                 , "Failed to push queue: already closed"
                 , -1);
             if (q_.size() >= n_) {
-                p_.insert(ch);
+                p_.insert(&ch);
                 ch.suspend();
             }
             q_.push_back(t);
             while(!q_.empty() && !c_.empty()) {
                 auto ch = c_.extract(c_.begin()).value();
-                ch.resume();
+                ch->resume();
             }
         }
         std::optional<T> pop(coroutine_handler& ch) {
@@ -41,7 +41,7 @@ namespace flame {
                 if (!q_.empty()) break; // 有数据消费
                 else if (closed_) return std::optional<T>();  // 无数据关闭
                 else { // 无数据等待
-                    c_.insert(ch);
+                    c_.insert(&ch);
                     ch.suspend();
                 }
             }
@@ -50,7 +50,7 @@ namespace flame {
 
             while (!p_.empty()) {
                 auto ch = p_.extract(p_.begin()).value();
-                ch.resume();
+                ch->resume();
             }
             return std::optional<T>(t);
         }
@@ -58,8 +58,8 @@ namespace flame {
     /* private: */
         std::size_t                 n_;
         std::list<T>                q_;
-        std::set<coroutine_handler> c_; // 消费者
-        std::set<coroutine_handler> p_; // 生产者
+        std::set<coroutine_handler*> c_; // 消费者
+        std::set<coroutine_handler*> p_; // 生产者
         bool                   closed_;
     };
 
@@ -72,9 +72,9 @@ TRY_ALL:
             else if (!(*i)->closed_) all_closed = false;
         }
         if (all_closed) return std::shared_ptr< coroutine_queue<T> >(nullptr);
-        for(auto i=queues.begin();i!=queues.end();++i) (*i)->c_.insert(ch);
+        for(auto i=queues.begin();i!=queues.end();++i) (*i)->c_.insert(&ch);
         ch.suspend();
-        for (auto i = queues.begin(); i != queues.end(); ++i) (*i)->c_.erase(ch);
+        for (auto i = queues.begin(); i != queues.end(); ++i) (*i)->c_.erase(&ch);
         goto TRY_ALL;
     }
 

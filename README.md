@@ -117,8 +117,8 @@ make && make install
 
 #### boost
 ``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.69.0
-./b2 -j4 --prefix=/data/vendor/boost-1.69.0 cxxflags="-fPIC" variant=release link=static threading=multi install
+./bootstrap.sh --prefix=/data/vendor/boost-1.70.0
+./b2 --prefix=/data/vendor/boost-1.70.0 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
 
 #### PHP
@@ -185,7 +185,7 @@ PREFIX=/data/vendor/hiredis-0.14.0 make install
 
 #### nghttp2
 ``` Bash
-PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/nghttp2-1.37.0 --enable-shared=no --enable-lib-only --with-boost=/data/vendor/boost-1.69.0 --enable-asio-lib
+PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/nghttp2-1.37.0 --enable-shared=no --enable-lib-only --with-boost=/data/vendor/boost-1.70.0 --enable-asio-lib
 make && make install
 ```
 

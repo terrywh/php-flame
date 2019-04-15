@@ -49,35 +49,52 @@ namespace flame {
         // !!! 慎用: 目前仅用于空构造后指定协程
         void reset(std::shared_ptr<coroutine> co);
         void reset();
-        operator bool() const;
-        void operator()(const boost::system::error_code& e, std::size_t n = 0);
-        coroutine_handler& operator [](boost::system::error_code& e);
         void resume();
         void suspend();
-        boost::system::error_code* er_;
+
+        operator bool() const;
+        void operator()(const boost::system::error_code& e, std::size_t n);
+        void operator()(const boost::system::error_code& e);
+        coroutine_handler& operator [](boost::system::error_code& e);
+        
+        boost::system::error_code* err_;
         std::shared_ptr<coroutine> co_;
         std::shared_ptr<std::atomic<int>> stat_;
-
         friend bool operator<(const coroutine_handler &ch1, const coroutine_handler &ch2);
-
       private:
         
     };
 } // namespace flame
 
 namespace boost::asio {
-
     template <>
-    class async_result<::flame::coroutine_handler> {
+    class async_result<::flame::coroutine_handler, void (boost::system::error_code error, std::size_t size)> {
     public:
         explicit async_result(::flame::coroutine_handler& ch) : ch_(ch) {
         }
-        using type = std::size_t;
-        type get() {
+        using completion_handler_type = ::flame::coroutine_handler;
+        using return_type = std::size_t;
+        return_type get() {
             ch_.suspend();
             return ch_.co_->len_;
         }
     private:
         ::flame::coroutine_handler &ch_;
     };
+
+    template <>
+    class async_result<::flame::coroutine_handler, void (boost::system::error_code error)> {
+    public:
+        explicit async_result(::flame::coroutine_handler& ch) : ch_(ch) {
+        }
+        using completion_handler_type = ::flame::coroutine_handler;
+        using return_type = void;
+        void get() {
+            ch_.suspend();
+        }
+    private:
+        ::flame::coroutine_handler &ch_;
+    };
+
+    
 } // namespace boost::asio

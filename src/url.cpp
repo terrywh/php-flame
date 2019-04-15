@@ -37,13 +37,10 @@ namespace flame {
         }
         if (x.field_set & (1 << UF_QUERY)) {
             auto y = x.field_data[UF_QUERY];
-            query_raw.assign(s + y.off, y.len);
             if (parse_query) {
                 parser_t p('\0', '\0', '=', '\0', '\0', '&', [this](parser_t::entry_type et) {
                     std::string key = et.first;
                     std::string val = et.second;
-                    // 一律小写 KEY
-                    php::lowercase_inplace(key.data(), key.size());
                     val.resize(php::url_decode_inplace(val.data(), val.size()));
                     query[key] = val;
                 });
@@ -57,7 +54,12 @@ namespace flame {
         if (update) {
             std::ostringstream ss;
             ss << schema << "://" << user << ":" << pass << "@" << host << ":" << port << path;
-            if (with_query) ss << "?" << query_raw;
+            if (with_query) {
+                ss << "?";
+                for (auto i=query.begin();i!=query.end();++i) {
+                    ss << i->first << "=" << php::url_encode(i->second.c_str(), i->second.size()) << "&";
+                }
+            }
             raw_ = ss.str();
         }
         return raw_;

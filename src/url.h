@@ -10,7 +10,6 @@ namespace flame {
         std::uint16_t port;
         std::string   path;
         std::map<std::string, std::string> query;
-        std::string   query_raw;
         std::string   user;
         std::string   pass;
 

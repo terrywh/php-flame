@@ -73,7 +73,7 @@ RETURN_DATA:
         
         boost::system::error_code err;
         std::string data = params[0];
-        boost::asio::async_write(socket_, boost::asio::buffer(data), ch);
+        std::size_t len = boost::asio::async_write(socket_, boost::asio::buffer(data), ch);
 
         if (!err || err == boost::asio::error::operation_aborted) return nullptr;
         else throw php::exception(zend_ce_exception

@@ -119,15 +119,22 @@ namespace flame {
     }
     coroutine_handler::coroutine_handler()
     : co_(nullptr)
-    , er_(nullptr)
+    , err_(nullptr)
     , stat_(new std::atomic<int>(0)) {
     }
 
     coroutine_handler::coroutine_handler(std::shared_ptr<coroutine> co)
     : co_(co)
-    , er_(nullptr)
+    , err_(nullptr)
     , stat_(new std::atomic<int>(0)) {
     }
+
+    // coroutine_handler::coroutine_handler(coroutine_handler&& ch)
+    // : co_(std::move(ch.co_))
+    // , err_(ch.err_)
+    // , stat_(std::move(ch.stat_)) {
+    //     ch.err_ = nullptr;
+    // }
 
     coroutine_handler::~coroutine_handler() {
         // std::cout << "~coroutine_handler\n";
@@ -149,14 +156,19 @@ namespace flame {
     }
 
     void coroutine_handler::operator() (const boost::system::error_code &e, std::size_t n) {
-        if (er_) *er_ = e;
+        if (err_) *err_ = e;
         co_->len_ = n;
+        resume();
+    }
 
+    void coroutine_handler::operator() (const boost::system::error_code &e) {
+        if (err_) *err_ = e;
+        // co_->len_ = 0;
         resume();
     }
 
     coroutine_handler& coroutine_handler::operator [](boost::system::error_code& e) {
-        er_ = &e;
+        err_ = &e;
         return *this;
     }
 

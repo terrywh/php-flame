@@ -39,7 +39,6 @@ namespace flame::http {
         set("raw_body", rbody);
         if (c_head_.exists("content-type")) {
             php::string ctype = c_head_.get("content-type");
-            std::cout << "content-type: " << ctype << "\n";
             std::string_view sv {ctype.c_str(), ctype.size()};
             set("body", ctype_decode(sv, rbody));
         }

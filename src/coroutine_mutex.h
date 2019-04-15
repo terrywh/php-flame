@@ -11,7 +11,7 @@ namespace flame {
 
         void lock(coroutine_handler& ch) {  
             while(mt_) {
-                cm_.insert(ch);
+                cm_.insert(&ch);
                 ch.suspend();
             }
             mt_ = true;
@@ -28,12 +28,12 @@ namespace flame {
         void unlock() {
             while(!cm_.empty()) {
                 auto ch = cm_.extract(cm_.begin()).value();
-                ch.resume();
+                ch->resume();
             }
             mt_ = false;
         }
     private:
-        std::set<coroutine_handler> cm_;
+        std::set<coroutine_handler*> cm_;
         bool mt_;
     };
     class coroutine_guard {
