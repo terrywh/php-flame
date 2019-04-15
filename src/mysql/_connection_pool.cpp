@@ -75,7 +75,7 @@ namespace flame::mysql {
     void _connection_pool::init_options(MYSQL* c) {
         // 这里的 CHARSET 设定会被 reset_connection 重置为系统值
         mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
-        // 8.0.15 默认使用 caching_sha2_password 进行认证，底版本不支持
+        // 8.0.15 默认使用 caching_sha2_password 进行认证，低版本不支持
         mysql_options(c, MYSQL_DEFAULT_AUTH, "mysql_native_password");
         // SSL 参数
         unsigned int ssl = SSL_MODE_DISABLED;
@@ -104,20 +104,25 @@ namespace flame::mysql {
             }
             if (flag_ & FLAG_REUSE_BY_RESET) mysql_reset_connection(c);
             else if (flag_ & FLAG_REUSE_BY_CUSER) mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
-            else if (flag_ & FLAG_REUSE_BY_PROXY) ;// PROXY 已处理复用流程，此处无需处理
+            // else if (flag_ & FLAG_REUSE_BY_PROXY) ; // PROXY 已处理复用流程，此处无需处理
             
             if (flag_ & FLAG_CHARSET_DIFFER) mysql_set_character_set(c, url_.query["charset"].c_str());
             std::function<void(std::shared_ptr<MYSQL> c)> cb = await_.front();
             await_.pop_front();
             auto self = this->shared_from_this();
             // 释放回调函数须持有当前对象引用 self (否则连接池可能先于连接归还被销毁)
-            cb(std::shared_ptr<MYSQL>(c, [this, self](MYSQL *c) {
+            cb(std::shared_ptr<MYSQL>(c, [this, self] (MYSQL *c) {
                 boost::asio::post(guard_, std::bind(&_connection_pool::release, self, c));
             }));
         }
     }
 
     void _connection_pool::query_charset(MYSQL* c) {
+        // 兼容 proxysql 流程：纯粹的字符集设置，首次 SQL 会卡住:
+        // 代理：2019, Can't initialize character set (null) (path: compiled_in)
+        // 后端：不断尝试连接、断开
+        std::string sql = (boost::format("SET NAMES '%s'") % url_.query["charset"]).str();
+        mysql_real_query(c, sql.c_str(), sql.size());
         // 使用 mysql_get_charactor_set_name() 获取到的字符集与下述查询不同
         if (0 == mysql_real_query(c, "SHOW VARIABLES WHERE `Variable_name`='character_set_client'", 59)) {
             std::unique_ptr<MYSQL_RES, void (*)(MYSQL_RES*)> rst(mysql_store_result(c), mysql_free_result);
