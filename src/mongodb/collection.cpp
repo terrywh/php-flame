@@ -245,7 +245,15 @@ namespace flame::mongodb {
         php::array cmd(8);
         cmd.set("count", name_);
         cmd.set("query", params[0]);
-
+        if (params.size() > 1) {
+            if (params[1].typeof(php::TYPE::INTEGER)) cmd.set("limit", params[1]);
+            else if (params[1].typeof(php::TYPE::ARRAY)) {
+                php::array limits = params[1];
+                if (limits.size() > 0) cmd.set("skip", limits[0].to_integer());
+                if (limits.size() > 1) cmd.set("limit", limits[1].to_integer());
+            }
+        }
+        if (params.size() > 1 && params[1].typeof(php::TYPE::INTEGER)) cmd.set("limit", params[1]);
         coroutine_handler ch{coroutine::current};
         auto conn_ = cp_->acquire(ch);
         php::array cs = cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
