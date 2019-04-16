@@ -39,6 +39,7 @@ namespace flame::mysql {
 
         void init_options(MYSQL *c);
         void release(MYSQL *c);
+        void set_names(MYSQL* c);
         void query_charset(MYSQL* c);
         void query_version(MYSQL* c);
     };

@@ -48,6 +48,10 @@ namespace flame::mysql {
             init_options(c);
 
             if (mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0)) {
+                if(url_.query.count("proxy") > 0) {
+                    set_names(c); // 进行此操作以兼容 proxysql 代理
+                    flag_ =  FLAG_CHARSET_EQUAL | FLAG_REUSE_BY_PROXY;
+                }
                 ++size_; // 当前还存在的连接数量
                 release(c);
             }
@@ -91,6 +95,14 @@ namespace flame::mysql {
         mysql_options(c, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
     }
 
+    void _connection_pool::set_names(MYSQL* c) {
+        // 兼容 proxysql 流程：纯粹的字符集设置，首次 SQL 会卡住:
+        // 代理：2019, Can't initialize character set (null) (path: compiled_in)
+        // 后端：不断尝试连接、断开
+        std::string sql = (boost::format("SET NAMES '%s'") % url_.query["charset"]).str();
+        mysql_real_query(c, sql.c_str(), sql.size());
+    }
+
     void _connection_pool::release(MYSQL *c) {
         // 无等待分配的请求, 保存连接(待后续分配)
         if (await_.empty()) conn_.push_back({c, std::chrono::steady_clock::now()});
@@ -118,11 +130,6 @@ namespace flame::mysql {
     }
 
     void _connection_pool::query_charset(MYSQL* c) {
-        // 兼容 proxysql 流程：纯粹的字符集设置，首次 SQL 会卡住:
-        // 代理：2019, Can't initialize character set (null) (path: compiled_in)
-        // 后端：不断尝试连接、断开
-        std::string sql = (boost::format("SET NAMES '%s'") % url_.query["charset"]).str();
-        mysql_real_query(c, sql.c_str(), sql.size());
         // 使用 mysql_get_charactor_set_name() 获取到的字符集与下述查询不同
         if (0 == mysql_real_query(c, "SHOW VARIABLES WHERE `Variable_name`='character_set_client'", 59)) {
             std::unique_ptr<MYSQL_RES, void (*)(MYSQL_RES*)> rst(mysql_store_result(c), mysql_free_result);
