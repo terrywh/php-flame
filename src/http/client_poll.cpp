@@ -5,22 +5,20 @@
 namespace flame::http {
     
     client_poll* client_poll::create_poll(boost::asio::io_context &io, curl_socket_t fd, client_poll::poll_callback_t cb, void* data) {
-        int       type;
-        socklen_t size;
+        int       type, r;
+        socklen_t size = sizeof(type);
         struct sockaddr addr;
-        int x = ::getsockopt(fd, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&type), &size);
-        assert(x == 0);
-        ::getsockname(fd, &addr, &size);
+        r = ::getsockopt(fd, SOL_SOCKET, SO_TYPE, reinterpret_cast<char*>(&type), &size);
+        assert(r == 0);
+        size = sizeof(addr);
+        r = ::getsockname(fd, &addr, &size);
+        assert(r == 0);
         client_poll* poll;
-        if (type == SOCK_STREAM) {
-            poll = new client_poll_tcp(io, addr.sa_family == AF_INET6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), ::dup(fd));
-        }
-        else if (type == SOCK_DGRAM) {
-            poll = new client_poll_udp(io, addr.sa_family == AF_INET6 ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4(), ::dup(fd));
-        }
-        else {
-            return nullptr;
-        }
+        if (type == SOCK_STREAM) poll = new client_poll_tcp(io, addr.sa_family == AF_INET6
+            ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), ::dup(fd));
+        else if (type == SOCK_DGRAM) poll = new client_poll_udp(io, addr.sa_family == AF_INET6
+            ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4(), ::dup(fd));
+        else return nullptr;
         poll->data = data;
         poll->fd_ = fd;
         poll->cb_ = cb;
