@@ -97,7 +97,7 @@ namespace flame::http {
         }
 
         php::array cookies = get("cookie");
-        if (cookies.typeof(php::TYPE::NULLABLE)) cookies = php::array(4);
+        if (cookies.type_of(php::TYPE::NULLABLE)) cookies = php::array(4);
         cookies.set(cookies.size(), cookie);
         return nullptr;
     }
@@ -181,7 +181,7 @@ namespace flame::http {
         status_ |= STATUS_BUILT; // 在 chunked_writer 中设置
         ctr_.result( get("status").to_integer() ); // 非法 status_code 会抛出异常
         php::array headers = get("header");
-        if (headers.typeof(php::TYPE::ARRAY)) {
+        if (headers.type_of(php::TYPE::ARRAY)) {
             for (auto i=headers.begin(); i!=headers.end(); ++i) {
                 php::string key { i->first };
                 php::string val { i->second };
@@ -189,7 +189,7 @@ namespace flame::http {
             }
         }
         php::array cookies = get("cookie");
-        if (cookies.typeof(php::TYPE::ARRAY)) {
+        if (cookies.type_of(php::TYPE::ARRAY)) {
             for(auto i=cookies.begin(); i!=cookies.end(); ++i) {
                 php::array  cookie = i->second;
                 std::string buffer;

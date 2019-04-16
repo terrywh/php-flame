@@ -35,11 +35,11 @@ namespace flame::tcp {
             len = socket_.async_read_some(boost::asio::buffer(buffer_.prepare(8192), 8192), ch[err]);
             buffer_.commit(len);
         }
-        else if (params[0].typeof(php::TYPE::STRING)) { // 2. 读取到指定的结束符
+        else if (params[0].type_of(php::TYPE::STRING)) { // 2. 读取到指定的结束符
             std::string delim = params[0];
             len = boost::asio::async_read_until(socket_, buffer_, delim, ch[err]);
         }
-        else if (params[0].typeof(php::TYPE::INTEGER)) { // 3. 读取指定长度
+        else if (params[0].type_of(php::TYPE::INTEGER)) { // 3. 读取指定长度
             std::size_t want = params[0].to_integer();
             if (buffer_.size() >= want) {
                 len = want;

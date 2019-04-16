@@ -69,14 +69,14 @@ namespace flame::rabbitmq {
     // 仅支持一维数组
     AMQP::Table array2table(const php::array& table) {
         AMQP::Table data;
-        if (!table.typeof(php::TYPE::ARRAY) || table.empty()) return std::move(data);
+        if (!table.type_of(php::TYPE::ARRAY) || table.empty()) return std::move(data);
         for (auto i = table.begin(); i != table.end(); ++i) {
-            if (i->second.typeof(php::TYPE::BOOLEAN)) data.set(i->first.to_string(), i->second.to_boolean());
-            else if (i->second.typeof(php::TYPE::INTEGER)) data.set(i->first.to_string(), i->second.to_integer());
-            else if (i->second.typeof(php::TYPE::STRING)) data.set(i->first.to_string(), i->second.to_string());
-            else if (i->second.typeof(php::TYPE::FLOAT)) data.set(i->first.to_string(), AMQP::Double{i->second.to_float()});
+            if (i->second.type_of(php::TYPE::BOOLEAN)) data.set(i->first.to_string(), i->second.to_boolean());
+            else if (i->second.type_of(php::TYPE::INTEGER)) data.set(i->first.to_string(), i->second.to_integer());
+            else if (i->second.type_of(php::TYPE::STRING)) data.set(i->first.to_string(), i->second.to_string());
+            else if (i->second.type_of(php::TYPE::FLOAT)) data.set(i->first.to_string(), AMQP::Double{i->second.to_float()});
             else throw php::exception(zend_ce_type_error
-                , (boost::format("Failed to convert array: unsupported type '%s'") % i->second.typeof().name()).str()
+                , (boost::format("Failed to convert array: unsupported type '%s'") % i->second.type_of().name()).str()
                 , -1);
         }
         return std::move(data);

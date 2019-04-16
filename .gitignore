@@ -2,4 +2,5 @@
 .vscode
 debug
 release
+stage
 compile_commands.json

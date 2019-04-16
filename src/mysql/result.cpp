@@ -20,7 +20,7 @@ namespace flame::mysql {
             coroutine_handler ch{coroutine::current};
             row = cl_->fetch(cl_->acquire(ch), rs_, f_, n_, ch);
         }
-        if (row.typeof(php::TYPE::NULLABLE)) {
+        if (row.type_of(php::TYPE::NULLABLE)) {
             // 尽早的释放连接
             rs_.reset();
             cl_.reset();
@@ -34,7 +34,7 @@ namespace flame::mysql {
             auto conn = cl_->acquire(ch);
             php::array data {4}, row;
 
-            for(row = cl_->fetch(conn, rs_, f_, n_, ch); !row.typeof(php::TYPE::NULLABLE); row = cl_->fetch(conn, rs_, f_, n_, ch)) {
+            for(row = cl_->fetch(conn, rs_, f_, n_, ch); !row.type_of(php::TYPE::NULLABLE); row = cl_->fetch(conn, rs_, f_, n_, ch)) {
                 data.set(data.size(), row);
             }
             // 尽早的释放连接

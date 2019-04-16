@@ -72,7 +72,7 @@ namespace flame::http {
         set("header", header);
 
         php::string body = ctr_.body();
-        if (body.typeof(php::TYPE::STRING)) {
+        if (body.type_of(php::TYPE::STRING)) {
             auto ctype = ctr_.find(boost::beast::http::field::content_type);
             if (ctype == ctr_.end() || ctype->value().compare(0, 19, "multipart/form-data") != 0)
                 set("raw_body", body); // 不在 multipart 时保留原始数据

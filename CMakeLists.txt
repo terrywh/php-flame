@@ -5,6 +5,11 @@ cmake_minimum_required(VERSION 3.13)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif(NOT CMAKE_BUILD_TYPE)
+set(CLANG_GCC_TOOLCHAIN "<default>" CACHE PATH "gcc toolchain install prefix, used with clang --gcc-toolchain option")
+if (NOT (CLANG_GCC_TOOLCHAIN STREQUAL "<default>"))
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --gcc-toolchain=${CLANG_GCC_TOOLCHAIN}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --gcc-toolchain=${CLANG_GCC_TOOLCHAIN}")
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # -----------------------------------------------------------------------------
 # 项目源文件
@@ -22,7 +27,7 @@ execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
     COMMAND sed "s/ *-I/;/g"
     OUTPUT_VARIABLE VENDOR_PHP_INCLUDES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(VENDOR_PHPEXT /data/vendor/phpext-1.1.3)
+set(VENDOR_PHPEXT /data/vendor/phpext-2.0.0)
 set(VENDOR_PARSER /data/vendor/parser-1.0.0)
 set(VENDOR_BOOST /data/vendor/boost-1.69.0)
 set(VENDOR_MYSQL /data/vendor/mysqlc-8.0.15)
@@ -37,18 +42,12 @@ set(VENDOR_OPENSSL /data/vendor/openssl-1.1.1)
 # -----------------------------------------------------------------------------
 # 编译选项
 # -----------------------------------------------------------------------------
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND WITH_GCC_TOOLCHAIN)
-    set(CLANG_EXTRA_COMPILE_FLAGS "--gcc-toolchain=${WITH_GCC_TOOLCHAIN}")
-    set(CLANG_EXTRA_LINK_FLAGS "--gcc-toolchain=${WITH_GCC_TOOLCHAIN}")
-endif()
 target_compile_options(FLAME BEFORE
 	PRIVATE "-std=c++17"
-    PRIVATE "-pthread"
-	PRIVATE "${CLANG_EXTRA_COMPILE_FLAGS}")
+    PRIVATE "-pthread")
 target_link_options(FLAME BEFORE
 	PRIVATE "-static-libstdc++"
-    PRIVATE "-pthread"
-	PRIVATE "${CLANG_EXTRA_COMPILE_FLAGS}")
+    PRIVATE "-pthread")
 set_target_properties(FLAME PROPERTIES
     PREFIX ""
     OUTPUT_NAME "flame")

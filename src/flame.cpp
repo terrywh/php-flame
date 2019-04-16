@@ -22,7 +22,7 @@
 namespace flame {
     static php::value init(php::parameters& params) {
         php::array options(0);
-        if (params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) options = params[1];
+        if (params.size() > 1 && params[1].type_of(php::TYPE::ARRAY)) options = params[1];
         gcontroller->initialize(params[0], options);
         return nullptr;
     }
@@ -56,7 +56,7 @@ namespace flame {
 
     static php::value on(php::parameters &params) {
         std::string event = params[0].to_string();
-        if (!params[1].typeof(php::TYPE::CALLABLE)) throw php::exception(zend_ce_type_error
+        if (!params[1].type_of(php::TYPE::CALLABLE)) throw php::exception(zend_ce_type_error
             , "Failed to set callback: callable required"
             , -1);
         gcontroller->cbmap->insert({event, params[1]});

@@ -73,11 +73,11 @@ namespace flame::http {
         return client_->exec(params);
     }
     php::string ctype_encode(std::string_view ctype, const php::value& v) {
-        if (v.typeof(php::TYPE::STRING)) return v;
+        if (v.type_of(php::TYPE::STRING)) return v;
 
         php::value r = v;
         if (ctype.compare(0, 33, "application/x-www-form-urlencoded") == 0) {
-            if (r.typeof(php::TYPE::ARRAY)) {
+            if (r.type_of(php::TYPE::ARRAY)) {
                 r = php::callable("http_build_query")({v});
             }
             else {

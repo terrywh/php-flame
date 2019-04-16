@@ -20,7 +20,7 @@ namespace flame::mongodb {
             coroutine_handler ch{coroutine::current};
             row = cl_->fetch(cs_, ch);
         }
-        if (row.typeof(php::TYPE::NULLABLE)) {
+        if (row.type_of(php::TYPE::NULLABLE)) {
             // 尽早释放连接
             cs_.reset();
             cl_.reset();
@@ -32,7 +32,7 @@ namespace flame::mongodb {
         if (cs_ && cl_) {
             coroutine_handler ch{coroutine::current};
             php::array data(8);
-            for(php::array row = cl_->fetch(cs_, ch); !row.typeof(php::TYPE::NULLABLE); row = cl_->fetch(cs_, ch))
+            for(php::array row = cl_->fetch(cs_, ch); !row.type_of(php::TYPE::NULLABLE); row = cl_->fetch(cs_, ch))
                 data.set(data.size(), row);
             // 尽早释放连接
             cs_.reset();

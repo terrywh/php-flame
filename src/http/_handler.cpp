@@ -79,9 +79,9 @@ namespace flame::http {
             try {
                 php::value rv = true;
                 if (ib != svr_ptr->cb_.end()) rv = ib->second.call({req, res, ih != svr_ptr->cb_.end()});
-                if (rv.typeof(php::TYPE::NO)) goto HANDLE_BREAK;
+                if (rv.type_of(php::TYPE::NO)) goto HANDLE_BREAK;
                 if (ih != svr_ptr->cb_.end()) rv = ih->second.call({req, res});
-                if (rv.typeof(php::TYPE::NO)) goto HANDLE_BREAK;
+                if (rv.type_of(php::TYPE::NO)) goto HANDLE_BREAK;
                 if (ia != svr_ptr->cb_.end()) rv = ia->second.call({req, res, ih != svr_ptr->cb_.end()});
 HANDLE_BREAK:
                 if (!res_->chunked()/* && !(res_ptr->status_ & server_response::STATUS_BODY_SENT)*/) {

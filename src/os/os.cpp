@@ -78,12 +78,12 @@ namespace flame::os {
         if (params.size() > 2) {
             php::array opts = params[2];
             php::array envs = opts.get("env");
-            if (envs.typeof(php::TYPE::ARRAY)) {
+            if (envs.type_of(php::TYPE::ARRAY)) {
                 for (auto i = envs.begin(); i != envs.end(); ++i)
                     env[i->first.to_string()] = i->second.to_string();
             }
             php::string cwds = opts.get("cwd");
-            if (cwds.typeof(php::TYPE::STRING)) cwdv = cwds.to_string();
+            if (cwds.type_of(php::TYPE::STRING)) cwdv = cwds.to_string();
         }
 
         boost::process::child c(exec, boost::process::args = argv, env, gcontroller->context_x,

@@ -52,7 +52,7 @@ namespace flame::mongodb {
     }
 
     php::value object_id::equal(php::parameters &params) {
-        if (params[0].typeof(php::TYPE::STRING)) {
+        if (params[0].type_of(php::TYPE::STRING)) {
             php::string data = params[0];
             bson_oid_t oid;
             bson_oid_init_from_string(&oid, data.c_str());

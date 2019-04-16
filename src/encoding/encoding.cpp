@@ -3,7 +3,7 @@
 
 namespace flame::encoding {
     static php::value bson_encode(php::parameters &params) {
-        if (params[0].typeof(php::TYPE::ARRAY)) {
+        if (params[0].type_of(php::TYPE::ARRAY)) {
             auto doc = flame::mongodb::array2bson(params[0]);
             return php::string((const char*)bson_get_data(doc.get()), doc->len);
         }

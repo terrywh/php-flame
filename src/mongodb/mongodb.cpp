@@ -98,7 +98,7 @@ namespace flame::mongodb {
     }
 
     std::shared_ptr<bson_t> array2bson(const php::array &v) {
-        assert(v.typeof(php::TYPE::ARRAY));
+        assert(v.type_of(php::TYPE::ARRAY));
         bson_t *doc = bson_new();
         for (auto i = v.begin(); i != v.end(); ++i) {
             php::string key = i->first;

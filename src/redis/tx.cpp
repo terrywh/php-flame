@@ -108,7 +108,7 @@ namespace flame::redis {
     php::value tx::zrange(php::parameters& params) {
         php::string name("ZRANGE", 6);
         php::string last = params[params.size()-1];
-        if (last.typeof(php::TYPE::STRING) && last.size() == 10 && strncasecmp("WITHSCORES", last.c_str(), 10) == 0)
+        if (last.type_of(php::TYPE::STRING) && last.size() == 10 && strncasecmp("WITHSCORES", last.c_str(), 10) == 0)
             cl_->push(name, params, reply_type::ASSOC_ARRAY_1);
         else
             cl_->push(name, params, reply_type::SIMPLE);
@@ -118,7 +118,7 @@ namespace flame::redis {
     php::value tx::zrevrange(php::parameters& params) {
         php::string name("ZREVRANGE", 9);
         php::string last = params[params.size() - 1];
-        if (last.typeof(php::TYPE::STRING) &&last.size() == 10 && strncasecmp("WITHSCORES", last.c_str(), 10) == 0)
+        if (last.type_of(php::TYPE::STRING) &&last.size() == 10 && strncasecmp("WITHSCORES", last.c_str(), 10) == 0)
             cl_->push(name, params, reply_type::ASSOC_ARRAY_1);
         else
             cl_->push(name, params, reply_type::SIMPLE);
@@ -129,7 +129,7 @@ namespace flame::redis {
         php::string name("ZRANGEBYSCORE", 13);
 
         for(int i=3; i<params.size(); ++i) {
-            if (params[i].typeof(php::TYPE::STRING) && params[i].size() == 10) {
+            if (params[i].type_of(php::TYPE::STRING) && params[i].size() == 10) {
                 php::string arg = params[i];
                 if (strncasecmp("WITHSCORES", arg.c_str(), 10) == 0) {
                     cl_->push(name, params, reply_type::ASSOC_ARRAY_1);
@@ -145,7 +145,7 @@ namespace flame::redis {
         php::string name("ZREVRANGEBYSCORE", 16);
 
         for(int i=3; i<params.size(); ++i) {
-            if (params[i].typeof(php::TYPE::STRING) && params[i].size() == 10) {
+            if (params[i].type_of(php::TYPE::STRING) && params[i].size() == 10) {
                 php::string arg = params[i];
                 if (strncasecmp("WITHSCORES", arg.c_str(), 10) == 0) {
                     cl_->push(name, params, reply_type::ASSOC_ARRAY_1);

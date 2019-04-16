@@ -74,7 +74,7 @@ namespace flame::mysql {
 
         php::buffer buffer;
         char quote = '\'';
-        if (params.size() > 1 && params[1].typeof(php::TYPE::STRING)) {
+        if (params.size() > 1 && params[1].type_of(php::TYPE::STRING)) {
             php::string q = params[1];
             if (q.data()[0] == '`') quote = '`';
         }

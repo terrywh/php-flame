@@ -72,7 +72,7 @@ namespace flame::kafka {
 
     rd_kafka_headers_t* array2hdrs(const php::array& data) {
         rd_kafka_headers_t *hdrs = nullptr;
-        if (!data.empty() && data.typeof(php::TYPE::ARRAY) && data.size() > 0) {
+        if (!data.empty() && data.type_of(php::TYPE::ARRAY) && data.size() > 0) {
             hdrs = rd_kafka_headers_new(data.size());
             for (auto i = data.begin(); i != data.end(); ++i) {
                 php::string key = i->first.to_string(),

@@ -85,11 +85,11 @@ namespace flame::http {
         curl_easy_setopt(c_easy_, CURLOPT_SSLCERTTYPE, "PEM");
         php::string cert = params[0];
         curl_easy_setopt(c_easy_, CURLOPT_SSLCERT, cert.c_str());
-        if (params.size() > 1 && params[1].typeof(php::TYPE::STRING)) {
+        if (params.size() > 1 && params[1].type_of(php::TYPE::STRING)) {
             php::string pkey = params[1];
             curl_easy_setopt(c_easy_, CURLOPT_SSLKEY, pkey.c_str());
         }
-        if (params.size() > 2 && params[2].typeof(php::TYPE::STRING)) {
+        if (params.size() > 2 && params[2].type_of(php::TYPE::STRING)) {
             php::string pass = params[2];
             curl_easy_setopt(c_easy_, CURLOPT_KEYPASSWD, pass.c_str());
         }
@@ -119,7 +119,7 @@ namespace flame::http {
         // 目标请求地址
         // ---------------------------------------------------------------------------
         php::string u = get("url");
-        if (!u.typeof(php::TYPE::STRING)) 
+        if (!u.type_of(php::TYPE::STRING)) 
             throw php::exception(zend_ce_type_error
                 , "Failed to build client request: 'url' typeof 'string' required"
                 , -1);

@@ -38,7 +38,7 @@ namespace flame::udp {
     php::value socket::__construct(php::parameters& params) {
         boost::system::error_code err;
         php::array option;
-        if (params.size() > 0 && params[0].typeof(php::TYPE::STRING)) {
+        if (params.size() > 0 && params[0].type_of(php::TYPE::STRING)) {
             auto pair = addr2pair(params[0]);
             boost::asio::ip::address address = boost::asio::ip::make_address(std::string_view(pair.first.data(), pair.first.size()), err);
             if (err) throw php::exception(zend_ce_exception
@@ -55,7 +55,7 @@ namespace flame::udp {
             if (err) throw php::exception(zend_ce_exception
                 , (boost::format("failed to bind: %s") % err.message()).str()
                 , err.value());
-            if (params.size() > 1 && params[1].typeof(php::TYPE::ARRAY)) {
+            if (params.size() > 1 && params[1].type_of(php::TYPE::ARRAY)) {
                 option = params[0];
                 goto PARSE_OPTION;
             }
@@ -66,7 +66,7 @@ namespace flame::udp {
             if (err) throw php::exception(zend_ce_exception
                 , (boost::format("Failed to bind: %s") % err.message()).str()
                 , err.value());
-            if (params.size() > 0 && params[0].typeof(php::TYPE::ARRAY)) {
+            if (params.size() > 0 && params[0].type_of(php::TYPE::ARRAY)) {
                 option = params[0];
                 goto PARSE_OPTION;
             }
