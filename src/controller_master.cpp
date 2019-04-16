@@ -1,11 +1,14 @@
 #include "controller_master.h"
 #include "controller.h"
 
+PHPAPI extern char *php_ini_opened_path;
+
 namespace flame {
 
     static std::string start_command_line() {
         std::ostringstream ss;
         ss << php::constant("PHP_BINARY");
+        ss << " -c " << php_ini_opened_path;
         php::array argv = php::server("argv");
         for (auto i = argv.begin(); i != argv.end(); ++i) ss << " " << i->second;
         return ss.str();
@@ -14,7 +17,7 @@ namespace flame {
     controller_master_worker::controller_master_worker(controller_master* m, int i)
     : m_(m), i_(i)
     , sout_(gcontroller->context_x), eout_(gcontroller->context_x) {
-        // 准备命令行及环境变量
+        // 准备命令行及环境变量（完全重新启动一个新的 PHP， 通过环境变量标识其为工作进程）
         std::string cmd = start_command_line();
         boost::process::environment env = gcontroller->env;
         env["FLAME_CUR_WORKER"] = std::to_string(i + 1);

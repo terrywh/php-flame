@@ -18,9 +18,11 @@ namespace flame;
  *  * "timeout" - 多进程退出超时, 单位毫秒 ( 200 ~ 100000ms ), 默认 3000ms（超时后会被强制杀死）
  *  @see flame\log
  *
- * 使用环境变量 FLAME_MAX_WORKERS=X 启动多进程模式；
- * 主进程将自动进行日志文件写入，子进程自动拉起；
- * 向主进程发送 SIGUSR1 信号将进行进程重载；（陆续停止当前进程并启动新进程）
+ * 多进程模式：
+ *  使用环境变量 FLAME_MAX_WORKERS=X 启动多进程模式；
+ *  主进程将自动进行日志文件写入，子进程自动拉起；
+ *  子进程继承主进程的环境变量/ -c /path/to/php.ini 配置（通过命令行 -d XXX=XXX 的临时设置无效）；
+ *  向主进程发送 SIGUSR1 信号将进行进程重载；（陆续停止当前进程并启动新进程）
  */
 function init($process_name, $options = []) {}
 /**
