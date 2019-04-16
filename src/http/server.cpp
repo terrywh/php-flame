@@ -129,7 +129,7 @@ namespace flame::http {
     php::value server::run(php::parameters &params) {
         boost::system::error_code err;
         accp_.bind(addr_, err);
-        if (err) throw php::exception(zend_ce_exception
+        if (err) throw php::exception(zend_ce_error_exception
             , (boost::format("Failed to bind TCP socket: %s") % err.message()).str()
             , err.value());
         accp_.listen(boost::asio::socket_base::max_listen_connections);
@@ -139,7 +139,7 @@ namespace flame::http {
             boost::system::error_code err;
             accp_.async_accept(sock_, ch[err]);
             if (err == boost::asio::error::operation_aborted) break; 
-            else if (err) throw php::exception(zend_ce_exception
+            else if (err) throw php::exception(zend_ce_error_exception
                 , (boost::format("Failed to accept connection: %s") % err.message()).str()
                 , err.value());
             else std::make_shared<_handler>(this, std::move(sock_))->start();
