@@ -17,6 +17,7 @@ namespace flame::mongodb {
     private:
         // 须先销毁 指针 后归还 连接
         std::shared_ptr<_connection_lock> cl_;
+        std::shared_ptr<mongoc_client_session_t> ss_;
         std::shared_ptr<mongoc_cursor_t>  cs_;
         friend class _connection_base;
     };

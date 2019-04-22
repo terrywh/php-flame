@@ -21,8 +21,9 @@ namespace flame::mongodb {
             row = cl_->fetch(cs_, ch);
         }
         if (row.type_of(php::TYPE::NULLABLE)) {
-            // 尽早释放连接
+            // 尽早释放连接 (注意顺序)
             cs_.reset();
+            ss_.reset();
             cl_.reset();
         }
         return row;
@@ -34,8 +35,9 @@ namespace flame::mongodb {
             php::array data(8);
             for(php::array row = cl_->fetch(cs_, ch); !row.type_of(php::TYPE::NULLABLE); row = cl_->fetch(cs_, ch))
                 data.set(data.size(), row);
-            // 尽早释放连接
+            // 尽早释放连接 (注意顺序)
             cs_.reset();
+            ss_.reset();
             cl_.reset();
             return data;
         }

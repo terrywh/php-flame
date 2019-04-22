@@ -7,8 +7,11 @@
 namespace flame::mongodb {
 
     void _connection_base::fake_deleter(bson_t *doc) {}
-    
-    php::value _connection_base::exec(std::shared_ptr<mongoc_client_t> conn, php::array& pcmd, int type, coroutine_handler &ch) {
+
+    php::value _connection_base::exec(std::shared_ptr<mongoc_client_t> conn
+        , php::array& pcmd, int type, coroutine_handler &ch
+        , std::shared_ptr<mongoc_client_session_t> session) {
+
         std::shared_ptr<bson_t> cmd = array2bson(pcmd);
         // 此处不能使用 bson_new 创建 bson_t 否则会导致内存泄漏
         //（实际对 reply 的使用流程会重新初始化 reply 导致其值被至于 stack 上，导致此处 heap 内存泄漏）
@@ -18,7 +21,13 @@ namespace flame::mongodb {
         std::uint32_t server_id;
         int  rok = 0;
 
-        boost::asio::post(gcontroller->context_y, [conn, type, &cmd, &rep, &opt, &err, &rok, &ch] () {
+        boost::asio::post(gcontroller->context_y, [&session, conn, type, &cmd, &rep, &opt, &err, &rok, &ch] () {
+            if (!session) {
+                session.reset(mongoc_client_start_session(conn.get(), nullptr, nullptr)
+                    , mongoc_client_session_destroy);
+                mongoc_client_session_append(session.get(), opt.get(), nullptr);
+            }
+
             mongoc_server_description_t* server;
             switch(type) {
             case COMMAND_READ:
@@ -54,6 +63,10 @@ namespace flame::mongodb {
             ch.resume();
         });
         ch.suspend();
+        // size_t size;
+        // char * json = bson_as_relaxed_extended_json(rep.get(), &size);
+        // std::cout << "REPLY: (" << size << ") " << json << "\n";
+        // bson_free(json);
         if (!rok) throw php::exception(zend_ce_exception
             , (boost::format("Failed to execute MongoDB command: %s") % err->message).str()
             , err->code);
@@ -61,7 +74,7 @@ namespace flame::mongodb {
             php::object obj{php::class_entry<cursor>::entry()};
             auto ptr = static_cast<cursor *>(php::native(obj));
             ptr->cl_.reset(new _connection_lock(conn));
-
+            ptr->ss_ = session;
             ptr->cs_.reset(
                 mongoc_cursor_new_from_command_reply_with_opts(conn.get(), rep.get(), opt.get()),
                 mongoc_cursor_destroy);
