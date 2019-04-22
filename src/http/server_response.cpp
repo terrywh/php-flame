@@ -4,7 +4,7 @@
 #include "server_response.h"
 
 namespace flame::http {
-    
+
     void server_response::declare(php::extension_entry& ext) {
         php::class_entry<server_response> class_server_response("flame\\http\\server_response");
         class_server_response
@@ -96,7 +96,7 @@ namespace flame::http {
             cookie.set("http_only", http_only);
         }
 
-        php::array cookies = get("cookie");
+        php::array cookies = get("cookie", true);
         if (cookies.type_of(php::TYPE::NULLABLE)) cookies = php::array(4);
         cookies.set(cookies.size(), cookie);
         return nullptr;
@@ -107,7 +107,7 @@ namespace flame::http {
             throw php::exception(zend_ce_error_exception
                 , "Failed to write header: already sent"
                 , -1);
-        
+
         status_ |= STATUS_HEAD_SENT;
         if (params.size() > 0) set("status", params[0].to_integer());
         coroutine_handler ch{coroutine::current};
@@ -136,7 +136,7 @@ namespace flame::http {
             throw php::exception(zend_ce_error_exception
                 , "Failed to write body: response already done"
                 , -1);
-        
+
         coroutine_handler ch{coroutine::current};
         if (!(status_ & STATUS_HEAD_SENT)) {
             status_ |= STATUS_HEAD_SENT;
@@ -174,7 +174,7 @@ namespace flame::http {
         handler_->write_file(this, (root / file.lexically_normal()).string(), ch);
         return nullptr;
     }
-    
+
     // 支持 content-length 形式的用法
     void server_response::build_ex(boost::beast::http::message<false, value_body<false>>& ctr_) {
         if (status_ & STATUS_BUILT) return; // 重复使用
