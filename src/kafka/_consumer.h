@@ -8,8 +8,9 @@ namespace flame {
 }
 
 namespace flame::kafka {
-
-    class _consumer {
+    // 消费者
+    // 目前的实现方式无需 shared_from_this 管理
+    class _consumer/*: public std::enable_shared_from_this<_consumer> */{
     public:
         _consumer(php::array& config, php::array& topics);
         ~_consumer();
@@ -21,5 +22,6 @@ namespace flame::kafka {
         rd_kafka_t* conn_;
         rd_kafka_topic_partition_list_t* tops_;
         bool       close_;
+        static void on_error(rd_kafka_t* conn, int error, const char* reason, void* data);
     };
 } // namespace flame::kafka

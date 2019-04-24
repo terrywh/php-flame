@@ -3,7 +3,7 @@
 #include "../coroutine.h"
 
 namespace flame::kafka {
-    
+
     class _consumer;
     class consumer : public php::class_base {
     public:
@@ -17,7 +17,6 @@ namespace flame::kafka {
         std::shared_ptr<_consumer> cs_;
         int                        cc_ = 8;
         php::callable              cb_;
-        zend_execute_data*         ex_;
 
         friend php::value consume(php::parameters &params);
     };

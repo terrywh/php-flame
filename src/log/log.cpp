@@ -15,17 +15,8 @@ namespace flame::log {
 
     static std::map<std::string, int> LEVEL_I {};
 
-    enum {
-        LEVEL_TRACE,
-        LEVEL_DEBUG,
-        LEVEL_INFO,
-        LEVEL_WARNING,
-        LEVEL_ERROR,
-        LEVEL_FATAL,
-    };
+    int level = 0;
 
-    static int level = 0;
-    
     static void write_ex(int lv, php::parameters& params) {
         if (lv < level) return;
         std::ostream& os = lv > LEVEL_WARNING ? std::cout : std::cerr;
@@ -34,7 +25,7 @@ namespace flame::log {
         os << ")";
         for (int i = 0; i < params.size(); ++i)
             os << ' ' << params[i].ptr();
-        
+
         os << std::endl;
     }
 

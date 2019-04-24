@@ -1,8 +1,10 @@
 #include "../controller.h"
+#include "../coroutine_queue.h"
+#include "../time/time.h"
+#include "../log/log.h"
 #include "_consumer.h"
 #include "kafka.h"
 #include "message.h"
-#include "../coroutine_queue.h"
 
 namespace flame::kafka {
     static rd_kafka_topic_partition_list_t *array2topics(const php::array &topics) {
@@ -19,12 +21,12 @@ namespace flame::kafka {
             throw php::exception(zend_ce_type_error
                 , "Failed to create Kafka consumer: 'bootstrap.servers' required"
                 , -1);
-        
+
         if (!config.exists("group.id"))
             throw php::exception(zend_ce_type_error
                 , "Failed to create Kafka consumer: 'group.id' required"
                 , -1);
-        
+
         if (topics.size() == 0)
             throw php::exception(zend_ce_type_error
                 , "Failed to create Kafka consumer: target topics missing"
@@ -32,18 +34,21 @@ namespace flame::kafka {
 
         rd_kafka_conf_t *conf = array2conf(config);
         char err[256];
+        rd_kafka_conf_set_opaque(conf, this);
+        rd_kafka_conf_set_error_cb(conf, on_error);
 
         conn_ = rd_kafka_new(RD_KAFKA_CONSUMER, conf, err, sizeof(err));
         if (!conn_)
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to create Kafka consumer: %s") % err).str()/*, 0*/);
-        
+
         auto r = rd_kafka_poll_set_consumer(conn_);
         if (r != RD_KAFKA_RESP_ERR_NO_ERROR)
             throw php::exception(zend_ce_exception
                 , (boost::format("Failed to create Kafka Consumer: %s") % rd_kafka_err2str(r)).str()
                 , r);
-        
+
+
         tops_ = array2topics(topics);
     }
 
@@ -55,6 +60,12 @@ namespace flame::kafka {
         }
     }
 
+    void _consumer::on_error(rd_kafka_t* conn, int error, const char* reason, void* data) {
+        _consumer* self = reinterpret_cast<_consumer*>(data);
+        if (log::level <= log::LEVEL_WARNING)
+            std::cerr << "[" << time::iso() << "] (WARNING) Kafka Consumer " << rd_kafka_err2str((rd_kafka_resp_err_t)error) << ": " << reason << "\n";
+    }
+
     void _consumer::subscribe(coroutine_handler &ch) {
         rd_kafka_resp_err_t err;
         boost::asio::post(gcontroller->context_y, [this, &err, &ch] ()  {
@@ -62,20 +73,19 @@ namespace flame::kafka {
             ch.resume();
         });
         ch.suspend();
-        if (err != RD_KAFKA_RESP_ERR_NO_ERROR) 
+        if (err != RD_KAFKA_RESP_ERR_NO_ERROR)
             throw php::exception(zend_ce_exception
                 , (boost::format("failed to subcribe Kafka topics: %s") % rd_kafka_err2str(err)).str()
                 , err);
     }
 
     void _consumer::consume(coroutine_queue<php::object>& q, coroutine_handler& ch) {
-        rd_kafka_resp_err_t err;
+        rd_kafka_resp_err_t err = RD_KAFKA_RESP_ERR_NO_ERROR;
         rd_kafka_message_t* msg = nullptr;
 POLL_MESSAGE:
-        // 由于 poll 动作本身阻塞, 为防止所有工作线被占用, 这里绑定到 strd_ 执行
-        // (理论上仅占用一个协程)
+        // 采用内部队列，理论上仅占用一个工作线程（应保证占用时间不要过长）
         boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]() {
-            msg = rd_kafka_consumer_poll(conn_, 500);
+            msg = rd_kafka_consumer_poll(conn_, 40);
             if (!msg) err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
             else if (msg->err) {
                 err = msg->err;
@@ -131,7 +141,7 @@ POLL_MESSAGE:
             throw php::exception(zend_ce_exception
                 , (boost::format("failed to close Kafka consumer: %s") % rd_kafka_err2str(err)).str()
                 , err);
-        
+
         close_ = true;
     }
 

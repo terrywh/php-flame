@@ -20,7 +20,7 @@ namespace flame::kafka {
         consumer::declare(ext);
         producer::declare(ext);
     }
-    
+
     php::value consume(php::parameters& params) {
         php::array config = params[0];
         php::array topics = params[1];
@@ -33,7 +33,7 @@ namespace flame::kafka {
         }
         if (!config.exists("log.connection.close")) config.set("log.connection.close", "false");
 
-        ptr->cs_.reset(new _consumer(config, topics));
+        ptr->cs_ = std::make_shared<_consumer>(config, topics);
         coroutine_handler ch {coroutine::current};
         // 订阅
         ptr->cs_->subscribe(ch);
@@ -49,7 +49,8 @@ namespace flame::kafka {
 
         if (!config.exists("log.connection.close")) config.set("log.connection.close", "false");
 
-        ptr->pd_.reset(new _producer(config, topics));
+        ptr->pd_ = std::make_shared<_producer>(config, topics);
+        ptr->pd_->start(); // 不能在构造中启动 poll 流程
         // TODO 优化: 确认首次连接已建立
         return std::move(obj);
     }
