@@ -30,7 +30,8 @@ namespace flame::mysql {
         url u(params[0]);
         if (u.port < 10) u.port = 3306;
         if (!u.query.count("charset")) u.query["charset"] = "utf8mb4";
-        if (!u.query.count("ssl")) u.query["ssl"] = "disabled";
+        // 版本 8.0.3 后默认使用 caching_sha2_password 进行认证，低版本不支持
+        if (!u.query.count("auth")) u.query["auth"] = "mysql_native_password";
 
         php::object obj(php::class_entry<client>::entry());
         client *ptr = static_cast<client *>(php::native(obj));
@@ -73,7 +74,7 @@ namespace flame::mysql {
     static void where_lt(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond) {
         if (cond.type_of(php::TYPE::NULLABLE)) {
             buf.append("<0", 2);
-        } 
+        }
         else {
             php::string str = cond;
             str.to_string();
@@ -165,7 +166,7 @@ namespace flame::mysql {
             else {
                 php::string key = i->first;
                 if (key.c_str()[0] == '{') { // OPERATOR (php::TYPE::STRING)
-                    if ((key.size() == 5 && strncasecmp(key.c_str(), "{NOT}", 5) == 0) 
+                    if ((key.size() == 5 && strncasecmp(key.c_str(), "{NOT}", 5) == 0)
                         || (key.size() == 3 && strncasecmp(key.c_str(), "{!}", 3) == 0)) {
 
                         assert(i->second.type_of(php::TYPE::ARRAY));

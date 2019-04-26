@@ -47,7 +47,7 @@ namespace ssl = boost::asio::ssl;
 #include <boost/crc.hpp>
 #include <amqpcpp.h>
 #include <amqpcpp/libboostasio.h>
-#include <mysql.h>
+#include <mariadb/mysql.h>
 // #include <my_sys.h>
 #include <mongoc.h>
 #include <librdkafka/rdkafka.h>

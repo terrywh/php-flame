@@ -14,7 +14,7 @@ flame\go(function() {
                     $body = $socket->read($length);
                     echo $body, "\n";
                 }
-                flame\time\sleep(4000);
+                flame\time\sleep(200);
                 $socket->write("HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok");
             }
         }

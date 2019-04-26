@@ -4,6 +4,7 @@
 #include "result.h"
 
 namespace flame::mysql {
+    
     void _connection_base::escape(std::shared_ptr<MYSQL> conn, php::buffer &b, const php::value &v, char quote) {
         switch (Z_TYPE_P(static_cast<zval *>(v))) {
         case IS_NULL:
@@ -23,25 +24,37 @@ namespace flame::mysql {
         //  break;
         // }
         case IS_STRING: {
-            php::string str = v;
             // 支持字段名 aaa.bbb 进行 ESCAPE 变为 `aaa`.`bbb`
             if (quote == '`') {
-                const char *s = str.c_str(), *c, *e = str.c_str() + str.size();
+                std::string str = v; // 这里进行拷贝（原字符串可能发生更改）
+                char *s = str.data(), *c, *e = str.data() + str.size();
+                char *t = b.prepare(str.size() * 2 + 2);
+                std::size_t n = 0;
+ESCAPE_REMAINING:
                 for (c = s; c < e; ++c) {
+                    if (*c == '`') *c = '\\';
                     if (*c == '.') {
-                        escape(conn, b, php::string(s, c - s), quote);
-                        b.push_back('.');
-                        escape(conn, b, php::string(c + 1, e - c - 1), quote);
-                        goto ESCAPE_FINISHED;
+                        t[n++] = quote;
+                        n += mysql_real_escape_string(conn.get(), t + n, s, c - s);
+                        t[n++] = quote;
+                        t[n++] = '.';
+                        s = c + 1;
+                        goto ESCAPE_REMAINING;
                     }
                 }
+                t[n++] = quote;
+                n += mysql_real_escape_string(conn.get(), t + n, s, c - s);
+                t[n++] = quote;
+                b.commit(n);
+            } else {
+                php::string str = v;
+                char *t = b.prepare(str.size() * 2 + 2);
+                std::size_t n = 0;
+                t[n++] = quote;
+                n += mysql_real_escape_string(conn.get(), t + n, str.c_str(), str.size());
+                t[n++] = quote;
+                b.commit(n);
             }
-            char *to = b.prepare(str.size() * 2 + 2);
-            std::size_t n = 0;
-            to[n++] = quote;
-            n += mysql_real_escape_string_quote(conn.get(), to + n, str.c_str(), str.size(), quote);
-            to[n++] = quote;
-            b.commit(n);
             break;
         }
         case IS_ARRAY: {
@@ -70,7 +83,6 @@ namespace flame::mysql {
             escape(conn, b, str, quote);
         }
         }
-ESCAPE_FINISHED:;
     }
 
     php::object _connection_base::query(std::shared_ptr<MYSQL> conn, std::string sql, coroutine_handler& ch) {
@@ -131,7 +143,7 @@ ESCAPE_FINISHED:;
         ch.suspend();
         if (!row) {
             int err = mysql_errno(conn.get());
-            if (err != 0) 
+            if (err != 0)
                 throw php::exception(zend_ce_error
                     , (boost::format("Failed to fetch MySQL row: %s") % mysql_error(conn.get())).str()
                     , err);

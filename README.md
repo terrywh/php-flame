@@ -136,6 +136,7 @@ make install
 ``` Bash
 make install
 ```
+
 <!--
 #### sasl2
 ``` Bash
@@ -143,6 +144,7 @@ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-
 make && make install
 ```
 -->
+
 #### mongoc-driver
 ``` Bash
 mkdir stage && cd stage
@@ -195,6 +197,7 @@ CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=/data/vendor/cur
 make && make install
 ```
 
+<!--
 #### mysql-connector-c
 ``` Bash
 mkdir stage && cd stage
@@ -203,6 +206,14 @@ make && make install
 # rm /data/vendor/mysqlc-8.0.15/lib/*.so*
 ```
 注意：需要下载内含 boost 头文件的版本（与框架依赖版本不同）；
+-->
+
+#### maria-connector-c
+```
+mkdir stage && cd stage
+CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig:/data/vendor/curl-7.64.1/lib/pkgconfig cmake3 -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC  -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.0.9 ../
+# rm /data/vendor/mariac-3.0.9/lib/mariadb/*.so*
+```
 
 </p>
 </details>

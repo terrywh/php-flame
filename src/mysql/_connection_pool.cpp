@@ -5,7 +5,8 @@ namespace flame::mysql {
     _connection_pool::_connection_pool(url u)
     : url_(std::move(u)), min_(2), max_(6), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
     , flag_(FLAG_UNKNOWN) {
-
+        if(url_.query.count("proxy") > 0 && std::stoi(url_.query["proxy"]) != 0)
+            flag_ =  FLAG_CHARSET_EQUAL | FLAG_REUSE_BY_PROXY;
     }
 
     _connection_pool::~_connection_pool() {
@@ -31,7 +32,7 @@ namespace flame::mysql {
             while (!conn_.empty()) {
                 if (now - conn_.front().ttl < std::chrono::seconds(15)
                     || mysql_ping(conn_.front().conn) == 0) {  // 可用连接
-                    
+
                     MYSQL* c = conn_.front().conn;
                     conn_.pop_front();
                     release(c);
@@ -46,18 +47,15 @@ namespace flame::mysql {
             if (size_ >= max_) return; // 已建立了足够多的连接, 需要等待已分配连接释放
             MYSQL* c = mysql_init(nullptr);
             init_options(c);
-
             if (mysql_real_connect(c, url_.host.c_str(), url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1, url_.port, nullptr, 0)) {
-                if(url_.query.count("proxy") > 0) {
-                    set_names(c); // 进行此操作以兼容 proxysql 代理
-                    flag_ =  FLAG_CHARSET_EQUAL | FLAG_REUSE_BY_PROXY;
-                }
+                if (flag_ & FLAG_REUSE_BY_PROXY) set_names(c);
                 ++size_; // 当前还存在的连接数量
                 release(c);
             }
             else {
                 errnum = mysql_errno(c);
                 errmsg = mysql_error(c);
+                std::cout << "connect failed:" << errnum << "/" << errmsg << "\n";
                 mysql_close(c);
                 await_.pop_back();
                 ch.resume();
@@ -79,18 +77,8 @@ namespace flame::mysql {
     void _connection_pool::init_options(MYSQL* c) {
         // 这里的 CHARSET 设定会被 reset_connection 重置为系统值
         mysql_options(c, MYSQL_SET_CHARSET_NAME, url_.query["charset"].c_str());
-        // 8.0.15 默认使用 caching_sha2_password 进行认证，低版本不支持
-        mysql_options(c, MYSQL_DEFAULT_AUTH, "mysql_native_password");
-        // SSL 参数
-        unsigned int ssl = SSL_MODE_DISABLED;
-        if (url_.query.count("ssl") > 0) {
-            std::string sstr = url_.query["ssl"];
-            if (strncasecmp(sstr.c_str(), "preferred", 9) == 0) ssl = SSL_MODE_PREFERRED;
-            else if (strncasecmp(sstr.c_str(), "required", 8) == 0) ssl = SSL_MODE_REQUIRED;
-            else if (strncasecmp(sstr.c_str(), "verify_ca", 9) == 0) ssl = SSL_MODE_VERIFY_CA;
-            else if (strncasecmp(sstr.c_str(), "verify_identity", 15) == 0) ssl = SSL_MODE_VERIFY_IDENTITY;
-        }
-        mysql_options(c, MYSQL_OPT_SSL_MODE, &ssl);
+        // 版本 8.0.3 后默认使用 caching_sha2_password 进行认证，低版本不支持
+        mysql_options(c, MYSQL_DEFAULT_AUTH, url_.query["auth"].c_str());
         unsigned int timeout = 5; // 连接超时
         mysql_options(c, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
     }
@@ -110,15 +98,15 @@ namespace flame::mysql {
             // 每次连接复用前，需要清理状态;
             // 这里兼容不支持 mysql_reset_connection() 新 API 的情况
             // （不支持自动切换到 mysql_change_user() 兼容老版本或变异版本）
-            if (flag_ == FLAG_UNKNOWN) {
-                query_version(c);
-                query_charset(c); // 由于上述 reset 动作，会导致字符集被重置为服务端字符集，确认字符集是否匹配
-            }
+            if (!(flag_ & FLAG_REUSE_MASK)) query_version(c);
+            // 由于 reset 动作会导致字符集被重置为服务端字符集，确认字符集是否匹配
+            if (!(flag_ & FLAG_CHARSET_MASK)) query_charset(c);
+
             if (flag_ & FLAG_REUSE_BY_RESET) mysql_reset_connection(c);
             else if (flag_ & FLAG_REUSE_BY_CUSER) mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
             // else if (flag_ & FLAG_REUSE_BY_PROXY) ; // PROXY 已处理复用流程，此处无需处理
-            
-            if (flag_ & FLAG_CHARSET_DIFFER) mysql_set_character_set(c, url_.query["charset"].c_str());
+            if (flag_ & FLAG_CHARSET_DIFFER)
+                mysql_set_character_set(c, url_.query["charset"].c_str());
             std::function<void(std::shared_ptr<MYSQL> c)> cb = await_.front();
             await_.pop_front();
             auto self = this->shared_from_this();
@@ -144,13 +132,10 @@ namespace flame::mysql {
     }
 
     void _connection_pool::query_version(MYSQL* c) {
-        if (url_.query.count("proxy") > 0) {
-            if (std::stoi(url_.query["proxy"]) > 0) {
-                flag_ |= FLAG_REUSE_BY_PROXY;
-                return;
-            }
-        }
-        flag_ |= mysql_get_server_version(c) >= 50700 ? FLAG_REUSE_BY_RESET : FLAG_REUSE_BY_CUSER;
+        // PROXY 存在时不会进行下述动作
+        flag_ |= mysql_get_server_version(c) >= 50700
+            ? FLAG_REUSE_BY_RESET
+            : FLAG_REUSE_BY_CUSER;
     }
 
     void _connection_pool::sweep() {

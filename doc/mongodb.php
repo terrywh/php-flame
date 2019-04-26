@@ -147,8 +147,9 @@ class collection {
     }
     /**
      * 查询并返回匹配文档数量
+     * @param mixed $limit integer/array 请参见 find 函数对应 $limit 说明
      */
-    function count(array $query): int {
+    function count(array $query, mixed $limit): int {
         return 0;
     }
     /**

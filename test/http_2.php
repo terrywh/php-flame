@@ -23,6 +23,7 @@ flame\go(function() {
             return false;
         }
     })->get("/", function($req, $res) {
+        $res->set_cookie("a","b", 3600);
         $res->body = json_encode($req);
     })->post("/", function($req, $res) {
         $res->status = 200;
