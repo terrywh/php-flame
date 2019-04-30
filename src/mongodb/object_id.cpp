@@ -20,7 +20,7 @@ namespace flame::mongodb {
     }
 
     php::value object_id::__construct(php::parameters &params) {
-        if (params.size() > 0) {
+        if (params.size() > 0 && params[0].type_of(php::TYPE::STRING)) {
             php::string oid = params[0].to_string();
             bson_oid_init_from_string(&oid_, oid.c_str());
         }

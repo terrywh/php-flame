@@ -52,7 +52,7 @@ namespace flame::mongodb {
                 {"sort", php::TYPE::ARRAY, false, true},
                 {"limit", php::TYPE::UNDEFINED, false, true},
             })
-            .method<&collection::find_one>("one", { 
+            .method<&collection::find_one>("one", {
                 {"filter", php::TYPE::ARRAY},
                 {"sort", php::TYPE::ARRAY, false, true},
             })
@@ -165,8 +165,8 @@ namespace flame::mongodb {
     php::value collection::find(php::parameters &params) {
         php::array cmd(8);
         cmd.set("find", name_);
-        if (params.size() > 0)
-            cmd.set("filter", params[0]);
+        if(params[0].empty()) cmd.set("filter", php::object(php::CLASS(zend_standard_class_def)));
+        else cmd.set("filter", params[0]);
 
         if (params.size() > 1) {
             php::array project;
@@ -208,7 +208,9 @@ namespace flame::mongodb {
     php::value collection::find_one(php::parameters &params) {
         php::array cmd(8);
         cmd.set("find", name_);
-        cmd.set("filter", params[0]);
+        if(params[0].empty()) cmd.set("filter", php::object(php::CLASS(zend_standard_class_def)));
+        else cmd.set("filter", params[0]);
+
         if (params.size() > 1 && params[1].type_of(php::TYPE::ARRAY))
             cmd.set("sort", params[1]);
 
@@ -219,7 +221,7 @@ namespace flame::mongodb {
         assert(cs.instanceof(php::class_entry<cursor>::entry()));
         return cs.call("fetch_row");
     }
-    
+
     php::value collection::get(php::parameters &params) {
         php::array cmd(8);
         cmd.set("find", name_);
@@ -227,7 +229,8 @@ namespace flame::mongodb {
         php::string field = params[1];
         project.set(field, 1);
         cmd.set("projection", project);
-        cmd.set("filter", params[0]);
+        if (params[0].empty()) cmd.set("filter", php::object(php::CLASS(zend_standard_class_def)));
+        else cmd.set("filter", params[0]);
         if (params.size() > 2 && params[2].type_of(php::TYPE::ARRAY))
             cmd.set("sort", params[2]);
         cmd.set("limit", 1);
@@ -244,6 +247,7 @@ namespace flame::mongodb {
     php::value collection::count(php::parameters &params) {
         php::array cmd(8);
         cmd.set("count", name_);
+        if (params[0].empty()) cmd.set("query", php::object(php::CLASS(zend_standard_class_def)));
         cmd.set("query", params[0]);
         if (params.size() > 1) {
             if (params[1].type_of(php::TYPE::INTEGER)) cmd.set("limit", params[1]);
@@ -277,7 +281,7 @@ namespace flame::mongodb {
         int execute_type = _connection_base::COMMAND_READ;
         if (params.size() > 2)
             execute_type = params[2].to_integer();
-        
+
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
         return cp_->exec(conn_, cmd, execute_type, ch);
@@ -285,7 +289,8 @@ namespace flame::mongodb {
 
     php::value collection::find_and_delete(php::parameters& params) {
         php::array cmd(8);
-        cmd.set("query", params[0]);
+        if (params[0].empty()) cmd.set("query", php::object(php::CLASS(zend_standard_class_def)));
+        else cmd.set("query", params[0]);
         cmd.set("remove", true);
         if (params.size() > 1) {
             php::value f = params[1];
@@ -303,7 +308,8 @@ namespace flame::mongodb {
 
     php::value collection::find_and_update(php::parameters& params) {
         php::array cmd(8);
-        cmd.set("query", params[0]);
+        if (params[0].empty()) cmd.set("query", php::object(php::CLASS(zend_standard_class_def)));
+        else cmd.set("query", params[0]);
         if (params.size() > 1) {
             php::value f = params[1];
             if (f.type_of(php::TYPE::ARRAY)) cmd.set("update", f);
@@ -318,7 +324,7 @@ namespace flame::mongodb {
             if (f.type_of(php::TYPE::ARRAY)) cmd.set("fields", f);
         }
         if (params.size() > 5) cmd.set("new", params[5].to_boolean());
-        
+
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
         return cp_->exec(conn_, cmd, _connection_base::COMMAND_READ_WRITE, ch);
