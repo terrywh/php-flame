@@ -23,6 +23,8 @@ flame\go(function() {
             return false;
         }
     })->get("/", function($req, $res) {
+        $req->header["test1"] = "string";
+        $req->header["test2"] = 123456;
         $res->set_cookie("a","b", 3600);
         $res->body = json_encode($req);
     })->post("/", function($req, $res) {

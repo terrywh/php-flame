@@ -183,9 +183,9 @@ namespace flame::http {
         php::array headers = get("header");
         if (headers.type_of(php::TYPE::ARRAY)) {
             for (auto i=headers.begin(); i!=headers.end(); ++i) {
-                php::string key { i->first };
-                php::string val { i->second };
-                ctr_.set(std::string_view(key.c_str(), key.size()), val);
+                php::string key = i->first.to_string();
+                php::string val = i->second.to_string();
+                ctr_.set(std::string_view(key.c_str(), key.size()), static_cast<std::string>(val));
             }
         }
         php::array cookies = get("cookie");

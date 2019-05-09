@@ -76,7 +76,7 @@ namespace flame::http {
             throw php::exception(zend_ce_error_exception
                 , "Failed to set HTTP version: value out of range"
                 , -1);
-        
+
         curl_easy_setopt(c_easy_, CURLOPT_HTTP_VERSION, v);
         return nullptr;
     }
@@ -98,7 +98,7 @@ namespace flame::http {
 
     php::value client_request::ssl_verify(php::parameters& params) {
         long v = static_cast<int>(params[0]), YES = 1, NO = 0;
-        if (v | CURLOPT_SSL_VERIFYPEER) 
+        if (v | CURLOPT_SSL_VERIFYPEER)
             curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, YES);
         else
             curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, NO);
@@ -106,9 +106,9 @@ namespace flame::http {
             curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, YES);
         else
             curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, NO);
-        if (v | CURLOPT_SSL_VERIFYSTATUS) 
+        if (v | CURLOPT_SSL_VERIFYSTATUS)
             curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, YES);
-        else 
+        else
             curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, NO);
         return nullptr;
     }
@@ -119,11 +119,11 @@ namespace flame::http {
         // 目标请求地址
         // ---------------------------------------------------------------------------
         php::string u = get("url");
-        if (!u.type_of(php::TYPE::STRING)) 
+        if (!u.type_of(php::TYPE::STRING))
             throw php::exception(zend_ce_type_error
                 , "Failed to build client request: 'url' typeof 'string' required"
                 , -1);
-        
+
         curl_easy_setopt(c_easy_, CURLOPT_URL, u.c_str());
         php::string m = get("method");
         curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
@@ -134,9 +134,9 @@ namespace flame::http {
         long keepalive = 1;
         php::array header = get("header");
         for (auto i=header.begin(); i!=header.end(); ++i) {
-            std::string key = i->first;
-            std::string val = i->second;
-            if (strncasecmp(key.c_str(), "content-type", 12) == 0) ctype = val;
+            php::string key = i->first.to_string();
+            php::string val = i->second.to_string();
+            if (strncasecmp(key.c_str(), "content-type", 12) == 0) ctype.assign(val.data(), val.size());
             else if (strncasecmp(key.c_str(), "connection", 10) == 0
                 && strncasecmp(val.c_str(), "close", 5) == 0) keepalive = 0;
             c_head_ = curl_slist_append(c_head_, (boost::format("%s: %s") % key % val).str().c_str());
@@ -149,7 +149,7 @@ namespace flame::http {
         php::array cookie = get("cookie");
         php::buffer cookies;
         for (auto i=cookie.begin(); i!=cookie.end(); ++i) {
-            php::string key = i->first;
+            php::string key = i->first.to_string();
             php::string val = i->second.to_string();
             val = php::url_encode(val.c_str(), val.size());
             cookies.append(key);
@@ -180,4 +180,3 @@ namespace flame::http {
         }
     }
 }
-
