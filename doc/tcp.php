@@ -30,7 +30,7 @@ class socket {
      *  * 参数为 int 时, 表示读取指定量的数据, 例如 $completion = 1024 表示读取 1024 字节;
      *  * 参数为 string 时, 表示读取到指定的结束符, 例如 $completion = "\r\n" 读取到 "abc\r\n" 字符串;
      */
-    function read(mixed $completion = null) {}
+    function read($completion = null) {}
     /**
      * 发送数据
      * @param string $data

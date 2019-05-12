@@ -101,6 +101,7 @@ ESCAPE_REMAINING:
             ch.resume();
         });
         ch.suspend();
+        // std::cout << "last_query: " << sql << ": " << err << "\n";
         last_query_ = sql;
         if (err != 0) {
             int err = mysql_errno(conn.get());

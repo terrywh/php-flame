@@ -131,7 +131,7 @@ class client {
      * @param mixed $limit LIMIT 子句, 请参考上文;（数组形式描述将自动进行 ESCAPE 转义)
      * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
-    function delete(string $table, mixed $where, mixed $order, mixed $limit): result {
+    function delete(string $table, $where, $order = null, $limit = null): result {
         return new result();
     }
     /**
@@ -143,7 +143,7 @@ class client {
      * @param mixed $limit LIMIT 子句, 请参考上文;
      * @return array 关联数组, 一般包含 affected_rows / insert_id 两项;
      */
-    function update(string $table, mixed $where, mixed $modify, mixed $order, mixed $limit): result {
+    function update(string $table, $where, $modify, $order = null, $limit = null): result {
         return new result();
     }
     /**
@@ -158,20 +158,20 @@ class client {
      * @param mixed $order ORDER 子句, 请参考上文;
      * @param mixed $limit LIMIT 子句, 请参考上文;
      */
-    function select(string $table, mixed $fields, array $where, mixed $order, mixed $limit): result {
+    function select(string $table, $fields, $where, $order = null, $limit = null): result {
         return new result();
     }
     /**
      * 从指定表筛选获取一条数据, 并立即返回该行数据
      */
-    function one(string $table, mixed $where, mixed $order): array {
+    function one(string $table, $where, $order = null): array {
         return [];
     }
     /**
      * 从指定表获取一行数据的指定字段值
      * @return mixed 字段类型映射请参见顶部说明
      */
-    function get(string $table, string $field, array $where, mixed $order) {
+    function get(string $table, string $field, array $where, $order) {
         return null;
     }
     /**
@@ -208,32 +208,32 @@ class tx {
     /**
      * @see client::delete()
      */
-    function delete(string $table, mixed $where, mixed $order, mixed $limit): array {
+    function delete(string $table, $where, $order, $limit): array {
         return [];
     }
     /**
      * @see client::update()
      */
-    function update(string $table, array $where, mixed $modify, mixed $order = null, mixed $limit = null): array {
+    function update(string $table, $where, $modify, $order = null, $limit = null): array {
         return [];
     }
     /**
      * @see client::select()
      */
-    function select(string $table, mixed $fields, array $where, mixed $order = null, mixed $limit = null): result {
+    function select(string $table, $fields, $where, $order = null, $limit = null): result {
         return new result();
     }
     /**
      * @see client::one()
      */
-    function one(string $table, array $where, mixed $order = null): array {
+    function one(string $table, $where, $order = null): array {
         return [];
     }
     /**
      * @see client::get()
      * @return mixed 字段类型映射参见顶部说明；
      */
-    function get(string $table, string $field, rray $where, mixed $order = null) {
+    function get(string $table, string $field, $where, $order = null) {
         return null;
     }
 };

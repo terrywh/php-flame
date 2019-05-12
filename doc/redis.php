@@ -12,6 +12,51 @@ function connect(string $url):client {
 }
 /**
  * Redis 客户端
+ * 支持 Redis 大部分指令:
+ *
+ * @method get(string $key)
+ * @method int del(string $key)
+ * @method int expire(string $key, int $seconds)
+ * @method int ttl(string $key)
+ * @method string type(string $key)
+ * @method string set(string $key, string $val)
+ * @method string mset(string $key, string $val)
+ * @method array mget(string $key)
+ * @method array scan(int $cursor)
+ * @method int incr(string $key)
+ * @method int incrby(string $key, int $by)
+ * @method int sadd(string $key, string $member)
+ * @method int scard(string $key)
+ * @method string spop(string $key)
+ * @method int srem(string $key, string $member)
+ * @method string lpop(string $key)
+ * @method string rpop(string $key)
+ * @method int llen(string $key)
+ * @method int lpush(string $key)
+ * @method int rpush(string $key)
+ * @method array blpop(string $key)
+ * @method array lrpop(string $key)
+ * @method int hdel(string $key)
+ * @method hget(string $key, string $field)
+ * @method int hset(string $key, string $field, string $val)
+ * @method array hmget(string $key, string $field1)
+ * @method string hmset(string $key, string $field, string $val)
+ * @method array hgetall(string $key)
+ * @method int hincrby(string $key, string $field, int $by)
+ * @method int hlen(string $key)
+ * @method int zadd(string $key, $score, $member)
+ * @method int zincrby(string $key, int $inc, string $member)
+ * @method int zcount(string $key, int $min, int $max)
+ * @method int zcard(string $key)
+ * @method int zrank(string $key, string $member)
+ * @method int zrem(string $key, string $member)
+ * @method string zscore(string $key, string $member)
+ * @method array zrange(string $key, int $start, int $stop)
+ * @method array zrevrange(string $key, int $start, int $stop)
+ * @method array zrangebyscore(string $key, int $min, int $max)
+ * @method array zrevrangebyscore(string $key, int $min, int $max)
+ * ...
+ * 这里仅列出了常用的部分函数及其对应的必要参数
  */
 class client {
     /**
@@ -25,25 +70,6 @@ class client {
     function __isset($name) {
         return true;
     }
-    /**
-     * 支持 Redis 大部分指令:
-     *
-     * @method get()
-     * @method set()
-     * @method incr()
-     * @method zincr()
-     * @method mset()
-     * @method mget()
-     * @method hmset()
-     * @method hmget()
-     * @method hgetall()
-     * @method zrange()
-     * @method zrevrange()
-     * @method zrangebyscore()
-     * @method zrevrangebyscore()
-     * ...
-     * 这里不再一一列举
-     */
     /**
      * 批量执行
      */
@@ -87,3 +113,7 @@ class tx {
         return [];
     }
 }
+
+
+
+$r = new client();

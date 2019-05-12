@@ -120,10 +120,10 @@ class collection {
      *  ['a'=>1,'b'=>-1] // a 字段升序，b 字段降序
      * @param mixed $limit 可以为 int 设置 `limit` 值，或 array 设置 `[$skip, $limit]`
      */
-    function find(array $query, array $projection = null, array $sort = null, mixed $limit = null):cursor {
+    function find(array $query, array $projection = null, array $sort = null, $limit = null):cursor {
         return new cursor();
     }
-    function find_many(array $query, array $projection = null, array $sort = null, mixed $limit = null):cursor {
+    function find_many(array $query, array $projection = null, array $sort = null, $limit = null):cursor {
         return new cursor();
     }
 
@@ -151,7 +151,7 @@ class collection {
      * 查询并返回匹配文档数量
      * @param mixed $limit integer/array 请参见 find 函数对应 $limit 说明
      */
-    function count(array $query, mixed $limit): int {
+    function count(array $query, $limit): int {
         return 0;
     }
     /**
@@ -164,7 +164,7 @@ class collection {
     /**
      * 查找满足条件的第一个文档，删除并将其返回
      */
-    function find_and_delete(array $query, array $sort = null, $upsert = false, $fields = null): array {
+    function find_and_delete(array $query, array $sort = null, boolean $upsert = false, $fields = null): array {
         return [];
     }
     /**

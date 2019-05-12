@@ -24,15 +24,13 @@ class socket {
      * @param array $option 可用选项如下:
      * * `max` integer - 接收缓冲区上限(默认为 64k 可减小已提升效率)
      */
-    function __construct(mixed $opt_or_address = null, array $option = []) {}
+    function __construct($opt_or_address = null, array $option = []) {}
     /**
-     * 本地地址（含端口）
-     * @var string
+     * @var string 本地地址（含端口
      */
     public $local_address;
     /**
-     * 远端地址（含端口）
-     * @var string
+     * @var string 远端地址（含端口）
      */
     public $remote_address;
     /**
@@ -66,7 +64,6 @@ class server {
     /**
      * 创建一个服务器, 绑定在指定的地址上, 准备服务
      * @param string $address 绑定地址, 例如: "0.0.0.0:8888" 或 ":::8888"
-     * @param string
      */
     function __construct(string $address, array $options = []) {}
     /**

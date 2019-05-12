@@ -21,13 +21,13 @@ function get(string $url, int $timeout = 3000): client_response {
 /**
  * 使用默认客户端, 构建并执行一个 POST 请求
  */
-function post(string $url, mixed $data, int $timeout = 3000): client_response {
+function post(string $url, $data, int $timeout = 3000): client_response {
     return new client_response();
 }
 /**
  * 使用默认客户端, 构建并执行一个 PUT 请求
  */
-function put(string $url, mixed $data, int $timeout = 3000): client_response {
+function put(string $url, $data, int $timeout = 3000): client_response {
     return new client_response();
 }
 /**
@@ -62,13 +62,13 @@ class client {
     /**
      * 构建并执行一个 POST 请求
      */
-    function post(string $url, mixed $data, int $timeout = 3000): client_response {
+    function post(string $url, $data, int $timeout = 3000): client_response {
         return new client_response();
     }
     /**
      * 构建并执行一个 PUT 请求
      */
-    function put(string $url, mixed $data, int $timeout = 3000): client_response {
+    function put(string $url, $data, int $timeout = 3000): client_response {
         return new client_response();
     }
     /**
@@ -152,7 +152,7 @@ class client_request {
     /**
      * 构建请求, 可选的指定请求体 `$body` (将自动设置为 POST 请求方法)及超时时间 `$timeout`
      */
-    function __construct(string $url, mixed $body = null, int $timeout = 3000) {}
+    function __construct(string $url, $body = null, int $timeout = 3000) {}
     /**
      * @param string $cert_file 证书文件路径
      * @param string $pkey_file 密钥文件路径

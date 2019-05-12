@@ -13,7 +13,7 @@ function sleep(int $ms) {}
  * (此时间戳采用框架缓存机制，较默认获取系统时间函数消耗较小)
  */
 function now():int {
-    return intval(microtime(true) * 1000);
+    return 1557659996427;
 }
 /**
  * 获取标准时间 "YYYY-mm-dd HH:ii:ss"

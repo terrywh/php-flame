@@ -103,7 +103,6 @@ namespace flame {
     }
 
     void controller_master::close_worker(int i) {
-        std::cout << "close_worker: " << i << "\n";
         if (worker_close_[i] == nullptr) return;
         if ((close_ & CLOSE_WORKER_MASK) == CLOSE_WORKER_TERMINATE) worker_close_[i]->close_now();
         else worker_close_[i]->close();

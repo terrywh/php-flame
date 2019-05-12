@@ -56,18 +56,18 @@ class producer {
      * @param mixed $message 为 string 时表示生产的消息的包体; 也可以为 message 类型的对象;
      * @param string $routing_key 路由KEY, 可以覆盖 $message 对象内部的 routing_key 属性
      */
-    function publish(string $exchange, mixed $message, string $routing_key = null) {}
+    function publish(string $exchange, $message, string $routing_key = null) {}
 }
 /**
  * 消息对象
  */
 class message implements JsonSerializable {
     /**
-     * 路由键值
+     * @var string 路由键值
      */
     public $routing_key;
     /**
-     * 消息体
+     * @var string 消息体
      */
     public $body;
     public $expiration;
@@ -86,14 +86,14 @@ class message implements JsonSerializable {
     public $user_id;
     public $type_name;
     /**
-     * 消息时间戳，一般为秒级（由于可用户自定指定，含义可能发生变异）
+     * @var int 消息时间戳，一般为秒级（由于可用户自定指定，含义可能发生变异）
      */
     public $timestamp;
     public $message_id;
     /**
      * 构建一条新的 message 消息
      */
-    function __construct($body = "", $routing_key = "") {}
+    function __construct(string $body = "", string $routing_key = "") {}
     /**
      * 返回消息体
      */

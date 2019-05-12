@@ -66,7 +66,7 @@ class producer {
      * @param string $key
      * @param array $header
      */
-    function publish(string $topic, mixed $message, string $key = null, array $header = []) {}
+    function publish(string $topic, $message, string $key = null, array $header = []) {}
     /**
      * 清空"生产队列", 若当前队列中还有消息等待其传输完毕;
      */
