@@ -173,11 +173,13 @@ namespace flame {
     }
 
     void coroutine_handler::resume() {
+        if (!co_) throw php::exception(zend_ce_parse_error, "Failed to resume coroutine, missing 'flame\\go()' ?", 0);
         if (--*stat_ == 0) boost::asio::post(gcontroller->context_x, std::bind(&coroutine::resume, co_));
     }
 
     void coroutine_handler::suspend() {
         assert(std::this_thread::get_id() == gcontroller->mthread_id);
+        if (!co_) throw php::exception(zend_ce_parse_error, "Failed to suspend coroutine, missing 'flame\\go()' ?", 0);
         if (++*stat_ == 1) co_->suspend();
     }
     

@@ -68,7 +68,7 @@ namespace flame {
             gcontroller->default_execute_data = EG(current_execute_data);
             gcontroller->run();
         }
-        else throw php::exception(zend_ce_error_exception
+        else throw php::exception(zend_ce_parse_error
             , "Failed to run flame: exception or missing 'flame\\init()' ?"
             , -1);
         return nullptr;
