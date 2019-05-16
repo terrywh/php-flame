@@ -22,7 +22,7 @@ namespace flame {
         boost::process::environment env = gcontroller->env;
         env["FLAME_CUR_WORKER"] = std::to_string(i + 1);
         // 构造进程
-        proc_ = boost::process::child(gcontroller->context_x, cmd, env, 
+        proc_ = boost::process::child(gcontroller->context_x, cmd, env,
             boost::process::std_out > sout_, boost::process::std_err > eout_,
             // 结束回调
             boost::process::on_exit = [this, i](int exit_code, const std::error_code &error) {
@@ -84,7 +84,7 @@ namespace flame {
         if (i >= gcontroller->worker_size) return;
         if (i == 0) worker_spawn_count_ = 0;
         spawn_worker(i);
-        
+
         // 防止启动过快，按间隔进行启动
         tm_inter_.cancel();
         tm_inter_.expires_after(std::chrono::milliseconds(125));
@@ -156,15 +156,16 @@ namespace flame {
 
     void controller_master::notify_exit(int i, controller_master_worker* w, int exit_code) {
         // 异常退出
-        if (exit_code != 0) { 
+        if (exit_code != 0 && (close_ & CLOSE_FLAG_MASK) != CLOSE_FLAG_MASTER) {
             int sec = std::rand() % 3 + 3;
-            std::cerr << "(FATAL) worker unexpected exit: (" << exit_code << "), restart in " << sec << " ...\n";
+            std::cerr << "[" << system_time() << "] (FATAL) worker unexpected exit: (" << exit_code << "), restart in " << sec << " ...\n";
             // 少许延迟进行重启
             auto tm = std::make_shared<boost::asio::steady_timer>(gcontroller->context_x, std::chrono::seconds(sec));
             tm->async_wait([this, tm, i](const boost::system::error_code &error) {
-                if (error) std::cerr << "(FATAL) failed to restart worker: ("
+                if (error) std::cerr << "[" << system_time()
+                    << "] (FATAL) failed to restart worker: ("
                     << error.value() << ") " << error.message() << std::endl;
-                else spawn_worker(i); // 重启进程
+                else if((close_ & CLOSE_FLAG_MASK) != CLOSE_FLAG_MASTER) spawn_worker(i); // 重启进程
             });
         }
         // 下面容器理论上仅会命中一个
@@ -173,9 +174,9 @@ namespace flame {
         delete w;
         --worker_count_;
         // 正常退出
-        if (exit_code == 0) {
+        if (exit_code == 0 || (close_ & CLOSE_FLAG_MASK) == CLOSE_FLAG_MASTER) {
             // 所有进程全部关闭, 同时计划关闭主进程
-            if (worker_count_ == 0 && (close_ & CLOSE_FLAG_MASK) == CLOSE_FLAG_MASTER) close(); 
+            if (worker_count_ == 0 && (close_ & CLOSE_FLAG_MASK) == CLOSE_FLAG_MASTER) close();
             // 重启模式, 关闭了一个进程
             // if ((close_ & CLOSE_FLAG_MASK) == CLOSE_FLAG_RESTART
             // && (close_ & CLOSE_WORKER_MASK) == CLOSE_WORKER_SIGNALING) {
@@ -195,7 +196,7 @@ namespace flame {
 
     void controller_master::close() {
         // 强制模式，子进程已经全部被结束了 -> 主进退出
-        gcontroller->context_x.stop(); 
+        gcontroller->context_x.stop();
     }
 
     void controller_master::await_signal() {
@@ -255,6 +256,20 @@ namespace flame {
             else return;
         }
         offile_.reset(&std::clog, boost::null_deleter());
+    }
+    // 住进成没有进行 time 明明空间相关的初始化，系统时间需要额外手段获取
+    const char* controller_master::system_time() {
+        static char buffer[24] = {0};
+        std::time_t t = std::time(nullptr);
+        struct tm *m = std::localtime(&t);
+        sprintf(buffer, "%04d-%02d-%02d %02d:%02d:%02d",
+                1900 + m->tm_year,
+                1 + m->tm_mon,
+                m->tm_mday,
+                m->tm_hour,
+                m->tm_min,
+                m->tm_sec);
+        return buffer;
     }
 
 }

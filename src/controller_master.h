@@ -42,10 +42,10 @@ namespace flame {
         void spawn_worker_next(int i = 0);
         void notify_exit(int i, controller_master_worker* w, int exit_code);
         enum {
-            CLOSE_NOTHING, 
+            CLOSE_NOTHING,
             CLOSE_WORKER_SIGNALING = 0x0001, // 信号通知 + 超时
             CLOSE_WORKER_TERMINATE = 0x0002, // 立即停止
-            CLOSE_WORKER_MASK      = 0x000f, 
+            CLOSE_WORKER_MASK      = 0x000f,
             CLOSE_FLAG_RESTART     = 0x0010, // 重启
             CLOSE_FLAG_MASTER      = 0x0020, // 停止主进程
             CLOSE_FLAG_MASK        = 0x00f0,
@@ -53,14 +53,14 @@ namespace flame {
         int close_ = CLOSE_NOTHING;
         void close_worker(int i);
         void close_worker_next(int i = 0);
-
         void close();
 
         void reload_worker();
-        
-
         void reload_output();
+
         void await_signal();
+
+        const char* system_time();
         friend class controller_master_worker;
     };
 }
