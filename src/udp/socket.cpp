@@ -110,7 +110,7 @@ PARSE_OPTION:
         // 数据返回
         if (err == boost::asio::error::operation_aborted || err == boost::asio::error::eof) return nullptr;
         else if (err) throw php::exception(zend_ce_exception
-            , (boost::format("failed to read TCP socket: %s") % err.message()).str()
+            , (boost::format("failed to read UDP socket: %s") % err.message()).str()
             , err.value());
         if (params.size() > 0) params[0] = (boost::format("%s:%d") % ep.address().to_string(err) % ep.port()).str();
         return php::string(std::move(buffer_));
@@ -126,9 +126,10 @@ PARSE_OPTION:
         std::string data = params[0];
         socket_.async_send(boost::asio::buffer(data), ch[err]);
 
-        if (!err || err == boost::asio::error::operation_aborted) return nullptr;
+        if (!err || err == boost::asio::error::operation_aborted
+            || err == boost::asio::error::connection_refused) return nullptr;
         else throw php::exception(zend_ce_exception
-            , (boost::format("Failed to write TCP socket: %s") % err.message()).str()
+            , (boost::format("Failed to write UDP socket: %s") % err.message()).str()
             , err.value());
         return nullptr;
     }

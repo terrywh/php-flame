@@ -157,7 +157,7 @@ namespace flame {
     void controller_master::notify_exit(int i, controller_master_worker* w, int exit_code) {
         // 异常退出
         if (exit_code != 0 && (close_ & CLOSE_FLAG_MASK) != CLOSE_FLAG_MASTER) {
-            int sec = std::rand() % 3 + 3;
+            int sec = std::rand() % 5 + 1;
             std::cerr << "[" << system_time() << "] (FATAL) worker unexpected exit: (" << exit_code << "), restart in " << sec << " ...\n";
             // 少许延迟进行重启
             auto tm = std::make_shared<boost::asio::steady_timer>(gcontroller->context_x, std::chrono::seconds(sec));
