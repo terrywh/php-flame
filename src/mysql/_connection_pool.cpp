@@ -99,11 +99,10 @@ namespace flame::mysql {
             // 这里兼容不支持 mysql_reset_connection() 新 API 的情况
             // （不支持自动切换到 mysql_change_user() 兼容老版本或变异版本）
             if (!(flag_ & FLAG_REUSE_MASK)) query_version(c);
-            // 由于 reset 动作会导致字符集被重置为服务端字符集，确认字符集是否匹配
-            if (!(flag_ & FLAG_CHARSET_MASK)) query_charset(c);
-
             if (flag_ & FLAG_REUSE_BY_RESET) mysql_reset_connection(c);
             else if (flag_ & FLAG_REUSE_BY_CUSER) mysql_change_user(c, url_.user.c_str(), url_.pass.c_str(), url_.path.c_str() + 1);
+            // 由于 reset 动作会导致字符集被重置为服务端字符集，确认字符集是否匹配
+            if (!(flag_ & FLAG_CHARSET_MASK)) query_charset(c);
             // else if (flag_ & FLAG_REUSE_BY_PROXY) ; // PROXY 已处理复用流程，此处无需处理
             if (flag_ & FLAG_CHARSET_DIFFER)
                 mysql_set_character_set(c, url_.query["charset"].c_str());
