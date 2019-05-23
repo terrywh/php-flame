@@ -19,7 +19,6 @@
 #include <optional>
 #include <unordered_set>
 #include <phpext/phpext.h>
-#include <http_parser.h>
 #include <hiredis/hiredis.h>
 #include <parser/separator_parser.hpp>
 #include <parser/multipart_parser.hpp>
