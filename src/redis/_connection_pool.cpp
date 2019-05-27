@@ -93,39 +93,44 @@ namespace flame::redis {
 
     redisContext *_connection_pool::create(std::string& err) {
         struct timeval tv {5, 0};
-        redisContext* c = redisConnectWithTimeout(url_.host.c_str(), url_.port, tv);
+        std::unique_ptr<redisContext, void(*)(redisContext*)> c {
+            redisConnectWithTimeout(url_.host.c_str(), url_.port, tv), redisFree };
         if (!c) {
             err.assign("connection failed");
             return nullptr;
         }
         else if (c->err) {
             err.assign(c->errstr);
-            redisFree(c);
             return nullptr;
         }
         if (!url_.pass.empty()) { // 认证
-            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply*)redisCommand(c, "AUTH %s"
-                , url_.pass.c_str())
-                , (void (*)(redisReply*))freeReplyObject);
+            std::unique_ptr<redisReply, void(*)(redisReply*)> rp {
+                (redisReply*) redisCommand(c.get(), "AUTH %s", url_.pass.c_str()),
+                (void (*)(redisReply*)) freeReplyObject };
 
-            if (!rp || rp->type == REDIS_REPLY_ERROR) {
+            if (!rp) {
+                err.assign(c->errstr);
+                return nullptr;
+            }
+            if (rp->type == REDIS_REPLY_ERROR) {
                 err.assign(rp->str, rp->len);
-                redisFree(c);
                 return nullptr;
             }
         }
         if (url_.path.length() > 1) { // 指定数据库
-            std::unique_ptr<redisReply, void(*)(redisReply*)> rp((redisReply *)redisCommand(c, "SELECT %d"
-                , std::atoi(url_.path.c_str() + 1))
-                , (void (*)(redisReply*))freeReplyObject);
-
-            if (!rp || rp->type == REDIS_REPLY_ERROR) {
+            std::unique_ptr<redisReply, void(*)(redisReply*)> rp {
+                (redisReply *) redisCommand(c.get(), "SELECT %d", std::atoi(url_.path.c_str() + 1)),
+                (void (*)(redisReply*)) freeReplyObject };
+            if (!rp) {
+                err.assign(c->errstr);
+                return nullptr;
+            }
+            if (rp->type == REDIS_REPLY_ERROR) {
                 err.assign(rp->str, rp->len);
-                redisFree(c);
                 return nullptr;
             }
         }
-        return c;
+        return c.release();
     }
 
     void _connection_pool::release(redisContext *c) {
