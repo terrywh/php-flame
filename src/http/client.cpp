@@ -72,10 +72,7 @@ namespace flame::http {
             poll = client_poll::create_poll(gcontroller->context_x, fd, c_socket_ready_cb, self);
             curl_multi_assign(self->c_multi_, fd, poll);
         }
-        else {
-            // 
-        }
-        poll->async_wait(action);
+        poll->async_wait(action); // 自行 delete
         return 0;
     }
 
@@ -130,24 +127,9 @@ namespace flame::http {
         return nullptr;
     }
 
-    // curl_socket_t client::c_socket_open_cb(void* data, curlsocktype purpose, struct curl_sockaddr* addr) {
-    //     client* self = reinterpret_cast<client*>(data);
-    //     curl_socket_t fd = ::socket(addr->family, addr->socktype, addr->protocol);
-    //     return fd;
-    // }
-
-    // int client::c_socket_close_cb(void* data, curl_socket_t fd) {
-    //     client* self = reinterpret_cast<client*>(data);
-    //     return ::close(fd);
-    // }
-
     php::value client::exec_ex(const php::object& req) {
         auto req_ = static_cast<client_request*>(php::native(req));
         if (req_->c_easy_ == nullptr) req_->c_easy_ = curl_easy_init();
-        // curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETFUNCTION, c_socket_open_cb);
-        // curl_easy_setopt(req_->c_easy_, CURLOPT_OPENSOCKETDATA, this);
-        // curl_easy_setopt(req_->c_easy_, CURLOPT_CLOSESOCKETFUNCTION, c_socket_close_cb);
-        // curl_easy_setopt(req_->c_easy_, CURLOPT_CLOSESOCKETDATA, this);
         curl_easy_setopt(req_->c_easy_, CURLOPT_PIPEWAIT, 1);
         req_->build_ex();
 

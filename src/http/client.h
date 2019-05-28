@@ -15,9 +15,6 @@ namespace flame::http {
         php::value post(php::parameters& params);
         php::value put(php::parameters& params);
         php::value delete_(php::parameters& params);
-
-        std::map<curl_socket_t, boost::asio::ip::tcp::socket*> c_socks_;
-
     private:
         CURLM *c_multi_ = nullptr;
         int    c_still_ = 0;
