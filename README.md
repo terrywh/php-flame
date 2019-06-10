@@ -109,73 +109,9 @@ flame\run();
 <details><summary>依赖项编译安装，仅供参考</summary>
 <p>
 
-#### openssl
-``` Bash
-CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1.1 linux-x86_64
-make && make install
-```
-
-#### boost
-``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.70.0
-./b2 --prefix=/data/vendor/boost-1.70.0 cxxflags="-fPIC" variant=release link=static threading=multi install
-```
-
-#### PHP
-``` Bash
-CC=gcc CXX=g++ ./configure --prefix=/data/vendor/php-7.2.17 --with-config-file-path=/data/vendor/php-7.2.17/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --build=x86_64-linux-gnu
-```
-
-#### libphpext
-``` Bash
-CXXFLAGS="-O2" make
-make install
-```
-
 #### cpp-parser
 ``` Bash
 make install
-```
-
-<!--
-#### sasl2
-``` Bash
-PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/sasl2 --with-openssl=/data/vendor/openssl-1.1.1 --without-ldap --enable-shared=no
-make && make install
-```
--->
-
-#### mongoc-driver
-``` Bash
-mkdir stage && cd stage
-CC=gcc CXX=g++ LDFLAGS="-pthread -ldl" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SASL=OFF -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
-make && make install
-# rm /data/vendor/mongoc-1.14.0/lib/*.so*
-```
-
-#### AMQP-CPP
-``` Bash
-mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.4 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=ON ../
-make && make install
-```
-
-#### rdkafka
-``` Bash
-CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.0.0 --disable-sasl
-# rm /data/vendor/rdkafka-1.0.0/lib/*.so*
-cp src/snappy.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
-cp src/rdmurmur2.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
-cp src/xxhash.h /data/vendor/rdkafka-1.0.0/include/librdkafka/
-```
-
-#### http-parser
-``` Bash
-mkdir -p /data/vendor/http-parser-2.9.0/lib
-mkdir -p /data/vendor/http-parser-2.9.0/include
-CC=gcc CFLAGS=-fPIC make libhttp_parser.o
-cp libhttp_parser.o /data/vendor/http-parser-2.9.0/lib
-cp http_parser.h /data/vendor/http-parser-2.9.0/include
 ```
 
 #### hiredis
@@ -185,35 +121,94 @@ PREFIX=/data/vendor/hiredis-0.14.0 make install
 # rm /data/vendor/hiredis-0.14.0/lib/*.so*
 ```
 
+#### AMQP-CPP
+``` Bash
+mkdir stage && cd stage
+CC=gcc CXX=g++ cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.4 -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=ON ../
+make && make install
+```
+
+#### openssl
+``` Bash
+CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1.1c linux-x86_64
+make && make install
+```
+
+<!--
+#### sasl2
+``` Bash
+PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/sasl2 --with-openssl=/data/vendor/openssl-1.1.1c --without-ldap --enable-shared=no
+make && make install
+```
+-->
+
+#### mongoc-driver
+``` Bash
+mkdir stage && cd stage
+CC=gcc CXX=g++ LDFLAGS="-pthread -ldl" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.14.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-fPIC -DENABLE_STATIC=ON -DENABLE_SASL=OFF -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+make && make install
+# rm /data/vendor/mongoc-1.14.0/lib/*.so*
+```
+
+#### rdkafka
+``` Bash
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.0.1 --disable-sasl
+make && make install
+# rm /data/vendor/rdkafka-1.0.1/lib/*.so*
+cp src/snappy.h /data/vendor/rdkafka-1.0.1/include/librdkafka/
+cp src/rdmurmur2.h /data/vendor/rdkafka-1.0.1/include/librdkafka/
+cp src/xxhash.h /data/vendor/rdkafka-1.0.1/include/librdkafka/
+```
+
+#### boost
+``` Bash
+./bootstrap.sh --prefix=/data/vendor/boost-1.70.0
+./b2 --prefix=/data/vendor/boost-1.70.0 cxxflags="-fPIC" variant=release link=static threading=multi install
+```
+
 #### nghttp2
 ``` Bash
-PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/nghttp2-1.37.0 --enable-shared=no --enable-lib-only --with-boost=/data/vendor/boost-1.70.0 --enable-asio-lib
+mkdir stage && cd stage
+CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.39.0 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR:PATH=lib ../
 make && make install
 ```
 
 #### curl
 ``` Bash
-CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=/data/vendor/curl-7.64.1 --with-nghttp2=/data/vendor/nghttp2-1.37.0 --with-ssl=/data/vendor/openssl-1.1.1 --with-pic=pic --enable-ipv6 --enable-shared=no --without-libidn2 --disable-ldap --without-libpsl --without-lber --enable-ares
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=/data/vendor/curl-7.65.1 --with-nghttp2=/data/vendor/nghttp2-1.39.0 --with-ssl=/data/vendor/openssl-1.1.1c --with-pic=pic --enable-ipv6 --enable-shared=no --without-brotli --without-libidn2 --disable-ldap --without-libpsl --without-lber --enable-ares
 make && make install
 ```
-
-<!--
-#### mysql-connector-c
-``` Bash
-mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/mysqlc-8.0.15 -DWITHOUT_SERVER=ON -DWITH_BOOST=../boost/boost_1_68_0 -DWITH_SSL=/data/vendor/openssl-1.1.1 -DOPENSSL_EXECUTABLE=/data/vendor/openssl-1.1.1/bin/openssl -DWITH_CURL=/data/vendor/curl-7.64.1 -DWITH_SASL=OFF -DSASL_SYSTEM_LIBRARY=OFF -DCMAKE_C_FLAGS=-pthread -DCMAKE_CXX_FLAGS=-pthread ../
-make && make install
-# rm /data/vendor/mysqlc-8.0.15/lib/*.so*
-```
-注意：需要下载内含 boost 头文件的版本（与框架依赖版本不同）；
--->
 
 #### maria-connector-c
 ```
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1/lib/pkgconfig:/data/vendor/curl-7.64.1/lib/pkgconfig cmake3 -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC  -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.0.9 ../
-# rm /data/vendor/mariac-3.0.9/lib/mariadb/*.so*
+CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig:/data/vendor/curl-7.65.1/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.0.10 ../
+make && make install
+# rm /data/vendor/mariac-3.0.10/lib/mariadb/*.so*
+```
+
+#### PHP
+``` Bash
+CC=gcc CXX=g++ ./configure --prefix=/data/vendor/php-7.2.19 --with-config-file-path=/data/vendor/php-7.2.19/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --build=x86_64-linux-gnu
+make && make install
+```
+
+<!--
+# external openssl extension for php
+CC=gcc CXX=g++ LDFLAGS="-pthread -ldl" ./configure --with-php-config=/data/vendor/php-7.2.19/bin/php-config --with-openssl=/data/vendor/openssl-1.1.1c --build=x86_64-linux-gnu
+# external curl extension for php
+# modify config.m4 and remove some checkings
+CC=gcc CXX=g++ LDFLAGS="-L/data/vendor/nghttp2-1.37.0/lib -L/data/vendor/openssl-1.1.1c/lib" ./configure --with-php-config=/data/vendor/php-7.2.19/bin/php-config --with-curl=/data/vendor/curl-7.65.1 --build=x86_64-linux-gnu
+-->
+
+#### libphpext
+``` Bash
+CXXFLAGS="-O2" make
+make install
 ```
 
 </p>
 </details>
+
+### 版权声明
+本软件使用 MIT 许可协议；

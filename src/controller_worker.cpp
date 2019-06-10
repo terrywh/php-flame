@@ -19,12 +19,18 @@ namespace flame {
             if (gcontroller->worker_size == 0) signal_.reset(); // 单进程模式
             else await_signal(); // 多进程模式的工作进程需要持续监听
             
-            if(sig == SIGTERM) { // 工作进程仅处理退出信号
+            if(sig == SIGTERM || sig == SIGINT) { // 工作进程仅处理退出信号
                 boost::asio::post(gcontroller->context_x, [this] () {
                     gcontroller->status |= controller::controller_status::STATUS_SHUTDOWN;
                     auto ft = gcontroller->cbmap->equal_range("quit"); // 需要在协程调用退出回调
                     for (auto i = ft.first; i != ft.second; ++i) coroutine::start(i->second);
                 });
+            }
+            else if(sig == SIGUSR1) {
+                if(gcontroller->status & controller::controller_status::STATUS_CLOSECONN) 
+                    gcontroller->status &= ~controller::controller_status::STATUS_CLOSECONN;
+                else
+                    gcontroller->status |= controller::controller_status::STATUS_CLOSECONN;
             }
         });
     }

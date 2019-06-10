@@ -90,7 +90,7 @@ HANDLE_BREAK:
                     //     res_ptr->set("body", nullptr);
                     // }
                     // 服务及将停止或服务器以进行关闭后，禁止连接复用
-                    if (gcontroller->status & controller::controller_status::STATUS_SHUTDOWN || svr_ptr->closed_) {
+                    if (gcontroller->status & controller::controller_status::STATUS_CLOSECONN || svr_ptr->closed_) {
                         res_->keep_alive(false);
                         res_->set(boost::beast::http::field::connection, "close");
                     }
@@ -136,7 +136,7 @@ HANDLE_BREAK:
         res_->chunked(true);
         res_->set(boost::beast::http::field::transfer_encoding, "chunked");
         // 服务及将停止或服务器以进行关闭后，禁止连接复用
-        if (gcontroller->status & controller::controller_status::STATUS_SHUTDOWN || svr_ptr->closed_) {
+        if (gcontroller->status & controller::controller_status::STATUS_CLOSECONN || svr_ptr->closed_) {
             res_->keep_alive(false);
             res_->set(boost::beast::http::field::connection, "close");
         }

@@ -21,6 +21,7 @@ namespace flame {
             STATUS_SHUTDOWN    = 0x02,
             STATUS_EXCEPTION   = 0x04,
             STATUS_RUN         = 0x08,
+            STATUS_CLOSECONN   = 0x10,
         };
         int status;
         std::size_t    worker_size;

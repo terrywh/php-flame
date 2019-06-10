@@ -7,7 +7,7 @@ namespace flame {
     class controller_master_worker {
     public:
         controller_master_worker(controller_master* m, int i);
-        void close();
+        void close(int sig = SIGTERM);
         void close_now();
     private:
         controller_master*            m_;

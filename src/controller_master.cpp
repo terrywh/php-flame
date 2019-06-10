@@ -1,5 +1,6 @@
 #include "controller_master.h"
 #include "controller.h"
+#include "time/time.h"
 
 PHPAPI extern char *php_ini_opened_path;
 
@@ -50,8 +51,8 @@ namespace flame {
         });
     }
 
-    void controller_master_worker::close() {
-        ::kill(proc_.id(), SIGTERM);
+    void controller_master_worker::close(int sig) {
+        ::kill(proc_.id(), sig);
     }
 
     void controller_master_worker::close_now() {
@@ -205,13 +206,24 @@ namespace flame {
              // 主进程与子进程 signal 处理之间有干扰
             await_signal();
             boost::asio::post(gcontroller->context_x, [this, sig]() {
-                if (sig == SIGUSR1) {
+                if (sig == SIGRTMIN+1) { // 进程重载(主进程保持,逐步重启工作进程)
                     if (close_ != CLOSE_NOTHING) return;
                     close_ = CLOSE_FLAG_RESTART | CLOSE_WORKER_SIGNALING;
                     worker_close_.swap(worker_spawn_); // 准备关闭的进程
                     close_worker_next(); // 关闭现有进程
                 }
-                else if (sig == SIGUSR2) reload_output();
+                else if (sig == SIGUSR2) reload_output(); // 日志重载
+                else if (sig == SIGUSR1) { // 长短连切换
+                    if(gcontroller->status & controller::controller_status::STATUS_CLOSECONN) {
+                        gcontroller->status &= ~controller::controller_status::STATUS_CLOSECONN;
+                        std::cout << "[" << time::iso() << "] [INFO] remove 'Connection: close' header." << std::endl;
+                    }
+                    else {
+                        gcontroller->status |= controller::controller_status::STATUS_CLOSECONN;
+                        std::cout << "[" << time::iso() << "] [INFO] append 'Connection: close' header." << std::endl;
+                    }
+                    for(auto i=worker_spawn_.begin();i!=worker_spawn_.end(); ++i) (*i)->close(SIGUSR1);
+                }
                 else {
                     if ((close_ & CLOSE_FLAG_MASK) == CLOSE_FLAG_MASTER) {
                         close_ = CLOSE_FLAG_MASTER | CLOSE_WORKER_TERMINATE;
@@ -234,8 +246,9 @@ namespace flame {
         for(int i=0;i<gcontroller->worker_size;++i) spawn_worker(i);
         // 2. 监听信号进行日志重载或停止
         signal_.reset(new boost::asio::signal_set(gcontroller->context_y, SIGINT, SIGTERM));
-        signal_->add(SIGUSR1); // 进程重载
+        signal_->add(SIGUSR1); // HTTP / 长短连接切换
         signal_->add(SIGUSR2); // 日志重载
+        signal_->add(SIGRTMIN+1); // 进程重载
         await_signal();
         // 3. 启动运行
         thread_ = std::thread([this] {

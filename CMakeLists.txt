@@ -22,23 +22,22 @@ add_library(FLAME SHARED ${SOURCES})
 # -----------------------------------------------------------------------------
 # 依赖项目录
 # -----------------------------------------------------------------------------
-set(VENDOR_PHP /data/vendor/php-7.2.17)
+set(VENDOR_PARSER /data/vendor/parser-1.0.0)
+set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
+set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.4)
+set(VENDOR_OPENSSL /data/vendor/openssl-1.1.1c)
+set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
+set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.1)
+set(VENDOR_BOOST /data/vendor/boost-1.70.0)
+set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.39.0)
+set(VENDOR_CURL /data/vendor/curl-7.65.1)
+set(VENDOR_MARIA /data/vendor/mariac-3.0.10)
+set(VENDOR_PHP /data/vendor/php-7.2.19)
 execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
     COMMAND sed "s/ *-I/;/g"
     OUTPUT_VARIABLE VENDOR_PHP_INCLUDES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(VENDOR_PHPEXT /data/vendor/phpext-2.0.0)
-set(VENDOR_PARSER /data/vendor/parser-1.0.0)
-set(VENDOR_BOOST /data/vendor/boost-1.69.0)
-# set(VENDOR_MYSQL /data/vendor/mysqlc-8.0.15)
-set(VENDOR_MARIA /data/vendor/mariac-3.0.9)
-set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
-set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
-set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.4)
-set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.0)
-set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.37.0)
-set(VENDOR_CURL /data/vendor/curl-7.64.1)
-set(VENDOR_OPENSSL /data/vendor/openssl-1.1.1)
 # -----------------------------------------------------------------------------
 # 编译选项
 # -----------------------------------------------------------------------------
