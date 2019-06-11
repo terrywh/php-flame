@@ -23,4 +23,12 @@ flame\go(function() {
     });
 });
 
+flame\go(function() {
+    $socket = flame\udp\connect("127.0.0.1:6666");
+    for($i=0;$i<10;++$i) {
+        $socket->send("hello");
+        flame\time\sleep(100);
+    }
+});
+
 flame\run();

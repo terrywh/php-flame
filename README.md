@@ -109,6 +109,12 @@ flame\run();
 <details><summary>依赖项编译安装，仅供参考</summary>
 <p>
 
+#### boost
+``` Bash
+./bootstrap.sh --prefix=/data/vendor/boost-1.70.0
+./b2 --prefix=/data/vendor/boost-1.70.0 cxxflags="-fPIC" variant=release link=static threading=multi install
+```
+
 #### cpp-parser
 ``` Bash
 make install
@@ -160,22 +166,41 @@ cp src/rdmurmur2.h /data/vendor/rdkafka-1.0.1/include/librdkafka/
 cp src/xxhash.h /data/vendor/rdkafka-1.0.1/include/librdkafka/
 ```
 
-#### boost
+#### PHP
 ``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.70.0
-./b2 --prefix=/data/vendor/boost-1.70.0 cxxflags="-fPIC" variant=release link=static threading=multi install
+CC=gcc CXX=g++ CFLAGS="-pthread" ./configure --prefix=/data/vendor/php-7.2.19 --with-config-file-path=/data/vendor/php-7.2.19/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --with-openssl=/data/vendor/openssl-1.1.1c --build=x86_64-linux-gnu
+make && make install
+```
+
+<!--
+# external openssl extension for php
+CC=gcc CXX=g++ LDFLAGS="-pthread -ldl" ./configure --with-php-config=/data/vendor/php-7.2.19/bin/php-config --with-openssl=/data/vendor/openssl-1.1.1c --build=x86_64-linux-gnu
+-->
+
+#### libphpext
+``` Bash
+CXXFLAGS="-O2" make
+make install
+```
+
+#### c-ares
+``` Bash
+mkdir stage && cd stage
+CC=gcc CXX=g++ cmake -DCARES_SHARED=OFF -DCARES_STATIC=ON -DCARES_STATIC_PIC=ON -DCMAKE_INSTALL_PREFIX=/data/vendor/cares-1.15.0 -DCMAKE_BUILD_TYPE=Release ../
+make && make install
 ```
 
 #### nghttp2
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.39.0 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR:PATH=lib ../
+CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.15.0/lib/pkgconfig:/data/vendor/openssl-1.1.1c/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.39.0 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR:PATH=lib ../
 make && make install
 ```
 
 #### curl
 ``` Bash
-CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --prefix=/data/vendor/curl-7.65.1 --with-nghttp2=/data/vendor/nghttp2-1.39.0 --with-ssl=/data/vendor/openssl-1.1.1c --with-pic=pic --enable-ipv6 --enable-shared=no --without-brotli --without-libidn2 --disable-ldap --without-libpsl --without-lber --enable-ares
+mkdir stage && cd stage
+CC=gcc CXX=g++ CFLAGS="-pthread -fPIC" CXXFLAGS="-pthread -fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.15.0/lib/pkgconfig:/data/vendor/nghttp2-1.39.0:/data/vendor/openssl-1.1.1c/lib/pkgconfig" cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/curl-7.65.1 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_USE_LIBSSH2=OFF -DCURL_DISABLE_IMAP=ON -DCURL_DISABLE_GOPHER=ON -DCURL_DISABLE_POP3=ON -DCURL_DISABLE_RTSP=ON -DCURL_DISABLE_SMTP=ON -DCURL_DISABLE_LDAP=ON -DCURL_DISABLE_LDAPS=ON -DENABLE_ARES=ON -DCARES_LIBRARY=/data/vendor/cares-1.15.0/lib/libcares.a -DUSE_NGHTTP2=ON -DNGHTTP2_LIBRARY=/data/vendor/nghttp2-1.39.0/lib/libnghttp2.a -DNGHTTP2_INCLUDE_DIR=/data/vendor/nghttp2-1.39.0/include ../
 make && make install
 ```
 
@@ -185,26 +210,6 @@ mkdir stage && cd stage
 CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig:/data/vendor/curl-7.65.1/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.0.10 ../
 make && make install
 # rm /data/vendor/mariac-3.0.10/lib/mariadb/*.so*
-```
-
-#### PHP
-``` Bash
-CC=gcc CXX=g++ ./configure --prefix=/data/vendor/php-7.2.19 --with-config-file-path=/data/vendor/php-7.2.19/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --build=x86_64-linux-gnu
-make && make install
-```
-
-<!--
-# external openssl extension for php
-CC=gcc CXX=g++ LDFLAGS="-pthread -ldl" ./configure --with-php-config=/data/vendor/php-7.2.19/bin/php-config --with-openssl=/data/vendor/openssl-1.1.1c --build=x86_64-linux-gnu
-# external curl extension for php
-# modify config.m4 and remove some checkings
-CC=gcc CXX=g++ LDFLAGS="-L/data/vendor/nghttp2-1.37.0/lib -L/data/vendor/openssl-1.1.1c/lib" ./configure --with-php-config=/data/vendor/php-7.2.19/bin/php-config --with-curl=/data/vendor/curl-7.65.1 --build=x86_64-linux-gnu
--->
-
-#### libphpext
-``` Bash
-CXXFLAGS="-O2" make
-make install
 ```
 
 </p>

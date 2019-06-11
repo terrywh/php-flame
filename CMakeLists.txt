@@ -22,22 +22,25 @@ add_library(FLAME SHARED ${SOURCES})
 # -----------------------------------------------------------------------------
 # 依赖项目录
 # -----------------------------------------------------------------------------
+set(VENDOR_BOOST /data/vendor/boost-1.70.0)
 set(VENDOR_PARSER /data/vendor/parser-1.0.0)
 set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
 set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.4)
 set(VENDOR_OPENSSL /data/vendor/openssl-1.1.1c)
 set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
 set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.1)
-set(VENDOR_BOOST /data/vendor/boost-1.70.0)
+set(VENDOR_PHP /data/vendor/php-7.2.19)
+set(VENDOR_PHPEXT /data/vendor/phpext-2.0.0)
+set(VENDOR_CARES /data/vendor/cares-1.15.0)
 set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.39.0)
 set(VENDOR_CURL /data/vendor/curl-7.65.1)
 set(VENDOR_MARIA /data/vendor/mariac-3.0.10)
-set(VENDOR_PHP /data/vendor/php-7.2.19)
+
 execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
     COMMAND sed "s/ *-I/;/g"
     OUTPUT_VARIABLE VENDOR_PHP_INCLUDES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(VENDOR_PHPEXT /data/vendor/phpext-2.0.0)
+
 # -----------------------------------------------------------------------------
 # 编译选项
 # -----------------------------------------------------------------------------
@@ -52,25 +55,25 @@ set_target_properties(FLAME PROPERTIES
     OUTPUT_NAME "flame")
 # 包含路径
 target_include_directories(FLAME SYSTEM PRIVATE
-    ${VENDOR_PHP_INCLUDES}
-    ${VENDOR_BOOST}/include
-    ${VENDOR_PHPEXT}/include
     ${VENDOR_PARSER}/include
-    ${VENDOR_MARIA}/include
     ${VENDOR_HIREDIS}/include
-    ${VENDOR_MONGODB}/include/libmongoc-1.0
-    ${VENDOR_MONGODB}/include/libbson-1.0
     ${VENDOR_AMQP}/include
     ${VENDOR_RDKAFKA}/include
+    ${VENDOR_MONGODB}/include/libmongoc-1.0
+    ${VENDOR_MONGODB}/include/libbson-1.0
+    ${VENDOR_MARIA}/include 
     ${VENDOR_NGHTTP2}/include
     ${VENDOR_CURL}/include
+    ${VENDOR_PHPEXT}/include
+    ${VENDOR_PHP_INCLUDES}
     ${VENDOR_OPENSSL}/include
+    ${VENDOR_BOOST}/include
 )
 # 链接库
 target_link_libraries(FLAME
+    ${VENDOR_HIREDIS}/lib/libhiredis.a
     ${VENDOR_PHPEXT}/lib/libphpext.a
     ${VENDOR_MARIA}/lib/mariadb/libmariadbclient.a
-    ${VENDOR_HIREDIS}/lib/libhiredis.a
     ${VENDOR_MONGODB}/lib/libmongoc-static-1.0.a
     ${VENDOR_MONGODB}/lib/libbson-static-1.0.a
     ${VENDOR_AMQP}/lib/libamqpcpp.a
@@ -82,10 +85,8 @@ target_link_libraries(FLAME
     ${VENDOR_BOOST}/lib/libboost_filesystem.a
     ${VENDOR_CURL}/lib/libcurl.a
     ${VENDOR_NGHTTP2}/lib/libnghttp2.a
-    cares
+    ${VENDOR_CARES}/lib/libcares.a
     ${VENDOR_OPENSSL}/lib/libssl.a
     ${VENDOR_OPENSSL}/lib/libcrypto.a
-#    z
-#    dl
-#    rt
+    z
 )
