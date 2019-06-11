@@ -33,7 +33,7 @@ set(VENDOR_PHP /data/vendor/php-7.2.19)
 set(VENDOR_PHPEXT /data/vendor/phpext-2.0.0)
 set(VENDOR_CARES /data/vendor/cares-1.15.0)
 set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.39.0)
-set(VENDOR_CURL /data/vendor/curl-7.65.1)
+set(VENDOR_CURL /data/vendor/curl-7.65.0)
 set(VENDOR_MARIA /data/vendor/mariac-3.0.10)
 
 execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
@@ -88,5 +88,10 @@ target_link_libraries(FLAME
     ${VENDOR_CARES}/lib/libcares.a
     ${VENDOR_OPENSSL}/lib/libssl.a
     ${VENDOR_OPENSSL}/lib/libcrypto.a
+    resolv
     z
+    dl
+    m
+    nsl
+    rt
 )

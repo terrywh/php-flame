@@ -200,10 +200,12 @@ make && make install
 #### curl
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-pthread -fPIC" CXXFLAGS="-pthread -fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.15.0/lib/pkgconfig:/data/vendor/nghttp2-1.39.0:/data/vendor/openssl-1.1.1c/lib/pkgconfig" cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/curl-7.65.1 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_USE_LIBSSH2=OFF -DCURL_DISABLE_IMAP=ON -DCURL_DISABLE_GOPHER=ON -DCURL_DISABLE_POP3=ON -DCURL_DISABLE_RTSP=ON -DCURL_DISABLE_SMTP=ON -DCURL_DISABLE_LDAP=ON -DCURL_DISABLE_LDAPS=ON -DENABLE_ARES=ON -DCARES_LIBRARY=/data/vendor/cares-1.15.0/lib/libcares.a -DUSE_NGHTTP2=ON -DNGHTTP2_LIBRARY=/data/vendor/nghttp2-1.39.0/lib/libnghttp2.a -DNGHTTP2_INCLUDE_DIR=/data/vendor/nghttp2-1.39.0/include ../
-make && make install
+# quote: cmake for curl is poorly maintained
+# segfault @7.65.1 
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1.1c --enable-ares=/data/vendor/cares-1.15.0 --with-nghttp2=/data/vendor/nghttp2-1.39.0 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.65.0
+make && make
 ```
-
+make i
 #### maria-connector-c
 ```
 mkdir stage && cd stage
