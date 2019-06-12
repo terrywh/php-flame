@@ -32,7 +32,7 @@ set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.1)
 set(VENDOR_PHP /data/vendor/php-7.2.19)
 set(VENDOR_PHPEXT /data/vendor/phpext-2.0.0)
 set(VENDOR_CARES /data/vendor/cares-1.15.0)
-set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.39.0)
+set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.39.1)
 set(VENDOR_CURL /data/vendor/curl-7.65.0)
 set(VENDOR_MARIA /data/vendor/mariac-3.0.10)
 

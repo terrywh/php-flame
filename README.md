@@ -193,7 +193,7 @@ make && make install
 #### nghttp2
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.15.0/lib/pkgconfig:/data/vendor/openssl-1.1.1c/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.39.0 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR:PATH=lib ../
+CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.15.0/lib/pkgconfig:/data/vendor/openssl-1.1.1c/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.39.1 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR:PATH=lib ../
 make && make install
 ```
 
@@ -202,14 +202,14 @@ make && make install
 mkdir stage && cd stage
 # quote: cmake for curl is poorly maintained
 # segfault @7.65.1 
-CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1.1c --enable-ares=/data/vendor/cares-1.15.0 --with-nghttp2=/data/vendor/nghttp2-1.39.0 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.65.0
-make && make
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1.1c --enable-ares=/data/vendor/cares-1.15.0 --with-nghttp2=/data/vendor/nghttp2-1.39.1 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.65.0
+make && make install
 ```
-make i
+
 #### maria-connector-c
 ```
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig:/data/vendor/curl-7.65.1/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.0.10 ../
+CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig:/data/vendor/curl-7.65.0/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.0.10 ../
 make && make install
 # rm /data/vendor/mariac-3.0.10/lib/mariadb/*.so*
 ```
