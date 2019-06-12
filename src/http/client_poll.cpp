@@ -77,9 +77,7 @@ namespace flame::http {
             ++ref_;
             sock_.async_wait(boost::asio::ip::tcp::socket::wait_write, std::bind(&client_poll_tcp::on_ready, this, std::placeholders::_1, action_));
         }
-        if (action_ == CURL_POLL_REMOVE && ref_ == 0) {
-            delete this;
-        }
+        if (action_ == CURL_POLL_REMOVE && ref_ == 0) delete this;
     }
     
     client_poll_udp::client_poll_udp(boost::asio::io_context &io, boost::asio::ip::udp proto, curl_socket_t fd)
@@ -102,6 +100,7 @@ namespace flame::http {
             ++ref_;
             sock_.async_wait(boost::asio::ip::tcp::socket::wait_write, std::bind(&client_poll_udp::on_ready, this, std::placeholders::_1, action_));
         }
+        if (action_ == CURL_POLL_REMOVE && ref_ == 0) delete this;
     }
 
 }
