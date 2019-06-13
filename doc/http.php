@@ -2,7 +2,8 @@
 /**
  * 提供基本的 HTTP(S) 客户端、服务端封装；服务端仅支持 HTTP/1.1 协议; 客户端支持 (TLS) HTTP/1.x HTTP/2 协议;
  * 注意：
- * * 默认状态客户端对请求连接进行 KeepAlive 复用；若需要使用短连接，请自行制定 Connection: close 头；
+ * * 默认状态，服务器对客户端请求连接进行 KeepAlive 复用（长连状态）；若需要使用短连接，请自行制定 Connection: close 头（短连状态）；
+ * * 当进程接收到 SIGUSR1 信号时，切换连接复用状态（短连状态附加 Connection: close 头信息）；
  */
 namespace flame\http;
 
@@ -44,7 +45,7 @@ class client {
     /**
      * 构建新的客户端对象
      * @param array $options 选项, 目前支持的选项如下:
-     *  * "connection_per_host" - 单个 HOST 目标连接限制, 默认 16;
+     *  * "connection_per_host" - 单个 HOST 目标连接限制, 默认 16，超出限制时须等待;
      */
     function __construct(array $options = []) {}
     /**
@@ -296,12 +297,12 @@ class server {
  */
 class server_request {
     /**
-     * 请求方法
+     * 请求方法（大写）
      * @var string
      */
     public $method = "GET";
     /**
-     * 请求路径
+     * 请求路径（不包含查询参数）
      * @var string
      */
     public $path = "/";
@@ -311,9 +312,10 @@ class server_request {
      */
     public $query;
     /**
-     * 请求头; 所有头信息字段名被转换为**小写**形式;
-     * 注意：暂不支持多项同名 Header 字段;
+     * 请求头;
      * @var array
+     * 注意：所有头信息字段名被转换为**小写**形式;
+     * 注意：由于目前使用数组形式，暂不支持同名字段；
      */
     public $header;
     /**
@@ -355,7 +357,7 @@ class server_request {
     public $file;
     /**
      * 用户可设置的请求关联数据;
-     * 例如: 在 before 回调中从 Cookie 中提取用户信息放在 $req->data["user"] 中, 后续处理器即可访问 $req->data["user"] 获取户信息;
+     * @example 在 before 回调中从 Cookie 中提取用户信息放在 $req->data["user"] 中, 后续处理器即可访问 $req->data["user"] 获取户信息;
      * @var array
      */
     public $data;
@@ -363,6 +365,8 @@ class server_request {
 
 /**
  * 服务端响应对象（由 server 对应处理回调获得）提供接口向客户端返回数据
+ * 默认状态下 HTTP/1.1 使用 长连接（保持连接）；可使用 Connection: close 头禁止；
+ * 向进程发送 SIGUSR1 信号时将会在 长短连 状态切换（短连接状态自动附加 Connection: close 头信息）；
  */
 class server_response {
     /**
@@ -373,6 +377,7 @@ class server_response {
     /**
      * 响应头信息, Key/Val 形式
      * @var array
+     * 注意：一般情况下 Key/Val 均为字符串，其他类型会被转换为字符串输出；
      */
     public $header;
     // public $cookie;
@@ -381,7 +386,7 @@ class server_response {
      * @var mixed 任意数据, 实际响应会序列化此数据; 以下几种 Content-Type 存在内置的序列化:
      *  * "application/json" - 使用 json_encode 进行序列化;
      *  * "application/x-www-form-urlencoded" - 使用 http_build_query 进行序列化;
-     * 其他类型强制转换为文本类型后响应;
+     * 其他类型强制转换为文本类型后返回响应;
      */
     public $body;
     /**
@@ -408,7 +413,7 @@ class server_response {
     /**
      * 响应一个文件的内容; 一般需要自行设置对应文件的 Content-Type 以保证浏览器能正常渲染;
      * 下述参数中的 $path 将会被正常化处理, 以保证其不超出 $root 指定的根目录范围;
-     * 注意: 此功能一般仅用于调试或少量文件访问使用, 大量生产环境请考虑使用 nginx 代为处理静态文件;
+     * 注意: 此功能一般仅用于调试或少量文件访问使用, 大量生产环境请考虑使用 nginx 等代为处理静态文件;
      */
     function file(string $root, string $path) {}
 }

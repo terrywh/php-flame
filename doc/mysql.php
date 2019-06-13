@@ -5,7 +5,7 @@
  * 1. 同一协程中连续进行 MySQL 查询操作, 且结果集数据不读取且不销毁(或不读取完且不销毁)可能导致进程死锁; (请将结果集读取完 或 主动 unset 释放结果集对象)
  * 2. MySQL 读取数据时数值型字段读取映射为 PHP 对应数值类型；`DATETIME` 映射为 PHP 内置类型 `DateTime`;
  * 3. 客户端提供的简化方法如 `insert()` `update()` 也同时支持与上述反向的映射;
- * 4. 单客户端内连接池上限大小为 6（单进程）；
+ * 4. 单客户端内连接池上限大小为 6（单进程），即在并行访问超过 6 时须排队等待；
  */
 namespace flame\mysql;
 /**
@@ -17,7 +17,8 @@ namespace flame\mysql;
  *      * "auth" => 认证方式，默认 "mysql_native_password" 可用 "caching_sha2_password"（MySQL 8.0 服务器默认） / "sha256_parssword"
  *      * "proxy" => 当前地址是否是代理服务（已提供连接复用机制） "1" - 是，已提供连接复用机制 (禁用框架提供的复用重置机制)， "0" - 否，未提供（默认）
  * 注意：若服务端配置默认字符集与上述字符集不同，且未指定 proxy=1 参数，那么：
- *      每次连接使用（复用）均会进行字符集设置，这里可能会产生部分额外消耗；
+ *      每次连接使用（复用）连接重置，字符集被恢复为服务器默认，框架将再次进行字符集设置（这里可能会产生少量额外消耗）；
+ * 注意：若指定了 proxy 参数框架不再进行任何”连接复用“的清理工作（CONNECTION_RESET / CHANGE_USER / CHARSET_RESET)；
  * @return client 客户端对象
  */
 function connect($url): client {

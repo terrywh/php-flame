@@ -9,7 +9,8 @@ namespace flame\rabbitmq;
  * @param string $url 连接地址, 形如:
  *  amqp://{username}:{password}@{host}:{port}/{vhost}?key1=val1
  * 可使用参数:
- *  * `prefetch` - int - 用于指定未 ack 时最大读取数量
+ *  * `prefetch` - int - 用于指定未 ack 时最大读取数量，将启动半数的消息处理协程；
+ * 注意：消费者在消费过程中发生网络错误时，会中断消费过程 `run()` 并抛出异常；
  */
 function consume(string $url, string $queue): consumer {
     return new consumer();
@@ -29,7 +30,7 @@ class consumer {
      * 开始消费, 框架将按照一定数量启动并行消费协程, 并使用消息对象调用 $cb 回调函数;
      * @param callable $cb 消费回调, 形如:
      *  function callback($message) {}
-     * 当消费过程失败，将抛出异常（结束消费）
+     * 当消费过程失败（网络连接异常、断开等），将抛出异常（结束消费）
      */
     function run(callable $cb) {}
     /**

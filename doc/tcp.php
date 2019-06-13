@@ -41,6 +41,7 @@ class socket {
      */
     function close() {}
 }
+
 class server {
     /**
      * 创建一个服务器, 绑定在指定的地址上, 准备服务

@@ -5,7 +5,7 @@
 namespace flame\time;
 
 /**
- * 当前协程休眠 $ms 毫秒
+ * 当前协程休眠 $ms 毫秒（调度式休眠，实际 CPU 可调度执行其他协程）
  */
 function sleep(int $ms) {}
 /**

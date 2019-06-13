@@ -5,10 +5,10 @@
 namespace flame\kafka;
 /**
  * @param array $config 基本 Kafka 配置, 以下两个选项必要:
- *  * "bootstrap.servers" - string 服务器地址(9092);
+ *  * "bootstrap.servers" - string 服务器地址(一般为多个端口为 9092 的服务器地址，逗号分隔，例如："127.0.0.1:9092, 127.0.0.2:9092");
  *  * "group.id" - string 消费组名称(同一消费组共享消费进度);
  * 可以使用一个自定义的的参数:
- *  * "concurrent" - 控制并行消费协程数量, 默认为 8 (数值类型)，上限为 256;
+ *  * "concurrent" - 控制并行消费协程数量（即一个消费者消费到数据作为生产过程交由协程消费）, 默认为 8 (数值类型)，上限为 256;
  * @see 其他可配置选项均为字符串类型(非字符串会被强制转换), 请参考:
  *  https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
  * @param array $topics 待消费的数据源 TOPIC 名称列表
@@ -19,7 +19,7 @@ function consume(array $config, array $topics):consumer {
 
 /**
  * @param array $config 基本 Kafka 配置, 一下两个选项必要:
- *  * "bootstrap.servers" - 服务器地址(9092);
+ *  * "bootstrap.servers" - 服务器地址(一般为多个端口为 9092 的服务器地址，逗号分隔，例如："127.0.0.1:9092, 127.0.0.2:9092");
  *  * "group.id" - 消费组名称(同一消费组共享消费进度);
  * @see 其他可配置选项请参考:
  *  https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md

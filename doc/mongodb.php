@@ -5,7 +5,7 @@
  * 1. 同一协程中连续进行 MongoDB 查询操作, 且游标不读取数据不销毁 (或 不读取完不销毁) 可能导致进程死锁; (请将游标读取完毕 或 主动 unset 释放游标对象)
  * 2. 对应 MongoDB ObjectID 映射类型 class flame\mongodb\object_id;
  * 3. 对应 MongoDB DateTime 映射类型 class flame\mongodb\date_time;
- * 4. 单客户端内连接池上限大小为 6（单进程）；
+ * 4. 单客户端内连接池上限大小为 6（单进程），即并行访问超过 6 时须排队等待；
  * 5. 由于 PHP 数组混合了关联数组机制，空查询条件时可考虑使用 new StdClass() 空对象代替空数组，以明确区分 JSON Object/Array 两种形式；
  *    针对 find 相关操作框架内部**对查询条件**已进行了上述**适配**；其他情况的空数组将按照 BSON_ARRAY 转换；
  */

@@ -3,6 +3,7 @@
 /**
  * 日志模块, 可通过框架配置设置日志等级以过滤日志输出;
  * @see flame\init()
+ * 注意：单进程模式不支持设置输出目标文件，固定输出到 STDOUT / STDERR (由错误等级决定)
  */
 namespace flame\log;
 /**

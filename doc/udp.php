@@ -8,11 +8,17 @@ namespace flame\udp;
  * 连接指定地址, 并返回 socket 对象
  * @param string $address 连接地址, 例如: "127.0.0.1:8687"
  * 注意: UDP "链接" 能在一定程度上提高效率;
+ * 注意：非连接型可直接使用构造函数创建；
  */
 function connect(string $address):socket {
     return new socket();
 }
 
+/**
+ * 非连接型 socket 可直接调用构造创建：
+ * @example
+ *    $socket = new flame\udp\socket();
+ */
 class socket {
     /**
      * 构建 socket 可选的进行地址绑定
