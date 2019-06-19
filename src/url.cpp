@@ -5,7 +5,8 @@ namespace flame {
     typedef ::parser::separator_parser<std::string, std::string> parser_t;
 
     url::url(const php::string &str, bool parse_query)
-    : raw_(str) {
+    : raw_(str)
+    , port(0) { // 原始类型 port 初始值可能随机
         auto u = curl_url();
         curl_url_set(u, CURLUPART_URL, str.c_str(), CURLU_NON_SUPPORT_SCHEME);
         char * tmp;
