@@ -115,7 +115,7 @@ extern "C" {
             .desc({"vendor/hiredis", VERSION_MACRO(HIREDIS_MAJOR, HIREDIS_MINOR, HIREDIS_PATCH)})
             // .desc({"vendor/mysqlc", mysql_get_client_info()})
             .desc({"vendor/mariac", MARIADB_PACKAGE_VERSION})
-            .desc({"vendor/amqpcpp", "4.1.4"})
+            .desc({"vendor/amqpcpp", "4.1.5"})
             .desc({"vendor/rdkafka", rd_kafka_version_str()})
             .desc({"vendor/mongoc", MONGOC_VERSION_S})
             .desc({"vendor/nghttp2", NGHTTP2_VERSION})
