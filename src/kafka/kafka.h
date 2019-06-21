@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include <librdkafka/rdkafka.h>
 
 namespace flame::kafka {
     void declare(php::extension_entry &ext);

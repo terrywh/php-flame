@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include "mysql.h"
 
 namespace flame::mysql {
 

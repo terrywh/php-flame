@@ -18,6 +18,9 @@
 #include "hash/hash.h"
 #include "encoding/encoding.h"
 #include "compress/compress.h"
+#include "toml/toml.h"
+#include <boost/version.hpp>
+#include <nghttp2/nghttp2ver.h>
 
 namespace flame {
     static php::value init(php::parameters& params) {
@@ -154,6 +157,7 @@ extern "C" {
             flame::hash::declare(ext);
             flame::encoding::declare(ext);
             flame::compress::declare(ext);
+            flame::toml::declare(ext);
         }
         else {
             ext

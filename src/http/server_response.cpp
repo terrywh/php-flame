@@ -167,7 +167,7 @@ namespace flame::http {
         }
         status_ |= STATUS_BODY_END | STATUS_BODY_SENT;
 
-        boost::filesystem::path root, file;
+        std::filesystem::path root, file;
         root += params[0].to_string();
         file += params[1].to_string();
 

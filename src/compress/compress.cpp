@@ -1,4 +1,7 @@
 #include "compress.h"
+extern "C" {
+#include <librdkafka/snappy.h>
+}
 
 namespace flame::compress {
     

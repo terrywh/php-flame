@@ -1,5 +1,6 @@
 #include "vendor.h"
 #include "url.h"
+#include <curl/curl.h>
 
 namespace flame {
     typedef ::parser::separator_parser<std::string, std::string> parser_t;

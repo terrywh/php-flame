@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include "http.h"
 #include "value_body.h"
 
 namespace flame::http {

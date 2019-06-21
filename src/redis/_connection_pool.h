@@ -2,6 +2,7 @@
 #include "../vendor.h"
 #include "../coroutine.h"
 #include "../url.h"
+#include "redis.h"
 #include "_connection_base.h"
 
 

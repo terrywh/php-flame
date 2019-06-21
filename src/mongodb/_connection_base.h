@@ -1,6 +1,7 @@
 #pragma once
 #include "../vendor.h"
 #include "../coroutine.h"
+#include "mongodb.h"
 
 namespace flame::mongodb {
 

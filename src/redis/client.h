@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include "redis.h"
 
 namespace flame::redis {
     class _connection_pool;

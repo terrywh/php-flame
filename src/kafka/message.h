@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include "kafka.h"
 
 namespace flame::kafka {
     

@@ -2,6 +2,7 @@
 #include "../vendor.h"
 #include "../coroutine.h"
 #include "_connection_base.h"
+#include "mysql.h"
 
 namespace flame::mysql {
     class _connection_lock : public _connection_base, public std::enable_shared_from_this<_connection_lock> {

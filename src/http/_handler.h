@@ -1,6 +1,7 @@
 #pragma once
 #include "../vendor.h"
 #include "../coroutine.h"
+#include "http.h"
 
 namespace flame::http {
     class server_response;

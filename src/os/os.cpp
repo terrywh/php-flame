@@ -2,6 +2,13 @@
 #include "../controller.h"
 #include "os.h"
 #include "process.h"
+#include <filesystem>
+// 获取本地网卡地址
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <netdb.h>
+
 
 namespace flame::os {
     void declare(php::extension_entry &ext) {

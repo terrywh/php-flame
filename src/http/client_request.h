@@ -2,6 +2,7 @@
 #include "../vendor.h"
 #include "../coroutine.h"
 #include "../url.h"
+#include "http.h"
 
 namespace flame::http {
     

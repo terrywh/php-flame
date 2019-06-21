@@ -3,6 +3,7 @@
 #include "../coroutine.h"
 #include "../url.h"
 #include "../coroutine_queue.h"
+#include "rabbitmq.h"
 
 namespace flame::rabbitmq {
 

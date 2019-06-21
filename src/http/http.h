@@ -1,5 +1,10 @@
 #pragma once
 #include "../vendor.h"
+#define BOOST_BEAST_USE_STD_STRING_VIEW
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/websocket.hpp>
+#include <curl/curl.h>
 
 namespace flame::http {
     

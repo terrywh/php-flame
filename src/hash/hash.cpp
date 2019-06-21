@@ -1,5 +1,9 @@
 #include "hash.h"
-
+#include <boost/crc.hpp>
+extern "C" {
+    #include <librdkafka/rdmurmur2.h>
+    #include <librdkafka/xxhash.h>
+}
 
 namespace flame::hash {
     

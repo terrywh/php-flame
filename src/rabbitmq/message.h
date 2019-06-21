@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include "rabbitmq.h"
 
 namespace flame::rabbitmq {
 

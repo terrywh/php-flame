@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include "mongodb.h"
 #include "_connection_base.h"
 
 namespace flame::mongodb {

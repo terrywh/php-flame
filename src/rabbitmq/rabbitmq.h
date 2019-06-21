@@ -1,5 +1,7 @@
 #pragma once
 #include "../vendor.h"
+#include <amqpcpp.h>
+#include <amqpcpp/libboostasio.h>
 
 namespace flame::rabbitmq {
 

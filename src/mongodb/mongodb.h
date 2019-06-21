@@ -1,5 +1,6 @@
 #pragma once
 #include "../vendor.h"
+#include <mongoc.h>
 
 namespace flame::mongodb {
     void declare(php::extension_entry &ext);
