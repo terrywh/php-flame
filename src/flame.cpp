@@ -82,6 +82,20 @@ namespace flame {
         gcontroller->context_y.stop();
         return nullptr;
     }
+
+    static php::value get(php::parameters& params) {
+        php::array  target = params[0];
+        php::string fields = params[1];
+        return flame::toml::get(target, { fields.data(), fields.size() }, 0);
+    }
+
+    static php::value set(php::parameters& params) {
+        php::array  target = params.get(0, true);
+        php::string fields = params[1];
+        php::value  values = params[2];
+        flame::toml::set(target, {fields.data(), fields.size()}, 0, values);
+        return nullptr;
+    }
 }
 
 static std::string openssl_version_str() {
@@ -140,7 +154,16 @@ extern "C" {
                 {"event", php::TYPE::STRING},
                 {"callback", php::TYPE::CALLABLE},
             })
-            .function<flame::quit>("flame\\quit");
+            .function<flame::quit>("flame\\quit")
+            .function<flame::set>("flame\\set", {
+                {"target", php::TYPE::ARRAY, true},
+                {"fields", php::TYPE::STRING},
+                {"values", php::TYPE::UNDEFINED},
+            })
+            .function<flame::get>("flame\\get", {
+                {"target", php::TYPE::ARRAY},
+                {"fields", php::TYPE::STRING},
+            });
 
             flame::core::declare(ext);
             flame::log::declare(ext);

@@ -11,6 +11,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <set>
 #include <stack>
 #include <string_view>
 #include <optional>

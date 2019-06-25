@@ -24,17 +24,18 @@ add_library(FLAME SHARED ${SOURCES})
 # -----------------------------------------------------------------------------
 set(VENDOR_BOOST /data/vendor/boost-1.70.0)
 set(VENDOR_PARSER /data/vendor/parser-1.0.0)
+set(VENDOR_LLTOML /data/vendor/lltoml-1.0.0)
 set(VENDOR_HIREDIS /data/vendor/hiredis-0.14.0)
 set(VENDOR_AMQP /data/vendor/amqpcpp-4.1.5)
 set(VENDOR_OPENSSL /data/vendor/openssl-1.1.1c)
 set(VENDOR_MONGODB /data/vendor/mongoc-1.14.0)
-set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.0.1)
-set(VENDOR_PHP /data/vendor/php-7.2.19)
-set(VENDOR_PHPEXT /data/vendor/phpext-2.0.0)
+set(VENDOR_RDKAFKA /data/vendor/rdkafka-1.1.0)
+set(VENDOR_PHP /data/server/php-7.2.19)
+set(VENDOR_PHPEXT /data/vendor/phpext-2.1.0)
 set(VENDOR_CARES /data/vendor/cares-1.15.0)
 set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.39.1)
 set(VENDOR_CURL /data/vendor/curl-7.65.0)
-set(VENDOR_MARIA /data/vendor/mariac-3.0.10)
+set(VENDOR_MARIA /data/vendor/mariac-3.1.2)
 
 execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes
     COMMAND sed "s/ *-I/;/g"
@@ -56,6 +57,7 @@ set_target_properties(FLAME PROPERTIES
 # 包含路径
 target_include_directories(FLAME SYSTEM PRIVATE
     ${VENDOR_PARSER}/include
+    ${VENDOR_LLTOML}/include
     ${VENDOR_HIREDIS}/include
     ${VENDOR_AMQP}/include
     ${VENDOR_RDKAFKA}/include
@@ -72,6 +74,7 @@ target_include_directories(FLAME SYSTEM PRIVATE
 # 链接库
 target_link_libraries(FLAME
     ${VENDOR_HIREDIS}/lib/libhiredis.a
+    ${VENDOR_LLTOML}/lib/liblltoml.a
     ${VENDOR_PHPEXT}/lib/libphpext.a
     ${VENDOR_MARIA}/lib/mariadb/libmariadbclient.a
     ${VENDOR_MONGODB}/lib/libmongoc-static-1.0.a

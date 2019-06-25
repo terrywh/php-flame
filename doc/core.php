@@ -40,6 +40,26 @@ function init($process_name, $options = []) {}
  */
 function go(callable $cb) {}
 /**
+ * 读取数组的指定层级键（常用于读取配置数据）
+ * @example
+ *  $a = ["a" => ["b" => 123]];
+ *  var_dump(flame\get($a, "a.b")); // 123
+ * @return mixed
+ * 注意：
+ *  1. 数字下标将被当作文本处理；
+ */
+function get($array, $keys) {}
+/**
+ * 设置数组的层级键值
+ * @example
+ *  $a = [];
+ *  flame\set($a, "a.b", 123);
+ *  var_dump($a); // ["a" => ["b" => 123]]
+ * 注意：
+ *   1. 数字下标将被当作文本处理；
+ */
+function set(&$array, $keys, $val) {}
+/**
  * 获取一个当前协程 ID 标识
  */
 function co_id():int {
