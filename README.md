@@ -97,13 +97,16 @@ flame\run();
 * **encoding** - 提供了若干编码、序列化函数；
 * **compress** - 提供了若干压缩算法；
 
-
-
-### 文档
+### 说明
 * [API 文档](https://github.com/terrywh/php-flame/tree/master/doc)
 * [常见问题](https://github.com/terrywh/php-flame/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
-
-> 将 `/doc` 挂接在 IDE 内可提供 **自动完成** 等功能
+* 自动完成（IDE提示）- 目录 `/doc` 下使用 PHP Doc 语法定义和说明 API 接口，可挂接 IDE 自动完成功能；
+    * VSCode/ (php-intelephense)
+    > ``` Bash
+    > ln -s /path/to/php-flame/doc /path/to/extensions/bmewburn.vscode-intelephense-client-x.x.xx/node_modules/intelephense/lib/stub/flame
+    > ```
+    * PhpStorm
+    > [Configuring Include Paths](https://www.jetbrains.com/help/phpstorm/configuring-include-paths.html#Configuring_Include_Paths.xml)
 
 ### 其他
 <details><summary>依赖项编译安装，仅供参考</summary>
