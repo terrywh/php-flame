@@ -138,10 +138,10 @@ namespace flame::http {
             boost::system::error_code err;
             accp_.async_accept(sock_, ch[err]);
             if (err == boost::asio::error::operation_aborted) break; 
-            else if (err) throw php::exception(zend_ce_error_exception
-                , (boost::format("Failed to accept connection: %s") % err.message()).str()
-                , err.value());
-            else std::make_shared<_handler>(this, std::move(sock_))->start();
+            else if (err) throw php::exception(zend_ce_error_exception, (boost::format("Failed to accept connection: %s") % err.message()).str(), err.value());
+            else coroutine::start(php::callable( // 按连接启动处理协程（目前仅支持 HTTP/1.1 按 HTTP/2 机制须按照 STREAM 启动协程）
+                std::bind(&_handler::run, std::make_shared<_handler>(this, std::move(sock_)), std::placeholders::_1)
+            ));
         }
         return nullptr;
     }

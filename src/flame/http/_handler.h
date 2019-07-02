@@ -14,20 +14,21 @@ namespace flame::http {
     public:
         _handler(server *svr, boost::asio::ip::tcp::socket &&sock);
         ~_handler();
-        void start();
+        php::value run(php::parameters& params);
         
-        void read_request();
-        void call_handler();
+        bool prepare(coroutine_handler& ch);
+        bool execute(coroutine_handler& ch);
 
+        void write_body(server_response* res_ptr, coroutine_handler& ch);
         void write_head(server_response* res_ptr, coroutine_handler& ch);
-        void write_body(server_response* res_ptr, php::string data, coroutine_handler& ch);
+        void write_chunk(server_response* res_ptr, php::string data, coroutine_handler& ch);
         void write_end(server_response* res_ptr, coroutine_handler& ch);
         void write_file(server_response* res_ptr, std::string file, coroutine_handler& ch);
 
         // 由 server_response 销毁时调用
         void finish(server_response *res, coroutine_handler &ch);
 
-      private:
+    private:
         server *svr_ptr;
         php::object svr_obj;
         boost::asio::ip::tcp::socket socket_;

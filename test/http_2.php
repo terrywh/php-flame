@@ -11,7 +11,7 @@ class JsonObject implements JsonSerializable {
 
 flame\go(function() {
     $server = new flame\http\server(":::56101");
-    $poll;
+    $q = new flame\queue();
 
     $server->before(function($req, $res, $m) {
         $req->data["start"] = flame\time\now();
@@ -34,42 +34,28 @@ flame\go(function() {
         // 文件上传
         var_dump($req->file);
         // return $res->body = json_encode($req);
-    })->get("/poll", function($req, $res) use(&$poll) {
+    })->get("/poll", function($req, $res) use($q) {
         $res->header["Content-Type"] = "text/event-stream";
         $res->header["Cache-Control"] = "no-cache";
         $res->write_header(200);
-        $poll = $res;
-        // flame\go(function() use($res) {
-        //     var_dump($res);
-        //     for($i=0;$i<50;++$i) {
-        //         flame\time\sleep(1000);
-        //         echo "write\n";
-        //         $res->write("event: time\n");
-        //         $res->write("data: ".flame\time\now()."\n\n");
-        //     }
-        //     echo "done1\n";
-        // });
-    })->get("/push", function($req, $res) use(&$poll) {
-        if($poll) {
-            $poll->write("event: time\n");
-            $poll->write("data: ".flame\time\now()."\n\n");
-            $res->body = true;
-        }else{
-            $res->body = false;
+        while($data = $q->pop()) {
+            $res->write($data);
         }
-    })->get("/abc", function($req, $res) {
+    })->get("/push", function($req, $res) use($q) {
+        $q->push("event: time\ndata: ".flame\time\now()."\n\n");
+        $res->body = "done";
+    })->get("/file", function($req, $res) {
         $res->header["Content-Type"] = "text/html";
         $res->file(__DIR__, "/coroutine_1.php");
-    })->get("/from", function($req, $res) {
-        $r = flame\http\get("http://127.0.0.1:56120/");
-        flame\time\sleep(10000);
-        $res->body = $r->body;
+    })->get("/exception", function($req, $res) {
+        throw new exception("Some Exception");
+        $res->body = "done";
     })->get("/json", function($req, $res) {
         $res->header["content-type"] = "application/json";
         $res->body = ["data" => new JsonObject()];
     })->after(function($req, $res, $m) {
         $end = flame\time\now();
-        // echo "elapsed: ", ($end - $req->data["start"]), "ms\n";
+        // echo "elapsed: ", ($end - $req->data["start"]), "ms\n";5
     });
     $server->run();
     echo "done2\n";

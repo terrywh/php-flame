@@ -11,7 +11,6 @@ namespace flame::http {
         static void declare(php::extension_entry& ext);
         // 声明为 ZEND_ACC_PRIVATE 禁止创建（不会被调用）
         php::value __construct(php::parameters& params);
-        php::value __destruct(php::parameters& params);
         php::value set_cookie(php::parameters& params);
         php::value write_header(php::parameters& params);
         php::value write(php::parameters& params);

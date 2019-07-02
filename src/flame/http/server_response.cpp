@@ -13,7 +13,6 @@ namespace flame::http {
             .property({"cookie", nullptr})
             .property({"body",   nullptr})
             .method<&server_response::__construct>("__construct", {}, php::PRIVATE)
-            .method<&server_response::__destruct>("__destruct")
             .method<&server_response::set_cookie>("set_cookie", {
                 {"name", php::TYPE::STRING},
                 {"value", php::TYPE::STRING, false, true},
@@ -50,15 +49,6 @@ namespace flame::http {
     }
     // 声明为 ZEND_ACC_PRIVATE 禁止创建（不会被调用）
     php::value server_response::__construct(php::parameters& params) {
-        return nullptr;
-    }
-
-    php::value server_response::__destruct(php::parameters& params) {
-        // 响应还未完全结束, 由 handler 代理 last_chunk 响应
-        if (handler_)  {
-            coroutine_handler ch{coroutine::current};
-            handler_->finish(this, ch);
-        }
         return nullptr;
     }
 
@@ -128,9 +118,10 @@ namespace flame::http {
         }
         status_ |= STATUS_BODY_SENT;
         php::string chunk = params[0].to_string();
-        handler_->write_body(this, chunk, ch);
+        handler_->write_chunk(this, chunk, ch);
         return nullptr;
     }
+    
     php::value server_response::end(php::parameters& params) {
         if (status_ & STATUS_BODY_END)
             throw php::exception(zend_ce_error_exception
@@ -145,7 +136,7 @@ namespace flame::http {
         if (params.size() > 0) {
             status_ |= STATUS_BODY_SENT;
             php::string chunk = params[0].to_string();
-            handler_->write_body(this, chunk, ch);
+            handler_->write_chunk(this, chunk, ch);
         }
         else {
             status_ |= STATUS_BODY_END;
@@ -154,6 +145,7 @@ namespace flame::http {
         }
         return nullptr;
     }
+
     php::value server_response::file(php::parameters& params) {
         if ((status_ & STATUS_BODY_END) || (status_ & STATUS_BODY_SENT))
             throw php::exception(zend_ce_error_exception
