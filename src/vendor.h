@@ -9,6 +9,8 @@
 #include <cstdio>
 #include <filesystem>
 #include <functional>
+#include <iostream>
+#include <ostream>
 #include <limits>
 #include <memory>
 #include <set>

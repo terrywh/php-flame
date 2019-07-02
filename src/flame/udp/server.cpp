@@ -83,7 +83,7 @@ namespace flame::udp {
                         gcontroller->call_user_cb("exception", {ex});
                         // 记录错误信息
                         php::object obj = ex;
-                        std::cerr << "[" << time::iso() << "] (ERROR) Uncaught Exception in UDP handler: " << obj.call("__toString") << "\n";
+                        gcontroller->output(0) << "[" << time::iso() << "] (ERROR) Uncaught Exception in UDP handler: " << obj.call("__toString") << "\n";
                     }
                 }
                 if (--count == 0) ch.resume();

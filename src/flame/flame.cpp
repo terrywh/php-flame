@@ -17,11 +17,11 @@ extern "C" {
         class_closure.method<&php::closure::__invoke>("__invoke");
         ext.add(std::move(class_closure));
         // 全局控制器
-        gcontroller.reset(new controller());
+        flame::gcontroller.reset(new flame::controller());
         // 扩展版本
         flame::version::declare(ext);
         // 主进程与工作进程注册不同的函数实现
-        if (gcontroller->type == ::controller::process_type::WORKER) flame::worker::declare(ext);
+        if (flame::gcontroller->type == flame::controller::process_type::WORKER) flame::worker::declare(ext);
         else flame::master::declare(ext);
 
         return ext;

@@ -2,6 +2,8 @@
 #include "worker.h"
 #include "coroutine.h"
 
+#include "queue.h"
+#include "mutex.h"
 #include "log/log.h"
 #include "os/os.h"
 #include "time/time.h"
@@ -24,9 +26,13 @@ namespace flame {
     void worker::declare(php::extension_entry& ext) {
         ext
         .on_request_shutdown([] (php::extension_entry& ext) -> bool {
-            if (flame::coroutine::count > 0 && (gcontroller->status & controller::STATUS_RUN) == 0) {
-                if (!php::error::exists()) std::cerr << "[FATAL] process exited prematurely: exception or missing 'flame\\run();' ?\n";
-                _exit(-1);
+            if (gcontroller->status & controller::STATUS_INITIALIZED) {
+                if (php::error::exists()) 
+                    std::cerr << "[WARNING] process exited prematurely: uncaught exception / error\n";
+                if (!(gcontroller->status & controller::STATUS_RUN)) 
+                    std::cerr << "[WARNING] process exited prematurely: missing 'flame\\run();'\n";
+                
+                gcontroller->status & controller::STATUS_EXCEPTION ? _exit(-1) : _exit(0);
             }
             return true;
         })
@@ -56,6 +62,9 @@ namespace flame {
             {"target", php::TYPE::ARRAY},
             {"fields", php::TYPE::STRING},
         });
+        // 顶级命名空间
+        flame::mutex::declare(ext);
+        flame::queue::declare(ext);
         // 子命名空间模块注册
         flame::log::declare(ext);
         flame::os::declare(ext);
@@ -92,8 +101,8 @@ namespace flame {
         else
             php::callable("cli_set_process_title").call({title + " (php-flame/w)"});
         
-        gcontroller->init(options);
         worker::ww_ = new worker();
+        gcontroller->init(options);        
         return nullptr;
     }
 
@@ -101,8 +110,24 @@ namespace flame {
         if ((gcontroller->status & controller::STATUS_INITIALIZED) == 0)
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
 
-        php::callable fn = params[0];
-        flame::coroutine::start(fn);
+        coroutine::start(php::callable([fn = php::callable(params[0])] (php::parameters& params) -> php::value {
+            try { // 函数调用产生了堆栈过程，可以捕获异常
+                fn.call(); 
+            } catch (const php::exception &ex) {
+                gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
+                php::object obj = ex; // 记录错误信息
+                gcontroller->output(0) << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
+
+                boost::asio::post(gcontroller->context_x, [] () {
+                    gcontroller->status |= controller::STATUS_EXCEPTION;
+                    gcontroller->context_x.stop();
+                    gcontroller->context_y.stop();
+                });
+            }
+            return nullptr;
+        }));
+        // 如下形式无法在内部无法捕获到 PHP 错误（顶层栈）
+        // flame::coroutine::start(params[0]);
         return nullptr;
     }
 
@@ -141,6 +166,8 @@ namespace flame {
         if ((gcontroller->status & controller::STATUS_RUN) == 0)
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
         
+        gcontroller->call_user_cb("quit");
+
         gcontroller->context_x.stop();
         gcontroller->context_y.stop();
         return nullptr;
@@ -169,11 +196,9 @@ namespace flame {
     }
 
     worker::worker() 
-    : lm_()
+    : lm_(new logger_manager_worker)
     , sw_(gcontroller->context_y) {
 
-        gcontroller->lm = &lm_;
-        sw_.lg_ = lm_.index(0);
         sw_.start(std::bind(&worker::on_signal, this, std::placeholders::_1, std::placeholders::_2));
     }
 

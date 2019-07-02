@@ -16,12 +16,16 @@ public:
     std::ostream& stream() override {
         return *file_;
     }
+    void write(std::string_view data, bool flush = true) override {
+        *file_ << data;
+        if(flush) file_->flush();
+    }
     friend class logger_manager_master;
 };
 
 class logger_manager_master: public logger_manager {
 public:
-    unsigned int connect(const std::string& filepath) override;
+    logger* connect(const std::string& filepath, coroutine_handler& ch) override;
 private:
     unsigned int index_ = 0;
 };

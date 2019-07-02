@@ -1,6 +1,6 @@
 #include "../controller.h"
 #include "../time/time.h"
-#include "../log/log.h"
+#include "../log/logger.h"
 #include "_producer.h"
 #include "kafka.h"
 
@@ -45,8 +45,8 @@ namespace flame::kafka {
 
     void _producer::on_error(rd_kafka_t* conn, int error, const char* reason, void* data) {
         _producer* self = reinterpret_cast<_producer*>(data);
-        if (log::level <= log::LEVEL_WARNING)
-            std::cerr << "[" << time::iso() << "] (WARNING) Kafka Producer " << rd_kafka_err2str((rd_kafka_resp_err_t)error) << ": " << reason << "\n";
+        if (log::logger::LEVEL_OPT <= log::logger::LEVEL_WARNING)
+            gcontroller->output(0) << "[" << time::iso() << "] (WARNING) Kafka Producer " << rd_kafka_err2str((rd_kafka_resp_err_t)error) << ": " << reason << "\n";
     }
 
     void _producer::start() {

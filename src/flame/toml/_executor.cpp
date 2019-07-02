@@ -9,7 +9,7 @@ void _executor::operator ()(const toml_parser::parser& p, std::string_view chunk
 
 void _executor::operator ()(const toml_parser::parser& p) {
     php::string raw = std::move(buffer_);
-    std::cout << "(" << (int)p.value_type() << ") " << p.field() << " => [" << raw << "]\n";
+    // std::cout << "(" << (int)p.value_type() << ") " << p.field() << " => [" << raw << "]\n";
     php::value  val = _executor::restore(raw, p.value_type());
     
     // switch(p.container_type()) {

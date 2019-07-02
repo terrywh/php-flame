@@ -54,28 +54,17 @@ namespace flame {
 
     void coroutine::start(php::callable fn) {
         ++coroutine::count;
+        coroutine_php_save_context(coroutine::gctx_);
         auto co = std::make_shared<flame::coroutine>();
         
         boost::asio::post(co->ex_, [co, fn] () mutable {
             co->c1_ = boost::context::fiber([co, gd = boost::asio::make_work_guard(co->ex_), fn] (boost::context::fiber&& c2) mutable {
                 co->c2_ = std::move(c2);
-                coroutine_php_save_context(coroutine::gctx_);
+                
                 coroutine_php_vm_stack_init();
                 coroutine::current = co;
-
-                try {
-                    fn();
-                } catch (const php::exception &ex) {
-                    gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
-                    php::object obj = ex; // 记录错误信息
-                    std::cerr << "[" << util::system_time() << "] (FATAL) " << obj.call("__toString") << "\n";
-
-                    boost::asio::post(co->ex_, [] () {
-                        gcontroller->status |= controller::STATUS_EXCEPTION;
-                        gcontroller->context_x.stop();
-                        gcontroller->context_y.stop();
-                    });
-                }
+                
+                fn.call(); // 产生 PHP 进栈 操作，才能进行捕获异常
                 fn = nullptr;
 
                 coroutine::current.reset();

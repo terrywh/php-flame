@@ -2,14 +2,9 @@
 #include "../../vendor.h"
 
 namespace flame::log {
-    enum {
-        LEVEL_TRACE,
-        LEVEL_DEBUG,
-        LEVEL_INFO,
-        LEVEL_WARNING,
-        LEVEL_ERROR,
-        LEVEL_FATAL,
-    };
-    extern int level;
+    class logger;
+    // 默认日志记录器
+    extern logger* logger_;
     void declare(php::extension_entry &ext);
+    php::value connect(php::parameters& params);
 } // namespace flame::log

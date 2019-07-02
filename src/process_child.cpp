@@ -43,12 +43,12 @@ process_child::process_child(boost::asio::io_context& io, process_manager* m, in
 void process_child::redirect_output(boost::process::async_pipe& pipe, std::string& data) {
     boost::asio::async_read_until(pipe, boost::asio::dynamic_buffer(data), '\n', [this, &pipe, &data] (const boost::system::error_code &error, std::size_t nread) {
         if (error == boost::asio::error::operation_aborted || error == boost::asio::error::eof)
-            ; // std::cerr << "(INFO) IGNORE sout\n";
+            ; // 忽略
         else if (error) {
-            manager_->lg_->stream() << "[" << util::system_time() << "] (ERROR) Failed to read from worker process: (" << error.value() << ") " << error.message() << "\n";
+            (manager_->lg_ ? manager_->lg_->stream() : std::cerr) << "[" << util::system_time() << "] (ERROR) Failed to read from worker process: (" << error.value() << ") " << error.message() << "\n";
         }
         else {
-            manager_->lg_->write({data.c_str(), nread}, true);
+            (manager_->lg_ ? manager_->lg_->stream() : std::cerr) << std::string_view(data.c_str(), nread);
             data.erase(0, nread);
             redirect_output(pipe, data);
         }

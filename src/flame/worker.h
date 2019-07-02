@@ -29,10 +29,12 @@ namespace flame {
     private:
         static worker* ww_;
 
-        logger_manager_worker lm_;
+        std::unique_ptr<logger_manager> lm_;
         signal_watcher sw_;
 
         int close_ = 0;
         int stats_ = 0;
+
+        friend class controller;
     };
 }

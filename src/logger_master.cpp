@@ -1,4 +1,5 @@
 #include "logger_master.h"
+#include "coroutine.h"
 
 void logger_master::reload() {
     file_.reset(new std::ofstream(path_, std::ios_base::out | std::ios_base::app));
@@ -8,17 +9,17 @@ void logger_master::reload() {
     file_.reset(&std::clog, boost::null_deleter());
 }
 
-unsigned int logger_manager_master::connect(const std::string& filepath) {
+logger* logger_manager_master::connect(const std::string& filepath, coroutine_handler& ch) {
     std::filesystem::path path = filepath;
     
     for(auto i=logger_.begin();i!=logger_.end();++i) {
         if(static_cast<logger_master*>(i->second.get())->path_ == path) {
             i->second->addref();
-            return i->second->index();
+            return i->second.get();
         }
     }
     auto p = logger_.insert({index_, std::make_unique<logger_master>(path, index_)});
     ++index_;
     p.first->second->reload();
-    return p.first->second->index();
+    return p.first->second.get();
 }

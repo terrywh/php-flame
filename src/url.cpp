@@ -38,7 +38,7 @@ url::url(const php::string &str, bool parse_query)
         parser_t p('\0', '\0', '=', '\0', '\0', '&', [this](parser_t::entry_type et) {
             php::url_decode_inplace(et.second.data(), et.second.size());
             query[et.first] = et.second;
-            std::cout << et.first << ": " << et.second << "\n";
+            // std::cout << et.first << ": " << et.second << "\n";
         });
         p.parse(tmp, strlen(tmp));
         p.end();

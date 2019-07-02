@@ -26,13 +26,10 @@ namespace flame {
         // 设置进程标题
         std::string title = params[0];
         php::callable("cli_set_process_title").call({title + " (php-flame/m)"});
-        // 初始化启动
-        gcontroller->init(options);
         // 主进程控制对象
         master::mm_ = new master();
-
-        if(options.exists("logger")) master::mm_->lm_.connect(options.get("logger"));
-        else master::mm_->lm_.connect("stdout");
+        // 初始化启动
+        gcontroller->init(options);
         return nullptr;
     }
 
@@ -60,41 +57,40 @@ namespace flame {
     }
 
     master::master()
-    : lm_()
+    : lm_(new logger_manager_master)
     , pm_(gcontroller->context_x, gcontroller->worker_size)
     , sw_(gcontroller->context_y) {
         
-        gcontroller->lm = &lm_;
-        sw_.lg_ = pm_.lg_ = lm_.index(0);
         sw_.start(std::bind(&master::on_signal, this, std::placeholders::_1, std::placeholders::_2));
     }
 
     void master::on_signal(const boost::system::error_code& error, int sig) {
         if (error) return;
         switch(sig) {
-        case SIGINT: coroutine::start(gcontroller->context_x.get_executor(), [this] (coroutine_handler ch) {
-            pm_.restart(ch);
-        });
+        case SIGINT: 
+            coroutine::start(gcontroller->context_x.get_executor(), [this] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
+                pm_.restart(ch);
+            });
         break;
         case SIGUSR2: 
-            lm_.reload(); // 日志重载
+            lm_->reload(); // 日志重载
         break;
         case SIGUSR1:
             if(++stats_ % 2 == 1) 
-                lm_.index(0)->stream() << "[" << util::system_time() << "] [INFO] append 'Connection: close' header." << std::endl;
+                lm_->index(0)->stream() << "[" << util::system_time() << "] [INFO] append 'Connection: close' header." << std::endl;
             else
-                lm_.index(0)->stream() << "[" << util::system_time() << "] [INFO] remove 'Connection: close' header." << std::endl;
+                lm_->index(0)->stream() << "[" << util::system_time() << "] [INFO] remove 'Connection: close' header." << std::endl;
             pm_.signal(SIGUSR1); // 长短连切换
         break;
         case SIGTERM:
             if(++close_ > 1) {
                 sw_.close();
-                coroutine::start(gcontroller->context_x.get_executor(), [this] (coroutine_handler ch) {
+                coroutine::start(gcontroller->context_x.get_executor(), [this] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
                     pm_.close(true, ch);
                 });
                 return;
             }else{
-                coroutine::start(gcontroller->context_x.get_executor(), [this] (coroutine_handler ch) {
+                coroutine::start(gcontroller->context_x.get_executor(), [this] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
                     pm_.close(false, ch);
                 });
             }

@@ -21,9 +21,11 @@ namespace flame {
         static master*  mm_;
 
         process_manager       pm_;
-        logger_manager_master lm_;
+        std::unique_ptr<logger_manager> lm_;
         signal_watcher        sw_;
         int close_ = 0;
         int stats_ = 0;
+
+        friend class controller;
     };
 }

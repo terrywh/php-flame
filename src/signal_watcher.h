@@ -10,7 +10,7 @@ public:
         ss_->async_wait(cb);
     }
     void close();
-    logger*  lg_;
+    logger*  lg_ = nullptr; // 等待填充
 private:
     std::unique_ptr<boost::asio::signal_set> ss_;
     int close_ = 0;

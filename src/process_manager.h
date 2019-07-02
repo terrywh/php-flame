@@ -14,7 +14,7 @@ public:
     unsigned int count() {
         return count_;
     }
-    logger*                  lg_; // master -> set
+    logger*        lg_ = nullptr; // 等待填充
 private:
     boost::asio::io_context& io_;
     unsigned int          count_;
