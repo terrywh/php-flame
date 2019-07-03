@@ -4,15 +4,30 @@
 class logger;
 class signal_watcher {
 public:
-    explicit signal_watcher(boost::asio::io_context& io);
-    template <class Handler>
-    void start(Handler&& cb) {
-        ss_->async_wait(cb);
+    explicit signal_watcher(boost::asio::io_context& io)
+    : ss_(new boost::asio::signal_set(io)) {
+        ss_->add(SIGINT);
+        ss_->add(SIGTERM);
+        ss_->add(SIGUSR1);
+        ss_->add(SIGUSR2);
     }
-    void close();
-    logger*  lg_ = nullptr; // 等待填充
+    virtual ~signal_watcher() {
+        std::cout << "~signal_watcher\n";
+        ss_.reset();
+    }
+    void sw_watch() {
+        ss_->async_wait([this, self = sw_self()] (const boost::system::error_code& error, int sig) {
+            if (error) return;
+            if (!on_signal(sig)) return;
+            sw_watch();
+        });
+    }
+    void sw_close() {
+        ss_.reset();
+    }
+    virtual std::shared_ptr<signal_watcher> sw_self() = 0;
+protected:
+    virtual bool on_signal(int sig) = 0;
 private:
     std::unique_ptr<boost::asio::signal_set> ss_;
-    int close_ = 0;
-    int stats_ = 0;
 };

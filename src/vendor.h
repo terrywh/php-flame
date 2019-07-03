@@ -34,3 +34,4 @@ using boost::asio::ip::tcp;
 using boost::asio::ip::udp;
 #include <boost/process.hpp>
 #include <boost/process/async.hpp>
+#include <boost/pool/pool.hpp>

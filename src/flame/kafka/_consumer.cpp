@@ -63,7 +63,7 @@ namespace flame::kafka {
     void _consumer::on_error(rd_kafka_t* conn, int error, const char* reason, void* data) {
         _consumer* self = reinterpret_cast<_consumer*>(data);
         if (log::logger::LEVEL_OPT <= log::logger::LEVEL_WARNING)
-            gcontroller->output(0) << "[" << time::iso() << "] (WARNING) Kafka Consumer " << rd_kafka_err2str((rd_kafka_resp_err_t)error) << ": " << reason << "\n";
+            log::logger_->stream() << "[" << time::iso() << "] (WARNING) Kafka Consumer " << rd_kafka_err2str((rd_kafka_resp_err_t)error) << ": " << reason << "\n";
     }
 
     void _consumer::subscribe(coroutine_handler &ch) {

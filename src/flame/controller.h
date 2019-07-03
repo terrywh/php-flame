@@ -1,6 +1,5 @@
 #pragma once
 #include "../vendor.h"
-#include "../logger.h"
 
 namespace flame {
 
@@ -40,9 +39,6 @@ namespace flame {
         controller* on_user(const std::string& event, php::callable cb);
         void call_user_cb(const std::string& event, std::vector<php::value> params);
         void call_user_cb(const std::string& event);
-        std::ostream& output(int w);
-        logger_manager* logger_manager();
-        // TODO write_to_master | write_worker
     };
 
     extern std::unique_ptr<controller> gcontroller;

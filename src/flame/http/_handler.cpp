@@ -1,5 +1,6 @@
 #include "../coroutine.h"
 #include "../time/time.h"
+#include "../log/logger.h"
 #include "_handler.h"
 #include "http.h"
 #include "server.h"
@@ -92,7 +93,7 @@ HANDLE_SKIPPED:
             gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
             // 记录错误信息
             php::object obj = ex;
-            gcontroller->output(0) << "[" << time::iso() << "] (ERROR) Uncaught Exception in HTTP handler: " << obj.call("__toString") << "\n";
+            log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in HTTP handler: " << obj.call("__toString") << "\n";
             return false;
         }
     }

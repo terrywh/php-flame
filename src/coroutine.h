@@ -94,6 +94,13 @@ public:
     inline void resume() {
         co_->resume();
     }
+
+    void error(const boost::system::error_code& error) {
+        if(error_) *error_ = error;
+    }
+    void size(std::size_t sz) {
+        if(size_) *size_ = sz;
+    }
 public:
     std::size_t*                size_ = nullptr;
     boost::system::error_code* error_ = nullptr;

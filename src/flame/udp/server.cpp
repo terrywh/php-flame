@@ -3,6 +3,7 @@
 #include "../time/time.h"
 #include "udp.h"
 #include "server.h"
+#include "../log/logger.h"
 
 namespace flame::udp {
     
@@ -83,7 +84,7 @@ namespace flame::udp {
                         gcontroller->call_user_cb("exception", {ex});
                         // 记录错误信息
                         php::object obj = ex;
-                        gcontroller->output(0) << "[" << time::iso() << "] (ERROR) Uncaught Exception in UDP handler: " << obj.call("__toString") << "\n";
+                        log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in UDP handler: " << obj.call("__toString") << "\n";
                     }
                 }
                 if (--count == 0) ch.resume();

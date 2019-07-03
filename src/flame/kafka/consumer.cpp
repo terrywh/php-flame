@@ -5,6 +5,7 @@
 #include "kafka.h"
 #include "message.h"
 #include "../../coroutine_queue.h"
+#include "../log/logger.h"
 
 namespace flame::kafka {
 
@@ -47,7 +48,7 @@ namespace flame::kafka {
                         gcontroller->call_user_cb("exception", {ex});
                         // 记录错误信息
                         php::object obj = ex;
-                        gcontroller->output(0) << "[" << time::iso() << "] (ERROR) Uncaught exception in Kafka consumer: " << obj.call("__toString") << "\n";
+                        log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught exception in Kafka consumer: " << obj.call("__toString") << "\n";
                     }
                 }
                 if (--count == 0) ch_run.resume();

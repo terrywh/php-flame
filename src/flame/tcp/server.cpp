@@ -4,6 +4,7 @@
 #include "server.h"
 #include "tcp.h"
 #include "socket.h"
+#include "../log/logger.h"
 
 namespace flame::tcp {
 
@@ -87,7 +88,7 @@ namespace flame::tcp {
                         gcontroller->call_user_cb("exception", {ex});
                         // 记录错误信息
                         php::object obj = ex;
-                        gcontroller->output(0) << "[" << time::iso() << "] (ERROR) Uncaught Exception in TCP handler: "<< obj.call("__toString") << "\n";
+                        log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in TCP handler: "<< obj.call("__toString") << "\n";
                     }
                     return nullptr;
                 }));

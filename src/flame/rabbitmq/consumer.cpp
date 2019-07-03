@@ -3,6 +3,7 @@
 #include "_client.h"
 #include "message.h"
 #include "../time/time.h"
+#include "../log/logger.h"
 
 namespace flame::rabbitmq  {
     
@@ -53,7 +54,7 @@ namespace flame::rabbitmq  {
                         gcontroller->call_user_cb("exception", {ex});
                         // 记录错误信息
                         php::object obj = ex;
-                        gcontroller->output(0) << "[" << time::iso() << "] (ERROR) Uncaught Exception in RabbitMQ consumer: " << obj.call("__toString") << "\n";
+                        log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in RabbitMQ consumer: " << obj.call("__toString") << "\n";
                     }
                 }
                 if (--count == 0)  ch.resume(); // ----> 1

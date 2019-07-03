@@ -1,5 +1,4 @@
 #include "controller.h"
-#include "master.h"
 #include "worker.h"
 // #include "../logger_master.h"
 // #include "../logger_worker.h"
@@ -57,13 +56,5 @@ namespace flame {
     void controller::call_user_cb(const std::string& event) {
         auto ft = user_cb->equal_range(event);
         for(auto i=ft.first; i!=ft.second; ++i) i->second.call();
-    }
-
-    std::ostream& controller::output(int w) {
-        return type == process_type::MASTER ? master::get()->lm_->index(w)->stream() : worker::get()->lm_->index(w)->stream();
-    }
-
-    logger_manager* controller::logger_manager() {
-        return type == process_type::MASTER ? master::get()->lm_.get() : worker::get()->lm_.get();
     }
 }

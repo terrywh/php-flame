@@ -1,3 +1,4 @@
+#include "../worker_logger.h"
 #include "controller.h"
 #include "worker.h"
 #include "coroutine.h"
@@ -5,6 +6,7 @@
 #include "queue.h"
 #include "mutex.h"
 #include "log/log.h"
+#include "log/logger.h"
 #include "os/os.h"
 #include "time/time.h"
 #include "mysql/mysql.h"
@@ -21,7 +23,7 @@
 #include "toml/toml.h"
 
 namespace flame {
-    worker* worker::ww_;
+    std::shared_ptr<worker> worker::ww_;
 
     void worker::declare(php::extension_entry& ext) {
         ext
@@ -100,9 +102,12 @@ namespace flame {
         }
         else
             php::callable("cli_set_process_title").call({title + " (php-flame/w)"});
-        
-        worker::ww_ = new worker();
-        gcontroller->init(options);        
+
+        worker::ww_.reset(new worker());
+
+        gcontroller->init(options); // 首个 logger 的初始化过程在 logger 注册 on_init 回调中进行（异步的）
+        // 信号监听启动
+        worker::ww_->sw_watch();
         return nullptr;
     }
 
@@ -116,7 +121,7 @@ namespace flame {
             } catch (const php::exception &ex) {
                 gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
                 php::object obj = ex; // 记录错误信息
-                gcontroller->output(0) << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
+                log::logger_->stream() << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
 
                 boost::asio::post(gcontroller->context_x, [] () {
                     gcontroller->status |= controller::STATUS_EXCEPTION;
@@ -156,7 +161,9 @@ namespace flame {
         }
         gcontroller->context_x.run();
         tswork.reset();
-        worker::get()->sw_.close();
+        worker::ww_->sw_close();
+        worker::ww_->ipc_close();
+        worker::ww_->lm_close();
         for (int i=0; i<4; ++i) ts[i].join();
         gcontroller->stop();
         return nullptr;
@@ -195,22 +202,26 @@ namespace flame {
         return nullptr;
     }
 
-    worker::worker() 
-    : lm_(new logger_manager_worker)
-    , sw_(gcontroller->context_y) {
+    worker::worker()
+    : signal_watcher(gcontroller->context_y)
+    , worker_ipc(gcontroller->context_y)
+    , worker_logger_manager(this) {
 
-        sw_.start(std::bind(&worker::on_signal, this, std::placeholders::_1, std::placeholders::_2));
     }
 
-    void worker::on_signal(const boost::system::error_code error, int sig) {
-        if(error) return;
+    std::ostream& worker::output() {
+        return log::logger_ ? log::logger_->stream() : std::clog;
+    }
+
+    // !!! 此函数在工作线程中运行
+    bool worker::on_signal(int sig) {
         switch(sig) {
         case SIGINT:
         case SIGTERM:
             if(++close_ > 1) {
                 gcontroller->context_x.stop();
                 gcontroller->context_y.stop();
-                return;
+                return false; // 多次停止信号立即结束
             }
             else coroutine::start(php::callable([] (php::parameters& params) -> php::value { // 通知用户退出(超时后主进程将杀死子进程)
                 gcontroller->call_user_cb("quit");
@@ -218,12 +229,17 @@ namespace flame {
             }));
             break;
         case SIGUSR1:
-            gcontroller->status ^= controller::STATUS_CLOSECONN;
+            boost::asio::post(gcontroller->context_x, [] () {
+                gcontroller->status ^= controller::STATUS_CLOSECONN;
+            });
             break;
         case SIGUSR2: // 日志重载, 与子进程无关
             break;
         }
-        // 强制结束时不再重复监听
-        sw_.start(std::bind(&worker::on_signal, this, std::placeholders::_1, std::placeholders::_2));
+        return true;
+    }
+
+    void worker::on_notify(std::shared_ptr<ipc::message_t> msg) {
+        gcontroller->call_user_cb("notify", {php::json_decode(&msg->payload[0], msg->length)});
     }
 }

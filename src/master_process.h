@@ -3,16 +3,15 @@
 #include <boost/process.hpp>
 #include <boost/process/async.hpp>
 
-class logger;
-class process_manager;
-class process_child {
+class master_process_manager;
+class master_process {
 public:
-    process_child(boost::asio::io_context& io, process_manager* m, int i);
+    master_process(boost::asio::io_context& io, master_process_manager* m, std::uint8_t idx);
     void close(bool force = false);
     void signal(int sig);
 private:
-    process_manager*        manager_;
-    int                       index_;
+    master_process_manager*     mgr_;
+    std::uint8_t                idx_;
 
     boost::process::child      proc_;
     boost::process::async_pipe sout_;
@@ -21,5 +20,5 @@ private:
     std::string                ebuf_;
     void redirect_output(boost::process::async_pipe& pipe, std::string& buffer);
 
-    friend class process_manager;
+    friend class master_process_manager;
 };
