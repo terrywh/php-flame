@@ -1,31 +1,43 @@
 #include "worker_logger_manager.h"
 #include "worker_logger.h"
 #include "worker_ipc.h"
-#include "worker_logger_buffer.h"
 
 worker_logger_manager::~worker_logger_manager() {
     std::cout << "~worker_logger_manager\n";
 }
 
-std::shared_ptr<worker_logger> worker_logger_manager::lm_connect(const std::string& filepath, coroutine_handler& ch) {
+std::shared_ptr<worker_logger> worker_logger_manager::lm_connect(const std::string& file, coroutine_handler& ch) {
+    std::filesystem::path path = file;
+    path = path.lexically_normal();
+
+    for (auto i=logger_.begin();i!=logger_.end();) {
+        if(i->second.expired()) i = logger_.erase(i);
+        else {
+            std::shared_ptr<worker_logger> lg = i->second.lock();
+            if(lg->path_ == path) return lg;
+            ++i;
+        }
+    }
+    
     std::shared_ptr<worker_logger> wl;
-    auto i = logger_.find(0);
-    if(i == logger_.end() || i->second.expired()) {
-        // IPC: 在父进程创建或链接到指定的日志文件
+    std::uint8_t index = 0;
+    if (ipc_->ipc_enabled()) {
         auto msg = ipc::create_message();
         msg->command = ipc::COMMAND_LOGGER_CONNECT;
         msg->unique_id = ipc::create_uid();
-        std::memcpy(msg->payload, filepath.data(), filepath.size());
-        // TODO
-        wl = std::make_shared<worker_logger>(this, 0);
-        /*
+        std::memcpy(msg->payload, file.data(), file.size());
         msg = ipc_->ipc_request(msg, ch);
+        index = msg->target;
         // 使用该日志文件标号创建 LOGGER 对象，以支持实际日志发送
-        wl = std::make_shared<worker_logger>(this, msg->target);
-        */
-        logger_.emplace(0, wl);
+        wl = std::make_shared<worker_logger>(this, file, msg->target);
     }
-    else wl = i->second.lock();
+    else {
+        index = lindex_;
+        wl = std::make_shared<worker_logger>(this, file, index, true);
+        ++lindex_;
+    }
+    
+    logger_.emplace(index, wl);
     return wl;
 }
 
@@ -38,10 +50,10 @@ void worker_logger_manager::lm_destroy(std::uint8_t idx) {
     auto msg = ipc::create_message();
     msg->command = ipc::COMMAND_LOGGER_DESTROY;
     msg->target  = idx;
-    // msg->length  = 0;
+    msg->length  = 0;
     ipc_->ipc_request(msg);
 }
 
 void worker_logger_manager::lm_close() {
-    
+
 }

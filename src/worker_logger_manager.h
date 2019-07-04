@@ -15,6 +15,7 @@ protected:
     virtual std::shared_ptr<worker_logger_manager> lm_self() = 0;
 private:
     std::map<std::uint8_t, std::weak_ptr<worker_logger>> logger_;
+    std::uint8_t                                         lindex_ = 0;
     worker_ipc* ipc_; // 目前的继承实现方式，此字段与 this 相等
     friend class worker_logger;
     friend class worker_logger_buffer;

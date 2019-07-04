@@ -23,7 +23,7 @@ namespace flame::log {
         gcontroller->on_init([] (const php::array& options) {
             if (options.exists("level")) logger::LEVEL_OPT = options.get("level").to_integer();
             else logger::LEVEL_OPT = logger::LEVEL_TRACE;
-            std::string output = "stdout";
+            std::string output = "<clog>";
             if (options.exists("logger")) output = options.get("logger").to_string();
             logger_ = new logger();
             // 启动的一个更轻量的 C++ 内部协程

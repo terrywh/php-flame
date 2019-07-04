@@ -1,5 +1,7 @@
 <?php
-flame\init("logger_1");
+flame\init("logger_1", [
+    "logger" => __DIR__."/logger_1.log"
+]);
 
 flame\go(function() {
     flame\log\warning("This is a warning message");

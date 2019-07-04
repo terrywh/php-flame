@@ -24,7 +24,7 @@ namespace flame {
         static php::value get(php::parameters& params);
         static php::value set(php::parameters& params);
         
-        worker();
+        worker(std::uint8_t idx);
         std::ostream& output() override;
     protected:
         virtual std::shared_ptr<signal_watcher> sw_self() override {

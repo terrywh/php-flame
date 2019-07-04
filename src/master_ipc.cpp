@@ -6,7 +6,7 @@
 master_ipc::master_ipc(boost::asio::io_context& io)
 : io_(io)
 , server_(io) {
-    
+    svrsck_ = (boost::format("/tmp/flame_ipc_%d.sock") % ::getpid()).str();
 }
 
 master_ipc::~master_ipc() {
@@ -15,7 +15,6 @@ master_ipc::~master_ipc() {
 }
 
 void master_ipc::ipc_run(coroutine_handler ch) {
-    svrsck_ = (boost::format("/tmp/flame_ipc_%d.sock") % ::getpid()).str();
     std::error_code ec;
     std::filesystem::remove(svrsck_, ec);
     boost::asio::local::stream_protocol::endpoint addr(svrsck_);

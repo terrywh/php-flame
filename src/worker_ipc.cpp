@@ -1,9 +1,10 @@
 #include "worker_ipc.h"
 #include "util.h"
 
-worker_ipc::worker_ipc(boost::asio::io_context& io)
-: socket_(new boost::asio::local::stream_protocol::socket(io)) {
-
+worker_ipc::worker_ipc(boost::asio::io_context& io, std::uint8_t idx)
+: socket_(new boost::asio::local::stream_protocol::socket(io))
+, idx_(idx) {
+    svrsck_ = (boost::format("/tmp/flame_ipc_%d.sock") % ::getpid()).str();
 }
 
 worker_ipc::~worker_ipc() {
@@ -44,13 +45,21 @@ void worker_ipc::ipc_notify(std::uint8_t target, php::value data) {
 }
 
 void worker_ipc::ipc_run(coroutine_handler ch) {
-    // TODO
-    // 连接主进程 IPC 通道
-    // 发送注册消息
-    // 
     boost::system::error_code error;
+    std::shared_ptr<ipc::message_t> msg;
+    std::uint64_t tmp;
+
+    ++status_;
+    // 连接主进程 IPC 通道
+    boost::asio::local::stream_protocol::endpoint addr(svrsck_);
+    socket_->async_connect(addr, ch[error]);
+    if (error) goto IPC_FAILED;
+    ++status_;
+    send_login();
+    // 发送注册消息
+    ++status_;
     while(true) {
-        auto msg = ipc::create_message();
+        msg = ipc::create_message();
         boost::asio::async_read(*socket_, boost::asio::buffer(msg.get(), sizeof(ipc::message_t)), ch[error]);
         if(error) break;
         if(msg->length > ipc::MESSAGE_INIT_CAPACITY - sizeof(ipc::message_t)) {
@@ -72,7 +81,7 @@ void worker_ipc::ipc_run(coroutine_handler ch) {
         break;
         }
     }
-
+IPC_FAILED:
     if (error && error != boost::asio::error::operation_aborted && error != boost::asio::error::eof) 
         output() << "[" << util::system_time() << "] (ERROR) Failed to read ipc connection: (" << error.value() << ") " << error.message() << "\n";
     socket_->close(error);
@@ -82,11 +91,22 @@ void worker_ipc::ipc_close() {
     socket_->close();
 }
 
+bool worker_ipc::ipc_enabled() {
+    return status_ > -1;
+}
+
+void worker_ipc::send_login() {
+    auto msg = ipc::create_message();
+    msg->command = ipc::COMMAND_REGISTER;
+    msg->target  = idx_;
+    msg->length  = 0;
+    send(msg);
+}
+
 void worker_ipc::send(std::shared_ptr<ipc::message_t> msg) {
-    
-    if(sendq_.empty()) {
+    if (sendq_.empty()) {
         sendq_.push_back(msg);
-        send_next();
+        if (status_ > 0) send_next();
     }else
         sendq_.push_back(msg);
 }

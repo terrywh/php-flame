@@ -14,10 +14,13 @@ namespace flame {
     , user_cb(new std::multimap<std::string, php::callable>()) {
 
         worker_size = std::atoi(env["FLAME_MAX_WORKERS"].to_string().c_str());
-        worker_size = std::min(std::max((int)worker_size, 1), 256);
+        worker_size = std::min(std::max((int)worker_size, 0), 256);
         // FLAME_MAX_WORKERS 环境变量会被继承, 故此处顺序须先检测子进程
-        if (env.count("FLAME_CUR_WORKER") > 0) type = process_type::WORKER;
-        else if (env.count("FLAME_MAX_WORKERS") > 0) type = process_type::MASTER;
+        if (env.count("FLAME_CUR_WORKER") > 0) {
+            type = process_type::WORKER;
+            worker_idx = std::atoi(env["FLAME_CUR_WORKER"].to_string().c_str());
+        }
+        else if (worker_size > 0) type = process_type::MASTER;
         else { // 单进程模式
             worker_size = 0;
             type = process_type::WORKER;

@@ -103,7 +103,7 @@ namespace flame {
         else
             php::callable("cli_set_process_title").call({title + " (php-flame/w)"});
 
-        worker::ww_.reset(new worker());
+        worker::ww_.reset(new worker(gcontroller->worker_idx));
 
         gcontroller->init(options); // 首个 logger 的初始化过程在 logger 注册 on_init 回调中进行（异步的）
         // 信号监听启动
@@ -202,9 +202,9 @@ namespace flame {
         return nullptr;
     }
 
-    worker::worker()
+    worker::worker(std::uint8_t idx)
     : signal_watcher(gcontroller->context_y)
-    , worker_ipc(gcontroller->context_y)
+    , worker_ipc(gcontroller->context_y, idx)
     , worker_logger_manager(this) {
 
     }

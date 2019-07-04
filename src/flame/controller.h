@@ -22,6 +22,7 @@ namespace flame {
             STATUS_CLOSECONN   = 0x10,
         };
         int status;
+        std::uint8_t   worker_idx;
         std::size_t    worker_size;
         std::size_t    worker_quit; // 多进程退出超时时间
         std::thread::id mthread_id;
