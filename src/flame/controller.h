@@ -32,17 +32,19 @@ namespace flame {
     private:
         std::list<std::function<void (const php::array& options)>>  init_cb;
         std::list<std::function<void ()>>                           stop_cb;
-        std::multimap<std::string, php::callable>*                  user_cb; // 防止 PHP 提前回收, 使用堆容器
+        std::multimap<std::string, php::callable>*                  evnt_cb; // 防止 PHP 提前回收, 使用堆容器
     public:
         controller();
         controller(const controller& c) = delete;
-        void init(php::array options);
-        void stop();
         controller *on_init(std::function<void(const php::array &options)> fn);
+        void init(php::array options);
         controller* on_stop(std::function<void ()> fn);
-        controller* on_user(const std::string& event, php::callable cb);
-        void call_user_cb(const std::string& event, std::vector<php::value> params);
-        void call_user_cb(const std::string& event);
+        void stop();
+        controller* add_event(const std::string& event, php::callable cb);
+        controller* del_event(const std::string& event);
+        std::size_t cnt_event(const std::string& event);
+        void event(const std::string& event, std::vector<php::value> params);
+        void event(const std::string& event);
     };
 
     extern std::unique_ptr<controller> gcontroller;

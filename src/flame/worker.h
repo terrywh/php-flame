@@ -3,6 +3,7 @@
 #include "../worker_logger_manager.h"
 #include "../signal_watcher.h"
 #include "../worker_ipc.h"
+#include "../coroutine_queue.h"
 
 namespace flame {
     class worker: public std::enable_shared_from_this<worker>, public signal_watcher, public worker_ipc, public worker_logger_manager {
@@ -15,6 +16,7 @@ namespace flame {
         static php::value init(php::parameters& params);
         static php::value go(php::parameters& params);
         static php::value on(php::parameters &params);
+        static php::value off(php::parameters& params);
         static php::value run(php::parameters& params);
         static php::value quit(php::parameters& params);
         // 协程相关
@@ -23,6 +25,8 @@ namespace flame {
         // 级联数组设置、读取
         static php::value get(php::parameters& params);
         static php::value set(php::parameters& params);
+        // 传递消息到其他工作进程
+        static php::value send(php::parameters& params);
         
         worker(std::uint8_t idx);
         std::ostream& output() override;
@@ -40,5 +44,10 @@ namespace flame {
         bool on_message(std::shared_ptr<ipc::message_t> msg) override;
     private:
         static std::shared_ptr<worker> ww_;
+        std::list<php::value> msgq_; // notify queue
+        coroutine_handler     msgc_; // notify coroutine
+
+        void msg_start();
+        void msg_close();
     };
 }

@@ -90,7 +90,7 @@ HANDLE_SKIPPED:
                 // Chunked 未结束 -> server_response::__destruct() -> finish()
             }*/
         } catch(const php::exception& ex) {
-            gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
+            gcontroller->event("exception", {ex}); // 调用用户异常回调
             // 记录错误信息
             php::object obj = ex;
             log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in HTTP handler: " << obj.call("__toString") << std::endl;

@@ -64,7 +64,7 @@ namespace flame::mysql {
     }
 
     php::value client::__destruct(php::parameters &params) {
-        // std::cout << "client destruct\n";
+        // std::cout << "~client" << std::endl;
         return nullptr;
     }
 

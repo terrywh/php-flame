@@ -70,6 +70,7 @@ namespace flame {
                 coroutine::current.reset();
                 zend_vm_stack_destroy();
                 coroutine_php_restore_context(coroutine::gctx_);
+                
                 --coroutine::count;
                 
                 return std::move(co->c2_);

@@ -10,10 +10,10 @@ namespace flame {
 
     void master::declare(php::extension_entry& ext) {
         ext
-        .function<master::init>("flame\\init")
-        .function<master::dummy>("flame\\go")
-        .function<master::dummy>("flame\\on")
-        .function<master::run>("flame\\run");
+            .function<master::init>("flame\\init")
+            .function<master::dummy>("flame\\go")
+            .function<master::dummy>("flame\\on")
+            .function<master::run>("flame\\run");
     }
 
     php::value master::init(php::parameters& params) {
@@ -36,7 +36,7 @@ namespace flame {
             master::mm_->lg_ = master::mm_->lm_connect({logger.data(), logger.size()});
         }
         else
-            master::mm_->lg_ = master::mm_->lm_connect("stdout");
+            master::mm_->lg_ = master::mm_->lm_connect("<clog>");
         // 初始化启动
         gcontroller->init(options);
         master::mm_->ipc_start(); // IPC 启动
@@ -59,7 +59,6 @@ namespace flame {
             gcontroller->context_z.run();
         });
         gcontroller->context_x.run();
-
         master::mm_->sw_close();
         master::mm_->ipc_close();
         master::mm_->lm_close();

@@ -24,18 +24,15 @@ public:
         COMMAND_LOGGER_DATA    = 0x04,
 
         COMMAND_TRANSFER_TO_CHILD = 0x10,
-        COMMAND_NOTIFY_DATA    = 0x10,
+        COMMAND_MESSAGE_STRING = 0x10,
+        COMMAND_MESSAGE_JSON   = 0x11,
     };
     struct callback_t {
         coroutine_handler&               cch;
         std::shared_ptr<ipc::message_t>& res;
     };
     // 消息容器构建
-    static message_t* malloc_message(std::uint16_t length = ipc::MESSAGE_INIT_CAPACITY - sizeof(ipc::message_t));
-    // 消息容器释放
-    static void free_message(message_t* msg);
-    // 消息容器构建
-    static std::shared_ptr<message_t> create_message();
+    static std::shared_ptr<message_t> create_message(std::uint16_t length = ipc::MESSAGE_INIT_CAPACITY - sizeof(ipc::message_t));
     // 消息容器长度调整
     static void relloc_message(std::shared_ptr<ipc::message_t>& msg, std::uint16_t copy, std::uint16_t length);
     // 生成消息ID

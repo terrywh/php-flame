@@ -51,6 +51,9 @@ namespace flame {
             {"event", php::TYPE::STRING},
             {"callback", php::TYPE::CALLABLE},
         })
+        .function<worker::off>("flame\\off", {
+            {"event", php::TYPE::STRING},
+        })
         .function<worker::run>("flame\\run")
         .function<worker::quit>("flame\\quit")
         .function<worker::co_id>("flame\\co_id")
@@ -64,6 +67,10 @@ namespace flame {
         .function<worker::get>("flame\\get", {
             {"target", php::TYPE::ARRAY},
             {"fields", php::TYPE::STRING},
+        })
+        .function<worker::send>("flame\\send", {
+            {"target", php::TYPE::INTEGER},
+            {"data", php::TYPE::UNDEFINED},
         });
         // 顶级命名空间
         flame::mutex::declare(ext);
@@ -109,7 +116,7 @@ namespace flame {
         // 信号监听启动
         worker::ww_->sw_watch();
         if(gcontroller->worker_size > 0) worker::ww_->ipc_start();
-        
+
         gcontroller->init(options); // 首个 logger 的初始化过程在 logger 注册 on_init 回调中进行（异步的）
         return nullptr;
     }
@@ -122,7 +129,7 @@ namespace flame {
             try { // 函数调用产生了堆栈过程，可以捕获异常
                 fn.call(); 
             } catch (const php::exception &ex) {
-                gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
+                gcontroller->event("exception", {ex}); // 调用用户异常回调
                 php::object obj = ex; // 记录错误信息
                 log::logger_->stream() << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << std::endl;
 
@@ -141,12 +148,30 @@ namespace flame {
     }
 
     php::value worker::on(php::parameters &params) {
+
         if ((gcontroller->status & controller::STATUS_INITIALIZED) == 0)
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
 
         std::string event = params[0].to_string();
         if (!params[1].type_of(php::TYPE::CALLABLE)) throw php::exception(zend_ce_type_error, "Failed to set callback: callable required", -1);
-        gcontroller->on_user(event, params[1]);
+        // message 事件需要启动协程辅助，故需要对应的停止机制
+        if(event == "message" && gcontroller->cnt_event(event) == 0) {
+            worker::ww_->msg_start();
+        }
+        gcontroller->add_event(event, params[1]);
+        return nullptr;
+    }
+
+    php::value worker::off(php::parameters& params) {
+        if ((gcontroller->status & controller::STATUS_INITIALIZED) == 0)
+            throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
+
+        std::string event = params[0].to_string();
+        gcontroller->del_event(event);
+        // message 事件启动了额外的协程，需要停止
+        if(event == "message"/*&& gcontroller->cnt_event(event) == 0 */) {
+            worker::ww_->msg_close();
+        }
         return nullptr;
     }
 
@@ -156,7 +181,8 @@ namespace flame {
 
         gcontroller->status |= controller::STATUS_RUN;
 
-        auto tswork = boost::asio::make_work_guard(gcontroller->context_y);
+        auto ywork = boost::asio::make_work_guard(gcontroller->context_y);
+        auto zwork = boost::asio::make_work_guard(gcontroller->context_z);
         std::thread ts[4];
         for (int i=0; i<3; ++i) {
             ts[i] = std::thread([] {
@@ -167,11 +193,16 @@ namespace flame {
             gcontroller->context_z.run();
         });
         gcontroller->context_x.run();
-        tswork.reset();
+        ywork.reset();
+        zwork.reset();
+
         worker::ww_->sw_close();
         worker::ww_->ipc_close();
         worker::ww_->lm_close();
-        for (int i=0; i<4; ++i) ts[i].join();
+
+        for (int i=0; i<4; ++i) {
+            ts[i].join();
+        }
         gcontroller->stop();
         worker::ww_.reset();
         return nullptr;
@@ -209,8 +240,13 @@ namespace flame {
         return nullptr;
     }
 
+    php::value worker::send(php::parameters& params) {
+        worker::ww_->ipc_notify(static_cast<int>(params[0]), params[1]);
+        return nullptr;
+    }
+
     worker::worker(std::uint8_t idx)
-    : signal_watcher(gcontroller->context_y)
+    : signal_watcher(gcontroller->context_z)
     , worker_ipc(gcontroller->context_z, idx)
     , worker_logger_manager(this) {
 
@@ -239,7 +275,7 @@ namespace flame {
         break;
         case SIGTERM:
             coroutine::start(php::callable([] (php::parameters& params) -> php::value { // 通知用户退出(超时后主进程将杀死子进程)
-                gcontroller->call_user_cb("quit");
+                gcontroller->event("quit");
                 return nullptr;
             }));
         case SIGUSR1:
@@ -255,14 +291,43 @@ namespace flame {
     // !!! 此函数在工作线程中工作
     bool worker::on_message(std::shared_ptr<ipc::message_t> msg) {
         switch(msg->command) {
-        case ipc::COMMAND_NOTIFY_DATA:
-            boost::asio::post(gcontroller->context_x, [msg] () {
-                std::cout << "notfiy data: " << std::string_view {&msg->payload[0], msg->length} << "\n";
-            // TODO 调度到主线程，通过协程队列传递
-            // gcontroller->call_user_cb("notify", {php::json_decode(&msg->payload[0], msg->length)});
+        case ipc::COMMAND_MESSAGE_STRING:
+            boost::asio::post(gcontroller->context_x, [this, self = worker::ww_, msg] () {
+                msgq_.push_back(php::string(&msg->payload[0], msg->length));
+                if(msgq_.size() == 1 && msgc_) msgc_.resume();
+            });
+        break;
+        case ipc::COMMAND_MESSAGE_JSON: // !!! json_decode('"abc"') === null !!!
+            boost::asio::post(gcontroller->context_x, [this, self = worker::ww_, msg] () {
+                msgq_.push_back(php::json_decode(&msg->payload[0], msg->length));
+                if(msgq_.size() == 1 && msgc_) msgc_.resume();
             });
         break;
         }
         return true;
+    }
+
+    void worker::msg_start() {
+        coroutine::start(php::callable([this, self = worker::ww_] (php::parameters& params) -> php::value {
+            coroutine_handler ch {coroutine::current};
+            while(true) {
+                while(msgq_.empty()) {
+                    msgc_.reset(ch);
+                    ch.suspend();
+                    msgc_.reset();
+                }
+                php::value v = msgq_.front();
+                msgq_.pop_front();
+
+                if(v.type_of(php::TYPE::UNDEFINED)) break;
+                gcontroller->event("message", {v});
+            }
+            return nullptr;
+        }));
+    }
+
+    void worker::msg_close() {
+        msgq_.push_back(php::value());
+        if(msgq_.size() == 1 && msgc_) msgc_.resume();
     }
 }

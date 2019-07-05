@@ -11,7 +11,7 @@ namespace flame {
     : type(process_type::UNKNOWN)
     , env(boost::this_process::environment())
     , status(STATUS_UNKNOWN)
-    , user_cb(new std::multimap<std::string, php::callable>()) {
+    , evnt_cb(new std::multimap<std::string, php::callable>()) {
 
         worker_size = std::atoi(env["FLAME_MAX_WORKERS"].to_string().c_str());
         worker_size = std::min(std::max((int)worker_size, 0), 256);
@@ -33,31 +33,41 @@ namespace flame {
         return this;
     }
 
+    void controller::init(php::array options) {
+        for (auto fn : init_cb) fn(options);
+    }
+
     controller* controller::on_stop(std::function<void ()> fn) {
         stop_cb.push_back(fn);
         return this;
     }
 
-    controller* controller::on_user(const std::string& event, php::callable cb) {
-        user_cb->insert({event, cb});
+    void controller::stop() {
+        for (auto fn : stop_cb) fn();
+        delete evnt_cb;
+    }
+
+    controller* controller::add_event(const std::string& event, php::callable cb) {
+        evnt_cb->insert({event, cb});
         return this;
     }
 
-    void controller::init(php::array options) {
-        for (auto fn : init_cb) fn(options);
-    }
-    void controller::stop() {
-        for (auto fn : stop_cb) fn();
-        delete user_cb;
+    controller* controller::del_event(const std::string& event) {
+        evnt_cb->erase(event);
+        return this;
     }
 
-    void controller::call_user_cb(const std::string& event, std::vector<php::value> params) {
-        auto ft = user_cb->equal_range(event);
+    std::size_t controller::cnt_event(const std::string& event) {
+        return evnt_cb->count(event);
+    }
+
+    void controller::event(const std::string& event, std::vector<php::value> params) {
+        auto ft = evnt_cb->equal_range(event);
         for(auto i=ft.first; i!=ft.second; ++i) i->second.call(params);
     }
 
-    void controller::call_user_cb(const std::string& event) {
-        auto ft = user_cb->equal_range(event);
+    void controller::event(const std::string& event) {
+        auto ft = evnt_cb->equal_range(event);
         for(auto i=ft.first; i!=ft.second; ++i) i->second.call();
     }
 }

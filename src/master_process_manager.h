@@ -21,7 +21,7 @@ protected:
     void pm_kills(int sig);
     // 进程数量
     std::uint8_t pm_count() {
-        return count_;
+        return cmax_;
     }
 protected:
     // 进程启动回调
@@ -31,8 +31,10 @@ protected:
 private:
     std::unique_ptr<boost::asio::io_context::work> work_;
     boost::asio::io_context&                        io_;
-    unsigned int                                 count_;
-    unsigned int                                 close_;
+    unsigned int                                 cmax_;
+    unsigned int                                 crun_;
+    unsigned int                                 tquit_;
+
     std::vector<std::unique_ptr<master_process>> child_;
     boost::asio::steady_timer                    timer_;
     coroutine_handler ch_close_;

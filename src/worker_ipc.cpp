@@ -27,23 +27,35 @@ void worker_ipc::ipc_request(std::shared_ptr<ipc::message_t> req) {
     send(req);
 }
 
-static void json_message_free(ipc::message_t* msg) {
+static void free_json_message(ipc::message_t* msg) {
     zend_string* ptr = reinterpret_cast<zend_string*>((char*)(msg) - offsetof(zend_string, val));
     smart_str str { ptr, 0 };
     smart_str_free(&str);
 }
 
 void worker_ipc::ipc_notify(std::uint8_t target, php::value data) {
-    smart_str str; // !!!! 避免 JSON 文本的 COPY 复制
-    smart_str_alloc(&str, 1, false);
-    ipc::message_t* msg = (ipc::message_t*)str.s->val;
-    msg->command = ipc::COMMAND_NOTIFY_DATA;
-    msg->source  = idx_;
-    msg->target  = target;
-    str.s->len = sizeof(ipc::message_t);
-    php::json_encode_to(&str, data);
-    msg->length = str.s->len - sizeof(ipc::message_t);
-    send(std::shared_ptr<ipc::message_t>{msg, ipc::free_message});
+    if(data.type_of(php::TYPE::STRING)) {
+        php::string str = data;
+        auto msg = ipc::create_message(str.size());
+        msg->command = ipc::COMMAND_MESSAGE_STRING;
+        msg->source  = idx_;
+        msg->target  = target;
+        std::memcpy(&msg->payload[0], str.data(), str.size());
+        msg->length = str.size();
+        send(msg);
+    }
+    else {
+        smart_str str {nullptr, 0}; // !!!! 避免 JSON 文本的 COPY 复制
+        smart_str_alloc(&str, 1, false);
+        ipc::message_t* msg = (ipc::message_t*)str.s->val;
+        msg->command = ipc::COMMAND_MESSAGE_JSON;
+        msg->source  = idx_;
+        msg->target  = target;
+        str.s->len = sizeof(ipc::message_t);
+        php::json_encode_to(&str, data);
+        msg->length = str.s->len - sizeof(ipc::message_t);
+        send(std::shared_ptr<ipc::message_t>(msg, free_json_message));
+    }
 }
 
 void worker_ipc::ipc_start() {

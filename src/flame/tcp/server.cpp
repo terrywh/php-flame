@@ -85,7 +85,7 @@ namespace flame::tcp {
                         cb.call({obj});
                     } catch(const php::exception& ex) {
                         // 调用用户异常回调
-                        gcontroller->call_user_cb("exception", {ex});
+                        gcontroller->event("exception", {ex});
                         // 记录错误信息
                         php::object obj = ex;
                         log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in TCP handler: "<< obj.call("__toString") << std::endl;

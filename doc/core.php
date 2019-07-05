@@ -4,18 +4,19 @@
  * 框架可在两种模式下工作：
  * 
  * 1. 单进程模式：
- *  * 信号 SIGQUIT 将 “通知” 进程退出 (触发 `quit` 回调)，等待超时后立即终止；
- *  * 信号 SIGINT / SIGTERM 立即终止；
+ *  * 信号 SIGQUIT 立即终止进程；
+ *  * 信号 SIGINT / SIGTERM 将 “通知” 进程退出 (触发 `quit` 回调)，等待超时后立即终止；
  *  * 信号 SIGUSR1 将切换 HTTP 服务器长短连状态 `Connection: close`；
  *  * 单进程模式**不支持**日志文件输出，固定输出到 STDERR / STDOUT (取决于错误等级）；
  * 
  * 2. 父子进程模式：
  *  * 使用环境变量 FLAME_MAX_WORKERS=X 启动父子进程模式；
+ *  * 子进程存在环境变量 FLAME_CUR_WORKER=N 标识该进程标号，1 ~ FLAME_MAX_WORKERS
  *  * 主进程将自动进行日志文件写入，子进程自动拉起；
  *  * 端口监听使用 SO_REUSEPORT 在多个工作进程间共享，但不排除外部监听的可能；
  * 
- *  * 向主进程发送 SIGQUIT 将 ”通知“ 子进程退出 (触发 `quit` 回调)，并等待超时后立即终止；
- *  * 项主进程发送 SIGINT / SIGTERM 将立即终止；
+ *  * 向主进程发送 SIGINT / SIGQUIT 将立即终止进程；
+ *  * 项主进程发送 SIGTERM 将 ”通知“ 子进程退出 (触发 `quit` 回调)，并等待超时后立即终止；
  *  * 向主进程发送 SIGUSR2 信号该文件将会被重新打开(或生成);
  *  * 子进程继承主进程的 环境变量 / -c /path/to/php.ini 配置（通过命令行 -d XXX=XXX 的临时设置无效）；
  *  * 向主进程发送 SIGUSR1 信号将切换 HTTP 服务器长短连状态 `Connection: close`；
@@ -87,13 +88,33 @@ function select(queue $q1, $q2/*, ...*/):queue {
     return new queue();
 }
 /**
- * 监听框架的通知
+ * 向指定工作进程发送消息通知
+ * @param int $target_worker 目标工作进程编号，1 ~ FLAME_MAX_WORKERS；当前进程可读取环境变量 FLAME_CUR_WORKER 获取编号；
+ * @param mixed $data 消息数据，自动进行 JSON 序列化传输；
+ * 注意：
+ *   对象类型数据进行 JSON 序列化可能丢失数据细节而无法还原；
+ *   目标进程将会收到 `message`（自动 JSON 反序列化数据）回调;
+ *   @see flame\on("message", $cb);
+ */
+function send(int $target_worker, $data) {
+
+}
+/**
+ * 为指定事件添加处理回调（函数）
  * @param string $event 目前消息存在以下两种:
  *  * "exception" - 当协程发生未捕获异常, 执行对应的回调，并记录错误信息（随后进程会退出），用户可在此回调进行错误报告或报警;
  *  * "quit" - 退出消息, 用户可在此回调停止各种服务，如停止 HTTP 服务器 / 关闭 MySQL 连接等;
+ *  * "message" - 消息通知，（启动内部协程）接收来自各子进程之间的相互通讯数据；回调函数接收一个不限类型参数；
+ * @see flame\send()
  * @param callable 回调函数
  */
 function on(string $event, callable $cb) {}
+/**
+ * 删除指定事件的所有处理回调（函数）
+ * 注意：
+ *  由于 `message` 事件内部启动协程，阻止了程序的停止；须取消对应回调，使该内部协程停止后，进程才可以正常退出；
+ */
+function off(string $event) {}
 /**
  * 用于在用户处理流程中退出
  * 注意：

@@ -63,10 +63,6 @@ namespace flame::mongodb {
             ch.resume();
         });
         ch.suspend();
-        // size_t size;
-        // char * json = bson_as_relaxed_extended_json(rep.get(), &size);
-        // std::cout << "REPLY: (" << size << ") " << json << "\n";
-        // bson_free(json);
         if (!rok) throw php::exception(zend_ce_exception
             , (boost::format("Failed to execute MongoDB command: %s") % err->message).str()
             , err->code);

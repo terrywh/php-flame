@@ -55,7 +55,6 @@ namespace flame::mysql {
             else {
                 errnum = mysql_errno(c);
                 errmsg = mysql_error(c);
-                // std::cout << "errnum: " << errnum << " errmsg: " << errmsg << "\n"; 
                 mysql_close(c);
                 await_.pop_back();
                 ch.resume();
