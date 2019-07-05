@@ -93,7 +93,7 @@ HANDLE_SKIPPED:
             gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
             // 记录错误信息
             php::object obj = ex;
-            log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in HTTP handler: " << obj.call("__toString") << "\n";
+            log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in HTTP handler: " << obj.call("__toString") << std::endl;
             return false;
         }
     }

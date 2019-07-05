@@ -25,6 +25,8 @@ master_process::master_process(boost::asio::io_context& io, master_process_manag
     // 构造进程
     proc_ = boost::process::child(io, php_cmd(), env,
         boost::process::std_out > sout_, boost::process::std_err > eout_,
+        // boost::process::std_out > boost::process::null, boost::process::std_err > boost::process::null,
+        // boost::process::std_out > stdout, boost::process::std_err > stdout,
         // 结束回调
         boost::process::on_exit = [this, &io] (int exit_code, const std::error_code &error) {
             if (error.value() == static_cast<int>(std::errc::no_child_process)) return;
@@ -43,12 +45,12 @@ master_process::master_process(boost::asio::io_context& io, master_process_manag
 void master_process::redirect_output(boost::process::async_pipe& pipe, std::string& data) {
     boost::asio::async_read_until(pipe, boost::asio::dynamic_buffer(data), '\n', [this, &pipe, &data] (const boost::system::error_code &error, std::size_t nread) {
         if (error == boost::asio::error::operation_aborted || error == boost::asio::error::eof)
-            ; // 忽略
+            ; // std::cout << "redirect_output stopped" << std::endl; // 忽略
         else if (error) {
             mgr_->output() << "[" << util::system_time() << "] (ERROR) Failed to read from worker process: (" << error.value() << ") " << error.message() << "\n";
         }
         else {
-            mgr_->output() << std::string_view(data.c_str(), nread);
+            mgr_->output() << "-----" << std::string_view(data.data(), nread);
             data.erase(0, nread);
             redirect_output(pipe, data);
         }
@@ -57,7 +59,7 @@ void master_process::redirect_output(boost::process::async_pipe& pipe, std::stri
 
 void master_process::close(bool force) {
     if(force) proc_.terminate();
-    else ::kill(proc_.id(), SIGTERM);
+    else ::kill(proc_.id(), SIGQUIT);
 }
 
 void master_process::signal(int sig) {

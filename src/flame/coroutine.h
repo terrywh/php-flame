@@ -41,6 +41,7 @@ namespace flame {
         : ::coroutine_handler() {
 
         }
+        coroutine_handler(const coroutine_handler& ch) = default;
         coroutine_handler(std::shared_ptr<coroutine> co)
         : ::coroutine_handler(co) {
             
@@ -67,8 +68,6 @@ namespace flame {
             size_ = &size;
             return *this;
         }
-    private:
-        coroutine::php_context_t  ctx_;
     };
 
 }

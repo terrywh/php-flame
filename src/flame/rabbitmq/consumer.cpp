@@ -54,7 +54,7 @@ namespace flame::rabbitmq  {
                         gcontroller->call_user_cb("exception", {ex});
                         // 记录错误信息
                         php::object obj = ex;
-                        log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in RabbitMQ consumer: " << obj.call("__toString") << "\n";
+                        log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught Exception in RabbitMQ consumer: " << obj.call("__toString") << std::endl;
                     }
                 }
                 if (--count == 0)  ch.resume(); // ----> 1

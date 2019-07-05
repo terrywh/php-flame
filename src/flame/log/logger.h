@@ -14,15 +14,18 @@ namespace flame::log {
             LEVEL_WARNING,
             LEVEL_ERROR,
             LEVEL_FATAL,
+
+            LEVEL_EMPTY,
         };
         static void declare(php::extension_entry& ext);
         static std::array<std::string, 6> LEVEL_STR;
         static int LEVEL_OPT;
-
+        php::value __construct(php::parameters& params);
         // 使用父类型 coroutine_handler 引用能够兼容 C++ / PHP 协程
         void connect(const std::string& path, ::coroutine_handler& ch);
         void write_ex(int lv, php::parameters& params);
         std::ostream& stream();
+        php::value write(php::parameters &params);
         php::value trace(php::parameters &params);
         php::value debug(php::parameters &params);
         php::value info(php::parameters &params);

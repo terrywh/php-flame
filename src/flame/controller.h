@@ -7,6 +7,7 @@ namespace flame {
     public:
         boost::asio::io_context context_x;
         boost::asio::io_context context_y;
+        boost::asio::io_context context_z;
         enum class process_type {
             UNKNOWN = 0,
             MASTER = 1,
@@ -16,10 +17,12 @@ namespace flame {
         enum status_t {
             STATUS_UNKNOWN     = 0x00,
             STATUS_INITIALIZED = 0x01,
-            STATUS_SHUTDOWN    = 0x02,
-            STATUS_EXCEPTION   = 0x04,
-            STATUS_RUN         = 0x08,
-            STATUS_CLOSECONN   = 0x10,
+            STATUS_CLOSING     = 0x02,
+            STATUS_QUITING     = 0x04,
+            STATUS_RSETING     = 0x08,
+            STATUS_EXCEPTION   = 0x10,
+            STATUS_RUN         = 0x20,
+            STATUS_CLOSECONN   = 0x40,
         };
         int status;
         std::uint8_t   worker_idx;

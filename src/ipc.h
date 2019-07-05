@@ -7,7 +7,9 @@ public:
     // 传输协议：消息格式
     struct message_t {
         std::uint8_t  command;
+        std::uint8_t  source;
         std::uint8_t  target;
+        std::uint8_t  xdata[3];
         std::uint16_t length;
         std::uint32_t unique_id;
         char payload[0];

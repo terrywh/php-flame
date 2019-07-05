@@ -37,11 +37,8 @@ namespace flame {
             return std::static_pointer_cast<worker_logger_manager>(shared_from_this());
         }
         bool on_signal(int sig) override;
-        void on_notify(std::shared_ptr<ipc::message_t> msg) override;
+        bool on_message(std::shared_ptr<ipc::message_t> msg) override;
     private:
         static std::shared_ptr<worker> ww_;
-
-        int close_ = 0;
-        int stats_ = 0;
     };
 }

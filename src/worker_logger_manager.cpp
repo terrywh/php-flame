@@ -3,7 +3,7 @@
 #include "worker_ipc.h"
 
 worker_logger_manager::~worker_logger_manager() {
-    std::cout << "~worker_logger_manager\n";
+    // std::cout << "~worker_logger_manager\n";
 }
 
 std::shared_ptr<worker_logger> worker_logger_manager::lm_connect(const std::string& file, coroutine_handler& ch) {
@@ -23,13 +23,15 @@ std::shared_ptr<worker_logger> worker_logger_manager::lm_connect(const std::stri
     std::uint8_t index = 0;
     if (ipc_->ipc_enabled()) {
         auto msg = ipc::create_message();
-        msg->command = ipc::COMMAND_LOGGER_CONNECT;
+        msg->command   = ipc::COMMAND_LOGGER_CONNECT;
+        msg->target    = 0; // 发送给主进程的消息
         msg->unique_id = ipc::create_uid();
-        std::memcpy(msg->payload, file.data(), file.size());
+        msg->length = file.size();
+        std::memcpy(msg->payload, file.data(), msg->length);
         msg = ipc_->ipc_request(msg, ch);
-        index = msg->target;
+        index = msg->xdata[0];
         // 使用该日志文件标号创建 LOGGER 对象，以支持实际日志发送
-        wl = std::make_shared<worker_logger>(this, file, msg->target);
+        wl = std::make_shared<worker_logger>(this, file, index);
     }
     else {
         index = lindex_;

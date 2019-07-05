@@ -10,10 +10,11 @@ public:
         ss_->add(SIGTERM);
         ss_->add(SIGUSR1);
         ss_->add(SIGUSR2);
+        ss_->add(SIGQUIT);
     }
     virtual ~signal_watcher() {
-        std::cout << "~signal_watcher\n";
         ss_.reset();
+        // std::cout << "~signal_watcher\n";
     }
     void sw_watch() {
         ss_->async_wait([this, self = sw_self()] (const boost::system::error_code& error, int sig) {

@@ -2,10 +2,12 @@
 #include "worker_logger_manager.h"
 #include "worker_ipc.h"
 
-worker_logger_buffer::worker_logger_buffer(worker_logger_manager* mgr)
+worker_logger_buffer::worker_logger_buffer(worker_logger_manager* mgr, std::uint8_t idx)
 : mgr_(mgr)
-, msg_(ipc::create_message()) {
+, msg_(ipc::create_message())
+, idx_(idx) {
     cap_ = msg_->length;
+    msg_->xdata[0]  = idx_;
     msg_->length = 0;
 }
 
@@ -30,10 +32,12 @@ long worker_logger_buffer::xsputn(const char* s, long c) {
 }
 
 void worker_logger_buffer::transfer_msg() {
-    msg_->command = ipc::COMMAND_NOTIFY_DATA;
+    msg_->command = ipc::COMMAND_LOGGER_DATA;
     msg_->target  = 0;
     mgr_->ipc_->ipc_request(msg_);
+
     msg_ = ipc::create_message();
     cap_ = msg_->length;
+    msg_->xdata[0]   = idx_; // 实际写入的日志文件
     msg_->length  = 0; // 以 length 累计当前需要发送的数据
 }

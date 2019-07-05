@@ -5,14 +5,15 @@
 worker_logger::worker_logger(worker_logger_manager* mgr, const std::filesystem::path& path, std::uint8_t idx) 
 : idx_(0)
 , path_(path)
-, wlb_(new worker_logger_buffer(mgr))
+, wlb_(new worker_logger_buffer(mgr, idx))
 , oss_(new std::ostream(wlb_.get())) {
-
+    // std::cout << "worker_logger:: ipc(" << path << ")" << std::endl;
 }
 
 worker_logger::worker_logger(worker_logger_manager* mgr, const std::filesystem::path& path, std::uint8_t idx, bool local)
 : idx_(0)
 , path_(path) {
+    // std::cout << "worker_logger:: local(" << path << ")" << std::endl;
     if(path.string() != "<clog>") {
         auto fb = new std::filebuf();
         fb->open(path, std::ios_base::app);

@@ -4,15 +4,18 @@
  * 框架可在两种模式下工作：
  * 
  * 1. 单进程模式：
- *  * 一次信号 SIGINT / SIGTERM 将 “通知” 进程退出（等待超时），第二次或超时后立即停止；
+ *  * 信号 SIGQUIT 将 “通知” 进程退出 (触发 `quit` 回调)，等待超时后立即终止；
+ *  * 信号 SIGINT / SIGTERM 立即终止；
  *  * 信号 SIGUSR1 将切换 HTTP 服务器长短连状态 `Connection: close`；
  *  * 单进程模式**不支持**日志文件输出，固定输出到 STDERR / STDOUT (取决于错误等级）；
  * 
- * 2. 多进程模式：
- *  * 使用环境变量 FLAME_MAX_WORKERS=X 启动多进程模式；
+ * 2. 父子进程模式：
+ *  * 使用环境变量 FLAME_MAX_WORKERS=X 启动父子进程模式；
  *  * 主进程将自动进行日志文件写入，子进程自动拉起；
  *  * 端口监听使用 SO_REUSEPORT 在多个工作进程间共享，但不排除外部监听的可能；
- *  * 向主进程发送 SIGINT / SIGTERM 一次将 ”通知“ 子进程退出（等待超时），第二次或超时后将立即停止；
+ * 
+ *  * 向主进程发送 SIGQUIT 将 ”通知“ 子进程退出 (触发 `quit` 回调)，并等待超时后立即终止；
+ *  * 项主进程发送 SIGINT / SIGTERM 将立即终止；
  *  * 向主进程发送 SIGUSR2 信号该文件将会被重新打开(或生成);
  *  * 子进程继承主进程的 环境变量 / -c /path/to/php.ini 配置（通过命令行 -d XXX=XXX 的临时设置无效）；
  *  * 向主进程发送 SIGUSR1 信号将切换 HTTP 服务器长短连状态 `Connection: close`；
@@ -30,7 +33,7 @@ namespace flame;
  *      "warning"
  *      "error"
  *      "fatal"
- *  * "timeout" - 多进程退出超时, 单位毫秒 ( 200 ~ 100000ms ), 默认 3000ms（超时后会被强制杀死）
+ *  * "timeout" - 进程退出超时, 单位毫秒 ( 200 ~ 100000ms ), 默认 3000ms（超时后会被强制杀死）
  *  @see flame\log
  */
 function init($process_name, $options = []) {}
@@ -94,10 +97,11 @@ function on(string $event, callable $cb) {}
 /**
  * 用于在用户处理流程中退出
  * 注意：
- * 使用 PHP 内置 exit() 进行退出可能导致框架提供的清理、退出机制无效；
- * 请示用本函数代替；
+ *  1. 使用 PHP 内置 exit() 进行退出可能导致框架提供的清理、退出机制无效；(请示用本函数代替)
+ *  2. 调用本函数主动退出进程，不会触发上述 `on("quit", $cb)` 注册的回调;
+ *  3. 父子进程模式，非停止流程，当 $exit_code 不为 0 时表示异常退出，父进程会（1s ~ 3s 后）将当前工作进程重启；
  */
-function quit() {}
+function quit(int $exit_code = 0) {}
 /**
  * 协程型队列
  */

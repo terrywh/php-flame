@@ -10,10 +10,11 @@ public:
     virtual ~master_ipc();
     // 输出
     virtual std::ostream& output() = 0;
+    void ipc_start();
     // 监听连接及连接数据接收
     void ipc_run(coroutine_handler ch);
-    // void ipc_read(socket_ptr sock, coroutine_handler ch);
-    void ipc_read(socket_ptr sock, coroutine_handler& ch);
+    void ipc_read(socket_ptr sock, coroutine_handler ch);
+    // void ipc_read(socket_ptr sock, coroutine_handler& ch);
     void ipc_close();
     // 请求并等待响应
     std::shared_ptr<ipc::message_t> ipc_request(std::shared_ptr<ipc::message_t> req, coroutine_handler& ch);

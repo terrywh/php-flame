@@ -37,6 +37,8 @@ namespace flame::log {
 
         php::class_entry<logger> class_logger("flame\\log\\logger");
         class_logger
+            .method<&logger::__construct>("__construct", php::PRIVATE) // 禁止手动创建
+            .method<&logger::write>("write")
             .method<&logger::trace>("trace")
             .method<&logger::debug>("debug")
             .method<&logger::info>("info")
@@ -48,6 +50,10 @@ namespace flame::log {
         ext.add(std::move(class_logger));
     }
     
+    php::value logger::__construct(php::parameters& params) {
+        return nullptr;
+    }
+
     void logger::connect(const std::string& path, ::coroutine_handler& ch) {
         lg_ = worker::get()->lm_connect(path, ch);
     }
@@ -59,13 +65,20 @@ namespace flame::log {
     void logger::write_ex(int lv, php::parameters& params) {
         if (lv < LEVEL_OPT) return;
         std::ostream& os = logger::stream();
-        os << '[' << time::iso() << "] (";
-        os << LEVEL_STR[lv];
-        os << ")";
-        for (int i = 0; i < params.size(); ++i)
-            os << ' ' << params[i].ptr();
+        if (lv != LEVEL_EMPTY) {
+            os << '[' << time::iso() << "] (";
+            os << LEVEL_STR[lv];
+            os << ") ";
+        }
+        int i = 0;
+        for (; i < params.size() - 1; ++i)
+            os << params[i].ptr() << ' ';
+        os << params[i].ptr() << std::endl; // 使用 endl 会进行 flush 使日志快速出现
+    }
 
-        os << std::endl;
+    php::value logger::write(php::parameters& params) {
+        write_ex(LEVEL_EMPTY, params);
+        return nullptr;
     }
 
     php::value logger::trace(php::parameters &params) {

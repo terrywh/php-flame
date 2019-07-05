@@ -1,45 +1,7 @@
 #pragma once
 #include "vendor.h"
 
-class coroutine: public std::enable_shared_from_this<coroutine> {
-public:
-    coroutine(boost::asio::executor ex)
-    : ex_(ex) {
-        
-    }
-    virtual ~coroutine() {
-
-    }
-    // static std::shared_ptr<coroutine> current;
-    template <class Handler>
-    static void start(boost::asio::executor ex, Handler&& fn) {
-        auto co = std::make_shared<coroutine>(ex);
-        
-        boost::asio::post(co->ex_, [co, fn] () mutable {
-            co->c1_ = boost::context::fiber([co, gd = boost::asio::make_work_guard(co->ex_), fn] (boost::context::fiber&& c2) mutable {
-                co->c2_ = std::move(c2);
-                fn({co});
-                return std::move(co->c2_);
-            });
-            co->c1_ = std::move(co->c1_).resume();
-        });
-    }
-    virtual void suspend() {
-        c2_ = std::move(c2_).resume();
-    }
-    virtual void resume() {
-        boost::asio::post(ex_, [co = shared_from_this()] () {
-            co->c1_ = std::move(co->c1_).resume();
-        });
-    }
-protected:
-    boost::context::fiber c1_;
-    boost::context::fiber c2_;
-    boost::asio::executor ex_;
-
-    friend class coroutine_handler;
-};
-
+class coroutine;
 class coroutine_handler {
 public:
     coroutine_handler() = default;
@@ -58,18 +20,14 @@ public:
         return *this;
     }
     
-    inline void operator()(const boost::system::error_code& error, std::size_t size = 0) {
-        if(error_) *error_ = error;
-        if(size_) *size_ = size;
-        co_->resume();
-    }
+    void operator()(const boost::system::error_code& error, std::size_t size = 0);
 
     inline bool operator !() {
-        return co_ == nullptr;
+        return !co_;
     }
     
     inline operator bool() {
-        return co_ != nullptr;
+        return !!co_;
     }
 
     void reset() {
@@ -77,6 +35,7 @@ public:
         size_ = nullptr;
         error_= nullptr;
     }
+    
     void reset(std::shared_ptr<coroutine> co) {
         co_ = co;
         size_ = nullptr;
@@ -88,17 +47,13 @@ public:
         error_= nullptr;
     }
 
-    inline void suspend() {
-        co_->suspend();
-    }
-    inline void resume() {
-        co_->resume();
-    }
+    void suspend();
+    void resume();
 
-    void error(const boost::system::error_code& error) {
+    inline void error(const boost::system::error_code& error) {
         if(error_) *error_ = error;
     }
-    void size(std::size_t sz) {
+    inline void size(std::size_t sz) {
         if(size_) *size_ = sz;
     }
 public:
@@ -109,6 +64,63 @@ public:
 private:
 
 };
+
+class coroutine: public std::enable_shared_from_this<coroutine> {
+public:
+    coroutine(boost::asio::executor ex)
+    : ex_(ex) {
+        
+    }
+    virtual ~coroutine() {
+
+    }
+    
+    template <class Handler>
+    static void start(boost::asio::executor ex, Handler&& fn);
+
+    virtual void suspend() {
+        c2_ = std::move(c2_).resume();
+    }
+    virtual void resume() {
+        boost::asio::post(ex_, [co = shared_from_this()] () {
+            co->c1_ = std::move(co->c1_).resume();
+        });
+    }
+protected:
+    boost::context::fiber c1_;
+    boost::context::fiber c2_;
+    boost::asio::executor ex_;
+
+    friend class coroutine_handler;
+};
+
+template <class Handler>
+void coroutine::start(boost::asio::executor ex, Handler&& fn) {
+    auto co = std::make_shared<coroutine>(ex);
+    
+    boost::asio::post(co->ex_, [co, fn] () mutable {
+        co->c1_ = boost::context::fiber([co, gd = boost::asio::make_work_guard(co->ex_), fn] (boost::context::fiber&& c2) mutable {
+            co->c2_ = std::move(c2);
+            fn(coroutine_handler{co});
+            return std::move(co->c2_);
+        });
+        co->c1_ = std::move(co->c1_).resume();
+    });
+}
+
+inline void coroutine_handler::operator()(const boost::system::error_code& error, std::size_t size) {
+    if(error_) *error_ = error;
+    if(size_) *size_ = size;
+    co_->resume();
+}
+
+inline void coroutine_handler::suspend() {
+    co_->suspend();
+}
+
+inline void coroutine_handler::resume() {
+    co_->resume();
+}
 
 namespace boost::asio {
     template <>

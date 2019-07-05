@@ -31,14 +31,14 @@ namespace flame {
         virtual std::shared_ptr<master_ipc> ipc_self() override {
             return std::static_pointer_cast<master_ipc>(shared_from_this());
         }
+        // void on_child_close(master_process* w, bool normal) override;
         bool on_signal(int sig) override;
         bool on_message(std::shared_ptr<ipc::message_t> msg, socket_ptr sock) override;
+        
     private:
         static std::shared_ptr<master> mm_;
         master_logger* lg_;
 
-        int close_ = 0;
-        int stats_ = 0;
         friend class controller;
     };
 }

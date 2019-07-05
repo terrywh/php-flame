@@ -1,11 +1,15 @@
 #include "master_logger_manager.h"
-#include "master_logger.h"
 
+master_logger_manager::master_logger_manager(boost::asio::io_context& io)
+: io_(io) {
 
-master_logger_manager::master_logger_manager() {}
-master_logger_manager::~master_logger_manager() {}
+}
 
-master_logger* master_logger_manager::lm_connect(const std::string& filepath) {
+master_logger_manager::~master_logger_manager() {
+    // std::cout << "~master_logger_manager\n";
+}
+
+master_logger* master_logger_manager::lm_connect(std::string_view filepath) {
     std::filesystem::path path = filepath;
     
     for(auto i=logger_.begin();i!=logger_.end();++i) {
@@ -16,7 +20,7 @@ master_logger* master_logger_manager::lm_connect(const std::string& filepath) {
     }
     auto p = logger_.insert({index_, std::make_unique<master_logger>(path, index_)});
     ++index_;
-    p.first->second->reload();
+    p.first->second->reload(io_);
     return p.first->second.get();
 }
 
@@ -28,13 +32,8 @@ void master_logger_manager::lm_destroy(std::uint8_t idx) {
     logger_.erase(i);
 }
 
-master_logger* master_logger_manager::lm_get(std::uint8_t idx) {
-    auto i = logger_.find(idx);
-    return i == logger_.end() ? nullptr : i->second.get();
-}
-
 void master_logger_manager::lm_reload() {
-    for(auto i=logger_.begin();i!=logger_.end();++i) i->second->reload();
+    for(auto i=logger_.begin();i!=logger_.end();++i) i->second->reload(io_);
 }
 
 void master_logger_manager::lm_close() {

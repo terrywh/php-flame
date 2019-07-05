@@ -38,7 +38,7 @@ namespace flame::mongodb {
     }
 
     php::value client::dump(php::parameters& params) {
-        std::cout << bson_as_relaxed_extended_json(array2bson(params[0]).get(), nullptr) << std::endl;
+        std::clog << bson_as_relaxed_extended_json(array2bson(params[0]).get(), nullptr) << std::endl;
         return nullptr;
     }
 

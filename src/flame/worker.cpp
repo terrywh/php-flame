@@ -1,3 +1,4 @@
+#include "../util.h"
 #include "../worker_logger.h"
 #include "controller.h"
 #include "worker.h"
@@ -30,9 +31,9 @@ namespace flame {
         .on_request_shutdown([] (php::extension_entry& ext) -> bool {
             if (gcontroller->status & controller::STATUS_INITIALIZED) {
                 if (php::error::exists()) 
-                    std::cerr << "[WARNING] process exited prematurely: uncaught exception / error\n";
+                    log::logger_->stream() << "[" << util::system_time() << "] (WARNING) process exited prematurely: uncaught exception / error\n" << std::endl;
                 if (!(gcontroller->status & controller::STATUS_RUN)) 
-                    std::cerr << "[WARNING] process exited prematurely: missing 'flame\\run();'\n";
+                    log::logger_->stream() << "[" << util::system_time() << "] (WARNING) process exited prematurely: missing 'flame\\run();'" << std::endl;
                 
                 gcontroller->status & controller::STATUS_EXCEPTION ? _exit(-1) : _exit(0);
             }
@@ -105,9 +106,11 @@ namespace flame {
 
         worker::ww_.reset(new worker(gcontroller->worker_idx));
 
-        gcontroller->init(options); // 首个 logger 的初始化过程在 logger 注册 on_init 回调中进行（异步的）
         // 信号监听启动
         worker::ww_->sw_watch();
+        if(gcontroller->worker_size > 0) worker::ww_->ipc_start();
+        
+        gcontroller->init(options); // 首个 logger 的初始化过程在 logger 注册 on_init 回调中进行（异步的）
         return nullptr;
     }
 
@@ -121,12 +124,13 @@ namespace flame {
             } catch (const php::exception &ex) {
                 gcontroller->call_user_cb("exception", {ex}); // 调用用户异常回调
                 php::object obj = ex; // 记录错误信息
-                log::logger_->stream() << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << "\n";
+                log::logger_->stream() << "[" << time::iso() << "] (FATAL) " << obj.call("__toString") << std::endl;
 
                 boost::asio::post(gcontroller->context_x, [] () {
                     gcontroller->status |= controller::STATUS_EXCEPTION;
                     gcontroller->context_x.stop();
                     gcontroller->context_y.stop();
+                    gcontroller->context_z.stop();
                 });
             }
             return nullptr;
@@ -154,11 +158,14 @@ namespace flame {
 
         auto tswork = boost::asio::make_work_guard(gcontroller->context_y);
         std::thread ts[4];
-        for (int i=0; i<4; ++i) {
+        for (int i=0; i<3; ++i) {
             ts[i] = std::thread([] {
                 gcontroller->context_y.run();
             });
         }
+        ts[3] = std::thread([] {
+            gcontroller->context_z.run();
+        });
         gcontroller->context_x.run();
         tswork.reset();
         worker::ww_->sw_close();
@@ -166,17 +173,17 @@ namespace flame {
         worker::ww_->lm_close();
         for (int i=0; i<4; ++i) ts[i].join();
         gcontroller->stop();
+        worker::ww_.reset();
         return nullptr;
     }
 
     php::value worker::quit(php::parameters& params) {
         if ((gcontroller->status & controller::STATUS_RUN) == 0)
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
-        
-        gcontroller->call_user_cb("quit");
 
         gcontroller->context_x.stop();
         gcontroller->context_y.stop();
+        gcontroller->context_z.stop();
         return nullptr;
     }
 
@@ -204,7 +211,7 @@ namespace flame {
 
     worker::worker(std::uint8_t idx)
     : signal_watcher(gcontroller->context_y)
-    , worker_ipc(gcontroller->context_y, idx)
+    , worker_ipc(gcontroller->context_z, idx)
     , worker_logger_manager(this) {
 
     }
@@ -217,17 +224,24 @@ namespace flame {
     bool worker::on_signal(int sig) {
         switch(sig) {
         case SIGINT:
-        case SIGTERM:
-            if(++close_ > 1) {
+            if(gcontroller->worker_size > 0) break; // 多进程模式忽略
+            [[fallthrough]]; // 单进程模式通 SIGQUIT 处理
+        case SIGQUIT:
+            boost::asio::post(gcontroller->context_x, [] () {
+                if(gcontroller->worker_size > 0) {
+                    gcontroller->status |= controller::STATUS_EXCEPTION;
+                }
                 gcontroller->context_x.stop();
                 gcontroller->context_y.stop();
-                return false; // 多次停止信号立即结束
-            }
-            else coroutine::start(php::callable([] (php::parameters& params) -> php::value { // 通知用户退出(超时后主进程将杀死子进程)
+                gcontroller->context_z.stop();
+            });
+            return false; // 多次停止信号立即结束
+        break;
+        case SIGTERM:
+            coroutine::start(php::callable([] (php::parameters& params) -> php::value { // 通知用户退出(超时后主进程将杀死子进程)
                 gcontroller->call_user_cb("quit");
                 return nullptr;
             }));
-            break;
         case SIGUSR1:
             boost::asio::post(gcontroller->context_x, [] () {
                 gcontroller->status ^= controller::STATUS_CLOSECONN;
@@ -238,8 +252,17 @@ namespace flame {
         }
         return true;
     }
-
-    void worker::on_notify(std::shared_ptr<ipc::message_t> msg) {
-        gcontroller->call_user_cb("notify", {php::json_decode(&msg->payload[0], msg->length)});
+    // !!! 此函数在工作线程中工作
+    bool worker::on_message(std::shared_ptr<ipc::message_t> msg) {
+        switch(msg->command) {
+        case ipc::COMMAND_NOTIFY_DATA:
+            boost::asio::post(gcontroller->context_x, [msg] () {
+                std::cout << "notfiy data: " << std::string_view {&msg->payload[0], msg->length} << "\n";
+            // TODO 调度到主线程，通过协程队列传递
+            // gcontroller->call_user_cb("notify", {php::json_decode(&msg->payload[0], msg->length)});
+            });
+        break;
+        }
+        return true;
     }
 }

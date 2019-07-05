@@ -31,14 +31,16 @@ namespace flame {
 
         // 主进程控制对象
         master::mm_.reset(new master());
-        if (options.exists("logger")) 
-            master::mm_->lg_ = master::mm_->lm_connect(options.get("logger"));
+        if (options.exists("logger")) {
+            php::string logger = options.get("logger");
+            master::mm_->lg_ = master::mm_->lm_connect({logger.data(), logger.size()});
+        }
         else
             master::mm_->lg_ = master::mm_->lm_connect("stdout");
         // 初始化启动
         gcontroller->init(options);
-        // 信号监听启动
-        master::mm_->sw_watch();
+        master::mm_->ipc_start(); // IPC 启动
+        master::mm_->sw_watch(); // 信号监听启动
         return nullptr;
     }
 
@@ -47,21 +49,27 @@ namespace flame {
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
             
         gcontroller->status |= controller::STATUS_RUN;
-
-        master::get()->pm_start(); // 启动工作进程
-        std::thread ts {[] () {
-            gcontroller->context_y.run();
-        }};
-        gcontroller->context_x.run();
+        master::mm_->pm_start(gcontroller->context_x); // 启动工作进程
         
+        std::thread ts[2];
+        ts[0] = std::thread([] () {
+            gcontroller->context_y.run();
+        });
+        ts[1] = std::thread([] () {
+            gcontroller->context_z.run();
+        });
+        gcontroller->context_x.run();
+
         master::mm_->sw_close();
         master::mm_->ipc_close();
         master::mm_->lm_close();
 
-        if (gcontroller->status & controller::STATUS_EXCEPTION) _exit(-1);
-        else gcontroller->stop();
+        // if (gcontroller->status & controller::STATUS_EXCEPTION) _exit(-1);
+        gcontroller->stop();
+        ts[0].join();
+        ts[1].join();
 
-        ts.join();
+        master::mm_.reset();
         return nullptr;
     }
 
@@ -70,9 +78,9 @@ namespace flame {
     }
 
     master::master()
-    : master_process_manager(gcontroller->context_x, gcontroller->worker_size)
+    : master_process_manager(gcontroller->context_y, gcontroller->worker_size, gcontroller->worker_quit)
     , signal_watcher(gcontroller->context_y)
-    , master_logger_manager()
+    , master_logger_manager(gcontroller->context_y)
     , master_ipc(gcontroller->context_y) {
         
     }
@@ -83,39 +91,66 @@ namespace flame {
     // !!! 此函数在工作线程中工作
     bool master::on_signal(int sig) {
         switch(sig) {
-        case SIGINT: 
-            coroutine::start(gcontroller->context_x.get_executor(), [this, self = shared_from_this()] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
-                pm_reset(ch);
-            });
         break;
         case SIGUSR2: 
             lm_reload(); // 日志重载
         break;
         case SIGUSR1:
-            if(++stats_ % 2 == 1) 
-                output() << "[" << util::system_time() << "] [INFO] append 'Connection: close' header." << std::endl;
-            else
-                output() << "[" << util::system_time() << "] [INFO] remove 'Connection: close' header." << std::endl;
-            pm_kills(SIGUSR1); // 长短连切换
+            boost::asio::post(gcontroller->context_y.get_executor(), [this, self = shared_from_this()] () {
+                gcontroller->status ^= controller::STATUS_CLOSECONN;
+                gcontroller->status & controller::STATUS_CLOSECONN ? 
+                    (output() << "[" << util::system_time() << "] [INFO] append 'Connection: close' header." << std::endl) :
+                    (output() << "[" << util::system_time() << "] [INFO] remove 'Connection: close' header." << std::endl) ;
+
+                pm_kills(SIGUSR1); // 长短连切换
+            });
+        break;
+        case SIGINT:
+        case SIGQUIT:
+            coroutine::start(gcontroller->context_y.get_executor(), [this, self = shared_from_this()] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
+                if(gcontroller->status & (controller::STATUS_CLOSING | controller::STATUS_QUITING | controller::STATUS_RSETING)) return; // 关闭进行中
+                gcontroller->status |= controller::STATUS_QUITING | controller::STATUS_CLOSECONN;
+                pm_close(ch, true); // 立即关闭
+            });
+            return false; // 除强制停止信号外，需要持续监听信号  
         break;
         case SIGTERM:
-            if(++close_ > 1) {
-                sw_close();
-                coroutine::start(gcontroller->context_x.get_executor(), [this, self = shared_from_this()] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
-                    pm_close(0, ch); // 立即关闭
+            coroutine::start(gcontroller->context_y.get_executor(), [this, self = shared_from_this()] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
+                if(gcontroller->status & (controller::STATUS_CLOSING | controller::STATUS_QUITING | controller::STATUS_RSETING)) return; // 关闭进行中
+                gcontroller->status |= controller::STATUS_CLOSING | controller::STATUS_CLOSECONN;
+                pm_close(ch); // 超时关闭
+            });
+        break;
+        default:
+            if(sig == SIGRTMIN + 1)
+                coroutine::start(gcontroller->context_y.get_executor(), [this, self = shared_from_this()] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
+                    if(gcontroller->status & (controller::STATUS_CLOSING | controller::STATUS_QUITING | controller::STATUS_RSETING)) return; // 关闭进行中
+                    gcontroller->status |=   controller::STATUS_RSETING | controller::STATUS_CLOSECONN;
+                    pm_reset(ch);
+                    gcontroller->status &= ~(controller::STATUS_RSETING | controller::STATUS_CLOSECONN);
                 });
-                return false; // 除强制停止信号外，需要持续监听信号
-            }else{
-                coroutine::start(gcontroller->context_x.get_executor(), [this, self = shared_from_this()] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
-                    pm_close(gcontroller->worker_quit, ch); // 超时关闭
-                });
-            }
-            break;
         }
         return true;
     }
     // !!! 此函数在工作线程中工作
     bool master::on_message(std::shared_ptr<ipc::message_t> msg, socket_ptr sock) {
+        switch(msg->command) {
+        // 工作进程创建了新的日志对象，连接到指定的文件输出
+        case ipc::COMMAND_LOGGER_CONNECT:
+            msg->xdata[0]  = lm_connect({&msg->payload[0], msg->length})->index();
+            msg->target = msg->source; // 响应给来源的工作进程
+            msg->length = 0;
+            ipc_request(msg);
+            return true;
+        // 工作进程写入日志数据
+        case ipc::COMMAND_LOGGER_DATA:
+            // 使用 xdata[0] 标识实际写入的目标日志
+            lm_get(msg->xdata[0])->stream() << "~~~~~" << std::string_view {&msg->payload[0], msg->length};
+            return true;
+        case ipc::COMMAND_LOGGER_DESTROY:
+            lm_destroy(msg->target);
+            return true;
+        }
         return master_ipc::on_message(msg, sock);
     }
 }

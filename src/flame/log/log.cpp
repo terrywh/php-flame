@@ -5,6 +5,11 @@
 
 namespace flame::log {
     
+    static php::value write(php::parameters &params) {
+        logger_->write_ex(logger::LEVEL_EMPTY, params);
+        return nullptr;
+    }
+
     static php::value trace(php::parameters &params) {
         logger_->write_ex(logger::LEVEL_TRACE, params);
         return nullptr;
@@ -45,6 +50,8 @@ namespace flame::log {
 
     void declare(php::extension_entry &ext) {
         ext
+            .function<connect>("flame\\log\\connect")
+            .function<write>("flame\\log\\write")
             .function<trace>("flame\\log\\trace")
             .function<debug>("flame\\log\\debug")
             .function<info>("flame\\log\\info")
