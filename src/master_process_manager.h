@@ -40,11 +40,13 @@ private:
     coroutine_handler ch_close_;
     coroutine_handler ch_start_;
     int status_;
+    
     enum {
         STATUS_CLOSING = 0x01,
         STATUS_RSETING = 0x02,
         STATUS_QUITING = 0x04,
         STATUS_ACLOSED = 0x08,
+        STATUS_TIMEOUT = 0x10,
     };
     
     friend class master_process;

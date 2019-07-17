@@ -50,7 +50,7 @@ void master_process::redirect_output(boost::process::async_pipe& pipe, std::stri
             mgr_->output() << "[" << util::system_time() << "] (ERROR) Failed to read from worker process: (" << error.value() << ") " << error.message() << "\n";
         }
         else {
-            mgr_->output() << "-----" << std::string_view(data.data(), nread);
+            mgr_->output() << /*"-----" << */std::string_view(data.data(), nread);
             data.erase(0, nread);
             redirect_output(pipe, data);
         }
@@ -59,7 +59,7 @@ void master_process::redirect_output(boost::process::async_pipe& pipe, std::stri
 
 void master_process::close(bool force) {
     if(force) proc_.terminate();
-    else ::kill(proc_.id(), SIGQUIT);
+    else ::kill(proc_.id(), SIGTERM);
 }
 
 void master_process::signal(int sig) {

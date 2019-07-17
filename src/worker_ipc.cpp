@@ -106,7 +106,7 @@ void worker_ipc::ipc_run(coroutine_handler ch) {
     }
 IPC_FAILED:
     if (error && error != boost::asio::error::operation_aborted && error != boost::asio::error::eof) 
-        output() << "[" << util::system_time() << "] (ERROR) Failed during IPC with master: (" << error.value() << ") " << error.message() << "\n";
+        output() << "[" << util::system_time() << "] (ERROR) Failed to read M-IPC: (" << error.value() << ") " << error.message() << "\n";
     socket_->close(error);
 }
 
@@ -133,7 +133,7 @@ void worker_ipc::send_next() {
 
     boost::asio::async_write(*socket_, boost::asio::buffer(msg.get(), sizeof(ipc::message_t) + msg->length), [this] (const boost::system::error_code& error, std::size_t size) {
         if(error) {
-            output() << "[" << util::system_time() << "] [FATAL] Failed during IPC with master: (" << error.value() << ") " << error.message() << "\n";
+            output() << "[" << util::system_time() << "] [FATAL] Failed to write M-IPC: (" << error.value() << ") " << error.message() << "\n";
             return;
         }
         sendq_.pop_front();

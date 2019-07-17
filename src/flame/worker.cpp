@@ -30,10 +30,10 @@ namespace flame {
         ext
         .on_request_shutdown([] (php::extension_entry& ext) -> bool {
             if (gcontroller->status & controller::STATUS_INITIALIZED) {
-                if (php::error::exists()) 
-                    log::logger_->stream() << "[" << util::system_time() << "] (WARNING) process exited prematurely: uncaught exception / error\n" << std::endl;
+                // if (php::error::exists()) 
+                //     log::logger_->stream() << "[" << util::system_time() << "] (WARNING) unexpected process exit: uncaught exception / error\n" << std::endl;
                 if (!(gcontroller->status & controller::STATUS_RUN)) 
-                    log::logger_->stream() << "[" << util::system_time() << "] (WARNING) process exited prematurely: missing 'flame\\run();'" << std::endl;
+                    log::logger_->stream() << "[" << util::system_time() << "] (WARNING) unexpected process exit: missing 'flame\\run();'" << std::endl;
                 
                 gcontroller->status & controller::STATUS_EXCEPTION ? _exit(-1) : _exit(0);
             }

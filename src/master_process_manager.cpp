@@ -48,33 +48,28 @@ void master_process_manager::pm_reset(coroutine_handler& ch) {
 
 void master_process_manager::pm_close(coroutine_handler& ch, bool now) {
     if(status_ & (STATUS_RSETING | STATUS_ACLOSED)) return;
-
-    if(status_ & STATUS_CLOSING) {
-        timer_.cancel(); // 提前强制关闭 ---> (3)
-        return;
-    }
+    if(status_ & STATUS_CLOSING) now = true; // 已经进行过关闭, 转为强制关闭
     status_ |= STATUS_CLOSING;
     for(int i=0;i<cmax_;++i) child_[i]->close(now);
     if (now) {
+        status_ &=~STATUS_TIMEOUT;
         status_ |= STATUS_ACLOSED;
         timer_.cancel(); // 可能有异常重启中的进程存在
         goto SHUTDOWN;
     }
     {
-        int  stopped = cmax_;
-        bool timeout = false;
         timer_.expires_after(std::chrono::milliseconds(tquit_));
-        timer_.async_wait([&ch, &timeout, &stopped, this, self = pm_self()] (const boost::system::error_code& error) mutable {
-            if(status_ & STATUS_ACLOSED) return;  // (2) 结束后栈数据丢失（ch/timeout/stopped)
-            timeout = true; // (3) 还未完全关闭时超时或提前强制关闭
-            ch.resume();
+        timer_.async_wait([&ch, this, self = pm_self()] (const boost::system::error_code& error) mutable {
+            if(status_ & STATUS_ACLOSED) return;  // (2) 结束后栈数据丢失（ch)
+            status_ |= STATUS_TIMEOUT; // (3) 还未完全关闭时超时或提前强制关闭
+            if(ch_close_) ch_close_.resume();
         });
     WAIT_FOR_CLOSE:
         ch_close_.reset(ch);
         ch_close_.suspend(); // 等待回调 on_child_event
         ch_close_.reset();
-        if(timeout) return pm_close(ch, true);
-        else if(--stopped > 0) goto WAIT_FOR_CLOSE;
+        if(status_ & STATUS_TIMEOUT) return pm_close(ch, true);
+        else if(crun_ > 0) goto WAIT_FOR_CLOSE;
     }
 SHUTDOWN:
     status_ |= STATUS_ACLOSED;   // -------> (2)

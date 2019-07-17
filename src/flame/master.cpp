@@ -16,6 +16,8 @@ namespace flame {
             .function<master::run>("flame\\run");
     }
 
+    static std::chrono::steady_clock::time_point tm_init;
+
     php::value master::init(php::parameters& params) {
         php::array options = php::array(0);
         if (params.size() > 1 && params[1].type_of(php::TYPE::ARRAY)) options = params[1];
@@ -41,6 +43,7 @@ namespace flame {
         gcontroller->init(options);
         master::mm_->ipc_start(); // IPC 启动
         master::mm_->sw_watch(); // 信号监听启动
+        tm_init = std::chrono::steady_clock::now();
         return nullptr;
     }
 
@@ -49,6 +52,10 @@ namespace flame {
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
             
         gcontroller->status |= controller::STATUS_RUN;
+        auto tm_run = std::chrono::steady_clock::now();
+        if(tm_run - tm_init < std::chrono::milliseconds(100)) {
+            std::this_thread::sleep_for(std::chrono::microseconds(100) - (tm_run - tm_init));
+        }
         master::mm_->pm_start(gcontroller->context_x); // 启动工作进程
         
         std::thread ts[2];
@@ -107,7 +114,7 @@ namespace flame {
         case SIGINT:
         case SIGQUIT:
             coroutine::start(gcontroller->context_y.get_executor(), [this, self = shared_from_this()] (coroutine_handler ch) { // 使用轻量级的 C++ 内部协程
-                if(gcontroller->status & (controller::STATUS_CLOSING | controller::STATUS_QUITING | controller::STATUS_RSETING)) return; // 关闭进行中
+                // if(gcontroller->status & (controller::STATUS_CLOSING | controller::STATUS_QUITING | controller::STATUS_RSETING)) return; // 关闭进行中
                 gcontroller->status |= controller::STATUS_QUITING | controller::STATUS_CLOSECONN;
                 pm_close(ch, true); // 立即关闭
             });
@@ -144,7 +151,7 @@ namespace flame {
         // 工作进程写入日志数据
         case ipc::COMMAND_LOGGER_DATA:
             // 使用 xdata[0] 标识实际写入的目标日志
-            lm_get(msg->xdata[0])->stream() << "~~~~~" << std::string_view {&msg->payload[0], msg->length};
+            lm_get(msg->xdata[0])->stream() << /*"~~~~~" << */std::string_view {&msg->payload[0], msg->length};
             return true;
         case ipc::COMMAND_LOGGER_DESTROY:
             lm_destroy(msg->target);
