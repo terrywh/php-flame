@@ -136,8 +136,6 @@ namespace flame {
                 boost::asio::post(gcontroller->context_x, [] () {
                     gcontroller->status |= controller::STATUS_EXCEPTION;
                     gcontroller->context_x.stop();
-                    gcontroller->context_y.stop();
-                    gcontroller->context_z.stop();
                 });
             }
             return nullptr;
@@ -195,14 +193,13 @@ namespace flame {
         gcontroller->context_x.run();
         ywork.reset();
         zwork.reset();
-
         worker::ww_->sw_close();
         worker::ww_->ipc_close();
         worker::ww_->lm_close();
-
-        for (int i=0; i<4; ++i) {
-            ts[i].join();
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        gcontroller->context_y.stop();
+        gcontroller->context_z.stop();
+        for (int i=0; i<4; ++i) ts[i].join();
         gcontroller->stop();
         worker::ww_.reset();
         return nullptr;
@@ -213,8 +210,6 @@ namespace flame {
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
 
         gcontroller->context_x.stop();
-        gcontroller->context_y.stop();
-        gcontroller->context_z.stop();
         return nullptr;
     }
 
@@ -264,12 +259,7 @@ namespace flame {
             [[fallthrough]]; // 单进程模式通 SIGQUIT 处理
         case SIGQUIT:
             boost::asio::post(gcontroller->context_x, [] () {
-                if(gcontroller->worker_size > 0) {
-                    gcontroller->status |= controller::STATUS_EXCEPTION;
-                }
                 gcontroller->context_x.stop();
-                gcontroller->context_y.stop();
-                gcontroller->context_z.stop();
             });
             return false; // 多次停止信号立即结束
         break;
