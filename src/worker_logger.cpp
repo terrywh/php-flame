@@ -13,7 +13,7 @@ worker_logger::worker_logger(worker_logger_manager* mgr, const std::filesystem::
 worker_logger::worker_logger(worker_logger_manager* mgr, const std::filesystem::path& path, std::uint8_t idx, bool local)
 : idx_(0)
 , path_(path) {
-    if(path.string() != "<clog>") {
+    if(path.has_filename() && path.string() != "<clog>") {
         auto fb = new std::filebuf();
         fb->open(path, std::ios_base::app);
         oss_.reset(new std::ostream(fb));
