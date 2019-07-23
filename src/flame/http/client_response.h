@@ -11,6 +11,7 @@ namespace flame::http {
         php::value to_string(php::parameters& params);
         // 声明为 ZEND_ACC_PRIVATE 禁止创建（不会被调用）
         php::value __construct(php::parameters& params);
+        ~client_response();
     private:
         CURL*       c_easy_;
         php::array  c_head_;

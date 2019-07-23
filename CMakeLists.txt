@@ -34,7 +34,7 @@ set(VENDOR_PHP /data/server/php-7.2.19)
 set(VENDOR_PHPEXT /data/vendor/phpext-2.2.0)
 set(VENDOR_CARES /data/vendor/cares-1.15.0)
 set(VENDOR_NGHTTP2 /data/vendor/nghttp2-1.39.1)
-set(VENDOR_CURL /data/vendor/curl-7.65.0)
+set(VENDOR_CURL /data/vendor/curl-7.65.3)
 set(VENDOR_MARIA /data/vendor/mariac-3.1.2)
 
 execute_process(COMMAND ${VENDOR_PHP}/bin/php-config --includes

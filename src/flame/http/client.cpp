@@ -5,6 +5,8 @@
 #include "client_response.h"
 #include "../time/time.h"
 
+#include "value_body.h"
+
 namespace flame::http {
     
     void client::declare(php::extension_entry& ext) {
@@ -40,12 +42,13 @@ namespace flame::http {
     void client::check_done() {
         CURLMsg *msg;
         int left;
-        client_response* res_;
+        client_response* res;
+        std::vector<client_response*> rrr;
         while((msg = curl_multi_info_read(c_multi_, &left))) {
             if (msg->msg == CURLMSG_DONE) {
-                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &res_);
-                res_->c_final_ = msg->data.result;
-                res_->c_coro_.resume();
+                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &res);
+                res->c_final_ = msg->data.result;
+                res->c_coro_.resume();
             }
         }
     }
@@ -129,7 +132,8 @@ namespace flame::http {
     php::value client::exec_ex(const php::object& req) {
         auto req_ = static_cast<client_request*>(php::native(req));
         if (req_->c_easy_ == nullptr) req_->c_easy_ = curl_easy_init();
-        curl_easy_setopt(req_->c_easy_, CURLOPT_PIPEWAIT, 1);
+        // 优先等待 multiplex 确认，会在 DNS 失败时，等待复用导致二次请求挂起
+        // curl_easy_setopt(req_->c_easy_, CURLOPT_PIPEWAIT, 1);
         req_->build_ex();
 
         php::object res(php::class_entry<client_response>::entry());
@@ -148,6 +152,7 @@ namespace flame::http {
         res_->c_coro_.suspend(); // <----- check_done
         res_->build_ex();
         curl_multi_remove_handle(c_multi_, res_->c_easy_);
+        curl_easy_cleanup(res_->c_easy_);
         return std::move(res);
     }
     php::value client::exec(php::parameters& params) {

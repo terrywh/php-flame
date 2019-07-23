@@ -16,8 +16,13 @@ namespace flame::http {
         ext.add(std::move(class_client_response));
     }
     // 声明为 ZEND_ACC_PRIVATE 禁止创建（不会被调用）
-    php::value client_response::__construct(php::parameters& params) {
+    php::value client_response::__construct(php::parameters& params) 
+    {
         return nullptr; 
+    }
+    client_response::~client_response()
+    {
+        
     }
     php::value client_response::to_string(php::parameters& params) {
         return get("raw_body");

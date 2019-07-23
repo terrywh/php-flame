@@ -41,8 +41,7 @@ namespace flame::http {
             })
             .method<&client_request::ssl_verify>("ssl_verify", {
                 {"verify", php::TYPE::INTEGER},
-            })
-            .method<&client_request::__destruct>("__destruct");
+            });
 
         ext.add(std::move(class_client_request));
     }
@@ -64,10 +63,8 @@ namespace flame::http {
         return nullptr;
     }
 
-    php::value client_request::__destruct(php::parameters &params) {
+    client_request::~client_request() {
         if (c_head_) curl_slist_free_all(c_head_);
-        if (c_easy_) curl_easy_cleanup(c_easy_);
-        return nullptr;
     }
 
     php::value client_request::http_version(php::parameters& params) {
