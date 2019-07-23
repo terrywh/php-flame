@@ -32,8 +32,10 @@ namespace flame::os {
 
     php::value process::__destruct(php::parameters& params) {
         if (!detach_) {
-            if (!c_.wait_for(std::chrono::milliseconds(10000))) c_.terminate();
-            if (c_.joinable()) c_.join();
+            if (!exit_) {
+                if (!c_.wait_for(std::chrono::milliseconds(10000))) c_.terminate();
+                if (c_.joinable()) c_.join();
+            }
         }
         return nullptr;
     }
