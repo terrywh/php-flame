@@ -25,14 +25,14 @@ namespace flame::rabbitmq {
     php::value consume(php::parameters &params) {
         coroutine_handler ch {coroutine::current};
         url u(params[0]);
-        //  u.query.clear();
-        std::shared_ptr<_client> cc = std::make_shared<_client>(u, ch);
-
-        // cc->connect(ch);
 
         php::object obj(php::class_entry<consumer>::entry());
         consumer* ptr = static_cast<consumer*>(php::native(obj));
-        ptr->cc_ = cc;
+        ptr->cc_ = std::make_shared<_client>(u, ch);
+        
+        gcontroller->on_stop([cc = ptr->cc_] () {
+            cc->heartb_tm_.cancel();
+        });
         ptr->qn_ = static_cast<std::string>(params[1]);
         return std::move(obj);
     }
@@ -40,14 +40,14 @@ namespace flame::rabbitmq {
     php::value produce(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
         url u(params[0]);
-        // u.query.clear();
-        std::shared_ptr<_client> cc = std::make_shared<_client>(u, ch);
-        
-        // cc->connect(ch);
 
         php::object obj(php::class_entry<producer>::entry());
         producer *ptr = static_cast<producer*>(php::native(obj));
-        ptr->cc_ = cc;
+
+        ptr->cc_ = std::make_shared<_client>(u, ch);
+        gcontroller->on_stop([cc = ptr->cc_] () {
+            cc->heartb_tm_.cancel();
+        });
         return std::move(obj);
     }
     // 仅支持一维数组

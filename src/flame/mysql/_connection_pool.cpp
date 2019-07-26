@@ -3,17 +3,16 @@
 
 namespace flame::mysql {
     _connection_pool::_connection_pool(url u)
-    : url_(std::move(u)), min_(2), max_(6), size_(0), guard_(gcontroller->context_y), tm_(gcontroller->context_y)
+    : url_(std::move(u)), min_(2), max_(6), size_(0)
+    , guard_(gcontroller->context_y)
+    , sweep_(gcontroller->context_y)
     , flag_(FLAG_UNKNOWN) {
         if(url_.query.count("proxy") > 0 && std::stoi(url_.query["proxy"]) != 0)
             flag_ =  FLAG_CHARSET_EQUAL | FLAG_REUSE_BY_PROXY;
     }
 
     _connection_pool::~_connection_pool() {
-        while (!conn_.empty()) {
-            mysql_close(conn_.front().conn);
-            conn_.pop_front();
-        }
+        close();
     }
 
     std::shared_ptr<MYSQL> _connection_pool::acquire(coroutine_handler& ch) {
@@ -137,9 +136,9 @@ namespace flame::mysql {
     }
 
     void _connection_pool::sweep() {
-        tm_.expires_from_now(std::chrono::seconds(60));
+        sweep_.expires_from_now(std::chrono::seconds(60));
         // 注意, 实际的清理流程需要保证 guard_ 串行流程
-        tm_.async_wait(boost::asio::bind_executor(guard_, [this] (const boost::system::error_code &error) {
+        sweep_.async_wait(boost::asio::bind_executor(guard_, [this] (const boost::system::error_code &error) {
             if (error) return; // 当前对象销毁时会发生对应的 abort 错误
             auto now = std::chrono::steady_clock::now();
             // 超低水位，关闭不活跃或已丢失的连接
@@ -155,6 +154,14 @@ namespace flame::mysql {
             // 再次启动
             sweep();
         }));
+    }
+
+    void _connection_pool::close() {
+        sweep_.cancel();
+        while (!conn_.empty()) {
+            mysql_close(conn_.front().conn);
+            conn_.pop_front();
+        }
     }
 
 } // namespace flame::mysql

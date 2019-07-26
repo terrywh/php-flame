@@ -28,10 +28,13 @@ namespace flame::redis {
             std::chrono::time_point<std::chrono::steady_clock> ttl;
         };
         std::list<connection_t> conn_;
-        boost::asio::steady_timer tm_;
+        // 连接池闲置扫描(工作线程)
+        boost::asio::steady_timer sweep_;
 
         bool ping(redisContext* c);
         redisContext *create(std::string& err);
         void release(redisContext *c);
+
+        friend php::value connect(php::parameters& params);
     };
 } // namespace flame::mysql

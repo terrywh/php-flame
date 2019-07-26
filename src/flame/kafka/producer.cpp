@@ -23,10 +23,7 @@ namespace flame::kafka {
     }
 
     php::value producer::__destruct(php::parameters &params) {
-        if (pd_) {
-            coroutine_handler ch {coroutine::current};
-            pd_->close(ch); // 内部存在 flush 机制
-        }
+        if (pd_) pd_->close(); // 内部存在 flush 机制
         return nullptr;
     }
 

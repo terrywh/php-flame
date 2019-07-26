@@ -191,17 +191,20 @@ namespace flame {
             gcontroller->context_z.run();
         });
         gcontroller->context_x.run();
+        gcontroller->stop();
+        
         ywork.reset();
         zwork.reset();
         worker::ww_->sw_close();
         worker::ww_->ipc_close();
         worker::ww_->lm_close();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        gcontroller->context_y.stop();
-        gcontroller->context_z.stop();
+        // gcontroller->context_y.stop();
+        // gcontroller->context_z.stop();
+        // 等待工作线程结束
         for (int i=0; i<4; ++i) ts[i].join();
-        gcontroller->stop();
         worker::ww_.reset();
+        // gcontroller.reset();
         return nullptr;
     }
 
@@ -256,18 +259,20 @@ namespace flame {
         switch(sig) {
         case SIGINT:
             if(gcontroller->worker_size > 0) break; // 多进程模式忽略
-            [[fallthrough]]; // 单进程模式通 SIGQUIT 处理
+            [[fallthrough]]; // 单进程模式同 SIGQUIT 处理: 强制停止
         case SIGQUIT:
+            gcontroller->status |= controller::STATUS_CLOSING | controller::STATUS_QUITING;
             boost::asio::post(gcontroller->context_x, [] () {
                 gcontroller->context_x.stop();
             });
-            return false; // 多次停止信号立即结束
-        break;
+            return false; // 强制停止, 仅允许进行一次; 停止信号处理
         case SIGTERM:
+            gcontroller->status |= controller::STATUS_CLOSING;
             coroutine::start(php::callable([] (php::parameters& params) -> php::value { // 通知用户退出(超时后主进程将杀死子进程)
                 gcontroller->event("quit");
                 return nullptr;
             }));
+            break;
         case SIGUSR1:
             boost::asio::post(gcontroller->context_x, [] () {
                 gcontroller->status ^= controller::STATUS_CLOSECONN;

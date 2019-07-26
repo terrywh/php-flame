@@ -12,7 +12,7 @@ namespace flame::kafka {
         ~_producer();
         void publish(const php::string& topic, const php::string& key, const php::string& payload, const php::array& headers, coroutine_handler& ch);
         void flush(coroutine_handler& ch);
-        void close(coroutine_handler& ch);
+        void close();
         void start();
     private:
         rd_kafka_t* conn_;

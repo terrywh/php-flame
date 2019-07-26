@@ -55,30 +55,29 @@ namespace flame::kafka {
 
     void _producer::poll(int expire) {
         poll_.expires_after(std::chrono::milliseconds(expire));
+        // 下面过程在工作线程中执行
         poll_.async_wait([this, self = shared_from_this()] (const boost::system::error_code& error) {
             if (error || close_) return;
             auto begin = std::chrono::steady_clock::now();
             int r = rd_kafka_poll(conn_, 40); // 防止对工作线程占用时间过长
-            if (close_) return;
             auto end = std::chrono::steady_clock::now();
             // 计算实际 poll 占用时间，稳定间隔
             int e = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
             // 无消息时放慢 poll 以减少对工作线程的占用
             if (r > 0) poll(std::max(40 - e, 1));
+            else if(close_ || (gcontroller->status & controller::STATUS_CLOSING)) ;
             else poll(std::max(1600 - e, 1));
         });
     }
 
-    void _producer::close(coroutine_handler& ch) {
+    void _producer::close() {
         if (!conn_) return;
-        close_ = true;
         poll_.cancel();
-        boost::asio::post(gcontroller->context_y, [this, &ch] {
+        close_ = true;
+        boost::asio::post(gcontroller->context_y, [self = shared_from_this(), this] {
             rd_kafka_yield(conn_);
             rd_kafka_flush(conn_, 10000);
-            ch.resume();
         });
-        ch.suspend();
     }
 
     void _producer::publish(const php::string &topic, const php::string &key

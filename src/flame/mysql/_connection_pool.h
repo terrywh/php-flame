@@ -13,6 +13,7 @@ namespace flame::mysql {
         ~_connection_pool();
         std::shared_ptr<MYSQL> acquire(coroutine_handler &ch) override;
         void sweep();
+        void close();
     private:
         url                               url_;
         const std::uint16_t               min_;
@@ -26,7 +27,8 @@ namespace flame::mysql {
             std::chrono::time_point<std::chrono::steady_clock> ttl;
         };
         std::list<connection_t> conn_;
-        boost::asio::steady_timer tm_;
+        // 扫描闲置连接的定时器 (工作线程)
+        boost::asio::steady_timer sweep_;
 
         int flag_;
         enum {

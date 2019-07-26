@@ -130,18 +130,10 @@ POLL_MESSAGE:
                 , err);
     }
 
-    void _consumer::close(coroutine_handler& ch) {
-        rd_kafka_resp_err_t err;
-        boost::asio::post(gcontroller->context_y, [this, &err, &ch] () {
-            err = rd_kafka_consumer_close(conn_);
-            ch.resume();
+    void _consumer::close() {
+        boost::asio::post(gcontroller->context_y, [self = shared_from_this(), this] () {
+            rd_kafka_consumer_close(conn_);
         });
-        ch.suspend();
-        if (err != RD_KAFKA_RESP_ERR_NO_ERROR)
-            throw php::exception(zend_ce_exception
-                , (boost::format("failed to close Kafka consumer: %s") % rd_kafka_err2str(err)).str()
-                , err);
-
         close_ = true;
     }
 

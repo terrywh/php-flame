@@ -7,7 +7,7 @@
 
 namespace flame::rabbitmq {
 
-    class _client {
+    class _client: public std::enable_shared_from_this<_client> {
     public:
         _client(url u, coroutine_handler& ch);
         
@@ -28,7 +28,8 @@ namespace flame::rabbitmq {
         AMQP::TcpChannel          chn_;
         int                       pf_;
         int                       fl_;
-        boost::asio::steady_timer tm_;
+        // 心跳定时器(在工作线程创建)
+        boost::asio::steady_timer heartb_tm_;
         std::string       consumer_tg_;
         coroutine_handler consumer_ch_;
         bool              producer_cb_;
@@ -36,5 +37,7 @@ namespace flame::rabbitmq {
         std::string       error_;
 
         friend class consumer;
+        friend php::value consume(php::parameters& params);
+        friend php::value produce(php::parameters& params);
     };
 }

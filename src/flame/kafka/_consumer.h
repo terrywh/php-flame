@@ -10,14 +10,14 @@ class coroutine_queue;
 namespace flame::kafka {
     // 消费者
     // 目前的实现方式无需 shared_from_this 管理
-    class _consumer/*: public std::enable_shared_from_this<_consumer> */{
+    class _consumer: public std::enable_shared_from_this<_consumer> {
     public:
         _consumer(php::array& config, php::array& topics);
         ~_consumer();
         void subscribe(coroutine_handler& ch);
         void consume(coroutine_queue<php::object>& q, coroutine_handler& ch);
         void commit(const php::object& msg, coroutine_handler& ch);
-        void close(coroutine_handler& ch);
+        void close();
     private:
         rd_kafka_t* conn_;
         rd_kafka_topic_partition_list_t* tops_;

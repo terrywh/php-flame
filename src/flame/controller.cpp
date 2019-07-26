@@ -44,7 +44,7 @@ namespace flame {
 
     void controller::stop() {
         for (auto fn : stop_cb) fn();
-        delete evnt_cb;
+        evnt_cb.reset();
     }
 
     controller* controller::add_event(const std::string& event, php::callable cb) {

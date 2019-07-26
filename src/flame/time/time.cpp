@@ -10,7 +10,7 @@ namespace flame::time {
         coroutine_handler ch {coroutine::current};
         boost::asio::steady_timer tm(gcontroller->context_x);
         int ms = static_cast<int>(params[0]);
-        if (ms < 0) ms = 1;
+        if (ms <= 0) ms = 1;
         tm.expires_from_now(std::chrono::milliseconds(ms));
         tm.async_wait(ch);
         return nullptr;

@@ -19,7 +19,7 @@ namespace flame::rabbitmq {
     : chl_(gcontroller->context_x)
     , con_(&chl_, AMQP::Address(u.str(true, false).c_str(), u.str().size()))
     , chn_(&con_)
-    , tm_(gcontroller->context_x)
+    , heartb_tm_(gcontroller->context_y)
     , producer_cb_(false) {
         chn_.onReady([this, &ch]() {
             // ch_.onError([] (const char* message) {});
@@ -59,12 +59,13 @@ namespace flame::rabbitmq {
     }
 
     void _client::heartbeat() {
-        tm_.expires_after(std::chrono::seconds(45));
-        tm_.async_wait([this] (const boost::system::error_code& error) {
+        heartb_tm_.expires_after(std::chrono::seconds(45));
+        // 保证实际的心跳动作发生在主线程
+        heartb_tm_.async_wait(boost::asio::bind_executor(gcontroller->context_x, [this] (const boost::system::error_code& error) {
             if (error) return;
             con_.heartbeat();
             heartbeat();
-        });
+        }));
     }
 
     bool _client::has_error() {

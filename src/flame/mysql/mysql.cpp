@@ -34,9 +34,11 @@ namespace flame::mysql {
 
         php::object obj(php::class_entry<client>::entry());
         client *ptr = static_cast<client *>(php::native(obj));
-        ptr->cp_.reset(new _connection_pool(u));
+        ptr->cp_ = std::make_shared<_connection_pool>(u);
         ptr->cp_->sweep(); // 启动自动清理扫描
-        // TODO 优化: 确认第一个连接建立 ?
+        gcontroller->on_stop([cp = ptr->cp_] () {
+            cp->close();
+        });
         return std::move(obj);
     }
     // 相等

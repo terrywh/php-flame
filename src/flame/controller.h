@@ -17,7 +17,9 @@ namespace flame {
         enum status_t {
             STATUS_UNKNOWN     = 0x00,
             STATUS_INITIALIZED = 0x01,
+            // 通知进程退出
             STATUS_CLOSING     = 0x02,
+            // 进程正在退出（强制）
             STATUS_QUITING     = 0x04,
             STATUS_RSETING     = 0x08,
             STATUS_EXCEPTION   = 0x10,
@@ -32,7 +34,7 @@ namespace flame {
     private:
         std::list<std::function<void (const php::array& options)>>  init_cb;
         std::list<std::function<void ()>>                           stop_cb;
-        std::multimap<std::string, php::callable>*                  evnt_cb; // 防止 PHP 提前回收, 使用堆容器
+        std::unique_ptr<std::multimap<std::string, php::callable>>  evnt_cb; // 防止 PHP 提前回收, 使用堆容器
     public:
         controller();
         controller(const controller& c) = delete;

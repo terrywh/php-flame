@@ -69,8 +69,7 @@ namespace flame::kafka {
     }
 
     php::value consumer::close(php::parameters& params) {
-        coroutine_handler ch {coroutine::current};
-        cs_->close(ch);
+        cs_->close();
         return nullptr;
     }
 } // namespace
