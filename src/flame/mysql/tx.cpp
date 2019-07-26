@@ -94,8 +94,11 @@ namespace flame::mysql {
 
     php::value tx::query(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
-        std::shared_ptr<MYSQL> conn = cl_->acquire(ch);
-        return cl_->query(conn, params[0], ch);
+        if(params.size() <= 1) // 单参数时的处理方式
+            return cl_->query(cl_->acquire(ch), params[0], ch);
+        // 多参数进行格式化
+        auto conn = cl_->acquire(ch);
+        return cl_->query(conn, cl_->format(conn, params), ch);
     }
 
     php::value tx::insert(php::parameters &params) {

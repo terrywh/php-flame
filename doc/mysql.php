@@ -102,10 +102,13 @@ class client {
     }
     /**
      * 执行制定的 SQL 查询, 并返回结果
-     * @param string $sql
+     * @param string $sql 自定义 SQL 语句或待格式化语句（包含 '?' 占位符将被后续参数值包裹转义后替换）
      * @return mixed SELECT 型语句返回结果集对象 `result`; 否则返回关联数组, 一般包含 affected_rows / insert_id 两项;
+     * @example
+     *  $rs = $db->query("SELECT * FROM `test`");
+     *  $rs = $db->query("INSERT INTO `test`(`a`,`b`) VALUES(?, ?)", $a, $b);
      */
-    function query(string $sql): result {
+    function query(string $sql /*, ...*/): result {
         return new result();
     }
     /**

@@ -96,7 +96,11 @@ namespace flame::mysql {
 
     php::value client::query(php::parameters &params) {
         coroutine_handler ch{coroutine::current};
-        return cp_->query(cp_->acquire(ch), params[0], ch);
+        if(params.size() <= 1) // 单参数直接执行 SQL 语句
+            return cp_->query(cp_->acquire(ch), params[0], ch);
+        // 多参数进行格式化
+        auto conn = cp_->acquire(ch);
+        return cp_->query(conn, cp_->format(conn, params), ch);
     }
 
     php::value client::insert(php::parameters &params) {

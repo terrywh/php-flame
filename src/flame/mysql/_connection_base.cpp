@@ -85,6 +85,26 @@ ESCAPE_REMAINING:
         }
     }
 
+    php::string _connection_base::format(std::shared_ptr<MYSQL> conn, php::parameters& params) {
+        php::buffer buf;
+        php::string sql = params[0];
+        int o = 0;
+        char* data = sql.data();
+        for(int i=0;i<sql.size();++i) {
+            if(data[i] == '?') {
+                ++o;
+                if(params.size() > o) 
+                    _connection_base::escape(conn, buf, params[o], '\'');
+                else throw php::exception(zend_ce_type_error, "Failed to format query: more argument(s) required");
+            }
+            else
+                buf.push_back(data[i]);
+        }
+        if(params.size() > o + 1) 
+            zend_error(E_WARNING, "Failed to format query: extra format argument(s) detected");
+        return std::move(buf);
+    }
+
     php::object _connection_base::query(std::shared_ptr<MYSQL> conn, std::string sql, coroutine_handler& ch) {
         MYSQL_RES* rst = nullptr;
         int err = 0;
