@@ -21,11 +21,12 @@ namespace flame::mongodb {
         std::uint32_t server_id;
         int  rok = 0;
 
-        boost::asio::post(gcontroller->context_y, [&session, conn, type, &cmd, &rep, &opt, &err, &rok, &ch] () {
-            if (!session) {
-                session.reset(mongoc_client_start_session(conn.get(), nullptr, nullptr)
+        boost::asio::post(gcontroller->context_y, [this, &session, conn, type, &cmd, &rep, &opt, &err, &rok, &ch] () {
+            if (!session && cp_sess_) {
+                session.reset(mongoc_client_start_session(conn.get(), nullptr, err.get())
                     , mongoc_client_session_destroy);
-                mongoc_client_session_append(session.get(), opt.get(), nullptr);
+                if(!session) cp_sess_ = false;
+                else mongoc_client_session_append(session.get(), opt.get(), nullptr);
             }
 
             mongoc_server_description_t* server;

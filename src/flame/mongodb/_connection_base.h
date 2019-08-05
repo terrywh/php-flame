@@ -19,5 +19,8 @@ namespace flame::mongodb {
             , std::shared_ptr<mongoc_client_session_t> session = nullptr);
 
         static void fake_deleter(bson_t *doc);
+
+    private:
+        bool cp_sess_ = true;
     };
 }
