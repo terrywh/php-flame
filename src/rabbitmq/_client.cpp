@@ -21,6 +21,7 @@ namespace flame::rabbitmq {
     , con_(&chl_, AMQP::Address(u.str(true, false).c_str(), u.str().size()))
     , chn_(&con_)
     , tm_(gcontroller->context_x)
+    , fl_(0)
     , producer_cb_(false) {
         chn_.onReady([this, &ch]() {
             // ch_.onError([] (const char* message) {});
