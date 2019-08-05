@@ -1,7 +1,7 @@
 #pragma once
 
 #define EXTENSION_NAME "flame"
-#define EXTENSION_VERSION "0.13.3"
+#define EXTENSION_VERSION "0.13.4"
 
 #include <sys/types.h>
 #include <sys/socket.h>
