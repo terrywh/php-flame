@@ -19,7 +19,10 @@ public:
     void sw_watch() {
         ss_->async_wait([this, self = sw_self()] (const boost::system::error_code& error, int sig) {
             if (error) return;
-            if (!on_signal(sig)) return;
+            if (!on_signal(sig)) {
+                sw_close();
+                return;
+            }
             sw_watch();
         });
     }
