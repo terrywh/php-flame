@@ -32,7 +32,7 @@ namespace flame::os {
 
     php::value process::__destruct(php::parameters& params) {
         if (!detach_) {
-            if (!exit_) {
+            if (!exit_ && c_.valid()) {
                 if (!c_.wait_for(std::chrono::milliseconds(10000))) c_.terminate();
                 if (c_.joinable()) c_.join();
             }
@@ -53,7 +53,7 @@ namespace flame::os {
     }
 
     php::value process::wait(php::parameters &params) {
-        if (!exit_) {
+        if (!exit_ && c_.valid()) {
             ch_.reset(coroutine::current);
             ch_.suspend();
             c_.join();
