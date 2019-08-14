@@ -57,17 +57,10 @@ ESCAPE_REMAINING:
             }
             break;
         }
-        case IS_ARRAY: {
-            php::array arr = v;
-            int index = 0;
-            b.push_back('(');
-            for (auto i = arr.begin(); i != arr.end(); ++i) {
-                if (++index > 1) b.push_back(',');
-                escape(conn, b, i->second, quote);
-            }
-            b.push_back(')');
+        case IS_ARRAY:
+            // 实际数据项按 JSON 处理
+            escape(conn, b, php::json_encode(v), quote);
             break;
-        }
         case IS_OBJECT: {
             php::object obj = v;
             php::string str;
@@ -198,6 +191,9 @@ ESCAPE_REMAINING:
                     value = std::move(obj);
                     break;
                 }
+                case MYSQL_TYPE_JSON:
+                    value = php::json_decode(row[i], len[i]);
+                    break;
                 default:
                     value = php::string(row[i], len[i]);
             }
