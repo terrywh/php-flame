@@ -1,7 +1,7 @@
 #pragma once
 
 #define EXTENSION_NAME "flame"
-#define EXTENSION_VERSION "0.15.0"
+#define EXTENSION_VERSION "0.16.0"
 
 
 #include <algorithm>
