@@ -129,7 +129,10 @@ namespace flame::http {
         curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
         // 头
         // ---------------------------------------------------------------------------
-        if (c_head_ != nullptr) curl_slist_free_all(c_head_);
+        if (c_head_ != nullptr) {
+            curl_slist_free_all(c_head_);
+            c_head_ = nullptr;
+        }
         std::string ctype;
         long keepalive = 1;
         php::array header = get("header");
