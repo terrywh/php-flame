@@ -62,9 +62,12 @@ namespace flame::http {
         c_easy_ = curl_easy_init();
         return nullptr;
     }
-
+    client_request::client_request()
+    : c_head_(nullptr)
+    /*, c_easy_(nullptr) */ {}
     client_request::~client_request() {
         if (c_head_) curl_slist_free_all(c_head_);
+        if (c_easy_) curl_easy_cleanup(c_easy_); // 未执行的请求需要清理
     }
 
     php::value client_request::http_version(php::parameters& params) {
@@ -126,7 +129,10 @@ namespace flame::http {
         curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
         // 头
         // ---------------------------------------------------------------------------
-        if (c_head_ != nullptr) curl_slist_free_all(c_head_);
+        if (c_head_ != nullptr) {
+            curl_slist_free_all(c_head_);
+            c_head_ = nullptr;
+        }
         std::string ctype;
         long keepalive = 1;
         php::array header = get("header");

@@ -10,6 +10,7 @@ namespace flame::http {
     public:
         static void declare(php::extension_entry& ext);
         php::value __construct(php::parameters& params);
+        client_request();
         ~client_request();
         php::value http_version(php::parameters& params);
         php::value ssl_pem(php::parameters& params);
