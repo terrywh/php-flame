@@ -122,8 +122,8 @@ PARSE_OPTION:
         coroutine_handler ch{coroutine::current};
 
         boost::system::error_code err;
-        std::string data = params[0];
-        socket_.async_send(boost::asio::buffer(data), ch[err]);
+        php::string data = params[0];
+        socket_.async_send(boost::asio::buffer(data.data(), data.size()), ch[err]);
 
         if (!err || err == boost::asio::error::operation_aborted
             || err == boost::asio::error::connection_refused) return nullptr;

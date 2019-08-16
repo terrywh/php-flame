@@ -71,8 +71,8 @@ RETURN_DATA:
         coroutine_guard guard(wmutex_, ch);
         
         boost::system::error_code err;
-        std::string data = params[0];
-        std::size_t len = boost::asio::async_write(socket_, boost::asio::buffer(data), ch);
+        php::string data = params[0];
+        std::size_t len = boost::asio::async_write(socket_, boost::asio::buffer(data.data(), data.size()), ch);
 
         if (!err || err == boost::asio::error::operation_aborted) return nullptr;
         else throw php::exception(zend_ce_exception
