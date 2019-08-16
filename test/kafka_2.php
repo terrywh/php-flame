@@ -1,9 +1,9 @@
 <?php
-flame\init("kafka_1");
+flame\init("kafka_2");
 
 flame\go(function() {
     $consumer = flame\kafka\consume([
-        "bootstrap.servers" => "host1:port1,host2:port2",
+        "bootstrap.servers" => "host1:port1, host2:port2",
         "group.id" => "flame-test-consumer",
         "auto.offset.reset" => "smallest",
     ], ["test"]);

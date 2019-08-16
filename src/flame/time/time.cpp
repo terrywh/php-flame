@@ -16,6 +16,14 @@ namespace flame::time {
         return nullptr;
     }
 
+    static php::value after(php::parameters& params) {
+
+    }
+
+    static php::value tick(php::parameters& params) {
+        
+    }
+
     std::chrono::time_point<std::chrono::system_clock> now() {
         std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - time_steady);

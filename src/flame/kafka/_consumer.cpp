@@ -75,51 +75,46 @@ namespace flame::kafka {
         ch.suspend();
         if (err != RD_KAFKA_RESP_ERR_NO_ERROR)
             throw php::exception(zend_ce_exception
-                , (boost::format("failed to subcribe Kafka topics: %s") % rd_kafka_err2str(err)).str()
+                , (boost::format("Failed to subcribe Kafka topics: %s") % rd_kafka_err2str(err)).str()
                 , err);
     }
 
     void _consumer::consume(coroutine_queue<php::object>& q, coroutine_handler& ch) {
-        rd_kafka_resp_err_t err = RD_KAFKA_RESP_ERR_NO_ERROR;
         rd_kafka_message_t* msg = nullptr;
-POLL_MESSAGE:
-        // 采用内部队列，理论上仅占用一个工作线程（应保证占用时间不要过长）
-        boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]() {
-            msg = rd_kafka_consumer_poll(conn_, 40);
-            if (!msg) err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
-            else if (msg->err) {
-                err = msg->err;
-                rd_kafka_message_destroy(msg);
+        do {
+            // 采用内部队列，理论上仅占用一个工作线程（应保证占用时间不要过长）
+            boost::asio::post(gcontroller->context_y, [this, &msg, &ch]() {
+                do {
+                    msg = rd_kafka_consumer_poll(conn_, 40);
+                } while(!msg && !close_);
+                ch.resume();
+            });
+            ch.suspend();
+            if (!msg) {
+                // close_ == true // 消费被停止
             }
-            else err = RD_KAFKA_RESP_ERR_NO_ERROR;
-            ch.resume();
-        });
-        ch.suspend();
-        if (err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
-            if (close_)  {
-                q.close(); // 关闭队列使对应消费协程自行退出
-                return;
-            } // 消费已被关闭
-            else goto POLL_MESSAGE;
-        }
-        else if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-            throw php::exception(zend_ce_exception
-                , (boost::format("failed to consume Kafka message: %s") % rd_kafka_err2str(err)).str()
-                , err);
-        }
-        else {
-            php::object obj(php::class_entry<message>::entry());
-            message* ptr = static_cast<message*>(php::native(obj));
-            ptr->build_ex(msg); // msg 交由 message 对象管理
-            q.push(std::move(obj), ch);
-            goto POLL_MESSAGE;
-        }
+            else if (msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
+                rd_kafka_message_destroy(msg); // 无新消息
+            }
+            else if (msg->err != RD_KAFKA_RESP_ERR_NO_ERROR) {
+                rd_kafka_message_destroy(msg);
+                throw php::exception(zend_ce_exception
+                    , (boost::format("Failed to consume Kafka message: %s / %s") % rd_kafka_err2str(msg->err) % rd_kafka_message_errstr(msg)).str()
+                    , msg->err);
+            }
+            else {
+                php::object obj(php::class_entry<message>::entry());
+                message* ptr = static_cast<message*>(php::native(obj));
+                ptr->build_ex(msg); // msg 交由 message 对象管理
+                q.push(std::move(obj), ch);
+            }
+        } while(!close_);
+        q.close(); // 关闭队列使对应消费协程自行退出
     }
 
     void _consumer::commit(const php::object& obj, coroutine_handler& ch) {
         rd_kafka_resp_err_t err;
-        rd_kafka_message_t *msg = static_cast<message*>(php::native(obj))->msg_;
-        boost::asio::post(gcontroller->context_y, [this, &err, &msg, &ch]() {
+        boost::asio::post(gcontroller->context_y, [this, &err, msg = static_cast<message*>(php::native(obj))->msg_, &ch]() {
             err = rd_kafka_commit_message(conn_, msg, 0);
             ch.resume();
         });

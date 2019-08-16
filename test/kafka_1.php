@@ -3,16 +3,19 @@ flame\init("kafka_1");
 
 flame\go(function() {
     $producer = flame\kafka\produce([
-        "bootstrap.servers" => "host1:port1,host2:port2",
+        "bootstrap.servers" => "host1:port1, host2:port2",
     ], ["test"]);
 
-    for($i=0;$i<10000;++$i) {
+    for($i=0;$i<100;++$i) {
         echo $i, "\n";
-        $message = new flame\kafka\message("this is the payload", "this is the key");
-        $message->header["key"] = "value";
-        $producer->publish("test", $message);
+        $producer->publish("test", "x:".strval($i));
         flame\time\sleep(50);
-        $producer->publish("test", "this is the payload", "this is the key");
+        $producer->publish("test", "y:".strval($i), "y:".strval($i));
+        flame\time\sleep(50);
+        $message = new flame\kafka\message("z:".strval($i), "z:".strval($i));
+        $message->header["key1"] = "string";
+        $message->header["key2"] = 123456; // convert to string
+        $producer->publish("test", $message);
         flame\time\sleep(50);
     }
     $producer->flush();
