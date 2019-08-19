@@ -139,6 +139,7 @@ namespace flame::http {
         php::object res(php::class_entry<client_response>::entry());
         auto res_ = static_cast<client_response*>(php::native(res));
         res_->c_easy_ = req_->c_easy_;
+        req_->c_easy_ = nullptr;
         res_->c_coro_.reset(coroutine::current);
         res_->c_head_ = php::array(4);
         curl_easy_setopt(res_->c_easy_, CURLOPT_WRITEFUNCTION, client_response::c_write_cb);
@@ -153,6 +154,7 @@ namespace flame::http {
         res_->build_ex();
         curl_multi_remove_handle(c_multi_, res_->c_easy_);
         curl_easy_cleanup(res_->c_easy_);
+        res_->c_easy_ = nullptr;
         return std::move(res);
     }
     php::value client::exec(php::parameters& params) {

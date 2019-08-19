@@ -13,7 +13,7 @@ namespace flame::http {
         php::value __construct(php::parameters& params);
         ~client_response();
     private:
-        CURL*       c_easy_;
+        CURL*       c_easy_ = nullptr;
         php::array  c_head_;
         php::buffer c_body_;
         CURLcode c_final_ = CURLE_OK;

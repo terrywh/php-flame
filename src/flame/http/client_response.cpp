@@ -22,7 +22,7 @@ namespace flame::http {
     }
     client_response::~client_response()
     {
-        
+        if (c_easy_) curl_easy_cleanup(c_easy_); // 未执行的请求需要清理
     }
     php::value client_response::to_string(php::parameters& params) {
         return get("raw_body");
