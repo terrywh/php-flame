@@ -147,23 +147,30 @@ namespace flame::http {
     }
 
     php::value server_response::file(php::parameters& params) {
-        if ((status_ & STATUS_BODY_END) || (status_ & STATUS_BODY_SENT))
+        if (status_ & STATUS_BODY_END)
             throw php::exception(zend_ce_error_exception
                 , "Failed to write file: response already done"
                 , -1);
 
         coroutine_handler ch{coroutine::current};
-        if (!(status_ & STATUS_HEAD_SENT)) {
-            status_ |= STATUS_HEAD_SENT;
-            handler_->write_head(this, ch);
-        }
-        status_ |= STATUS_BODY_END | STATUS_BODY_SENT;
 
         std::filesystem::path root, file;
         root += params[0].to_string();
         file += params[1].to_string();
 
-        handler_->write_file(this, (root / file.lexically_normal()).string(), ch);
+        file = root / file.lexically_normal();
+        std::error_code error;
+        std::filesystem::file_status fs = std::filesystem::status(file, error);
+        if(error) {
+            set("status", 404);
+        }
+        if (!(status_ & STATUS_HEAD_SENT)) {
+            status_ |= STATUS_HEAD_SENT;
+            handler_->write_head(this, ch);
+        }
+        status_ |= STATUS_BODY_SENT;
+
+        handler_->write_file(this, file, ch);
         return nullptr;
     }
 

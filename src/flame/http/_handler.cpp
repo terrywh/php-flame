@@ -196,7 +196,7 @@ HANDLE_SKIPPED:
             boost::asio::async_write(socket_, boost::beast::http::make_chunk( boost::asio::buffer(buffer, size) ), ch[error]);
             if (error) goto WRITE_ERROR;
         }
-        boost::asio::async_write(socket_, boost::beast::http::make_chunk_last(), ch[error]);
+        // boost::asio::async_write(socket_, boost::beast::http::make_chunk_last(), ch[error]);
 WRITE_ERROR:
         if (error) {
             res_.reset();
