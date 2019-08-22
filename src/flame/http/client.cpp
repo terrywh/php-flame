@@ -160,63 +160,52 @@ namespace flame::http {
     php::value client::exec(php::parameters& params) {
         return exec_ex(params[0]);
     }
+    static void extra_argv(php::object& req, php::parameters& params, int offset) {
+        if (params.length() > offset)
+            req.set("timeout", params[offset]);
+        else
+            req.set("timeout", 3000);
+        
+        if (params.length() > offset+1)
+            req.set("header", params[offset+1]);
+        else
+            req.set("header", php::array(0));
+        
+        if (params.length() > offset+2)
+            req.set("cookie", params[offset+2]);
+        else
+            req.set("cookie", php::array(0));
+    }
     php::value client::get(php::parameters& params) {
         php::object req(php::class_entry<client_request>::entry());
         req.set("method", "GET");
         req.set("url", params[0]);
-        req.set("header", php::array(0));
-        req.set("cookie", php::array(0));
         req.set("body", nullptr);
-        if (params.length() > 1) {
-            req.set("timeout", params[1]);
-        }
-        else {
-            req.set("timeout", 3000);
-        }
+        extra_argv(req, params, 1);
         return exec_ex(req);
     }
     php::value client::post(php::parameters& params) {
         php::object req(php::class_entry<client_request>::entry());
         req.set("method",        "POST");
         req.set("url",        params[0]);
-        req.set("header", php::array(0));
-        req.set("cookie", php::array(0));
         req.set("body",       params[1]);
-        if (params.length() > 2) {
-            req.set("timeout",params[2]);
-        }else{
-            req.set("timeout",     3000);
-        }
+        extra_argv(req, params, 2);
         return exec_ex(req);
     }
     php::value client::put(php::parameters& params) {
         php::object req(php::class_entry<client_request>::entry());
         req.set("method",        "PUT");
         req.set("url",        params[0]);
-        req.set("header", php::array(0));
-        req.set("cookie", php::array(0));
         req.set("body",       params[1]);
-        if (params.length() > 2) {
-            req.set("timeout",params[2]);
-        }
-        else {
-            req.set("timeout",     3000);
-        }
+        extra_argv(req, params, 2);
         return exec_ex(req);
     }
     php::value client::delete_(php::parameters& params) {
         php::object req(php::class_entry<client_request>::entry());
         req.set("method",         "DELETE");
         req.set("url",        params[0]);
-        req.set("header", php::array(0));
-        req.set("cookie", php::array(0));
         req.set("body",         nullptr);
-        if (params.length() > 1) {
-            req.set("timeout", params[1]);
-        }
-        else {
-            req.set("timeout", 3000);
-        }
+        extra_argv(req, params, 1);
         return exec_ex(req);
     }
 }
