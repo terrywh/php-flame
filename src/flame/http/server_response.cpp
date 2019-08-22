@@ -33,7 +33,7 @@ namespace flame::http {
             })
             .method<&server_response::file>("file", {
                 {"root", php::TYPE::STRING},
-                {"path", php::TYPE::STRING},
+                {"path", php::TYPE::STRING, false, true},
             });
 
         ext.add(std::move(class_server_response));
@@ -154,11 +154,14 @@ namespace flame::http {
 
         coroutine_handler ch{coroutine::current};
 
-        std::filesystem::path root, file;
-        root += params[0].to_string();
-        file += params[1].to_string();
-
-        file = root / file.lexically_normal();
+        std::filesystem::path file;
+        if(params.size() > 1) {
+            file = params[1].to_string();
+            file = params[0].to_string() / file.lexically_normal();
+        }
+        else {
+            file = params[0].to_string();
+        }
         std::error_code error;
         std::filesystem::file_status fs = std::filesystem::status(file, error);
         if(error) {

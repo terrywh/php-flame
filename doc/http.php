@@ -16,25 +16,25 @@ function exec(client_request $req): client_response {
 /**
  * 使用默认客户端, 构建并执行一个 GET 请求
  */
-function get(string $url, int $timeout = 3000): client_response {
+function get(string $url, int $timeout = 3000, array $header = [], array $cookie = []): client_response {
     return new client_response();
 }
 /**
  * 使用默认客户端, 构建并执行一个 POST 请求
  */
-function post(string $url, $data, int $timeout = 3000): client_response {
+function post(string $url, $data, int $timeout = 3000, array $header = [], array $cookie = []): client_response {
     return new client_response();
 }
 /**
  * 使用默认客户端, 构建并执行一个 PUT 请求
  */
-function put(string $url, $data, int $timeout = 3000): client_response {
+function put(string $url, $data, int $timeout = 3000, array $header = [], array $cookie = []): client_response {
     return new client_response();
 }
 /**
  * 使用默认客户端, 构建并执行一个 DELETE 请求
  */
-function delete(string $url, int $timeout = 3000): client_response {
+function delete(string $url, int $timeout = 3000, array $header = [], array $cookie = []): client_response {
     return new client_response();
 }
 
@@ -57,25 +57,25 @@ class client {
     /**
      * 构建并执行一个 GET 请求
      */
-    function get(string $url, int $timeout = 3000): client_response {
+    function get(string $url, int $timeout = 3000, $header = [], $cookie = []): client_response {
         return new client_response();
     }
     /**
      * 构建并执行一个 POST 请求
      */
-    function post(string $url, $data, int $timeout = 3000): client_response {
+    function post(string $url, $data, int $timeout = 3000, $header = [], $cookie = []): client_response {
         return new client_response();
     }
     /**
      * 构建并执行一个 PUT 请求
      */
-    function put(string $url, $data, int $timeout = 3000): client_response {
+    function put(string $url, $data, int $timeout = 3000, $header = [], $cookie = []): client_response {
         return new client_response();
     }
     /**
      * 构建并执行一个 DELETE 请求
      */
-    function delete(string $url, int $timeout = 3000): client_response {
+    function delete(string $url, int $timeout = 3000, $header = [], $cookie = []): client_response {
         return new client_response();
     }
 }
@@ -411,9 +411,12 @@ class server_response {
      */
     function end(string $chunk = null) {}
     /**
-     * 响应一个文件的内容; 一般需要自行设置对应文件的 Content-Type 以保证浏览器能正常渲染;
-     * 下述参数中的 $path 将会被正常化处理, 以保证其不超出 $root 指定的根目录范围;
-     * 注意: 此功能一般仅用于调试或少量文件访问使用, 大量生产环境请考虑使用 nginx 等代为处理静态文件;
+     * 响应一个文件的内容; 
+     * @param string $root 若 $path 存在，标识静态文件根目录（保证实际文件范围不超出此范围）；否则表示要响应的完整的文件路径；
+     * @param string $path 访问路径，与 $root 拼接后查询文件；
+     * 注意: 
+     *     1. 此功能一般仅用于调试或少量文件访问使用, 大量生产环境请考虑使用 nginx 等代为处理静态文件;
+     *     2. 一般需要自行设置对应文件的 Content-Type 类型，例如 "text/html" | "text/javascript" 等；
      */
-    function file(string $root, string $path) {}
+    function file(string $root, string $path = "") {}
 }
