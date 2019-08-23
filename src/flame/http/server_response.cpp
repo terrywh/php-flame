@@ -205,24 +205,18 @@ namespace flame::http {
                 }
                 if (cookie.exists("expire")) {
                     std::int64_t expire = cookie.get("expire");
-                    // 范围 30 天内的数值, 按时间长度计算
-                    if (expire < 30 * 86400) {
-                        buffer.append("; Max-Age=", 10);
-                        buffer.append(std::to_string(expire));
-                        buffer.append("; Expire=", 9);
-                        php::object date = php::datetime(expire * 1000 + std::chrono::duration_cast<std::chrono::milliseconds>(time::now().time_since_epoch()).count());
-                        buffer.append(date.call("format", {"l, d-M-Y H:i:s T"}));
-                    }
-                    else {
-                    // 超过上面范围, 按时间点计算
-                        buffer.append("; Expire=", 9);
-                        php::object date = php::datetime(expire * 1000);
-                        buffer.append(date.call("format", {"l, d-M-Y H:i:s T"}));
-                    }
+                    buffer.append("; Max-Age=", 10);
+                    buffer.append(std::to_string(expire));
+                    buffer.append("; Expires=", 10);
+                    php::object date = php::datetime(expire * 1000 + std::chrono::duration_cast<std::chrono::milliseconds>(time::now().time_since_epoch()).count());
+                    buffer.append(date.call("format", {"l, d M Y H:i:s \\G\\M\\T"}));
                 }
                 if (cookie.exists("path")) {
                     buffer.append("; Path=", 7);
                     buffer.append(cookie.get("path"));
+                }
+                else {
+                    buffer.append("; Path=/", 8);
                 }
                 if (cookie.exists("domain")) {
                     buffer.append("; Domain=", 9);

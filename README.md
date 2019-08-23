@@ -210,7 +210,6 @@ make && make install
 
 #### curl
 ``` Bash
-mkdir stage && cd stage
 # quote: cmake for curl is poorly maintained
 CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1.1c --enable-ares=/data/vendor/cares-1.15.0 --with-nghttp2=/data/vendor/nghttp2-1.39.2 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.65.3
 make && make install
