@@ -20,6 +20,8 @@ namespace flame::http {
         ext.on_module_startup([] (php::extension_entry& ext) -> bool {
             // 在框架初始化后创建全局HTTP客户端
             gcontroller->on_init([] (const php::array& opts) {
+                curl_global_init(CURL_GLOBAL_DEFAULT);
+                
                 body_max_size = std::max(php::ini("post_max_size").calc(), body_max_size);
                 client_ = new client();
                 php::parameters p(0, nullptr);

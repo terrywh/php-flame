@@ -15,14 +15,14 @@ url::url(const php::string &str, bool parse_query)
         curl_free(tmp);
     }
     if(curl_url_get(u, CURLUPART_USER, &tmp, 0) == CURLUE_OK) { // USER
-        user.assign(tmp);
+        user.assign(php::url_decode(tmp, std::strlen(tmp)));
         curl_free(tmp);
     }
     if(curl_url_get(u, CURLUPART_PASSWORD, &tmp, 0) == CURLUE_OK) { // PASS
-        pass.assign(tmp);
+        pass.assign(php::url_decode(tmp, std::strlen(tmp)));
         curl_free(tmp);
     }
-    if(curl_url_get(u, CURLUPART_HOST, &tmp, 0) == CURLUE_OK) { // USER
+    if(curl_url_get(u, CURLUPART_HOST, &tmp, 0) == CURLUE_OK) { // HOST
         host.assign(tmp);
         curl_free(tmp);
     }

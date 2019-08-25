@@ -175,7 +175,7 @@ class client {
      * 从指定表获取一行数据的指定字段值
      * @return mixed 字段类型映射请参见顶部说明
      */
-    function get(string $table, string $field, array $where, $order) {
+    function get(string $table, string $field, array $where, $order = null) {
         return null;
     }
     /**

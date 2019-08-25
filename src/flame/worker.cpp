@@ -22,6 +22,7 @@
 #include "encoding/encoding.h"
 #include "compress/compress.h"
 #include "toml/toml.h"
+#include "smtp/smtp.h"
 
 namespace flame {
     std::shared_ptr<worker> worker::ww_;
@@ -91,6 +92,7 @@ namespace flame {
         flame::encoding::declare(ext);
         flame::compress::declare(ext);
         flame::toml::declare(ext);
+        flame::smtp::declare(ext);
     }
 
     php::value worker::init(php::parameters& params) {
