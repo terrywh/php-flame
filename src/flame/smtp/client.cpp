@@ -14,7 +14,7 @@ namespace flame::smtp {
                 {"message", "flame\\smtp\\message"},
             })
             .method<&client::send>("send", {
-                {"from", php::TYPE::STRING},
+                {"from", php::TYPE::ARRAY},
                 {"to", php::TYPE::ARRAY},
                 {"subject", php::TYPE::STRING},
                 {"body", php::TYPE::STRING},

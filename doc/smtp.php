@@ -25,7 +25,7 @@ class client {
     function post(flame\smtp\message $mail) {}
     /**
      * 简化的发送邮件函数：
-     * @param string $from 来源邮箱, 形如 "xxxx@xxx.xxx" （不含引号）
+     * @param array $from 来源邮箱, 形式与 $to 一致，但仅包含一项；
      * @param array  $to 目标邮箱，可以使用如下形式：
      *  array(
      *     "名字1"=>"xxxx@xxxx.xxx",
@@ -41,7 +41,7 @@ class client {
      * @param string $subject 主题
      * @param string $html 邮件内容，请使用 HTML 形式；
      */
-    function send(string $from, array $to, string $subject, string $html) {}
+    function send(array $from, array $to, string $subject, string $html) {}
 }
 
 class message {

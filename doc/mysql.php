@@ -202,7 +202,7 @@ class tx {
      * @see client::query()
      * @return mixed cursor/array
      */
-    function query(string $sql) {}
+    function query(string $sql/*, ... */) {}
     /**
      * @see client::insert()
      */
