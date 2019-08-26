@@ -55,6 +55,9 @@ function interfaces():array {
 }
 /**
  * 异步启动进程
+ * @param array $options 目前可用的选项如下：
+ *  * "cwd" - string - 工作路径;
+ *  * "env" - array - 环境变量，K/V 结构文本;
  * @return 进程对象
  */
 function spawn(string $command, array $argv = [], array $options = []):process {
@@ -94,5 +97,11 @@ class process {
      */
     function stderr():string {
         return "stderr output";
+    }
+    /**
+     * 与底层进程对象脱离（不再绑定生命周期）
+     */
+    function detach() {
+
     }
 }

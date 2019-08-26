@@ -13,7 +13,7 @@ namespace flame::mongodb {
         gcontroller->on_init([] (const php::array& options) {
                 mongoc_init();
             })->on_stop([]() {
-                mongoc_cleanup();
+                // mongoc_cleanup();
             });
         ext
             .function<connect>("flame\\mongodb\\connect");

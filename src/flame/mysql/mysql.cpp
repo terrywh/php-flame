@@ -14,7 +14,7 @@ namespace flame::mysql {
                 mysql_library_init(0, nullptr, nullptr);
             })
             ->on_stop([] () {
-                mysql_library_end();
+                // mysql_library_end();
             });
         ext
             .function<connect>("flame\\mysql\\connect", {

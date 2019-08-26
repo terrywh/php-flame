@@ -21,9 +21,11 @@ class client {
     private function __construct() {}
     /**
      * 发送邮件, 两种参数形式 (取决于首个参数类型)
-     * @param mixed $mail 邮件对象 flame\smtp\message 或 来源邮箱 array 形式与 $to 一致，但仅包含一项；
-     *  当 $mail instanceof flame\smtp\message 时, 以下参数无效;
-     * @param array $to 目标邮箱，可以使用如下形式：
+     * @param mixed $mail flame\smtp\message 邮件对象, 直接定义邮件相关参数; 或 array 来源邮箱, 简易邮件形式, 使用如下形式定义来源:
+     *  array("名字"=>"xxxx@xxxx.xxx");
+     * 或
+     *  array("xxxx@xxxx.xxx");
+     * @param array $to 目标邮箱，简易邮件形式有效, 可以使用如下形式：
      *  array(
      *     "名字1"=>"xxxx@xxxx.xxx",
      *     "名字2"=>"xxxx@xxxx.xxx",
@@ -35,10 +37,10 @@ class client {
      *     "xxxx@xxxx.xxx",
      *     ...
      *  );
-     * @param string $subject 主题
-     * @param string $html 邮件内容，请使用 HTML 形式；
+     * @param string $subject 主题, 简易邮件形式有效;
+     * @param string $html 邮件内容，简易邮件形式, 使用 text/html 内容类型定义；
      */
-    function post(mixed $mail, array $to = [], string $subject = "", string $html = "") {}
+    function post($mail, array $to = [], string $subject = "", string $html = "") {}
 }
 
 class message {

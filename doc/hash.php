@@ -20,8 +20,8 @@ function xxh64(string $data, int $seed = 0, bool $raw = false) {}
  */
 function crc64(string $data, bool $raw = false) {}
 /**
- * 生成指定长度的随机可见字符串(大小写字符加数字组合)
- * 注意: 如对安全性有较高要求, 请采用 random_bytes / openssl_random_pseudo_bytes ;
+ * 生成指定长度 (不超过 128 字符) 的随机可见字符串(大小写字符加数字组合)
+ * 注意: 如对安全性有较高要求, 请采用 random_bytes / openssl_random_pseudo_bytes 并结合替换过程实现;
  */
 function rands(int $size): string {
     return "abcABC123";

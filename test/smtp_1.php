@@ -2,8 +2,7 @@
 
 flame\init("smtp_1");
 flame\go(function() {
-    $cli = flame\smtp\connect("smtp://user:pass@smtp.mxhichina.com:25");
-    // $cli = flame\smtp\connect("smtp://smtp.mxhichina.com:25");
+    $cli = flame\smtp\connect("smtp://user:pass@smtp.server.com:25");
     $msg = (new flame\smtp\message())
         ->from(["测试"=>"user"])
         ->to(["测试"=>"xxxx@xxxx.xxx"])
@@ -23,6 +22,10 @@ flame\go(function() {
         ->append('HTML <strong>STRONG</strong><br/>EMBED：<img src="cid:embed_image_1" /><br/>', ["Content-Type" => 'text/html; charset="UTF-8"']);
     
     // echo $msg, "\n";
-    var_dump( $cli->post($msg) );
+    $r = $cli->post($msg);
+    var_dump( $r );
+    $cli = flame\smtp\connect("smtps://user:pass@smtp.server.com:465/");
+    $r = $cli->post(["user"],["xxxx@xxxxxx.xxx"], "为什么 HTML 内容消失了？", "你能看到这次的内容么？时间：".flame\time\now());
+    var_dump($r);
 });
 flame\run();
