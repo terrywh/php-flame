@@ -18,19 +18,18 @@ namespace flame::http {
     void declare(php::extension_entry& ext) {
         client_ = nullptr;
         ext.on_module_startup([] (php::extension_entry& ext) -> bool {
-            // 在框架初始化后创建全局HTTP客户端
-            gcontroller->on_init([] (const php::array& opts) {
-                curl_global_init(CURL_GLOBAL_DEFAULT);
-                
-                body_max_size = std::max(php::ini("post_max_size").calc(), body_max_size);
-                client_ = new client();
-                php::parameters p(0, nullptr);
-                client_->__construct(p);
-            })->on_stop([] {
-                delete client_;
-                client_ = nullptr;
-            });
+            curl_global_init(CURL_GLOBAL_DEFAULT);
             return true;
+        });
+        // 在框架初始化后创建全局HTTP客户端
+        gcontroller->on_init([] (const php::array& opts) {
+            body_max_size = std::max(php::ini("post_max_size").calc(), body_max_size);
+            client_ = new client();
+            php::parameters p(0, nullptr);
+            client_->__construct(p);
+        })->on_stop([] {
+            delete client_;
+            client_ = nullptr;
         });
         ext
             .function<get>("flame\\http\\get")

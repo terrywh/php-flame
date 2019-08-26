@@ -60,4 +60,11 @@ namespace flame::mysql {
         }
     }
 
+    void _connection_lock::rollback() {
+        // 由于不存在协程上下文，需要共享延长生存周期
+        boost::asio::post(gcontroller->context_y, [this, self = shared_from_this()]() {
+            mysql_real_query(conn_.get(), "ROLLBACK", 8);
+        });
+    }
+
 } // namespace flame::mysql

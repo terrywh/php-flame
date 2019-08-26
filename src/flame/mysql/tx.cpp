@@ -60,7 +60,11 @@ namespace flame::mysql {
     }
 
     php::value tx::__destruct(php::parameters &params) {
-        if (!done_) rollback(params);
+        if (!done_) {
+            // 强制结束时，上下文已不存在，不能进行协程恢复
+            // 不能使用 this->rollback(params);
+            cl_->rollback();
+        }
         return nullptr;
     }
 

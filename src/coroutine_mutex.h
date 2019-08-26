@@ -24,8 +24,8 @@ public:
         return false;
     }
 
-    void unlock() {
-        while(!cm_.empty()) {
+    void unlock(bool quiting = false) {
+        while(!cm_.empty() && !quiting) {
             auto ch = cm_.extract(cm_.begin()).value();
             ch->resume();
         }

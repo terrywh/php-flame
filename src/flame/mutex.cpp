@@ -49,7 +49,8 @@ namespace flame {
     }
 
     php::value guard::__destruct(php::parameters & params) {
-        mutex_->unlock();
+        // 强制退出协程上下文丢失，无法进行 RESUME 恢复操作
+        mutex_->unlock( (gcontroller->status & controller::STATUS_QUITING) > 0 );
         return nullptr;
     }
 }

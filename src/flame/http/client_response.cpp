@@ -3,6 +3,7 @@
 #include "client_response.h"
 
 namespace flame::http {
+    
     void client_response::declare(php::extension_entry& ext) {
         php::class_entry<client_response>  class_client_response("flame\\http\\client_response");
         class_client_response
@@ -16,17 +17,18 @@ namespace flame::http {
         ext.add(std::move(class_client_response));
     }
     // 声明为 ZEND_ACC_PRIVATE 禁止创建（不会被调用）
-    php::value client_response::__construct(php::parameters& params) 
-    {
+    php::value client_response::__construct(php::parameters& params) {
         return nullptr; 
     }
-    client_response::~client_response()
-    {
+
+    client_response::~client_response() {
         if (c_easy_) curl_easy_cleanup(c_easy_); // 未执行的请求需要清理
     }
+
     php::value client_response::to_string(php::parameters& params) {
         return get("raw_body");
     }
+
     void client_response::build_ex() {
         if (c_final_ != 0) throw php::exception(zend_ce_exception
             , (boost::format("Failed to execute HTTP request: %s") % c_error_).str()

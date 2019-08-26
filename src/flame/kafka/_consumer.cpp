@@ -126,6 +126,7 @@ namespace flame::kafka {
     }
 
     void _consumer::close() {
+        // 由于不再协程上下文暂停，需要共享延长生命周期
         boost::asio::post(gcontroller->context_y, [self = shared_from_this(), this] () {
             rd_kafka_consumer_close(conn_);
         });

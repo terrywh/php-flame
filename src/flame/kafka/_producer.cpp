@@ -74,6 +74,7 @@ namespace flame::kafka {
         if (!conn_) return;
         poll_.cancel();
         close_ = true;
+        // 由于不再协程上下文暂停，需要共享延长生命周期
         boost::asio::post(gcontroller->context_y, [self = shared_from_this(), this] {
             rd_kafka_yield(conn_);
             rd_kafka_flush(conn_, 10000);

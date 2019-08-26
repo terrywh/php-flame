@@ -13,6 +13,7 @@ namespace flame::mysql {
         void begin_tx(coroutine_handler& ch);
         void commit(coroutine_handler& ch);
         void rollback(coroutine_handler& ch);
+        void rollback();
       private:
         std::shared_ptr<MYSQL> conn_;
     };
