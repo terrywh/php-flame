@@ -14,7 +14,6 @@ namespace flame::smtp {
         ~client();
         php::value __construct(php::parameters& params);
         php::value post(php::parameters& params);
-        php::value send(php::parameters& params);
     private:
         std::string c_rurl_; // 服务器地址 smtp://user:pass@xxx.xxx.xxx.xxx:port/
         std::string c_from_; // 解析后的 URL 用于设置 FROM 信息

@@ -2,6 +2,7 @@
 #include "message.h"
 #include "smtp.h"
 #include "../time/time.h"
+#include "../../util.h"
 
 // MIME encode WORDS =?charset?encoding?encoded?=
 // 使用 CURL 进行 SMTP 协议请求
@@ -38,20 +39,12 @@ namespace flame::smtp {
         return nullptr;
     }
 
-    static const char random_chars[] = "ABCDEFGHIJKLMKOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678";
-    std::string message::random(int size) {
-        std::string r(size, '\0');
-        for(int i=0;i<size;++i) {
-            r[i] = random_chars[ rand() % sizeof(random_chars) ];
-        }
-        return r;
-    }
-
     message::message()
     :  status_(0)
     , c_rcpt_(nullptr)
-    , c_easy_(curl_easy_init()) {
-        boundary_ = random(24);
+    , c_easy_(curl_easy_init())
+    , c_size_(0) {
+        boundary_.assign(util::random_string(24), 24);
         curl_easy_setopt(c_easy_, CURLOPT_READFUNCTION, read_cb);
         curl_easy_setopt(c_easy_, CURLOPT_READDATA, this);
         curl_easy_setopt(c_easy_, CURLOPT_UPLOAD, 1L);
@@ -199,6 +192,7 @@ namespace flame::smtp {
         c_data_.append(boundary_); // 结束标记
         c_data_.append("--", 2);
         c_mail_ = php::string(std::move(c_data_));
+        c_size_ = 0;
 
         long timeout = static_cast<long>(get("timeout"));
         curl_easy_setopt(c_easy_, CURLOPT_MAIL_RCPT, c_rcpt_);

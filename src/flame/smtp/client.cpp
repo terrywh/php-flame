@@ -11,13 +11,10 @@ namespace flame::smtp {
         class_client
             .method<&client::__construct>("__construct", {}, php::PRIVATE)
             .method<&client::post>("post", {
-                {"message", "flame\\smtp\\message"},
-            })
-            .method<&client::send>("send", {
-                {"from", php::TYPE::ARRAY},
-                {"to", php::TYPE::ARRAY},
-                {"subject", php::TYPE::STRING},
-                {"body", php::TYPE::STRING},
+                {"message", php::TYPE::UNDEFINED},
+                {"to", php::TYPE::ARRAY, false, true},
+                {"subject", php::TYPE::STRING, false, true},
+                {"body", php::TYPE::STRING, false, true},
             });
         ext.add(std::move(class_client));
     }
@@ -130,16 +127,24 @@ namespace flame::smtp {
     }
 
     php::value client::post(php::parameters& params) {
-        php::object msg = params[0];
+        php::object msg;
+        if(params[0].type_of(php::TYPE::OBJECT) && params[0].instanceof(php::class_entry<message>::entry())) {
+            php::object msg = params[0];
+            
+        }
+        else if(params[0].type_of(php::TYPE::ARRAY)) {
+            php::object req(php::class_entry<message>::entry());
+            req.call("from", {params[0]});
+            req.call("to", {params[1]});
+            req.call("subject", {params[2]});
+            php::array opts(2);
+            opts.set("Content-Type", "text/html; charset=\"UTF-8\"", false);
+            req.call("append", {params[3], opts});
+            msg = std::move(req);
+        }
+        else {
+            throw php::exception(zend_ce_type_error, "Object of 'flame\\smtp\\message' or Array of message sender required", 0);
+        }
         return post_ex(msg);
-    }
-    
-    php::value client::send(php::parameters& params) {
-        php::object req(php::class_entry<message>::entry());
-        req.call("from", {params[0]});
-        req.call("to", {params[1]});
-        req.call("subject", {params[2]});
-        req.call("append", {"text/html", params[3]});
-        return post_ex(req);
     }
 }
