@@ -63,7 +63,7 @@ flame\run();
 ### 功能
 
 * **core** - 核心，框架初始化设置，协程启动，协程队列，协程锁等；
-* **time** - 时间相关，协程休眠，当前时间等；
+* **time** - 时间相关，协程休眠，当前时间，定时器等；
 > 毫秒级时间戳及缓存机制;  
 * **log** - 简单日志记录功能:
 > 多进程统一日志记录;  
@@ -96,6 +96,7 @@ flame\run();
 * **hash** - 提供了若干哈希算法；
 * **encoding** - 提供了若干编码、序列化函数；
 * **compress** - 提供了若干压缩算法；
+* **stmp** - 简单 SMTP 协议邮件发送；
 
 ### 说明
 * [API 文档](https://github.com/terrywh/php-flame/tree/master/doc)
@@ -114,8 +115,8 @@ flame\run();
 
 #### boost
 ``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.70.0
-./b2 --prefix=/data/vendor/boost-1.70.0 cxxflags="-fPIC" variant=release link=static threading=multi install
+./bootstrap.sh --prefix=/data/vendor/boost-1.71.0
+./b2 --prefix=/data/vendor/boost-1.71.0 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
 
 #### cpp-parser
@@ -125,8 +126,8 @@ make install
 
 #### lltoml
 ``` Bash
-CFLAGS="-O2 -DNDEBUG" CXXFLAGS="-O2 -DNDEBUG" make
-make install
+ENVIRON="canvas" CFLAGS="-O2 -DNDEBUG" CXXFLAGS="-O2 -DNDEBUG" make
+ENVIRON="canvas" make install
 ```
 
 #### hiredis

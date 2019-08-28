@@ -1,5 +1,7 @@
 #include "time.h"
 #include "../coroutine.h"
+#include "timer.h"
+#include "scheduler.h"
 
 namespace flame::time {
 
@@ -15,15 +17,7 @@ namespace flame::time {
         tm.async_wait(ch);
         return nullptr;
     }
-
-    static php::value after(php::parameters& params) {
-
-    }
-
-    static php::value tick(php::parameters& params) {
-        
-    }
-
+    
     std::chrono::time_point<std::chrono::system_clock> now() {
         std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - time_steady);
@@ -68,5 +62,9 @@ namespace flame::time {
             .function<now>("flame\\time\\now")
             // 标准时间 YYYY-mm-dd HH:ii:ss
             .function<iso>("flame\\time\\iso");
+
+        scheduler::declare(ext);
+        timer::declare(ext);
+        // timer_invoke::declare(ext);
     }
 }

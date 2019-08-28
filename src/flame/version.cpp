@@ -30,7 +30,7 @@ static std::string openssl_version_str() {
         ext
             .desc({"vendor/openssl", openssl_version_str()})
             .desc({"vendor/boost", BOOST_LIB_VERSION})
-            .desc({"vendor/phpext", PHPEXT_LIB_VERSION})
+            // .desc({"vendor/phpext", php::version()})
             .desc({"vendor/hiredis", VERSION_MACRO(HIREDIS_MAJOR, HIREDIS_MINOR, HIREDIS_PATCH)})
             // .desc({"vendor/mysqlc", mysql_get_client_info()})
             .desc({"vendor/mariac", MARIADB_PACKAGE_VERSION})
