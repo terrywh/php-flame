@@ -11,6 +11,7 @@ namespace flame::encoding {
             , "Failed to encode: typeof 'array' required"
             , -1);
     }
+    
     static php::value bson_decode(php::parameters &params) {
         php::string data = params[0].to_string();
         bson_t* doc = bson_new_from_data((const uint8_t*)data.data(), data.size());

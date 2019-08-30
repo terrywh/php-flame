@@ -1,9 +1,5 @@
 #pragma once
 
-#define EXTENSION_NAME "flame"
-#define EXTENSION_VERSION "0.17.0"
-
-
 #include <algorithm>
 #include <cctype>
 #include <cstdio>

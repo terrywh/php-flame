@@ -5,6 +5,9 @@
 #include "worker.h"
 #include "master.h"
 
+#define EXTENSION_NAME    "flame"
+#define EXTENSION_VERSION "0.17.1"
+
 extern "C" {
     ZEND_DLEXPORT zend_module_entry *get_module()  {
         static php::extension_entry ext(EXTENSION_NAME, EXTENSION_VERSION);

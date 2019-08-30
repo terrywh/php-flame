@@ -30,6 +30,7 @@ namespace flame::tcp {
     typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
 
     php::value server::__construct(php::parameters &params) {
+        boost::system::error_code error;
         closed_ = false;
         std::string str_addr = params[0];
         auto pair = udp::addr2pair(str_addr);
@@ -37,7 +38,11 @@ namespace flame::tcp {
             throw php::exception(zend_ce_error_exception
                 , "Failed to bind TCP socket: address malformed"
                 , -1);
-        boost::asio::ip::address addr = boost::asio::ip::make_address(pair.first);
+        boost::asio::ip::address addr = boost::asio::ip::make_address(pair.first, error);
+        if (error) 
+            throw php::exception(zend_ce_error_exception
+                , "Failed to bind TCP socket: address malformed"
+                , -1);
         addr_.address(addr);
         addr_.port(std::atoi(pair.second.c_str()));
 
