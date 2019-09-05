@@ -41,7 +41,7 @@ namespace flame::toml {
             }
         } while(pe != prefix.npos);
 
-        if(field.empty()) ctr.set(ctr.size(), v);
+        if(field.empty() || field == "#") ctr.set(ctr.size(), v);
         else ctr.set({field.data(), field.size()}, v);
     }
 
