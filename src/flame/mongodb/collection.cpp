@@ -289,6 +289,7 @@ namespace flame::mongodb {
 
     php::value collection::find_and_delete(php::parameters& params) {
         php::array cmd(8);
+        cmd.set("findAndModify", name_);
         if (params[0].empty()) cmd.set("query", php::object(php::CLASS(zend_standard_class_def)));
         else cmd.set("query", params[0]);
         cmd.set("remove", true);
@@ -308,6 +309,7 @@ namespace flame::mongodb {
 
     php::value collection::find_and_update(php::parameters& params) {
         php::array cmd(8);
+        cmd.set("findAndModify", name_);
         if (params[0].empty()) cmd.set("query", php::object(php::CLASS(zend_standard_class_def)));
         else cmd.set("query", params[0]);
         if (params.size() > 1) {
