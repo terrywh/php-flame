@@ -45,30 +45,24 @@ namespace flame::mysql {
     static void where_eq(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond) {
         if (cond.type_of(php::TYPE::NULLABLE)) buf.append(" IS NULL", 8);
         else {
-            php::string str = cond;
-            str.to_string();
             buf.push_back('=');
-            _connection_base::escape(cc, buf, str);
+            _connection_base::escape(cc, buf, cond);
         }
     }
     // 不等 {!=}
     static void where_ne(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond) {
         if (cond.type_of(php::TYPE::NULLABLE)) buf.append(" IS NOT NULL", 12);
         else {
-            php::string str = cond;
-            str.to_string();
             buf.append("!=", 2);
-            _connection_base::escape(cc, buf, str);
+            _connection_base::escape(cc, buf, cond);
         }
     }
     // 大于 {>}
     static void where_gt(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond) {
         if (cond.type_of(php::TYPE::NULLABLE)) buf.append(">0", 2);
         else {
-            php::string str = cond;
-            str.to_string();
             buf.push_back('>');
-            _connection_base::escape(cc, buf, str);
+            _connection_base::escape(cc, buf, cond);
         }
     }
     // 小于 {<}
@@ -77,30 +71,24 @@ namespace flame::mysql {
             buf.append("<0", 2);
         }
         else {
-            php::string str = cond;
-            str.to_string();
             buf.push_back('<');
-            _connection_base::escape(cc, buf, str);
+            _connection_base::escape(cc, buf, cond);
         }
     }
     // 大于等于 {>=}
     static void where_gte(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond)  {
         if (cond.type_of(php::TYPE::NULLABLE)) buf.append(">=0", 3);
         else {
-            php::string str = cond;
-            str.to_string();
             buf.append(">=", 2);
-            _connection_base::escape(cc, buf, str);
+            _connection_base::escape(cc, buf, cond);
         }
     }
     // 小于等于 {<=}
     static void where_lte(std::shared_ptr<MYSQL> cc, php::buffer &buf, const php::value &cond) {
         if (cond.type_of(php::TYPE::NULLABLE)) buf.append("<=0", 3);
         else {
-            php::string str = cond;
-            str.to_string();
             buf.append("<=", 2);
-            _connection_base::escape(cc, buf, str);
+            _connection_base::escape(cc, buf, cond);
         }
     }
     // 某个 IN 无对应符号
@@ -110,9 +98,7 @@ namespace flame::mysql {
         buf.append(" IN (", 5);
         for (auto i = cond.begin(); i != cond.end(); ++i) {
             if (static_cast<int>(i->first) > 0) buf.push_back(',');
-            php::string v = i->second;
-            v.to_string();
-            _connection_base::escape(cc, buf, v);
+            _connection_base::escape(cc, buf, i->second);
         }
         buf.push_back(')');
     }
@@ -193,7 +179,7 @@ namespace flame::mysql {
                         _connection_base::escape(cc, buf, field, '`');
                         where_gt(cc, buf, i->second);
                     }
-                    else if (key.size() == 3 && strncasecmp(key.c_str(), "{<}", 2) == 0) {
+                    else if (key.size() == 3 && strncasecmp(key.c_str(), "{<}", 3) == 0) {
                         _connection_base::escape(cc, buf, field, '`');
                         where_lt(cc, buf, i->second);
                     }
