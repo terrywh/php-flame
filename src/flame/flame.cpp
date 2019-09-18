@@ -6,7 +6,7 @@
 #include "master.h"
 
 #define EXTENSION_NAME    "flame"
-#define EXTENSION_VERSION "0.17.1"
+#define EXTENSION_VERSION "0.17.2"
 
 extern "C" {
     ZEND_DLEXPORT zend_module_entry *get_module()  {

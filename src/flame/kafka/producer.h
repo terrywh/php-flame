@@ -12,7 +12,7 @@ namespace flame::kafka {
         php::value __destruct(php::parameters &params);
         php::value publish(php::parameters &params);
         php::value flush(php::parameters &params);
-
+        php::value close(php::parameters &params);
     private:
         std::shared_ptr<_producer> pd_;
         friend php::value produce(php::parameters &params);

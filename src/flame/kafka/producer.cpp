@@ -14,7 +14,8 @@ namespace flame::kafka {
             .method<&producer::publish>("publish", {
                 {"topic", php::TYPE::STRING},
             })
-            .method<&producer::flush>("flush");
+            .method<&producer::flush>("flush")
+            .method<&producer::close>("close");
         ext.add(std::move(class_producer));
     }
 
@@ -55,6 +56,12 @@ namespace flame::kafka {
     php::value producer::flush(php::parameters &params) {
         coroutine_handler ch {coroutine::current};
         pd_->flush(ch);
+        return nullptr;
+    }
+
+    php::value producer::close(php::parameters &params) {
+        pd_->close();
+        pd_.reset();
         return nullptr;
     }
 } // namespace flame::kafka
