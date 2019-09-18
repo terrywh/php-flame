@@ -53,6 +53,14 @@ namespace flame::redis {
                 {"min", php::TYPE::STRING},
                 {"max", php::TYPE::STRING},
             })
+            .method<&client::zpopmin>("zpopmin", {
+                {"zset", php::TYPE::STRING},
+                {"count", php::TYPE::INTEGER, false, true},
+            })
+            .method<&client::zpopmax>("zpopmax", {
+                {"zset", php::TYPE::STRING},
+                {"count", php::TYPE::INTEGER, false, true},
+            })
             .method<&client::multi>("multi")
             // 以下暂未实现
             .method<&client::unimplement>("subscribe")
@@ -164,6 +172,20 @@ namespace flame::redis {
             }
         }
         return cp_->exec(rc, name, params, reply_type::SIMPLE, ch);
+    }
+
+    php::value client::zpopmin(php::parameters &params) {
+        coroutine_handler ch{coroutine::current};
+        auto rc = cp_->acquire(ch);
+        php::string name("ZPOPMIN", 7);
+        return cp_->exec(rc, name, params, reply_type::ASSOC_ARRAY_3, ch);
+    }
+
+    php::value client::zpopmax(php::parameters &params) {
+        coroutine_handler ch{coroutine::current};
+        auto rc = cp_->acquire(ch);
+        php::string name("ZPOPMAX", 7);
+        return cp_->exec(rc, name, params, reply_type::ASSOC_ARRAY_3, ch);
     }
 
     php::value client::multi(php::parameters& params) {

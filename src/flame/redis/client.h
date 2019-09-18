@@ -21,6 +21,8 @@ namespace flame::redis {
         php::value zrevrange(php::parameters &params);
         php::value zrangebyscore(php::parameters &params);
         php::value zrevrangebyscore(php::parameters &params);
+        php::value zpopmin(php::parameters &params);
+        php::value zpopmax(php::parameters &params);
         php::value unsubscribe(php::parameters &params);
         php::value punsubscribe(php::parameters &params);
         // 批量

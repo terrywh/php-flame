@@ -46,6 +46,14 @@ namespace flame::redis {
                 wrap.set(1, data); 
                 return wrap;
             }
+            case reply_type::ASSOC_ARRAY_3: {
+                php::array data(rp->elements/2 + 1);
+                for (int i = 0; i < rp->elements; i += 2) {
+                    php::string key = simple2value(rp->element[i+1]).to_string();
+                    data.set(key, simple2value(rp->element[i]));
+                }
+                return data;
+            }
             case reply_type::COMBINE_1: {
                 php::array data(rp->elements);
                 for (int i = 0; i < rp->elements; ++i) {

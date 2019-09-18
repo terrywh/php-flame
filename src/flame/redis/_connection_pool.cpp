@@ -79,6 +79,13 @@ namespace flame::redis {
         if (rp) {
             php::value rv = reply2value(rp, argv, rt);
             freeReplyObject(rp);
+            // 错误响应的处理
+            if(rp->type == REDIS_REPLY_ERROR) {
+                php::string err = rv;
+                throw php::exception(zend_ce_exception
+                , (boost::format("Failed to exec Redis command: %s") % err.c_str()).str()
+                , 0);
+            }
             return std::move(rv);
         }
         else if (rc->err) throw php::exception(zend_ce_exception
