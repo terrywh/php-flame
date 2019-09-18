@@ -16,8 +16,10 @@ worker_logger::worker_logger(worker_logger_manager* mgr, const std::filesystem::
     if(path.has_filename() && path.string() != "<clog>") {
         auto fb = new std::filebuf();
         fb->open(path, std::ios_base::app);
-        oss_.reset(new std::ostream(fb));
-        wlb_.reset(fb);
+        if(fb->is_open()) { // 有可能无法打开
+            oss_.reset(new std::ostream(fb));
+            wlb_.reset(fb);
+        }
     }
 }
 
