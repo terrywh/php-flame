@@ -140,21 +140,21 @@ PREFIX=/data/vendor/hiredis-0.14.0 make install
 
 #### openssl
 ``` Bash
-CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1.1c linux-x86_64
+CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1.1d linux-x86_64
 make && make install
 ```
 
 #### AMQP-CPP
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CXXFLAGS="-fPIC -I/data/vendor/openssl-1.1.1c/include" LDFLAGS="-L/data/vendor/openssl-1.1.c/lib" cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.5 -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=ON ../
+CC=gcc CXX=g++ CXXFLAGS="-fPIC -I/data/vendor/openssl-1.1.1d/include" LDFLAGS="-L/data/vendor/openssl-1.1.1d/lib" cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/amqpcpp-4.1.5 -DCMAKE_BUILD_TYPE=Release -DAMQP-CPP_LINUX_TCP=ON ../
 make && make install
 ```
 
 <!--
 #### sasl2
 ``` Bash
-PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/sasl2 --with-openssl=/data/vendor/openssl-1.1.1c --without-ldap --enable-shared=no
+PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1d/lib/pkgconfig CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC ./configure --prefix=/data/vendor/sasl2 --with-openssl=/data/vendor/openssl-1.1.1d --without-ldap --enable-shared=no
 make && make install
 ```
 -->
@@ -162,25 +162,25 @@ make && make install
 #### mongoc-driver
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-fPIC" LDFLAGS="-pthread -ldl" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.15.0 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DENABLE_STATIC=ON -DENABLE_SASL=OFF -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
+CC=gcc CXX=g++ CFLAGS="-fPIC" LDFLAGS="-pthread -ldl" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1d/lib/pkgconfig cmake -DCMAKE_INSTALL_PREFIX=/data/vendor/mongoc-1.15.1 -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release -DENABLE_STATIC=ON -DENABLE_SASL=OFF -DENABLE_SHM_COUNTERS=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ../
 make && make install
 # 未提供 ENABLE_SHARED=OFF 或类似选项
-# rm /data/vendor/mongoc-1.15.0/lib/*.so*
+# rm /data/vendor/mongoc-1.15.1/lib/*.so*
 ```
 
 #### rdkafka
 ``` Bash
-CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.1.0 --disable-sasl
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1d/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.2.0 --disable-sasl
 make && make install
-# rm /data/vendor/rdkafka-1.1.0/lib/*.so*
-cp src/snappy.h /data/vendor/rdkafka-1.1.0/include/librdkafka/
-cp src/rdmurmur2.h /data/vendor/rdkafka-1.1.0/include/librdkafka/
-cp src/xxhash.h /data/vendor/rdkafka-1.1.0/include/librdkafka/
+# rm /data/vendor/rdkafka-1.2.0/lib/*.so*
+cp src/snappy.h /data/vendor/rdkafka-1.2.0/include/librdkafka/
+cp src/rdmurmur2.h /data/vendor/rdkafka-1.2.0/include/librdkafka/
+cp src/xxhash.h /data/vendor/rdkafka-1.2.0/include/librdkafka/
 ```
 
 #### PHP
 ``` Bash
-CC=gcc CXX=g++ CFLAGS="-pthread" ./configure --prefix=/data/server/php-7.2.21 --with-config-file-path=/data/server/php-7.2.21/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --with-openssl=/data/vendor/openssl-1.1.1c --build=x86_64-linux-gnu
+CC=gcc CXX=g++ CFLAGS="-pthread" ./configure --prefix=/data/server/php-7.2.22 --with-config-file-path=/data/server/php-7.2.22/etc --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --with-readline --enable-mbstring --without-pear --with-zlib --with-openssl=/data/vendor/openssl-1.1.1d --build=x86_64-linux-gnu
 make && make install
 ```
 
@@ -205,23 +205,23 @@ make && make install
 #### nghttp2
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.15.0/lib/pkgconfig:/data/vendor/openssl-1.1.1c/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.39.2 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR:PATH=lib ../
+CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.15.0/lib/pkgconfig:/data/vendor/openssl-1.1.1d/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.39.2 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR:PATH=lib ../
 make && make install
 ```
 
 #### curl
 ``` Bash
 # quote: cmake for curl is poorly maintained
-CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1.1c --enable-ares=/data/vendor/cares-1.15.0 --with-nghttp2=/data/vendor/nghttp2-1.39.2 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.65.3
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1.1d --enable-ares=/data/vendor/cares-1.15.0 --with-nghttp2=/data/vendor/nghttp2-1.39.2 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.65.3
 make && make install
 ```
 
 #### maria-connector-c
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1c/lib/pkgconfig:/data/vendor/curl-7.65.3/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.1.3 ../
+CC=gcc CXX=g++ CFLAGS="-pthread" CXXFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1d/lib/pkgconfig:/data/vendor/curl-7.65.3/lib/pkgconfig cmake -DCMAKE_BUILD_TYPE=Release -DCLIENT_PLUGIN_SHA256_PASSWORD=STATIC -DCLIENT_PLUGIN_CACHING_SHA2_PASSWORD=STATIC -DCMAKE_INSTALL_PREFIX=/data/vendor/mariac-3.1.4 ../
 make && make install
-# rm /data/vendor/mariac-3.1.3/lib/mariadb/*.so*
+# rm /data/vendor/mariac-3.1.4/lib/mariadb/*.so*
 ```
 
 </p>
