@@ -176,6 +176,9 @@ namespace flame {
     }
 
     php::value worker::run(php::parameters& params) {
+        if(params.size() > 0) {
+            worker::go(params);
+        }
         if ((gcontroller->status & controller::STATUS_INITIALIZED) == 0)
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
 
