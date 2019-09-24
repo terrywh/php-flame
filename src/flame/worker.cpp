@@ -261,6 +261,7 @@ namespace flame {
 
     // !!! 此函数在工作线程中运行
     bool worker::on_signal(int sig) {
+SIGNAL_AGAIN:
         switch(sig) {
         case SIGINT:
             if(gcontroller->worker_size > 0) break; // 多进程模式忽略
@@ -272,6 +273,11 @@ namespace flame {
             });
             return false; // 强制停止, 仅允许进行一次; 停止信号处理
         case SIGTERM:
+            // 单进程模式同强制退出
+            if(gcontroller->worker_size == 0) {
+                sig = SIGQUIT;
+                goto SIGNAL_AGAIN;
+            }
             gcontroller->status |= controller::STATUS_CLOSING;
             coroutine::start(php::callable([] (php::parameters& params) -> php::value { // 通知用户退出(超时后主进程将杀死子进程)
                 gcontroller->event("quit");
