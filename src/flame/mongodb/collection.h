@@ -15,6 +15,7 @@ namespace flame::mongodb {
         php::value update(php::parameters &params);
         php::value update_one(php::parameters& params);
         php::value find(php::parameters &params);
+        php::value find_many(php::parameters &params);
         php::value find_one(php::parameters &params);
         php::value get(php::parameters &params);
         php::value count(php::parameters &params);

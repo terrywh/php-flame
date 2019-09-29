@@ -52,6 +52,12 @@ namespace flame::mongodb {
                 {"sort", php::TYPE::ARRAY, false, true},
                 {"limit", php::TYPE::UNDEFINED, false, true},
             })
+            .method<&collection::find_many>("find_many", {
+                {"filter", php::TYPE::ARRAY},
+                {"projection", php::TYPE::ARRAY, false, true},
+                {"sort", php::TYPE::ARRAY, false, true},
+                {"limit", php::TYPE::UNDEFINED, false, true},
+            })
             .method<&collection::find_one>("one", {
                 {"filter", php::TYPE::ARRAY},
                 {"sort", php::TYPE::ARRAY, false, true},
@@ -203,6 +209,11 @@ namespace flame::mongodb {
         coroutine_handler ch {coroutine::current};
         auto conn_ = cp_->acquire(ch);
         return cp_->exec(conn_, cmd, _connection_base::COMMAND_READ, ch);
+    }
+
+    php::value collection::find_many(php::parameters& params) {
+        php::object obj = find(params);
+        return obj.call("fetch_all");
     }
 
     php::value collection::find_one(php::parameters &params) {

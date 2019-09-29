@@ -123,8 +123,12 @@ class collection {
     function find(array $query, array $projection = null, array $sort = null, $limit = null):cursor {
         return new cursor();
     }
-    function find_many(array $query, array $projection = null, array $sort = null, $limit = null):cursor {
-        return new cursor();
+    /**
+     * 同 find 但直接返回结果数据
+     * @return array
+     */
+    function find_many(array $query, array $projection = null, array $sort = null, $limit = null) {
+        return [["a"=>1], ["a"=>2]];
     }
 
     /**
