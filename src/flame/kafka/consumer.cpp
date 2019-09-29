@@ -24,6 +24,7 @@ namespace flame::kafka {
     }
 
     php::value consumer::__construct(php::parameters& params) {
+        // close_ = false;
         return nullptr;
     }
 
@@ -51,12 +52,24 @@ namespace flame::kafka {
                         log::logger_->stream() << "[" << time::iso() << "] (ERROR) Uncaught exception in Kafka consumer: " << obj.call("__toString") << std::endl;
                     }
                 }
-                if (--count == 0) ch_run.resume();
+                // 最后一个消费协程停止后，回复 run() 阻塞的协程
+                if (--count == 0) ch_run.resume(); // (B) -> (C)
                 return nullptr;
             }));
         }
-        cs_->consume(q, ch_run);
-        ch_run.suspend();
+        // 启动轻量的 C++ 协程进行消费
+        ::coroutine::start(gcontroller->context_x.get_executor(), [this, &q] (::coroutine_handler ch) {
+            boost::asio::steady_timer tm { gcontroller->context_x };
+            while(!close_) {
+                if(!cs_->consume(q, ch)) { // 消费到结尾后，适当等待
+                    tm.expires_from_now(std::chrono::milliseconds(40));
+                    tm.async_wait(ch);
+                }
+            }
+            cs_->close();
+            q.close(); // (A) -> (B)
+        });
+        ch_run.suspend(); // (C)
         return nullptr;
     }
 
@@ -69,7 +82,7 @@ namespace flame::kafka {
     }
 
     php::value consumer::close(php::parameters& params) {
-        cs_->close();
+        close_ = true;
         return nullptr;
     }
 } // namespace

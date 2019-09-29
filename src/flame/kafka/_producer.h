@@ -19,7 +19,7 @@ namespace flame::kafka {
         std::map<php::string, rd_kafka_topic_t*> tops_;
         boost::asio::steady_timer poll_;
         bool close_;
-        void poll(int expire = 970);
+        void poll(int expire = 800);
         static void on_error(rd_kafka_t* conn, int error, const char* reason, void* data);
         friend class producer;
     };

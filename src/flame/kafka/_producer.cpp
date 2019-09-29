@@ -59,14 +59,14 @@ namespace flame::kafka {
         poll_.async_wait([this, self = shared_from_this()] (const boost::system::error_code& error) {
             if (error || close_) return;
             auto begin = std::chrono::steady_clock::now();
-            int r = rd_kafka_poll(conn_, 40); // 防止对工作线程占用时间过长
+            int r = rd_kafka_poll(conn_, 0); // 防止对工作线程占用时间过长
             auto end = std::chrono::steady_clock::now();
             // 计算实际 poll 占用时间，稳定间隔
             int e = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
             // 无消息时放慢 poll 以减少对工作线程的占用
-            if (r > 0) poll(std::max(40 - e, 1));
+            if (r > 0) poll(std::max(200 - e, 1));
             else if(close_ || (gcontroller->status & controller::STATUS_CLOSING)) ;
-            else poll(std::max(1600 - e, 1));
+            else poll(std::max(800 - e, 1));
         });
     }
 

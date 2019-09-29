@@ -79,37 +79,29 @@ namespace flame::kafka {
                 , err);
     }
 
-    void _consumer::consume(coroutine_queue<php::object>& q, coroutine_handler& ch) {
-        rd_kafka_message_t* msg = nullptr;
-        do {
-            // 采用内部队列，理论上仅占用一个工作线程（应保证占用时间不要过长）
-            boost::asio::post(gcontroller->context_y, [this, &msg, &ch]() {
-                do {
-                    msg = rd_kafka_consumer_poll(conn_, 40);
-                } while(!msg && !close_);
-                ch.resume();
-            });
-            ch.suspend();
-            if (!msg) {
-                // close_ == true // 消费被停止
-            }
-            else if (msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
-                rd_kafka_message_destroy(msg); // 无新消息
-            }
-            else if (msg->err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-                rd_kafka_message_destroy(msg);
-                throw php::exception(zend_ce_exception
-                    , (boost::format("Failed to consume Kafka message: %s / %s") % rd_kafka_err2str(msg->err) % rd_kafka_message_errstr(msg)).str()
-                    , msg->err);
-            }
-            else {
-                php::object obj(php::class_entry<message>::entry());
-                message* ptr = static_cast<message*>(php::native(obj));
-                ptr->build_ex(msg); // msg 交由 message 对象管理
-                q.push(std::move(obj), ch);
-            }
-        } while(!close_);
-        q.close(); // 关闭队列使对应消费协程自行退出
+    bool _consumer::consume(coroutine_queue<php::object>& q, ::coroutine_handler& ch) {
+        rd_kafka_message_t* msg = rd_kafka_consumer_poll(conn_, 0);
+        if (!msg) {
+            // close_ == true // 消费被停止
+            return false;
+        }
+        else if (msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
+            rd_kafka_message_destroy(msg); // 无新消息
+            return false;
+        }
+        else if (msg->err != RD_KAFKA_RESP_ERR_NO_ERROR) {
+            rd_kafka_message_destroy(msg);
+            throw php::exception(zend_ce_exception
+                , (boost::format("Failed to consume Kafka message: %s / %s") % rd_kafka_err2str(msg->err) % rd_kafka_message_errstr(msg)).str()
+                , msg->err);
+        }
+        else {
+            php::object obj(php::class_entry<message>::entry());
+            message* ptr = static_cast<message*>(php::native(obj));
+            ptr->build_ex(msg); // msg 交由 message 对象管理
+            q.push(std::move(obj), ch);
+            return true;
+        }
     }
 
     void _consumer::commit(const php::object& obj, coroutine_handler& ch) {
@@ -126,11 +118,11 @@ namespace flame::kafka {
     }
 
     void _consumer::close() {
+        close_ = true;
         // 由于不再协程上下文暂停，需要共享延长生命周期
         boost::asio::post(gcontroller->context_y, [self = shared_from_this(), this] () {
             rd_kafka_consumer_close(conn_);
         });
-        close_ = true;
     }
 
 } // namespace flame::kafka

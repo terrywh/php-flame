@@ -13,11 +13,11 @@ namespace flame::kafka {
         php::value run(php::parameters &params);
         php::value commit(php::parameters &params);
         php::value close(php::parameters &params);
-
     private:
         std::shared_ptr<_consumer> cs_;
         int                        cc_ = 8;
         php::callable              cb_;
+        bool                    close_ = false;
 
         friend php::value consume(php::parameters &params);
     };
