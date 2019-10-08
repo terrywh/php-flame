@@ -156,12 +156,15 @@ namespace flame::http {
 
         std::filesystem::path file;
         if(params.size() > 1) {
-            file = params[1].to_string();
-            file = params[0].to_string() / file.lexically_normal();
+            std::filesystem::path dir = params[0].to_string(),
+                end = params[1].to_string();
+            file = dir / end.lexically_normal().relative_path();
         }
         else {
             file = params[0].to_string();
+            file = file.lexically_normal();
         }
+
         std::error_code error;
         std::filesystem::file_status fs = std::filesystem::status(file, error);
         if(error) {
