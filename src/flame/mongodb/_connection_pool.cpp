@@ -14,7 +14,7 @@ namespace flame::mongodb {
             mongoc_read_prefs_destroy(pref);
         }
         mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_CONNECTTIMEOUTMS, 5000);
-        mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_MAXPOOLSIZE, 6);
+        mongoc_uri_set_option_as_int32(uri.get(), MONGOC_URI_MAXPOOLSIZE, 16);
 
         p_ = mongoc_client_pool_new(uri.get());
     }

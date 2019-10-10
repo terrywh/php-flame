@@ -3,7 +3,7 @@
 
 namespace flame::mysql {
     _connection_pool::_connection_pool(url u)
-    : url_(std::move(u)), min_(2), max_(6), size_(0)
+    : url_(std::move(u)), min_(2), max_(12), size_(0)
     , guard_(gcontroller->context_y)
     , sweep_(gcontroller->context_y)
     , flag_(FLAG_UNKNOWN) {
