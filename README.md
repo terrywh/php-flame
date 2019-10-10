@@ -170,12 +170,12 @@ make && make install
 
 #### rdkafka
 ``` Bash
-CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1d/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.2.0 --disable-sasl
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1.1d/lib/pkgconfig ./configure --prefix=/data/vendor/rdkafka-1.2.1 --disable-sasl
 make && make install
-# rm /data/vendor/rdkafka-1.2.0/lib/*.so*
-cp src/snappy.h /data/vendor/rdkafka-1.2.0/include/librdkafka/
-cp src/rdmurmur2.h /data/vendor/rdkafka-1.2.0/include/librdkafka/
-cp src/xxhash.h /data/vendor/rdkafka-1.2.0/include/librdkafka/
+# rm /data/vendor/rdkafka-1.2.1/lib/*.so*
+cp src/snappy.h /data/vendor/rdkafka-1.2.1/include/librdkafka/
+cp src/rdmurmur2.h /data/vendor/rdkafka-1.2.1/include/librdkafka/
+cp src/xxhash.h /data/vendor/rdkafka-1.2.1/include/librdkafka/
 ```
 
 #### PHP
