@@ -11,6 +11,7 @@ namespace flame::kafka {
         php::value __construct(php::parameters &params); // 私有
         php::value __destruct(php::parameters &params);
         php::value publish(php::parameters &params);
+        php::value publish_to(php::parameters& params);
         php::value flush(php::parameters &params);
         php::value close(php::parameters &params);
     private:

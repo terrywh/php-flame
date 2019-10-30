@@ -10,7 +10,9 @@ namespace flame::kafka {
     public:
         _producer(php::array& config, php::array& topics);
         ~_producer();
-        void publish(const php::string& topic, const php::string& key, const php::string& payload, const php::array& headers, coroutine_handler& ch);
+        void publish(const php::string& topic, std::int32_t partition, 
+            const php::string& key, const php::string& payload,
+            const php::array& headers, coroutine_handler& ch);
         void flush(coroutine_handler& ch);
         void close();
         void start();

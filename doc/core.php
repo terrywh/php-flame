@@ -7,7 +7,7 @@
  *  * 信号 SIGQUIT 立即终止进程；
  *  * 信号 SIGINT / SIGTERM 将 “通知” 进程退出 (触发 `quit` 回调)，等待超时后立即终止；
  *  * 信号 SIGUSR1 将切换 HTTP 服务器长短连状态 `Connection: close`；
- *  * 单进程模式**不支持**日志文件输出，固定输出到 STDERR / STDOUT (取决于错误等级）；
+ *  * 信号 SIGUSR2 日志文件将会被重新打开(或生成);
  * 
  * 2. 父子进程模式：
  *  * 使用环境变量 FLAME_MAX_WORKERS=X 启动父子进程模式；

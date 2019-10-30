@@ -93,8 +93,8 @@ namespace flame::os {
             php::string cwds = opts.get("cwd");
             if (cwds.type_of(php::TYPE::STRING)) cwdv = cwds.to_string();
         }
-
-        boost::process::child c(exec, boost::process::args = argv, env, gcontroller->context_x,
+        auto c = std::make_unique<boost::process::child>(
+            exec, boost::process::args = argv, env, gcontroller->context_x,
             boost::process::start_dir = cwdv,
             boost::process::std_out > proc_->out_,
             boost::process::std_err > proc_->err_,
@@ -102,15 +102,19 @@ namespace flame::os {
                 proc_->exit_ = true;
                 if (proc_->ch_) proc_->ch_.resume();
             });
-        proc.set("pid", c.id());
-        proc_->c_ = std::move(c);
-        return proc;
+        if(c->valid()) {
+            proc.set("pid", c->id());
+            proc_->c_ = std::move(c);
+            return proc;
+        }
+        else {
+            return nullptr;
+        }
     }
 
     php::value exec(php::parameters &params) {
         php::object proc = spawn(params);
         process *proc_ = static_cast<process *>(php::native(proc));
-        proc.call("wait");
-        return proc_->out_.get();
+        return proc.call("stdout");
     }
 } // namespace flame::os

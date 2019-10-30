@@ -32,42 +32,46 @@ namespace flame::os {
 
     php::value process::__destruct(php::parameters& params) {
         if (!detach_) {
-            if (!exit_ && c_.valid()) {
-                if (!c_.wait_for(std::chrono::milliseconds(10000))) c_.terminate();
-                if (c_.joinable()) c_.join();
-            }
+            if (!exit_ && !c_->wait_for(std::chrono::milliseconds(10000)))
+                c_->terminate();
+            if (c_->joinable()) c_->join();
         }
         return nullptr;
     }
 
     php::value process::kill(php::parameters &params) {
-        if (params.size() > 0) ::kill(get("pid"), params[0].to_integer());
-        else ::kill(get("pid"), SIGTERM);
+        if (!exit_ && c_->valid()) {
+            if (params.size() > 0) ::kill(get("pid"), params[0].to_integer());
+            else ::kill(get("pid"), SIGTERM);
+        }
         return nullptr;
     }
 
     php::value process::detach(php::parameters& params) {
         detach_ = true;
-        c_.detach();
+        c_->detach();
         return nullptr;
     }
 
     php::value process::wait(php::parameters &params) {
-        if (!exit_ && c_.valid()) {
+        if (!exit_ && c_->valid()) {
             ch_.reset(coroutine::current);
             ch_.suspend();
-            c_.join();
+            ch_.reset();
         }
+        if (c_->joinable()) c_->join();
         return nullptr;
     }
 
     php::value process::stdout(php::parameters &params) {
         wait(params);
-        return out_.get();
+        if (c_->valid()) return out_.get();
+        return nullptr;
     }
 
     php::value process::stderr(php::parameters &params) {
         wait(params);
-        return out_.get();
+        if (c_->valid()) return err_.get();
+        return nullptr;
     }
 } // namespace flame::os

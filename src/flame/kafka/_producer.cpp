@@ -81,31 +81,23 @@ namespace flame::kafka {
         });
     }
 
-    void _producer::publish(const php::string &topic, const php::string &key
-        , const php::string &payload, const php::array &headers, coroutine_handler &ch) {
+    void _producer::publish(const php::string &topic, std::int32_t partition
+        , const php::string &key, const php::string &payload
+        , const php::array &headers, coroutine_handler &ch) {
 
         rd_kafka_resp_err_t err = RD_KAFKA_RESP_ERR_NO_ERROR;
         rd_kafka_headers_t* hdrs = array2hdrs(headers);
-        boost::asio::post(gcontroller->context_y, [this, &err, &topic, &key, &payload, &hdrs, &ch]() {
-            if (key.size() > 0) {
-                err = rd_kafka_producev(conn_,
-                    RD_KAFKA_V_TOPIC(topic.c_str()),
-                    RD_KAFKA_V_KEY(key.c_str(), key.size()),
-                    RD_KAFKA_V_PARTITION(RD_KAFKA_PARTITION_UA),
-                    RD_KAFKA_V_HEADERS(hdrs),
-                    RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
-                    RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
-                    RD_KAFKA_V_END);
-            }
-            else { // 无 KEY 时默认 partitioner 会随机分配
-                err = rd_kafka_producev(conn_,
-                    RD_KAFKA_V_TOPIC(topic.c_str()),
-                    RD_KAFKA_V_PARTITION(RD_KAFKA_PARTITION_UA),
-                    RD_KAFKA_V_HEADERS(hdrs),
-                    RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
-                    RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
-                    RD_KAFKA_V_END);
-            }
+        boost::asio::post(gcontroller->context_y, [this, &err, &topic, partition, &key, &payload, &hdrs, &ch]() {
+
+            err = rd_kafka_producev(conn_,
+                RD_KAFKA_V_TOPIC(topic.c_str()),
+                RD_KAFKA_V_KEY(key.c_str(), key.size()),
+                RD_KAFKA_V_PARTITION(partition),
+                RD_KAFKA_V_HEADERS(hdrs),
+                RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
+                RD_KAFKA_V_VALUE((void *)payload.c_str(), payload.size()),
+                RD_KAFKA_V_END);
+            
             ch.resume();
         });
         ch.suspend();

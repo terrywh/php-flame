@@ -28,28 +28,34 @@ namespace flame::kafka {
         return nullptr;
     }
 
-    php::value producer::publish(php::parameters &params) {
-        php::string topic = params[0].to_string(), key, payload;
+    php::value producer::publish(php::parameters& params) {
+        php::string topic = params[0].to_string(), key(0), payload;
         php::array header;
-        if (params[1].instanceof (php::class_entry<message>::entry())) {
-            php::object msg = params[1];
+        std::int32_t p = RD_KAFKA_PARTITION_UA, i = 1;
+        // 目标分区
+        if (params[1].type_of(php::TYPE::INTEGER)) {
+            p = params[1].to_integer();
+            ++i;
+        }
+        if (params[i].instanceof (php::class_entry<message>::entry())) {
+            php::object msg = params[i];
             key = msg.get("key").to_string();
             payload = msg.get("payload").to_string();
             header = msg.get("header");
             if (!header.type_of(php::TYPE::ARRAY)) header = php::array(0);
         }
         else {
-            payload = params[1].to_string();
-            if (params.size() > 2) key = params[2].to_string();
+            payload = params[i].to_string();
+            if (params.size() > i+1) key = params[i+1].to_string();
             else key = php::string(0);
-            if (params.size() > 3) {
-                if (params[3].type_of(php::TYPE::ARRAY)) header = params[4];
+            if (params.size() > i+2) {
+                if (params[i+2].type_of(php::TYPE::ARRAY)) header = params[i+2];
                 else header = php::array(0);
             }
         }
 
         coroutine_handler ch {coroutine::current};
-        pd_->publish(topic, key, payload, header, ch);
+        pd_->publish(topic, p, key, payload, header, ch);
         return nullptr;
     }
 

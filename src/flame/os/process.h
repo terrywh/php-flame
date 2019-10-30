@@ -16,7 +16,7 @@ namespace flame::os {
         php::value stdout(php::parameters& params);
         php::value stderr(php::parameters& params);
     private:
-        boost::process::child      c_;
+        std::unique_ptr<boost::process::child> c_;
         coroutine_handler         ch_;
         std::future<std::string> out_;
         std::future<std::string> err_;

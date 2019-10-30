@@ -58,15 +58,20 @@ class producer {
      * 注意: 此函数会将消息放入"生产队列", 并通过后台线程传输;
      * (为保证完成, 请使用 `flush()`)
      * @see producer::flush()
+     * 此函数存在如下几种定义形式：
+     * `function publish (string $topic, int $partition, string $payload, string $key = null, array $header = []) {}`
+     * `function publish (string $topic, int $partition, \flame\kafka\message $message) {}`
+     * `function publish (string $topic, string $payload, string $key = null, array $header = []) {}`
+     * `function publish (string $topic, \flame\kafka\message $message) {}`
      * @param string $topic 生成目标 TOPIC 名称, 必须是 待生产 $topics 数组中的一个;
-     * @see produce()
-     * @param mixed $mssage 若为 message 类型的对象, 则后续参数无效;
+     * @param int $partition 目标分区
+     * @param \flame\kafka\message $message 若为 message 类型的对象, 则后续参数无效;
      *  否则为现场 message 对象的 payload 数据;
      * @see class message;
      * @param string $key
-     * @param array $header
+     * @param array  $header
      */
-    function publish(string $topic, $message, string $key = null, array $header = []) {}
+    function publish(string $topic) {}
     /**
      * 清空"生产队列", 若当前队列中还有消息等待其传输完毕;
      */
