@@ -91,11 +91,12 @@ void worker_ipc::ipc_run(coroutine_handler ch) {
         boost::asio::async_read(*socket_, boost::asio::buffer(msg.get(), sizeof(ipc::message_t)), ch[error]);
         if(error) break;
         if(msg->length > ipc::MESSAGE_INIT_CAPACITY - sizeof(ipc::message_t)) {
-            ipc::relloc_message(msg, 0, msg->length);
+            ipc::relloc_message(msg, 0, msg->length + 1); // 额外用于容纳结尾 '\0'
         }
         if(msg->length > 0) {
             boost::asio::async_read(*socket_, boost::asio::buffer(&msg->payload[0], msg->length), ch[error]);
             if(error) break;
+            msg->payload[msg->length] = '\0'; // 防止 JSON 解析异常
         }
         if(!on_message(msg)) break;
         auto pcb = callback_.extract(msg->unique_id);
@@ -106,7 +107,7 @@ void worker_ipc::ipc_run(coroutine_handler ch) {
     }
 IPC_FAILED:
     if (error && error != boost::asio::error::operation_aborted && error != boost::asio::error::eof) 
-        output() << "[" << util::system_time() << "] (ERROR) Failed to read M-IPC: (" << error.value() << ") " << error.message() << "\n";
+        output() << "[" << util::system_time() << "] (ERROR) Failed to read W-IPC: (" << error.value() << ") " << error.message() << "\n";
     socket_->close(error);
 }
 
@@ -133,7 +134,7 @@ void worker_ipc::send_next() {
 
     boost::asio::async_write(*socket_, boost::asio::buffer(msg.get(), sizeof(ipc::message_t) + msg->length), [this] (const boost::system::error_code& error, std::size_t size) {
         if(error) {
-            output() << "[" << util::system_time() << "] [FATAL] Failed to write M-IPC: (" << error.value() << ") " << error.message() << "\n";
+            output() << "[" << util::system_time() << "] [ERROR] Failed to write W-IPC: (" << error.value() << ") " << error.message() << "\n";
             return;
         }
         sendq_.pop_front();

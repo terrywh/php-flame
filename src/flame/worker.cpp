@@ -319,7 +319,7 @@ SIGNAL_AGAIN:
             while(true) {
                 while(msgq_.empty()) {
                     msgc_.reset(ch);
-                    ch.suspend();
+                    msgc_.suspend();
                     msgc_.reset();
                 }
                 php::value v = msgq_.front();

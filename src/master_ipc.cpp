@@ -32,7 +32,7 @@ void master_ipc::ipc_run(coroutine_handler ch) {
         coroutine::start(io_.get_executor(), std::bind(&master_ipc::ipc_read, ipc_self(), sock, std::placeholders::_1));
     }
     if (error && error != boost::asio::error::operation_aborted)
-        output() << "[" << util::system_time() << "] (ERROR) Failed to accept ipc connection: (" << error.value() << ") " << error.message() << "\n";
+        output() << "[" << util::system_time() << "] (ERROR) Failed to accept M-IPC: (" << error.value() << ") " << error.message() << "\n";
     
     server_.close(error);
 }
@@ -59,7 +59,7 @@ void master_ipc::ipc_read(socket_ptr sock, coroutine_handler ch) {
         if (!on_message(msg, sock)) break;
     }
     if (error && error != boost::asio::error::operation_aborted && error != boost::asio::error::eof) 
-        output() << "[" << util::system_time() << "] (ERROR) Failed to read ipc connection: (" << error.value() << ") " << error.message() << "\n";
+        output() << "[" << util::system_time() << "] (ERROR) Failed to read M-IPC: (" << error.value() << ") " << error.message() << "\n";
     // 发生次数较少，效率不太重要了
     for(auto i=socket_.begin();i!=socket_.end();++i) {
         if(i->second == sock) {
@@ -112,7 +112,7 @@ void master_ipc::send_next() {
     else {
         boost::asio::async_write(*i->second, boost::asio::buffer(msg.get(), sizeof(ipc::message_t) + msg->length), [this] (const boost::system::error_code& error, std::size_t size) {
             if(error) {
-                output() << "[" << util::system_time() << "] [FATAL] Failed to write ipc message: (" << error.value() << ") " << error.message() << "\n";
+                output() << "[" << util::system_time() << "] [ERROR] Failed to write M-IPC: (" << error.value() << ") " << error.message() << "\n";
                 return;
             }
             sendq_.pop_front();

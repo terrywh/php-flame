@@ -3,4 +3,5 @@
 debug
 release
 stage
+canvas
 compile_commands.json
