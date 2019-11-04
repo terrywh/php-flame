@@ -44,6 +44,13 @@ function init($process_name, $options = []) {}
  */
 function go(callable $cb) {}
 /**
+ * 框架启动、调度运行
+ * @param callable $cb 可选，启动一个协程（同 `flame\go()` 函数）
+ * @see flame\go()
+ * 注意：此函数阻塞并持续运行直到所有协程结束；
+ */
+function run(callable $cb = null) {}
+/**
  * 读取数组的指定层级键（常用于读取配置数据）
  * @example
  *  $a = ["a" => ["b" => 123]];
