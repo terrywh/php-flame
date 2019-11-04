@@ -53,8 +53,8 @@ namespace flame {
             
         gcontroller->status |= controller::STATUS_RUN;
         auto tm_run = std::chrono::steady_clock::now();
-        if(tm_run - tm_init < std::chrono::milliseconds(100)) {
-            std::this_thread::sleep_for(std::chrono::microseconds(100) - (tm_run - tm_init));
+        if(tm_run - tm_init < std::chrono::milliseconds(360)) {
+            std::this_thread::sleep_for(std::chrono::microseconds(360) - (tm_run - tm_init));
         }
         master::mm_->pm_start(gcontroller->context_x); // 启动工作进程
         
