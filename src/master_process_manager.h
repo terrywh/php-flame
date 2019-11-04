@@ -19,6 +19,8 @@ protected:
     void pm_close(coroutine_handler& ch, bool now = false);
     // 发送信号
     void pm_kills(int sig);
+    // 等待子进程结束
+    void pm_await();
     // 进程数量
     std::uint8_t pm_count() {
         return cmax_;

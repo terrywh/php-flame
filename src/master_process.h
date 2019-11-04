@@ -9,6 +9,7 @@ public:
     master_process(boost::asio::io_context& io, master_process_manager* m, std::uint8_t idx);
     void close(bool force = false);
     void signal(int sig);
+    void await();
 private:
     master_process_manager*     mgr_;
     std::uint8_t                idx_;

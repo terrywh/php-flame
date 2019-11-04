@@ -65,3 +65,7 @@ void master_process::close(bool force) {
 void master_process::signal(int sig) {
     ::kill(proc_.id(), sig);
 }
+
+void master_process::await() {
+    if(proc_.joinable()) proc_.join();
+}

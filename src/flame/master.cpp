@@ -74,7 +74,8 @@ namespace flame {
         gcontroller->stop();
         ts[0].join();
         ts[1].join();
-
+        // 确保子进程退出后再进行销毁
+        master::mm_->pm_await();
         master::mm_.reset();
         return nullptr;
     }

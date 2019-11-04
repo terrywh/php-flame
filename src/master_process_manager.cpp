@@ -81,6 +81,10 @@ void master_process_manager::pm_kills(int sig) {
     for(int i=0;i<cmax_;++i) child_[i]->signal(sig);
 }
 
+void master_process_manager::pm_await() {
+    for(int i=0;i<cmax_;++i) child_[i]->await();
+}
+
 void master_process_manager::on_child_start(master_process* w) {
     ++crun_;
     if (ch_start_) ch_start_.resume(); // 陆续起停流程
