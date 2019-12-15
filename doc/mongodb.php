@@ -168,7 +168,7 @@ class collection {
     /**
      * 查找满足条件的第一个文档，删除并将其返回
      */
-    function find_and_delete(array $query, array $sort = null, boolean $upsert = false, $fields = null): array {
+    function find_and_delete(array $query, array $sort = null, $upsert = false, $fields = null): array {
         return [];
     }
     /**

@@ -13,8 +13,9 @@ namespace flame::http {
         client_request();
         ~client_request();
         php::value http_version(php::parameters& params);
-        php::value ssl_pem(php::parameters& params);
-        php::value ssl_verify(php::parameters& params);
+        php::value cert(php::parameters& params);
+        php::value insecure(php::parameters& params);
+        php::value option(php::parameters& params);
     private:
         void build_ex();
         CURL*       c_easy_ = nullptr; // cleanup in client

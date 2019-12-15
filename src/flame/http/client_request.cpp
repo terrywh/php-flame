@@ -16,13 +16,8 @@ namespace flame::http {
             .constant({"HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0})
             .constant({"HTTP_VERSION_2_TLS", CURL_HTTP_VERSION_2TLS})
             .constant({"HTTP_VERSION_2_PRI", CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE})
-            .constant({"SSL_VERIFY_NONE",   0})
-            .constant({"SSL_VERIFY_PEER",   1}) // CURLOPT_SSL_VERIFYPEER
-            .constant({"SSL_VERIFY_HOST",   2}) // CURLOPT_SSL_VERIFYHOST
-            .constant({"SSL_VERIFY_STATUS", 4}) // CURLOPT_SSL_VERIFYSTATUS
-            .constant({"SSL_VERIFY_ALL",    7})
             .property({"timeout", 3000})
-            .property({"method", "GET"})
+            .property({"method", ""}) // 请求方法默认值在 build 时进行填充
             .property({"url", nullptr})
             .property({"header", nullptr})
             .property({"cookie", nullptr})
@@ -35,12 +30,15 @@ namespace flame::http {
             .method<&client_request::http_version>("http_version", {
                 {"version", php::TYPE::INTEGER},
             })
-            .method<&client_request::ssl_pem>("ssl_pem", {
+            .method<&client_request::cert>("cert", {
                 {"cert", php::TYPE::STRING},
                 {"pkey", php::TYPE::STRING, false, true},
+                {"pass", php::TYPE::STRING, false, true},
             })
-            .method<&client_request::ssl_verify>("ssl_verify", {
-                {"verify", php::TYPE::INTEGER},
+            .method<&client_request::insecure>("insecure")
+            .method<&client_request::option>("option", {
+                {"option", php::TYPE::INTEGER},
+                {"values", php::TYPE::UNDEFINED},
             });
 
         ext.add(std::move(class_client_request));
@@ -52,9 +50,8 @@ namespace flame::http {
 
         if (params.length() > 1 && !params[1].empty()) {
             set("body", params[1]);
-            set("method", "POST");
         }
-        else set("method", "GET");
+        // 请求方法在进行 build 时再根据 body 进行设置
         set("url", params[0]);
         set("header", php::array(0));
         set("cookie", php::array(0));
@@ -81,7 +78,7 @@ namespace flame::http {
         return nullptr;
     }
 
-    php::value client_request::ssl_pem(php::parameters& params) {
+    php::value client_request::cert(php::parameters& params) {
         curl_easy_setopt(c_easy_, CURLOPT_SSLCERTTYPE, "PEM");
         php::string cert = params[0];
         curl_easy_setopt(c_easy_, CURLOPT_SSLCERT, cert.c_str());
@@ -96,20 +93,34 @@ namespace flame::http {
         return nullptr;
     }
 
-    php::value client_request::ssl_verify(php::parameters& params) {
-        long v = static_cast<int>(params[0]), YES = 1, NO = 0;
-        if (v | CURLOPT_SSL_VERIFYPEER)
-            curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, YES);
-        else
-            curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, NO);
-        if (v | CURLOPT_SSL_VERIFYHOST)
-            curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, YES);
-        else
-            curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, NO);
-        if (v | CURLOPT_SSL_VERIFYSTATUS)
-            curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, YES);
-        else
-            curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, NO);
+    php::value client_request::option(php::parameters& params) {
+        long opt = static_cast<int>(params[0]);
+        CURLcode r;
+        if(params[1].type_of(php::TYPE::STRING)) {
+            php::string val = params[1];
+            r = curl_easy_setopt(c_easy_, (CURLoption)opt, val.c_str());
+        }
+        else if(params[1].type_of(php::TYPE::INTEGER)) {
+            long val = params[1];
+            r = curl_easy_setopt(c_easy_, (CURLoption)opt, val);
+        }
+        else {
+            throw php::exception(zend_ce_type_error,
+                "Failed to set CURL option: option value must be of type 'string' or 'integer'");
+        }
+        if (r!= CURLE_OK) throw php::exception(zend_ce_type_error,
+            (boost::format("Failed to set CURL option: %s") % curl_easy_strerror(r)).str(), r);
+        return nullptr;
+    }
+
+    php::value client_request::insecure(php::parameters& params) {
+        long NO = 0;
+        // std::cout << "CAINFO: "
+        //     << curl_easy_setopt(c_easy_, CURLOPT_CAINFO, "/data/htdocs/src/github.com/terrywh/php-flame/stage/cacert.pem")
+        //     << std::endl;
+        curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYPEER, NO);
+        curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYHOST, NO);
+        curl_easy_setopt(c_easy_, CURLOPT_SSL_VERIFYSTATUS, NO);
         return nullptr;
     }
 
@@ -125,8 +136,6 @@ namespace flame::http {
                 , -1);
 
         curl_easy_setopt(c_easy_, CURLOPT_URL, u.c_str());
-        php::string m = get("method");
-        curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, m.c_str());
         // 头
         // ---------------------------------------------------------------------------
         if (c_head_ != nullptr) {
@@ -166,7 +175,20 @@ namespace flame::http {
         // 体
         // ---------------------------------------------------------------------------
         php::string body = get("body");
-        if (ctype.empty()) ctype.assign("application/x-www-form-urlencoded", 33);
+        php::string method = get("method");
+        if (method.empty()) {
+            if(!body.empty()) {
+                method = php::string("POST", 4);
+                set("method", method);
+                curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, "POST");
+            }
+        }
+        else {
+            curl_easy_setopt(c_easy_, CURLOPT_CUSTOMREQUEST, method.c_str());
+        }
+        if (ctype.empty())
+            ctype.assign("application/x-www-form-urlencoded", 33);
+
         if (body.empty()) {
             // TODO 空 BODY 的处理流程？
         }

@@ -82,7 +82,6 @@ function co_id():int {
 function co_count():int {
     return 8;
 }
-f33328ab3834390798004026bb34b50c1d7e0f68
 /**
  * 从若干个队列中选择(等待)一个有数据队列
  * @return 若所有通道已关闭, 返回 null; 否则返回一个有数据的通道, 即: 可以无等待 pop()

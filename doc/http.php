@@ -107,24 +107,6 @@ class client_request {
      * 强制在 non-TLS 状态进行 HTTP/2 请求，TLS (HTTPS) 时同 HTTP_VERSION_2_TLS
      */
     const HTTP_VERSION_2_PRI = 5;
-
-    const SSL_VERIFY_NONE    = 0;
-    /**
-     * 验证对端证书
-     */
-    const SSL_VERIFY_PEER    = 1;
-    /**
-     * 验证证书域名
-     */
-    const SSL_VERIFY_HOST    = 2;
-    /*
-     * 验证证书状态
-     */
-    const SSL_VERIFY_STATUS  = 4;
-    /**
-     * 相当于 SSL_VERIFY_PEER | SSL_VERIFY_HOST | SSL_VERIFY_STATUS
-     */
-    const SSL_VERIFY_ALL     = 7;
     /**
      * @var int
      */
@@ -155,19 +137,24 @@ class client_request {
      */
     function __construct(string $url, $body = null, int $timeout = 3000) {}
     /**
+     * 设置客户端证书
      * @param string $cert_file 证书文件路径
      * @param string $pkey_file 密钥文件路径
      * @param string $pkey_pass 密钥密码
      */
-    function ssl_pem(string $cert_file, string $pkey_file = "", string $pkey_pass = "") {}
+    function cert(string $cert_file, string $pkey_file = "", string $pkey_pass = "") {}
     /**
-     * 请使用 client_request::SSL_VERIFY_* 相关常量进行设置（可按位组合）
+     * 不验证对端、服务器、证书状态；
      */
-    function ssl_verify(int $verify) {}
+    function insecure() {}
     /**
      * 请选择使用 client_request::HTTP_VERSION_* 常量设置版本
      */
     function http_version(int $version) {}
+    /**
+     * 通用选项设置（支持 字符串或数值型 选项）
+     */
+    function option(int $option, mixed $value) {}
 }
 /**
  * 客户端响应对象，执行请求后得到

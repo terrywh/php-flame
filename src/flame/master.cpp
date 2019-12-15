@@ -35,9 +35,11 @@ namespace flame {
         master::mm_.reset(new master());
         if (options.exists("logger")) {
             php::string logger = options.get("logger");
-            master::mm_->lg_ = master::mm_->lm_connect({logger.data(), logger.size()});
+            if(logger.type_of(php::TYPE::STRING) && logger.size() > 4) {
+                master::mm_->lg_ = master::mm_->lm_connect({logger.data(), logger.size()});
+            }
         }
-        else
+        if(!master::mm_->lg_)
             master::mm_->lg_ = master::mm_->lm_connect("<clog>");
         // 初始化启动
         gcontroller->init(options);
@@ -88,7 +90,8 @@ namespace flame {
     : master_process_manager(gcontroller->context_y, gcontroller->worker_size, gcontroller->worker_quit)
     , signal_watcher(gcontroller->context_y)
     , master_logger_manager(gcontroller->context_y)
-    , master_ipc(gcontroller->context_y) {
+    , master_ipc(gcontroller->context_y)
+    , lg_(nullptr) {
         
     }
 
