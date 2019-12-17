@@ -72,6 +72,9 @@ namespace flame {
         .function<worker::send>("flame\\send", {
             {"target", php::TYPE::INTEGER},
             {"data", php::TYPE::UNDEFINED},
+        })
+        .function<worker::unique_id>("flame\\unique_id", {
+            {"node", php::TYPE::INTEGER},
         });
         // 顶级命名空间
         flame::mutex::declare(ext);
@@ -246,6 +249,18 @@ namespace flame {
     php::value worker::send(php::parameters& params) {
         worker::ww_->ipc_notify(static_cast<int>(params[0]), params[1]);
         return nullptr;
+    }
+
+    php::value worker::unique_id(php::parameters& params) {
+        static std::atomic_int16_t incr = 0;
+        int node = static_cast<int>(params[0]) % 1024;
+        std::int64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                time::now().time_since_epoch()).count() - 1288834974657l;
+        std::int64_t sfid = 
+            ((time & 0x01ffffffffffl) << 22) | // 41 bit
+            ((node & 0x03ff) << 12) | // 10bit
+            (incr++ & 0x0fff); // 12bit;
+        return sfid;
     }
 
     worker::worker(std::uint8_t idx)

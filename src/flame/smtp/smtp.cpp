@@ -2,8 +2,15 @@
 #include "message.h"
 #include "client.h"
 #include "../../url.h"
+#include "../../util.h"
 
 namespace flame::smtp {
+
+    static php::value create_boundary(php::parameters& params) {
+        int size = params[0];
+        return php::string(util::random_string(size), size);
+    }
+
     void declare(php::extension_entry& ext) {
         ext
             .on_module_startup([] (php::extension_entry& ext) -> bool {
@@ -12,6 +19,9 @@ namespace flame::smtp {
             })
             .function<connect>("flame\\smtp\\connect", {
                 {"url", php::TYPE::STRING},
+            })
+            .function<create_boundary>("flame\\smtp\\create_boundary", {
+                {"size", php::TYPE::INTEGER}
             });
         message::declare(ext);
         client::declare(ext);

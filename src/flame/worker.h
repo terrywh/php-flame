@@ -27,6 +27,8 @@ namespace flame {
         static php::value set(php::parameters& params);
         // 传递消息到其他工作进程
         static php::value send(php::parameters& params);
+        // 生成 snowflake 兼容唯一标识
+        static php::value unique_id(php::parameters& params);
         
         worker(std::uint8_t idx);
         std::ostream& output() override;

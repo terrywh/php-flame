@@ -8,8 +8,15 @@ namespace flame\smtp;
  * 创建 SMTP 客户端，请使用 URL 形式定义 SMTP 服务配置：
  * @param string $url 例如：smtp://user:pass@127.0.0.1:25/
  */
-function connect($url): flame\smtp\client {
-    return new flame\smtp\client();
+function connect($url): \flame\smtp\client {
+    return new client();
+}
+/**
+ * 生成指定长度 (不超过 128 字符) 的分界符（随机大小写字符加数字组合)
+ * 注意: 如对安全性有较高要求, 请采用 random_bytes / openssl_random_pseudo_bytes 并结合替换过程实现;
+ */
+function create_boundary(int $size): string {
+    return "abcABC123";
 }
 /**
  * SMTP 客户端

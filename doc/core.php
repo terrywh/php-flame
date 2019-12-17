@@ -126,6 +126,13 @@ function off(string $event) {}
  */
 function quit(int $exit_code = 0) {}
 /**
+ * 生成一个 唯一ID 编号 (兼容 SNOWFLAKE 格式: https://github.com/bwmarrin/snowflake)
+ * @param int $node 节点编号 (须为不同服务器、进程设置不同值 0 ~ 1023 范围)
+ */
+function unique_id(int $node):int {
+    return 1 << 22 | 2 << 12 | 3;
+}
+/**
  * 协程型队列
  */
 class queue {

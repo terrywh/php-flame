@@ -4,7 +4,6 @@ extern "C" {
     #include <librdkafka/rdmurmur2.h>
     #include <librdkafka/xxhash.h>
 }
-#include "../../util.h"
 
 namespace flame::hash {
     
@@ -42,11 +41,6 @@ namespace flame::hash {
         return dec2hex<std::uint64_t>(raw);
     }
 
-    static php::value rands(php::parameters& params) {
-        int size = params[0];
-        return php::string(util::random_string(size), size);
-    }
-
     void declare(php::extension_entry &ext) {
         ext
             .function<murmur2>("flame\\hash\\murmur2", {
@@ -58,9 +52,6 @@ namespace flame::hash {
             })
             .function<crc64>("flame\\hash\\crc64", {
                 {"data", php::TYPE::STRING},
-            })
-            .function<rands>("flame\\hash\\rands", {
-                {"size", php::TYPE::INTEGER}
             });
     }
 }
