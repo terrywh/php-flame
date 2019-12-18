@@ -80,23 +80,24 @@ namespace flame::kafka {
     }
 
     bool _consumer::consume(coroutine_queue<rd_kafka_message_t*>& q, ::coroutine_handler& ch) {
-        rd_kafka_message_t* msg = rd_kafka_consumer_poll(conn_, 0);
+        std::unique_ptr<rd_kafka_message_t, decltype(rd_kafka_message_destroy)*>
+            msg {rd_kafka_consumer_poll(conn_, 0), rd_kafka_message_destroy };
         if (!msg) {
             // close_ == true // 消费被停止
             return false;
         }
         else if (msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
-            rd_kafka_message_destroy(msg); // 无新消息
             return false;
         }
         else if (msg->err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-            rd_kafka_message_destroy(msg);
             throw php::exception(zend_ce_exception
-                , (boost::format("Failed to consume Kafka message: %s / %s") % rd_kafka_err2str(msg->err) % rd_kafka_message_errstr(msg)).str()
+                , (boost::format("Failed to consume Kafka message: %s / %s")
+                    % rd_kafka_err2str(msg->err)
+                    % rd_kafka_message_errstr(msg.get())).str()
                 , msg->err);
         }
         else {
-            q.push(msg, ch);
+            q.push(msg.release(), ch);
             return true;
         }
     }
