@@ -78,7 +78,7 @@ namespace flame::kafka {
                 , (boost::format("Failed to subcribe Kafka topics: %s") % rd_kafka_err2str(err)).str()
                 , err);
     }
-
+    // TODO 考虑将消费过程迁移置工作线程：目前在主线程运行
     bool _consumer::consume(coroutine_queue<rd_kafka_message_t*>& q, ::coroutine_handler& ch) {
         std::unique_ptr<rd_kafka_message_t, decltype(rd_kafka_message_destroy)*>
             msg {rd_kafka_consumer_poll(conn_, 0), rd_kafka_message_destroy };

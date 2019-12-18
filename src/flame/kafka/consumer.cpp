@@ -62,10 +62,9 @@ namespace flame::kafka {
                 return nullptr;
             }));
         }
-        // boost::asio::io_context::strand consumer_strand {gcontroller->context_y};
         // 启动轻量的 C++ 协程进行消费
-        ::coroutine::start(gcontroller->context_y.get_executor(), [this, &q] (::coroutine_handler ch) {
-            boost::asio::steady_timer tm { gcontroller->context_y };
+        ::coroutine::start(gcontroller->context_x.get_executor(), [this, &q] (::coroutine_handler ch) {
+            boost::asio::steady_timer tm { gcontroller->context_x };
             while(!close_) {
                 if(!cs_->consume(q, ch)) { // 消费到结尾后，适当等待
                     tm.expires_from_now(std::chrono::milliseconds(40));

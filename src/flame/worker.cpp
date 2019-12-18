@@ -208,8 +208,11 @@ namespace flame {
         worker::ww_->ipc_close();
         worker::ww_->lm_close();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // gcontroller->context_y.stop();
-        // gcontroller->context_z.stop();
+        // 强制退出立即结束工作线程
+        if(gcontroller->status & controller::STATUS_QUITING) {
+            gcontroller->context_y.stop();
+            gcontroller->context_z.stop();
+        }
         // 等待工作线程结束
         for (int i=0; i<4; ++i) ts[i].join();
         worker::ww_.reset();
