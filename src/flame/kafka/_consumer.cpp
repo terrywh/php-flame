@@ -79,7 +79,7 @@ namespace flame::kafka {
                 , err);
     }
 
-    bool _consumer::consume(coroutine_queue<php::object>& q, ::coroutine_handler& ch) {
+    bool _consumer::consume(coroutine_queue<rd_kafka_message_t*>& q, ::coroutine_handler& ch) {
         rd_kafka_message_t* msg = rd_kafka_consumer_poll(conn_, 0);
         if (!msg) {
             // close_ == true // 消费被停止
@@ -96,10 +96,7 @@ namespace flame::kafka {
                 , msg->err);
         }
         else {
-            php::object obj(php::class_entry<message>::entry());
-            message* ptr = static_cast<message*>(php::native(obj));
-            ptr->build_ex(msg); // msg 交由 message 对象管理
-            q.push(std::move(obj), ch);
+            q.push(msg, ch);
             return true;
         }
     }

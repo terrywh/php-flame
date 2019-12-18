@@ -31,7 +31,7 @@ namespace flame::kafka {
     php::value consumer::run(php::parameters& params) {
         cb_ = params[0];
         coroutine_handler ch_run {coroutine::current};
-        coroutine_queue<php::object> q;
+        coroutine_queue<rd_kafka_message_t*> q;
         // 启动若干协程, 然后进行"并行"消费
         int count = cc_;
         for (int i = 0; i < count; ++i) {
@@ -41,8 +41,13 @@ namespace flame::kafka {
                 while(true) {
                     try {
                         // consume 本身可能出现异常，不应导致进程停止
-                        std::optional<php::object> m = q.pop(ch);
-                        if (m) cb_.call({m.value()});
+                        std::optional<rd_kafka_message_t*> m = q.pop(ch);
+                        if (m) {
+                            php::object obj(php::class_entry<message>::entry());
+                            message* ptr = static_cast<message*>(php::native(obj));
+                            ptr->build_ex(m.value()); // msg 交由 message 对象管理
+                            cb_.call({obj});
+                        }
                         else break;
                     } catch(const php::exception& ex) {
                         // 调用用户异常回调
@@ -57,9 +62,10 @@ namespace flame::kafka {
                 return nullptr;
             }));
         }
+        // boost::asio::io_context::strand consumer_strand {gcontroller->context_y};
         // 启动轻量的 C++ 协程进行消费
-        ::coroutine::start(gcontroller->context_x.get_executor(), [this, &q] (::coroutine_handler ch) {
-            boost::asio::steady_timer tm { gcontroller->context_x };
+        ::coroutine::start(gcontroller->context_y.get_executor(), [this, &q] (::coroutine_handler ch) {
+            boost::asio::steady_timer tm { gcontroller->context_y };
             while(!close_) {
                 if(!cs_->consume(q, ch)) { // 消费到结尾后，适当等待
                     tm.expires_from_now(std::chrono::milliseconds(40));

@@ -100,7 +100,8 @@ namespace flame {
 
     php::value worker::init(php::parameters& params) {
         php::array options = php::array(0);
-        if(params.size() > 1 && params[1].type_of(php::TYPE::ARRAY)) options = params[1];
+        if (params.size() > 1 && params[1].type_of(php::TYPE::ARRAY))
+            options = params[1];
         if (options.exists("timeout"))
             gcontroller->worker_quit = std::min(std::max(static_cast<int>(options.get("timeout")), 200), 100000);
         else
@@ -255,7 +256,14 @@ namespace flame {
         static std::atomic_int16_t incr = 0;
         int node = static_cast<int>(params[0]) % 1024;
         std::int64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                time::now().time_since_epoch()).count() - 1288834974657l;
+                time::now().time_since_epoch()).count(),
+            epoch = 0;
+        if (params.size() > 1) 
+            epoch = params[1].to_integer();
+        if (epoch <= 1000000000000l || epoch > time)
+            epoch = 1288834974657l;
+
+        time -= epoch;
         std::int64_t sfid = 
             ((time & 0x01ffffffffffl) << 22) | // 41 bit
             ((node & 0x03ff) << 12) | // 10bit

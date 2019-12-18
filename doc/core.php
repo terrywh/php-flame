@@ -20,7 +20,7 @@
  *  * 向主进程发送 SIGUSR2 信号该文件将会被重新打开(或生成);
  *  * 子进程继承主进程的 环境变量 / -c /path/to/php.ini 配置（通过命令行 -d XXX=XXX 的临时设置无效）；
  *  * 向主进程发送 SIGUSR1 信号将切换 HTTP 服务器长短连状态 `Connection: close`；
- *  * 向主进程发送 SIGRTMIN+1 将进行进程重载（陆续停止当前进程并启动新进程）
+ *  * 向主进程发送 SIGRTMIN+1 将进行进程重载（陆续平滑停止当前工作进程并重新启动）
  */
 namespace flame;
 /**
@@ -126,11 +126,15 @@ function off(string $event) {}
  */
 function quit(int $exit_code = 0) {}
 /**
- * 生成一个 唯一ID 编号 (兼容 SNOWFLAKE 格式: https://github.com/bwmarrin/snowflake)
+ * 生成一个 唯一编号 (兼容 SNOWFLAKE 格式: https://github.com/bwmarrin/snowflake)
  * @param int $node 节点编号 (须为不同服务器、进程设置不同值 0 ~ 1023 范围)
+ * @param int $epoch 参照时间 (毫秒，生成相对时间戳 1000000000000 ~ CURRENT_TIME_MS 范围)
+ * 注意：
+ *   1. 配置不同的参照时间 `$epoch` 可以生成不同号段；
  */
-function unique_id(int $node):int {
-    return 1 << 22 | 2 << 12 | 3;
+function unique_id(int $node, int $epoch = 1288834974657):int {
+    static $inc = 0;
+    return (flame\time\now() - $epoch) << 22 | $node << 12 | $inc++;
 }
 /**
  * 协程型队列

@@ -6,7 +6,7 @@ flame\go(function() {
         "bootstrap.servers" => "host1:port1, host2:port2",
         "group.id" => "flame-test-consumer",
         "auto.offset.reset" => "smallest",
-    ], ["test"]);
+    ], ["flame_test"]);
     flame\go(function() use($consumer) {
         // 60 秒后关闭消费者
         flame\time\sleep(60000);
