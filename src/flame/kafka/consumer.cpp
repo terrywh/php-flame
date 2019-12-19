@@ -62,19 +62,38 @@ namespace flame::kafka {
                 return nullptr;
             }));
         }
+        rd_kafka_resp_err_t error = RD_KAFKA_RESP_ERR_NO_ERROR;
         // 启动轻量的 C++ 协程进行消费
-        ::coroutine::start(gcontroller->context_x.get_executor(), [this, &q] (::coroutine_handler ch) {
+        ::coroutine::start(gcontroller->context_x.get_executor(), [this, &error, &q] (::coroutine_handler ch) {
             boost::asio::steady_timer tm { gcontroller->context_x };
             while(!close_) {
-                if(!cs_->consume(q, ch)) { // 消费到结尾后，适当等待
-                    tm.expires_from_now(std::chrono::milliseconds(40));
+                error = cs_->consume(q, ch);
+                switch(error) { 
+                case RD_KAFKA_RESP_ERR__PARTITION_EOF: // 消费到结尾后，适当等待
+                    error = RD_KAFKA_RESP_ERR_NO_ERROR;
+                    tm.expires_from_now(std::chrono::milliseconds(300));
                     tm.async_wait(ch);
+                    break;
+                case RD_KAFKA_RESP_ERR__TRANSPORT: // 连接异常（貌似可恢复 ...）
+                    error = RD_KAFKA_RESP_ERR_NO_ERROR;
+                    tm.expires_from_now(std::chrono::milliseconds(1000));
+                    tm.async_wait(ch);
+                    break;
+                case RD_KAFKA_RESP_ERR_NO_ERROR: // 无错误 
+                    break;
+                default:
+                    close_ = true;
                 }
             }
             cs_->close();
             q.close(); // (A) -> (B)
         });
         ch_run.suspend(); // (C)
+        if(error != RD_KAFKA_RESP_ERR_NO_ERROR) throw php::exception(
+            zend_ce_exception,
+            (boost::format("Failed to commit Kafka message: (%d) %s")
+                % error % rd_kafka_err2str(error)).str(), error);
+                
         return nullptr;
     }
 

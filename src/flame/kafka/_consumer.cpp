@@ -79,27 +79,19 @@ namespace flame::kafka {
                 , err);
     }
     // TODO 考虑将消费过程迁移置工作线程：目前在主线程运行
-    bool _consumer::consume(coroutine_queue<rd_kafka_message_t*>& q, ::coroutine_handler& ch) {
+    rd_kafka_resp_err_t _consumer::consume(coroutine_queue<rd_kafka_message_t*>& q, ::coroutine_handler& ch) {
+        // 错误状态自动销毁
         std::unique_ptr<rd_kafka_message_t, decltype(rd_kafka_message_destroy)*>
             msg {rd_kafka_consumer_poll(conn_, 0), rd_kafka_message_destroy };
         if (!msg) {
             // close_ == true // 消费被停止
-            return false;
+            return RD_KAFKA_RESP_ERR__PARTITION_EOF;
         }
-        else if (msg->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
-            return false;
-        }
-        else if (msg->err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-            throw php::exception(zend_ce_exception
-                , (boost::format("Failed to consume Kafka message: %s / %s")
-                    % rd_kafka_err2str(msg->err)
-                    % rd_kafka_message_errstr(msg.get())).str()
-                , msg->err);
-        }
-        else {
+        if (msg->err == RD_KAFKA_RESP_ERR_NO_ERROR) {
+            // TODO 目前按终止型处理
             q.push(msg.release(), ch);
-            return true;
         }
+        return msg->err;
     }
 
     void _consumer::commit(const php::object& obj, coroutine_handler& ch) {

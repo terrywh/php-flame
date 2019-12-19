@@ -16,7 +16,7 @@ namespace flame::kafka {
         ~_consumer();
         void subscribe(coroutine_handler& ch);
         // 启动轻量的 C++ 协程进行消费
-        bool consume(coroutine_queue<rd_kafka_message_t*>& q, ::coroutine_handler& ch);
+        rd_kafka_resp_err_t consume(coroutine_queue<rd_kafka_message_t*>& q, ::coroutine_handler& ch);
         void commit(const php::object& msg, coroutine_handler& ch);
         void close();
     private:
