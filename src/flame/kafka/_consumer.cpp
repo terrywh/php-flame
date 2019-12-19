@@ -83,15 +83,12 @@ namespace flame::kafka {
         // 错误状态自动销毁
         std::unique_ptr<rd_kafka_message_t, decltype(rd_kafka_message_destroy)*>
             msg {rd_kafka_consumer_poll(conn_, 0), rd_kafka_message_destroy };
-        if (!msg) {
-            // close_ == true // 消费被停止
-            return RD_KAFKA_RESP_ERR__PARTITION_EOF;
-        }
-        if (msg->err == RD_KAFKA_RESP_ERR_NO_ERROR) {
-            // TODO 目前按终止型处理
+        rd_kafka_resp_err_t err = RD_KAFKA_RESP_ERR_NO_ERROR;
+        if (!msg) err = RD_KAFKA_RESP_ERR__PARTITION_EOF;
+        else if (msg->err == RD_KAFKA_RESP_ERR_NO_ERROR)
             q.push(msg.release(), ch);
-        }
-        return msg->err;
+        else err = msg->err;
+        return err;
     }
 
     void _consumer::commit(const php::object& obj, coroutine_handler& ch) {
