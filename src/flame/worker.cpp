@@ -223,7 +223,8 @@ namespace flame {
     php::value worker::quit(php::parameters& params) {
         if ((gcontroller->status & controller::STATUS_RUN) == 0)
             throw php::exception(zend_ce_parse_error, "Failed to run flame: exception or missing 'flame\\init()' ?", -1);
-
+        // 强制退出
+        gcontroller->status |= controller::STATUS_CLOSING | controller::STATUS_QUITING;
         gcontroller->context_x.stop();
         return nullptr;
     }
