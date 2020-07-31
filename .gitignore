@@ -1,7 +1,4 @@
-.ccls-cache
+.clangd
 .vscode
-debug
-release
-stage
-canvas
+build
 compile_commands.json

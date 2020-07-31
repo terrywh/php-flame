@@ -1,0 +1,11 @@
+dsn 'https://6b95e5db5f564a77afcfccd21da7bd8c@o428090.ingest.sentry.io/5373067'
+
+
+export SENTRY_KEY="6b95e5db5f564a77afcfccd21da7bd8c"
+export SENTRY_PRI="e242f5def7b1426d8862e7dea9ec3d63"
+export SENTRY_PRJ="5373067"
+
+curl -v -XPOST https://${SENTRY_KEY}@o428090.ingest.sentry.io/api/${SENTRY_PRJ}/store/ \
+ -H 'Content-Type: application/json' \
+ -H "X-Sentry-Auth: Sentry sentry_version=7,sentry_timestamp=$(date +"%s"),sentry_client=flame-sentry,sentry_key=${SENTRY_KEY}" \
+ -d '{"event_id":"fc6d8c0c43fc4630ad850ee518f1b9d0","timestamp":1596183542,"platform":"php","level":"error","server_name":"hello-sentry","extra":{"php":"8.0alpha2"},"exception":{"type":"error_exception","value":"uncaught exception: unknown error at xxxxxx:222","stacktrace":{"frames":[{"filename":"abc.php","lineno":12,"function":"hello","context_line":"throw new Exception(\"unknown error\")"}]}}}'

@@ -1,0 +1,19 @@
+{
+    "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0",
+    "timestamp": 1596183542,
+    "platform": "php",
+    "level": "error",
+    "logger": "flame",
+    "server_name": "hello-sentry",
+    "extra":{"php":"8.0alpha2"},
+    "exception": {
+        "type": "error_exception",
+        "value": "uncaught exception: unknown error at xxxxxx:222",
+        "stacktrace": {
+            "frames": [{"filename":"abc.php", "lineno": 12, "function": "hello", "context_line": "throw new Exception(\"unknown error\")"}],
+        }
+    }
+}
+
+
+{"event_id":"fc6d8c0c43fc4630ad850ee518f1b9d0","timestamp":1596183542,"platform":"php","level":"error","logger":"flame","server_name":"hello-sentry","extra":{"php":"8.0alpha2"},"exception":{"type":"error_exception","value":"uncaught exception: unknown error at xxxxxx:222","stacktrace":{"frames":[{"filename":"abc.php","lineno":12,"function":"hello","context_line":"throw new Exception(\"unknown error\")"}]}}}
