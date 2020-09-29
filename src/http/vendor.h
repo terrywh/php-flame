@@ -1,5 +1,5 @@
-#ifndef PHP_FLAME_CORE_VENDOR_H
-#define PHP_FLAME_CORE_VENDOR_H
+#ifndef PHP_FLAME_HTTP_VENDOR_H
+#define PHP_FLAME_HTTP_VENDOR_H
 
 #include <cstdint>
 #include <cstdlib>
@@ -16,6 +16,5 @@
 #include <boost/asio.hpp>
 #include <fmt/format.h>
 #include <fmt/chrono.h>
-#include <curl/curl.h>
 
-#endif // PHP_FLAME_CORE_VENDOR_H
+#endif // PHP_FLAME_HTTP_VENDOR_H

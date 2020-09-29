@@ -18,7 +18,7 @@ namespace core {
     class url {
     private:
         CURLU         *url_;
-        php::value   query_var_;  // 容器：query_
+        mutable php::value   query_var_;  // 容器：query_
         php::array&  query_;  // 查询
     public:
         // 用于生成 URL 字符串
@@ -32,9 +32,11 @@ namespace core {
         // 协议
         url& scheme(std::string_view protocol);
         // 重新拼接生成字符串
-        std::string str(bool with_query = true);
+        std::string str(bool with_query = true) const;
         // 获取或设置查询
-        php::array& query();
+        php::array& query() const;
     };
+    // 序列化
+    std::ostream& operator << (std::ostream& os, const url& u);
 }
 #endif // PHP_FLAME_CORE_URL_H

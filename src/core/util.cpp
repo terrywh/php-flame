@@ -1,13 +1,8 @@
-#include <chrono>
-#ifndef NDEBUG
-#include "vendor.h"
-#endif
-
 #include "coroutine.h"
 #include "util.h"
 
-
 #include <cstdint>
+#include <chrono>
 #include <boost/asio/steady_timer.hpp>
 #include <fmt/format.h>
 #include <fmt/chrono.h>
@@ -41,7 +36,7 @@ namespace core {
 
     random_string::random_string(int size, std::string_view code)
     : random_genr(reinterpret_cast<std::uintptr_t>(this))
-    , random_dist(code.size())
+    , random_dist(0, code.size()-1)
     , size_(size)
     , code_(code) {
 
@@ -57,7 +52,8 @@ namespace core {
     void random_string::build(char* const buffer, int size) const {
         if(size == 0) size = size_;
         for(int i=0;i<size;++i) {
-            buffer[i] = code_[random_dist(random_genr)];
+            int r = random_dist(random_genr);
+            buffer[i] = code_[r];
         }
         buffer[size] = '\0';
     }

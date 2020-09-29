@@ -20,7 +20,7 @@ namespace core {
     // 支持上下文（辅线程）
     extern boost::asio::io_context& support_context();
     // 协程处理器
-    template <class CoroutineT>
+    template <class CT>
     class basic_coroutine_handler {
     public:
         // 创建空的处理器
@@ -28,7 +28,7 @@ namespace core {
         : count_(nullptr)
         , error_(nullptr) {}
         // 创建指定协程的处理器
-        basic_coroutine_handler(std::shared_ptr<CoroutineT> co)
+        basic_coroutine_handler(std::shared_ptr<CT> co)
         : count_(nullptr)
         , error_(nullptr)
         , co_(co) {}
@@ -55,7 +55,7 @@ namespace core {
             co_.reset();
         }
         // 重置处理器用于控制指定的协程
-        void reset(std::shared_ptr<CoroutineT> co) {
+        void reset(std::shared_ptr<CT> co) {
             count_ = nullptr;
             error_ = nullptr;
             co_ = co;
@@ -78,9 +78,9 @@ namespace core {
     private:
         std::size_t*                count_;
         boost::system::error_code*  error_;
-        std::shared_ptr<CoroutineT>    co_;
-        friend CoroutineT;
-        friend class boost::asio::async_result<basic_coroutine_handler<CoroutineT>,
+        std::shared_ptr<CT>    co_;
+        friend CT;
+        friend class boost::asio::async_result<basic_coroutine_handler<CT>,
             void (boost::system::error_code error, std::size_t size)>;
     };
     // 协程

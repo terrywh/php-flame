@@ -1,6 +1,5 @@
 #include "vendor.h"
 #include "url.h"
-#include <curl/curl.h>
 
 namespace core {
     // 用于生成 URL 字符串
@@ -65,14 +64,18 @@ namespace core {
         return *this;
     }
     // 获取或设置查询
-    php::array& url::query() {
+    php::array& url::query() const {
         return query_;
     }
     // 重新拼接生成字符串
-    std::string url::str(bool with_query) {
+    std::string url::str(bool with_query) const {
         std::string u;
         char* tmp, *q = nullptr;
-        if(!with_query && curl_url_get(url_, CURLUPART_QUERY, &q, 0) == CURLUE_OK) {
+        if(with_query) {
+            php::value str = php::build_form_data(query_var_);
+            curl_url_set(url_, CURLUPART_QUERY, str.as<php::string>().c_str(), 0);
+        }
+        else if(curl_url_get(url_, CURLUPART_QUERY, &q, 0) == CURLUE_OK) {
             // 暂时屏蔽 QUERY 部分
             curl_url_set(url_, CURLUPART_QUERY, nullptr, 0);
         }
@@ -85,5 +88,11 @@ namespace core {
             curl_free(q);
         }
         return u;
+    }
+    // 序列化
+    std::ostream& operator << (std::ostream& os, const url& u) {
+        std::string s = u.str(true);
+        os.write(s.data(), s.size());
+        return os;
     }
 }
