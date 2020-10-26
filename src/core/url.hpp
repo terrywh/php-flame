@@ -6,9 +6,9 @@
 #ifndef PHP_FLAME_CORE_URL_H
 #define PHP_FLAME_CORE_URL_H
 
+#include <phpext.h>
 #include <string>
 #include <string_view>
-#include <phpext/phpext.h>
 
 struct Curl_URL;
 typedef struct Curl_URL CURLU;

@@ -1,5 +1,5 @@
-#include "vendor.h"
-#include "url.h"
+#include "url.hpp"
+#include <curl/curl.h>
 
 namespace core {
     // 用于生成 URL 字符串

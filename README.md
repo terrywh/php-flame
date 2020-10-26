@@ -101,18 +101,61 @@ flame\run();
     * PhpStorm
     > [Configuring Include Paths](https://www.jetbrains.com/help/phpstorm/configuring-include-paths.html#Configuring_Include_Paths.xml)
 
+* 依赖
+> * PHP >= v8.0 (注意 `--with-pic` 配置参数)
+
 ### 其他
 <details><summary>依赖项编译安装，仅供参考</summary>
 <p>
 
+#### openssl
+``` Bash
+CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1 linux-x86_64
+make && make install
+```
+
 #### boost
 ``` Bash
-./bootstrap.sh --prefix=/data/vendor/boost-1.73
-./b2 --prefix=/data/vendor/boost-1.73 cxxflags="-fPIC" variant=release link=static threading=multi install
+./bootstrap.sh --prefix=/data/vendor/boost-1.74
+./b2 --prefix=/data/vendor/boost-1.74 cxxflags="-fPIC" variant=release link=static threading=multi install
 ```
+
 #### fmt
 ``` Bash
 CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/fmt-7.0 ../
+make && make install
+```
+
+#### c-ares
+``` Bash
+mkdir stage && cd stage
+CC=gcc CXX=g++ cmake -DCARES_SHARED=OFF -DCARES_STATIC=ON -DCARES_STATIC_PIC=ON -DCMAKE_INSTALL_PREFIX=/data/vendor/cares-1.16 -DCMAKE_BUILD_TYPE=Release ../
+make && make install
+```
+
+#### nghttp2
+``` Bash
+mkdir stage && cd stage
+CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.16/lib/pkgconfig:/data/vendor/openssl-1.1/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.41 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR=lib ../
+make && make install
+```
+
+#### curl
+``` Bash
+# quote: cmake for curl is poorly maintained
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1 --enable-ares=/data/vendor/cares-1.16 --with-nghttp2=/data/vendor/nghttp2-1.41 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.71
+make && make install
+```
+#### PHP
+``` Bash
+CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1/lib/pkgconfig './configure' '--prefix=/data/server/php-8.0' '--with-config-file-path=/data/server/php-8.0/etc' '--build=x86_64-linux-gnu' '--with-pic' '--disable-all' '--disable-simplexml' '--disable-xml' '--disable-xmlreader' '--disable-xmlwriter' '--without-libxml' '--without-pear' '--enable-cli' '--enable-opcache' '--enable-opcache-jit' '--enable-mbstring' '--with-readline' '--with-zlib' '--with-openssl=/data/vendor/openssl-1.1' 
+# 不使用 --with-pic 参数可能出现部分奇怪的符号链接问题；
+make && make install
+```
+#### libphpext
+``` Bash
+mkdir stage && cd stage
+cmake -DCMAKE_BUILD_TYPE=Release ../
 make && make install
 ```
 
@@ -135,11 +178,6 @@ PREFIX=/data/vendor/hiredis-0.14 make install
 # rm /data/vendor/hiredis-0.14/lib/*.so*
 ```
 
-#### openssl
-``` Bash
-CC=gcc CXX=g++ ./Configure no-shared --prefix=/data/vendor/openssl-1.1 linux-x86_64
-make && make install
-```
 
 #### AMQP-CPP
 ``` Bash
@@ -173,39 +211,6 @@ make && make install
 cp src/snappy.h /data/vendor/rdkafka-1.5/include/librdkafka/
 cp src/rdmurmur2.h /data/vendor/rdkafka-1.5/include/librdkafka/
 cp src/rdxxhash.h /data/vendor/rdkafka-1.5/include/librdkafka/
-```
-
-#### PHP
-``` Bash
-CC=gcc CXX=g++ CFLAGS="-pthread" PKG_CONFIG_PATH=/data/vendor/openssl-1.1/lib/pkgconfig ./configure --prefix=/data/server/php-8.0 --with-config-file-path=/data/server/php-8.0/etc --disable-all --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --without-libxml --without-pear --enable-cli --enable-opcache --enable-opcache-jit --enable-mbstring  --with-readline --with-zlib --with-openssl=/data/vendor/openssl-1.1 --build=x86_64-linux-gnu
-make && make install
-```
-
-#### libphpext
-``` Bash
-cmake -DCMAKE_BUILD_TYPE=Release ../
-make && make install
-```
-
-#### c-ares
-``` Bash
-mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCARES_SHARED=OFF -DCARES_STATIC=ON -DCARES_STATIC_PIC=ON -DCMAKE_INSTALL_PREFIX=/data/vendor/cares-1.16 -DCMAKE_BUILD_TYPE=Release ../
-make && make install
-```
-
-#### nghttp2
-``` Bash
-mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.16/lib/pkgconfig:/data/vendor/openssl-1.1/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.41 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR=lib ../
-make && make install
-```
-
-#### curl
-``` Bash
-# quote: cmake for curl is poorly maintained
-CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1 --enable-ares=/data/vendor/cares-1.16 --with-nghttp2=/data/vendor/nghttp2-1.41 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.71
-make && make install
 ```
 
 #### maria-connector-c

@@ -1,4 +1,10 @@
-.clangd
+.xmake
 .vscode
 build
 compile_commands.json
+tests/*/*.php
+tests/*/*.exp
+tests/*/*.log
+tests/*/*.out
+tests/*/*.diff
+tests/*/*.sh

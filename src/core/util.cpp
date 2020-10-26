@@ -1,14 +1,13 @@
-#include "coroutine.h"
-#include "util.h"
+#include "coroutine.hpp"
+#include "util.hpp"
 
-#include <cstdint>
-#include <chrono>
-#include <boost/asio/steady_timer.hpp>
 #include <fmt/format.h>
 #include <fmt/chrono.h>
 
-namespace core {
+namespace flame { namespace core {
     static char buffer_[1024];
+
+    clock $clock;
     // 初始化时间计算参照
     clock::clock()
     : sys_(std::chrono::system_clock::now())
@@ -31,43 +30,33 @@ namespace core {
         build(buffer_);
         return buffer_;
     }
-    // 全局时钟
-    clock $clock;
+    
+    random $random;
 
-    random_string::random_string(int size, std::string_view code)
-    : random_genr(reinterpret_cast<std::uintptr_t>(this))
-    , random_dist(0, code.size()-1)
-    , size_(size)
-    , code_(code) {
-
-    }
-    // 生成一个随机字符串
-    random_string::operator std::string() const {
+    random::random()
+    : random_genr(reinterpret_cast<std::uintptr_t>(this)) {}
+    
+    std::string random::string(int size, std::string_view code) const {
         std::string str;
-        str.resize(size_);
-        build(str.data(), size_);
+        str.resize(size);
+        to(str.data(), size);
         return str;
     }
     // 在指定缓存空间中生成
-    void random_string::build(char* const buffer, int size) const {
-        if(size == 0) size = size_;
+    void random::to(char* const buffer, int size, std::string_view code) const {
         for(int i=0;i<size;++i) {
-            int r = random_dist(random_genr);
-            buffer[i] = code_[r];
+            int r = random_dist(random_genr) % size;
+            buffer[i] = code[r];
         }
         buffer[size] = '\0';
     }
-    // 在公共缓存空间中生成
-    const char* random_string::build(int size) const {
-        if(size == 0) size = size_;
-        assert(size < sizeof(buffer_)); // 公共缓冲空间大小
-        build(buffer_, size);
+
+    const char* random::make(int size, std::string_view code) const {
+        to(buffer_, size, code);
         return buffer_;
     }
-    // 协程：
-    void co::sleep(boost::asio::io_context& io, std::chrono::milliseconds ms, coroutine_handler& ch) {
-        boost::asio::steady_timer tm(io);
-        tm.expires_after(ms);
-        tm.async_wait(ch);
+    // 数值
+    int random::i32(int min , int max) {
+        return (random_dist(random_genr) % (max - min)) + min;
     }
-}
+}}

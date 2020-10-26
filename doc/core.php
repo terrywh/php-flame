@@ -71,125 +71,73 @@ function get($array, $keys) {}
  */
 function set(&$array, $keys, $val) {}
 /**
- * 获取一个当前协程 ID 标识
- */
-function co_id():int {
-    return 123456;
-}
-/**
- * 获取运行中的协程数量
- */
-function co_count():int {
-    return 8;
-}
-/**
- * 从若干个队列中选择(等待)一个有数据队列
- * @return 若所有通道已关闭, 返回 null; 否则返回一个有数据的通道, 即: 可以无等待 pop()
- */
-function select(queue $q1, $q2/*, ...*/):queue {
-    return new queue();
-}
-/**
- * 向指定工作进程发送消息通知
- * @param int $target_worker 目标工作进程编号，1 ~ FLAME_MAX_WORKERS；当前进程可读取环境变量 FLAME_CUR_WORKER 获取编号；
- * @param mixed $data 消息数据，自动进行 JSON 序列化传输；
- * 注意：
- *   对象类型数据进行 JSON 序列化可能丢失数据细节而无法还原；
- *   目标进程将会收到 `message`（自动 JSON 反序列化数据）回调;
- *   @see flame\on("message", $cb);
- */
-function send(int $target_worker, $data) {
-
-}
-/**
- * 为指定事件添加处理回调（函数）
- * @param string $event 目前消息存在以下两种:
- *  * "exception" - 当协程发生未捕获异常, 执行对应的回调，并记录错误信息（随后进程会退出），用户可在此回调进行错误报告或报警;
- *  * "quit" - 退出消息, 用户可在此回调停止各种服务，如停止 HTTP 服务器 / 关闭 MySQL 连接等;
- *  * "message" - 消息通知，（启动内部协程）接收来自各子进程之间的相互通讯数据；回调函数接收一个不限类型参数；
- * @see flame\send()
- * @param callable 回调函数
- */
-function on(string $event, callable $cb) {}
-/**
- * 删除指定事件的所有处理回调（函数）
- * 注意：
- *  由于 `message` 事件内部启动协程，阻止了程序的停止；须取消对应回调，使该内部协程停止后，进程才可以正常退出；
- */
-function off(string $event) {}
-/**
- * 用于在用户处理流程中退出 (终止所有协程，可代替 exit() 进行强制停止)
- * 注意：
- *  1. 父子进程模式，当 $exit_code 不为 0 时表示异常退出，父进程会（1s ~ 3s 后）将当前工作进程重启；
- */
-function quit(int $exit_code = 0) {}
-/**
- * 生成一个 唯一编号 (兼容 SNOWFLAKE 格式: https://github.com/bwmarrin/snowflake)
- * @param int $node 节点编号 (须为不同服务器、进程设置不同值 0 ~ 1023 范围)
+ * 生成一个 唯一ID (兼容 SNOWFLAKE 格式: https://github.com/bwmarrin/snowflake)
+ * @param int $node 节点编号 (须为不同服务器、进程设置不同值 0 ~ 1023 范围，默认 PID % 1024)
  * @param int $epoch 参照时间 (毫秒，生成相对时间戳 1000000000000 ~ CURRENT_TIME_MS 范围)
  * 注意：
  *   1. 配置不同的参照时间 `$epoch` 可以生成不同号段；
  */
-function unique_id(int $node, int $epoch = 1288834974657):int {
+function unique_id(int $node = 0, int $epoch = 1288834974657):int {
     static $inc = 0;
     return (flame\time\now() - $epoch) << 22 | $node << 12 | $inc++;
 }
 /**
- * 协程型队列
+ * 记录 TRACE 级别日志, 自动进行 JSON 形式的序列化;
  */
-class queue {
-    /**
-     * @param int $max 队列容量, 若已放入数据达到此数量, push() 将"阻塞"(等待消费);
-     */
-    function __construct($max = 1) {}
-    /**
-     * 放入; 若向已关闭的队列放入, 将抛出异常;
-     */
-    function push($v) {}
-    /**
-     * 取出
-     */
-    function pop() {}
-    /**
-     * 关闭 (将唤醒阻塞在取出 pop() 的协程);
-     * 原则上仅能在生产者方向关闭队列;
-     */
-    function close() {}
-    /**
-     * 队列是否已关闭
-     */
-    function is_closed(): bool {
-        return false;
-    }
-}
+function trace($x/*, $y, $z  ... */) {}
 /**
- * 协程互斥量（锁）
+ * 记录 DEBUG 级别日志, 自动进行 JSON 形式的序列化;
  */
-class mutex {
-    /**
-     * 构建一个协程式 mutex 对象
-     */
-    function __construct() {}
-    /**
-     * 加锁
-     */
-    function lock() {}
-    /**
-     * 解锁
-     */
-    function unlock() {}
-}
+function debug($x/*, $y, $z  ... */) {}
 /**
- * 协程锁（使用上述 mutex 构建自动加锁解锁流程）
+ * 记录 INFO 级别日志, 自动进行 JSON 形式的序列化;
  */
-class guard {
+function info($x/*, $y, $z  ... */) {}
+/**
+ * 记录 WARNING 级别日志, 自动进行 JSON 形式的序列化;
+ */
+function warn($x/*, $y, $z  ... */) {}
+/**
+ * 记录 ERROR 级别日志, 自动进行 JSON 形式的序列化;
+ */
+function error($x/*, $y, $z  ... */) {}
+/**
+ * 记录 FATAL 级别日志, 自动进行 JSON 形式的序列化;
+ */
+function fatal($x/*, $y, $z  ... */) {}
+
+class logger {
     /**
-     * 构建守护并锁定 mutex
-     * @param mutex $mutex 实际保护使用的 mutex 对象
+     * 禁止手动创建日志对象，请使用 flame\log\connect() 函数
+     * @see flame\log\connect()
      */
-    function __construct(mutex $mutex) {}
+    private function __construct() {}
     /**
-     * 解锁 mutex 并销毁守护
+     * 记录 无前缀（无时间戳 、无警告级别）的日志数据
      */
-    function __destruct() {}
-}
+    function write($x/*, $y, $z  ... */) {}
+    /**
+     * 记录 TRACE 级别日志, 自动进行 JSON 形式的序列化;
+     */
+    function trace($x/*, $y, $z  ... */) {}
+    /**
+     * 记录 DEBUG 级别日志, 自动进行 JSON 形式的序列化;
+     */
+    function debug($x/*, $y, $z  ... */) {}
+    /**
+     * 记录 INFO 级别日志, 自动进行 JSON 形式的序列化;
+     */
+    function info($x/*, $y, $z  ... */) {}
+    /**
+     * 记录 WARNING 级别日志, 自动进行 JSON 形式的序列化;
+     */
+    function warn($x/*, $y, $z  ... */) {}
+    /**
+     * 记录 ERROR 级别日志, 自动进行 JSON 形式的序列化;
+     */
+    function error($x/*, $y, $z  ... */) {}
+    /**
+     * 记录 FATAL 级别日志, 自动进行 JSON 形式的序列化;
+     */
+    function fatal($x/*, $y, $z  ... */) {}
+};

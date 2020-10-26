@@ -1,12 +1,17 @@
-#pragma once
+#ifndef PHP_FLAME_CORE_UTIL_H
+#define PHP_FLAME_CORE_UTIL_H
+
 #include <chrono>
+#include <limits>
+#include <memory>
 #include <random>
 #include <string>
 #include <string_view>
 
-namespace boost { namespace asio { class io_context; }}
+#include <cstdint>
 
-namespace core {
+namespace flame { namespace core {
+
     template <class T>
     class basic_coroutine_handler;
     class coroutine;
@@ -43,27 +48,23 @@ namespace core {
     // 全局时钟
     extern clock $clock;
     // 随机字符串
-    class random_string {
+    class random {
     public:
+        random();
         // 使用指定码表构建指定长度的随机字符串
-        random_string(int size = 16, std::string_view code = "ABCDEFGHIJKLMKOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-        // 生成一个随机字符串
-        operator std::string() const;
+        std::string string(int size = 16, std::string_view code = "ABCDEFGHIJKLMKOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") const;
         // 在指定缓存空间中生成（可临时调整生成长度）
-        void build(char* const buffer, int size = 0) const;
+        void to(char* const buffer, int size = 16, std::string_view code = "ABCDEFGHIJKLMKOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") const;
         // 在公共缓存空间中生成（可临时调整生成长度）
-        const char* build(int size = 0) const;
+        const char* make(int size = 16, std::string_view code = "ABCDEFGHIJKLMKOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") const;
+        // 数值
+        int i32(int min = 0, int max = std::numeric_limits<int>::max());
     private:
         mutable std::default_random_engine      random_genr;
         mutable std::uniform_int_distribution<> random_dist;
-
-        int                 size_;
-        std::string_view    code_;
     };
-    // 协程辅助
-    class co {
-    public:
-        static void sleep(boost::asio::io_context& io, std::chrono::milliseconds ms, coroutine_handler& ch);
-    };
+    // 全局时钟
+    extern random $random;
+}}
 
-}
+#endif // PHP_FLAME_CORE_UTIL_H

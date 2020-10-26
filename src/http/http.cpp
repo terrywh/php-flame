@@ -1,6 +1,5 @@
-#include "vendor.h"
 #include "http.h"
-#include <phpext/phpext.h>
+#include <phpext.h>
 
 namespace http {
     //
@@ -15,8 +14,8 @@ extern "C" {
         // 构建模块：在离开函数后保留 module 定义
         static php::module_entry module("flame-http", PHP_FLAME_HTTP_VERSION);
         module
-            .require("flame-core")
-            .declare<http::test>("flame\\http\\test");
+            - php::require("flame-core")
+            - php::function<http::test>("flame\\http\\test");
 
         return module;
     }

@@ -1,5 +1,5 @@
-#ifndef PHP_FLAME_CORE_WORKER_H
-#define PHP_FLAME_CORE_WORKER_H
+#ifndef PHP_FLAME_CORE_FUNCTION_RUN_WORKER_H
+#define PHP_FLAME_CORE_FUNCTION_RUN_WORKER_H
 
 #include <thread>
 #include <vector>
@@ -9,19 +9,18 @@
 namespace flame {
 namespace core {
     
-    class worker {
+    class function_run_worker {
     private:
         std::vector<std::thread>     worker_;
         boost::asio::executor_work_guard<boost::asio::io_context::executor_type> guard_;
-        static void run_ex();
     public:
-        worker();
+        function_run_worker();
+        ~function_run_worker();
         void start();
-        void stop();
         void halt();
     };
 
 }
 }
 
-#endif // PHP_FLAME_CORE_WORKER_H
+#endif // PHP_FLAME_CORE_FUNCTION_RUN_WORKER_H
