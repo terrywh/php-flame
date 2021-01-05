@@ -122,36 +122,66 @@ make && make install
 
 #### fmt
 ``` Bash
-CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/fmt-7.0 ../
+mkdir stage && cd stage
+CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/fmt-7.1 ../
 make && make install
 ```
 
 #### c-ares
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ cmake -DCARES_SHARED=OFF -DCARES_STATIC=ON -DCARES_STATIC_PIC=ON -DCMAKE_INSTALL_PREFIX=/data/vendor/cares-1.16 -DCMAKE_BUILD_TYPE=Release ../
+CC=gcc CXX=g++ cmake \
+    -DCARES_SHARED=OFF -DCARES_STATIC=ON -DCARES_STATIC_PIC=ON \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/cares-1.17 \
+    ../
 make && make install
 ```
 
 #### nghttp2
 ``` Bash
 mkdir stage && cd stage
-CC=gcc CXX=g++ CFLAGS="-fPIC" CXXFLAGS="-fPIC" PKG_CONFIG_PATH="/data/vendor/cares-1.16/lib/pkgconfig:/data/vendor/openssl-1.1/lib/pkgconfig" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/data/vendor/nghttp2-1.41 -DENABLE_LIB_ONLY=ON -DENABLE_SHARED_LIB=OFF -DENABLE_STATIC_LIB=ON -DCMAKE_INSTALL_LIBDIR=lib ../
+CC=gcc CXX=g++ CFLAGS=-fPIC CXXFLAGS=-fPIC PKG_CONFIG_PATH="/data/vendor/cares-1.17/lib/pkgconfig:/data/vendor/openssl-1.1/lib/pkgconfig" ./configure \
+    --prefix=/data/vendor/nghttp2-1.42 \
+    --disable-shared \
+    --enable-static \
+    --enable-lib-only \
+    --with-boost=/data/vendor/boost-1.74 \
+    --enable-asio-lib
 make && make install
 ```
 
 #### curl
 ``` Bash
 # quote: cmake for curl is poorly maintained
-CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure --with-ssl=/data/vendor/openssl-1.1 --enable-ares=/data/vendor/cares-1.16 --with-nghttp2=/data/vendor/nghttp2-1.41 --enable-shared=no --enable-static --enable-ipv6 --without-brotli --without-libidn2 --without-libidn --without-librtmp --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-gopher --without-libpsl --prefix=/data/vendor/curl-7.71
+CC=gcc CXX=g++ CFLAGS=-fPIC CPPFLAGS=-fPIC ./configure \
+    --with-ssl=/data/vendor/openssl-1.1 \
+    --enable-ares=/data/vendor/cares-1.17 \
+    --with-nghttp2=/data/vendor/nghttp2-1.42 \
+    --disable-shared --enable-static --enable-ipv6 \
+    --without-brotli --without-libidn2 --without-libidn --without-librtmp --without-libpsl \
+    --disable-unix-sockets --disable-ftp --disable-ldap --disable-ldaps \
+    --disable-rtsp --disable-dict --disable-file --disable-telnet --disable-tftp \
+    --disable-pop3 --disable-imap --disable-smb --disable-gopher \
+    --prefix=/data/vendor/curl-7.73
 make && make install
 ```
+
+#### lmdb
+
+``` Bash
+# wget https://github.com/LMDB/lmdb/archive/mdb.master.zip
+cd lmdb-mdb.master/libraries/liblmdb
+XCFLAGS="-fPIC" make -j4
+make install prefix=/data/vendor/lmdb-0.9
+```
+
 #### PHP
 ``` Bash
 CC=gcc CXX=g++ PKG_CONFIG_PATH=/data/vendor/openssl-1.1/lib/pkgconfig './configure' '--prefix=/data/server/php-8.0' '--with-config-file-path=/data/server/php-8.0/etc' '--build=x86_64-linux-gnu' '--with-pic' '--disable-all' '--disable-simplexml' '--disable-xml' '--disable-xmlreader' '--disable-xmlwriter' '--without-libxml' '--without-pear' '--enable-cli' '--enable-opcache' '--enable-opcache-jit' '--enable-mbstring' '--with-readline' '--with-zlib' '--with-openssl=/data/vendor/openssl-1.1' 
 # 不使用 --with-pic 参数可能出现部分奇怪的符号链接问题；
 make && make install
 ```
+
 #### libphpext
 ``` Bash
 mkdir stage && cd stage

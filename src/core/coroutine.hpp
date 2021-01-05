@@ -3,8 +3,8 @@
  * copyright (c) 2020 terrywh
  ********************************************************************/
 
-#ifndef PHP_FLAME_CORE_COROUTINE_H
-#define PHP_FLAME_CORE_COROUTINE_H
+#ifndef CPP_CORE_COROUTINE_H
+#define CPP_CORE_COROUTINE_H
 
 #include <memory>
 #include <boost/asio/io_context.hpp>
@@ -14,7 +14,7 @@
 #include <boost/context/fiber.hpp>
 #include <thread>
 
-namespace flame { namespace core {
+namespace core {
     // 协程处理器
     template <class CT>
     class basic_coroutine_handler {
@@ -120,39 +120,39 @@ namespace flame { namespace core {
             co->c1_ = std::move(co->c1_).resume();
         });
     }
-}}
+}
 
 namespace boost::asio {
     template <>
-    class async_result<::flame::core::coroutine_handler, void (boost::system::error_code error, std::size_t size)> {
+    class async_result<::core::coroutine_handler, void (boost::system::error_code error, std::size_t size)> {
     public:
-        explicit async_result(::flame::core::coroutine_handler& ch) : ch_(ch), size_(0) {
+        explicit async_result(::core::coroutine_handler& ch) : ch_(ch), size_(0) {
             ch_.count_ = &size_;
         }
-        using completion_handler_type = ::flame::core::coroutine_handler;
+        using completion_handler_type = ::core::coroutine_handler;
         using return_type = std::size_t;
         return_type get() {
             ch_.yield();
             return size_;
         }
     private:
-        ::flame::core::coroutine_handler &ch_;
+        ::core::coroutine_handler &ch_;
         std::size_t size_;
     };
 
     template <>
-    class async_result<::flame::core::coroutine_handler, void (boost::system::error_code error)> {
+    class async_result<::core::coroutine_handler, void (boost::system::error_code error)> {
     public:
-        explicit async_result(::flame::core::coroutine_handler& ch) : ch_(ch) {
+        explicit async_result(::core::coroutine_handler& ch) : ch_(ch) {
         }
-        using completion_handler_type = ::flame::core::coroutine_handler;
+        using completion_handler_type = ::core::coroutine_handler;
         using return_type = void;
         void get() {
             ch_.yield();
         }
     private:
-        ::flame::core::coroutine_handler &ch_;
+        ::core::coroutine_handler &ch_;
     };
 } // namespace boost::asio
 
-#endif // PHP_FLAME_CORE_COROUTINE_H
+#endif // CPP_CORE_COROUTINE_H

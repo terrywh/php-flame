@@ -1,97 +1,54 @@
-#include "url.hpp"
-#include <curl/curl.h>
+#include "url.h"
+#include "exception.h"
+#include <iostream>
 
 namespace core {
     // 用于生成 URL 字符串
     url::url()
-    : url_(curl_url())
-    , query_var_(php::array::create(4))
-    , query_(query_var_) {
+    : url_(curl_url()) {
 
     }
     // 用于解析 URL 字符串
-    url::url(std::string_view str, bool parse_query)
-    : url_(curl_url())
-    , query_var_(php::array::create(4))
-    , query_(query_var_) { // 原始类型 port 初始值可能随机
+    url::url(std::string_view str)
+    : url_(curl_url()) { // 原始类型 port 初始值可能随机
         curl_url_set(url_, CURLUPART_URL, str.data(), CURLU_NON_SUPPORT_SCHEME);
-        char * tmp;
-        // if(curl_url_get(u, CURLUPART_SCHEME, &tmp, 0) == CURLUE_OK) { // SCHEME
-        //     schema_.assign(tmp);
-        //     curl_free(tmp);
-        // }
-        // if(curl_url_get(u, CURLUPART_USER, &tmp, 0) == CURLUE_OK) { // USER
-        //     user.assign(php::url_decode(tmp));
-        //     curl_free(tmp);
-        // }
-        // if(curl_url_get(u, CURLUPART_PASSWORD, &tmp, 0) == CURLUE_OK) { // PASS
-        //     pass.assign(php::url_decode(tmp));
-        //     curl_free(tmp);
-        // }
-        // if(curl_url_get(u, CURLUPART_HOST, &tmp, 0) == CURLUE_OK) { // HOST
-        //     host.assign(tmp);
-        //     curl_free(tmp);
-        // }
-        // if(curl_url_get(u, CURLUPART_PORT, &tmp, 0) == CURLUE_OK) { // PORT
-        //     port = std::atoi(tmp);
-        //     curl_free(tmp);
-        // }
-        // if(curl_url_get(u, CURLUPART_PATH, &tmp, 0) == CURLUE_OK) { // PATH
-        //     path.assign(tmp);
-        //     curl_free(tmp);
-        // }
-        if(parse_query && curl_url_get(url_, CURLUPART_QUERY, &tmp, 0) == CURLUE_OK) { // QUERY
-            php::parse_form_data(tmp, query_var_);
-            curl_free(tmp);
-        }
     }
+    // 
     url::~url() {
         curl_url_cleanup(url_);
     }
-    // 协议
-    std::string url::scheme() const {
-        std::string schema;
-        char * tmp;
-        if(curl_url_get(url_, CURLUPART_SCHEME, &tmp, 0) == CURLUE_OK) { // SCHEME
-            schema.assign(tmp);
-            curl_free(tmp);
-        }
-        return schema;
+#define DEFINE_URL_PART_ACCESSOR(name, which) \
+    url::part url:: name() const {                                                    \
+        part data;                                                                     \
+        if(CURLUcode e = curl_url_get(url_, which, data, 0); e!= CURLUE_OK)            \
+            raise<unknown_error>("failed to get scheme of url: code = {}", e);         \
+        return data;                                                                   \
+    }                                                                                  \
+    url& url:: name(std::string_view data) {                                          \
+        if(CURLUcode e = curl_url_set(url_, which, data.data(), 0); e != CURLUE_OK)    \
+            raise<unknown_error>("failed to set " #name " of url: code = {}", e);      \
+        return *this;                                                                  \
     }
-    // 协议
-    url& url::scheme(std::string_view proto) {
-        curl_url_set(url_, CURLUPART_SCHEME, proto.data(), 0);
-        return *this;
-    }
-    // 获取或设置查询
-    php::array& url::query() const {
-        return query_;
-    }
+
+    DEFINE_URL_PART_ACCESSOR(scheme,   CURLUPART_SCHEME)
+    DEFINE_URL_PART_ACCESSOR(user,     CURLUPART_USER)
+    DEFINE_URL_PART_ACCESSOR(password, CURLUPART_PASSWORD)
+    DEFINE_URL_PART_ACCESSOR(host,     CURLUPART_HOST)
+    DEFINE_URL_PART_ACCESSOR(path,     CURLUPART_PATH)
+    DEFINE_URL_PART_ACCESSOR(query,    CURLUPART_QUERY)
+
+#undef DEFINE_URL_PART_ACCESSOR
+
     // 重新拼接生成字符串
-    std::string url::str(bool with_query) const {
-        std::string u;
-        char* tmp, *q = nullptr;
-        if(with_query) {
-            php::value str = php::build_form_data(query_var_);
-            curl_url_set(url_, CURLUPART_QUERY, str.as<php::string>().c_str(), 0);
-        }
-        else if(curl_url_get(url_, CURLUPART_QUERY, &q, 0) == CURLUE_OK) {
-            // 暂时屏蔽 QUERY 部分
-            curl_url_set(url_, CURLUPART_QUERY, nullptr, 0);
-        }
-        if(curl_url_get(url_, CURLUPART_URL, &tmp, 0) == CURLUE_OK) {
-            u.assign(tmp);
-            curl_free(tmp);
-        }
-        if(q) {
-            curl_url_set(url_, CURLUPART_QUERY, q, 0);
-            curl_free(q);
-        }
-        return u;
+    url::part url::str() const {
+        part tmp;
+        if(CURLUcode code = curl_url_get(url_, CURLUPART_URL, tmp, 0); code != CURLUE_OK) 
+            raise<unknown_error>("failed to generate url: code = {}", code);
+        return tmp;
     }
     // 序列化
     std::ostream& operator << (std::ostream& os, const url& u) {
-        std::string s = u.str(true);
+        url::part s = u.str();
         os.write(s.data(), s.size());
         return os;
     }

@@ -1,0 +1,9 @@
+example1 --> module started
+example1 --> request started
+
+Fatal error: Uncaught Error: Call to undefined function flame\trace() in /data00/home/wuhao.terry/htdocs/src/github.com/terrywh/php-flame/tests/core/log.php:2
+Stack trace:
+#0 {main}
+  thrown in /data00/home/wuhao.terry/htdocs/src/github.com/terrywh/php-flame/tests/core/log.php on line 2
+example1 --> request shutdown
+example1 --> module shutdown

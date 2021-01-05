@@ -2,9 +2,9 @@
 .vscode
 build
 compile_commands.json
-tests/*/*.php
-tests/*/*.exp
-tests/*/*.log
-tests/*/*.out
-tests/*/*.diff
-tests/*/*.sh
+test/*/*.php
+test/*/*.exp
+test/*/*.log
+test/*/*.out
+test/*/*.diff
+test/*/*.sh
