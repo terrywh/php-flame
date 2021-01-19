@@ -1,5 +1,7 @@
 #include "time.h"
+#include "coroutine.h"
 #include "../clock.h"
+#include "../context.h"
 
 namespace core { namespace extension {
 
@@ -26,7 +28,7 @@ namespace core { namespace extension {
     }
     // 暂定当前协程，并在若干时间后恢复
     php::value time::sleep(php::parameters& params) {
-        // TODO
+        $context->co_sleep(std::chrono::milliseconds(static_cast<int>(params[0])), coroutine_handler {coroutine::current()});
         return nullptr;
     }
 

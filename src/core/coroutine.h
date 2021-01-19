@@ -16,7 +16,7 @@
 
 namespace core {
     // 协程处理器
-    template <class CT>
+    template <class CoroutineT>
     class basic_coroutine_handler {
     public:
         // 创建空的处理器
@@ -24,12 +24,16 @@ namespace core {
         : count_(nullptr)
         , error_(nullptr) {}
         // 创建指定协程的处理器
-        basic_coroutine_handler(std::shared_ptr<CT> co)
+        basic_coroutine_handler(std::shared_ptr<CoroutineT> co)
         : count_(nullptr)
         , error_(nullptr)
         , co_(co) {}
         // 复制
         basic_coroutine_handler(const basic_coroutine_handler& ch) = default;
+        // 执行器
+        boost::asio::executor& executor() {
+            return co_->ex_;
+        }
         // 指定错误返回
         basic_coroutine_handler& operator[](boost::system::error_code& error) {
 #ifndef NDEBUG
@@ -51,7 +55,7 @@ namespace core {
             co_.reset();
         }
         // 重置处理器用于控制指定的协程
-        void reset(std::shared_ptr<CT> co) {
+        void reset(std::shared_ptr<CoroutineT> co) {
             count_ = nullptr;
             error_ = nullptr;
             co_ = co;
@@ -71,40 +75,39 @@ namespace core {
                 co->c1_ = std::move(co->c1_).resume();
             });
         }
-    private:
+    protected:
         std::size_t*                count_;
         boost::system::error_code*  error_;
-        std::shared_ptr<CT>    co_;
-        friend CT;
-        friend class boost::asio::async_result<basic_coroutine_handler<CT>,
+        std::shared_ptr<CoroutineT>    co_;
+        friend CoroutineT;
+        friend class boost::asio::async_result<basic_coroutine_handler<CoroutineT>,
             void (boost::system::error_code error, std::size_t size)>;
     };
     // 协程
-    class coroutine {
+    class basic_coroutine {
     public:
         // 注意：请使用 go 创建并启动协程
         template <class Executor>
-        coroutine(const Executor& ex)
+        basic_coroutine(const Executor& ex)
         : ex_(ex)
         , gd_(ex) {
             
         }
-    private:
+    protected:
         boost::context::fiber  c1_;
         boost::context::fiber  c2_;
         boost::asio::executor  ex_;
         boost::asio::executor_work_guard<boost::asio::executor> gd_; // 协程还未运行完毕时，阻止退出
-    #ifndef NDEBUG // 仅在调试模式计算线程标识
+#ifndef NDEBUG // 仅在调试模式计算线程标识
         std::thread::id        id_;
-    #endif
-        friend class basic_coroutine_handler<coroutine>;
+#endif
+        template <class T>
+        friend class basic_coroutine_handler;
     };
-    // 协程句柄
-    using coroutine_handler = basic_coroutine_handler<coroutine>;
     // 启动协程
-    template <class Executor, class Handler, class CoroutineHandler = coroutine_handler>
+    template <class Executor, class Handler, class CoroutineHandler = basic_coroutine_handler<basic_coroutine>>
     void go(const Executor& executor, Handler&& handler) {
-        auto co = std::make_shared<coroutine>(executor); 
+        auto co = std::make_shared<basic_coroutine>(executor); 
         // 在执行器上运行协程
         boost::asio::post(executor, [co, fn = std::move(handler)] () mutable {
     #ifndef NDEBUG // 仅在调试模式计算线程标识
@@ -124,34 +127,34 @@ namespace core {
 
 namespace boost::asio {
     template <>
-    class async_result<::core::coroutine_handler, void (boost::system::error_code error, std::size_t size)> {
+    class async_result<::core::basic_coroutine_handler<::core::basic_coroutine>, void (boost::system::error_code error, std::size_t size)> {
     public:
-        explicit async_result(::core::coroutine_handler& ch) : ch_(ch), size_(0) {
+        explicit async_result(::core::basic_coroutine_handler<::core::basic_coroutine>& ch) : ch_(ch), size_(0) {
             ch_.count_ = &size_;
         }
-        using completion_handler_type = ::core::coroutine_handler;
+        using completion_handler_type = ::core::basic_coroutine_handler<::core::basic_coroutine>;
         using return_type = std::size_t;
         return_type get() {
             ch_.yield();
             return size_;
         }
     private:
-        ::core::coroutine_handler &ch_;
+        ::core::basic_coroutine_handler<::core::basic_coroutine> &ch_;
         std::size_t size_;
     };
 
     template <>
-    class async_result<::core::coroutine_handler, void (boost::system::error_code error)> {
+    class async_result<::core::basic_coroutine_handler<::core::basic_coroutine>, void (boost::system::error_code error)> {
     public:
-        explicit async_result(::core::coroutine_handler& ch) : ch_(ch) {
+        explicit async_result(::core::basic_coroutine_handler<::core::basic_coroutine>& ch) : ch_(ch) {
         }
-        using completion_handler_type = ::core::coroutine_handler;
+        using completion_handler_type = ::core::basic_coroutine_handler<::core::basic_coroutine>;
         using return_type = void;
         void get() {
             ch_.yield();
         }
     private:
-        ::core::coroutine_handler &ch_;
+        ::core::basic_coroutine_handler<::core::basic_coroutine> &ch_;
     };
 } // namespace boost::asio
 

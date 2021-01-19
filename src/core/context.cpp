@@ -1,5 +1,4 @@
 #include "context.h"
-#include "coroutine.hpp"
 
 namespace core {
 
@@ -10,13 +9,7 @@ namespace core {
     : random(reinterpret_cast<std::uintptr_t>(this)) {
         
     }
-    // 协程：
-    void context::co_sleep(std::chrono::milliseconds ms, coroutine_handler& ch, boost::asio::io_context& io) {
-        boost::asio::steady_timer tm(io);
-        tm.expires_after(ms);
-        tm.async_wait(ch);
-    }
-
+    //
     bool context::in_status(status_t s) {
         switch(s) {
         default:

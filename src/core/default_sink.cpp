@@ -17,7 +17,7 @@ namespace core { namespace log {
         std::tm*    tm = std::gmtime(&tt);
         // TODO 优化：是否可以直接将 format 的输出指向该文件描述符以减少此次复制？
         fmt::memory_buffer buffer;
-
+        // 尽量与 syslog 的形式保持一致
         // priority datetime hostname app pid message_id structured_data message
         fmt::format_to(buffer, "<{}> {:%FT%H:%M}T{:%S}Z ", 
             logger::severity_s[static_cast<int>(level)], *tm, tp.time_since_epoch());

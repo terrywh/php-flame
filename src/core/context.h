@@ -1,7 +1,7 @@
 #ifndef CPP_CORE_CONTROLLER_H
 #define CPP_CORE_CONTROLLER_H
 
-#include "coroutine.hpp"
+#include "coroutine.h"
 #include "clock.h"
 #include "logger.h"
 
@@ -54,7 +54,15 @@ namespace core {
 
         bool in_status(status_t s);
         // 协程辅助
-        void co_sleep(std::chrono::milliseconds ms, coroutine_handler& ch, boost::asio::io_context& io = $context->io_m);
+        template <typename CoroutineHandlerT>
+        void co_sleep(std::chrono::milliseconds ms, CoroutineHandlerT&& ch, boost::asio::io_context& io = $context->io_m) {
+#ifndef NDEBUG
+            assert(io.get_executor() == ch.executor());
+#endif
+            boost::asio::steady_timer tm { io };
+            tm.expires_after(ms);
+            tm.async_wait(ch);
+        }
         // 事件辅助
         template <typename Handler>
         void ev_after(std::chrono::milliseconds ms, Handler&& cb, boost::asio::io_context& io = $context->io_m) {

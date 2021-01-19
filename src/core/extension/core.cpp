@@ -1,5 +1,6 @@
 
 #include "core.h"
+#include "coroutine.h"
 #include "../context.h"
 #include "../cluster.h"
 #include <sstream>
@@ -52,7 +53,7 @@ namespace core { namespace extension {
     }
 
     php::value core::go(php::parameters& params) {
-        // TODO
+        coroutine::go(params[0]);
         return nullptr;
     }
 
