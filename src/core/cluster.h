@@ -14,15 +14,16 @@ namespace core {
     // 进程组
     class cluster {
     public:
-        cluster(const std::string& cmd);
+        cluster();
         // 判定是否为主进程
         [[nodiscard]] bool is_main() {
             return env_.count("FLAME_CUR_WORKER") == 0;
         }
+        unsigned int evaluate_child_process_count();
     private:
         // 当前进程的环境变量
         boost::process::environment env_;
-        
+    public:
         class child_process {
             // 工作进程命令行
             std::string cmd_;
@@ -41,11 +42,10 @@ namespace core {
             // 强制停止（立即终止所有工作，应仅在主进程调用）
             void stop();
         };
-
+        // 工作线程（子进程内有效）
         class worker_thread {
-            // 工作线程（子进程内有效）
             std::vector<std::thread> worker_;
-            // 工作线程守护
+            // 防止工作线程退出
             boost::asio::executor_work_guard<boost::asio::io_context::executor_type> guard_;
         public:
             worker_thread(unsigned int count);
@@ -57,7 +57,8 @@ namespace core {
         public:
             handle_signal(child_process* cp, worker_thread* wt);
         private:
-            boost::asio::signal_set set_;
+            // Zend 引擎内置了信号处理流程，这里不能接管
+            // boost::asio::signal_set set_;
         };
     };
 }

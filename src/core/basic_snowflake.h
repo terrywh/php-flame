@@ -13,9 +13,14 @@ namespace core {
         std::int64_t next_id();
 
     protected:
-        std::int64_t time_:42;
-        std::int64_t node_:10;
-        std::int64_t seq_:12;
+        union {
+            struct {
+                std::int64_t  time:42;
+                std::int64_t  node:10;
+                std::int64_t   seq:12;
+            } parts_;
+            int64_t flake_;
+        };
         std::int64_t epoch_;
     };
 }

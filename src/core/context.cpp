@@ -2,7 +2,7 @@
 
 namespace core {
 
-    std::unique_ptr<context> $ { new context() };
+    std::unique_ptr<context> $context { new context() };
     // 
     context::context()
     // TODO 是否获取自定义的 PHP 配置中种子值？

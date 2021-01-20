@@ -16,7 +16,7 @@
 namespace core {
 
     class context;
-    static std::unique_ptr<context> $context;
+    extern std::unique_ptr<context> $context;
     // 工作上下文
     class context {
     public:
@@ -27,9 +27,9 @@ namespace core {
             STATUS_ERROR = 0x04,
         };
         struct environment_t {
-            pid_t  ppid; // 父进程 ID
-            pid_t   pid; // 进程 ID
-            int  status; // 整体状态
+            pid_t    ppid; // 父进程 ID
+            pid_t     pid; // 进程 ID
+            int    status; // 整体状态
         } env;
         struct option_t {
             // 服务配置

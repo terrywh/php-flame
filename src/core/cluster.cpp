@@ -2,32 +2,21 @@
 #include "context.h"
 
 namespace core {
-
+    
+    // 
+    cluster::cluster()
+    : env_(boost::this_process::environment()) {
+       
+    }
     // 计算目标工作进程数量
-    static unsigned int evaluate_child_process_count(const boost::process::environment& env) {
+    unsigned int cluster::evaluate_child_process_count() {
         unsigned int count = std::max(std::thread::hardware_concurrency()/2, 1u);
-        if(env.count("FLAME_MAX_WORKERS") > 0) {
-            unsigned int max = std::atoi( env.at("FLAME_MAX_WORKERS").to_string().c_str() );
+        if(env_.count("FLAME_MAX_WORKERS") > 0) {
+            unsigned int max = std::atoi( env_.at("FLAME_MAX_WORKERS").to_string().c_str() );
             // 需要将进程数量控制在合理范围内
-            count = std::min(std::max(max, count), 256u);
+            if(max >= 1 && max <= 256) count = max;
         }
         return count;
-    }
-
-    cluster::cluster(const std::string& cmd)
-    : env_(boost::this_process::environment()) {
-        if(is_main()) { // 主进程
-            // 启动子进程
-            child_process cp { evaluate_child_process_count(env_), cmd };
-            worker_thread wt{1};
-            handle_signal(&cp, &wt);
-        }
-        else {
-            // 子进程工作线程
-            auto count = std::max(std::thread::hardware_concurrency()/8, 2u);
-            worker_thread wt{count};
-            handle_signal(nullptr, &wt);
-        }
     }
 
     cluster::child_process::child_process(unsigned int count, const std::string& cmd)
@@ -97,12 +86,7 @@ namespace core {
     }
 
     
-    cluster::handle_signal::handle_signal(cluster::child_process* cp, cluster::worker_thread* wt)
-    : set_($context->io_w) {
-        set_.add(SIGINT);
-        set_.add(SIGTERM);
-        set_.add(SIGQUIT);
-        set_.add(SIGUSR1);
-        set_.add(SIGUSR2);
+    cluster::handle_signal::handle_signal(cluster::child_process* cp, cluster::worker_thread* wt) {
+        
     }
 }

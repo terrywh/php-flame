@@ -23,7 +23,7 @@ namespace core { namespace extension {
     // 对可选参数处理，并填充基类数据
     php::value util::snowflake::__construct(php::parameters& params) {
         if(params.size() > 0)
-            node_  = static_cast<int64_t>(params[0]) % 1024;
+            parts_.node  = static_cast<int64_t>(params[0]) % 1024;
         if(params.size() > 1)
             epoch_ = static_cast<int64_t>(params[1]);
         return nullptr;
