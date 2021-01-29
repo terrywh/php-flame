@@ -10,15 +10,18 @@ namespace core { namespace extension {
     void core::declare(php::module_entry& entry) {
         entry
             - php::function<core::run>("flame\\run", {
-                {"opts", php::TYPE_ARRAY},
-                {"main", php::FAKE_CALLABLE},
+                php::TYPE_VOID,
+                php::TYPE_ARRAY,
+                php::FAKE_CALLABLE,
             })
             - php::function<core::go>("flame\\go", {
-                {"routine", php::FAKE_CALLABLE},
+                php::TYPE_VOID,
+                php::FAKE_CALLABLE,
             })
             - php::function<core::on>("flame\\on", {
-                {"event", php::TYPE_STRING},
-                {"handler", php::FAKE_CALLABLE},
+                php::TYPE_VOID,
+                php::TYPE_STRING,   // event
+                php::FAKE_CALLABLE, // handler
             });
     }
     // 填充选项
@@ -72,6 +75,7 @@ namespace core { namespace extension {
             zend_signal(SIGINT, [] (int sig) {
                 std::cout << "main SIGINT\n";
             });
+            coroutine_traits::save_context(coroutine_traits::gtx_);
             // 主协程启动
             coroutine::start($context->io_m.get_executor(), params[1]);
             // 注意：上述创建的对象，声明周期在此 if block 范围内；其对应析构会在 run() 后等待、回收相关资源

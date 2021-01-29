@@ -15,20 +15,6 @@
 #include <thread>
 
 namespace core {
-    template <class C>
-    class basic_coroutine_runner {
-    public:
-        using coroutine_type = typename std::decay<C>::type;
-        basic_coroutine_runner(coroutine_type* co)
-        : co_(co) {
-            co_->start();
-        }
-        ~basic_coroutine_runner() {
-            co_->end();
-        }
-    private:
-        std::shared_ptr<coroutine_type> co_;
-    };
     // 协程处理器
     template <class C>
     class basic_coroutine_handler {
@@ -171,6 +157,8 @@ namespace core {
         // template <class T>
         // friend class basic_coroutine_handler;
     };
+    template <class T>
+    std::shared_ptr<basic_coroutine<T>> basic_coroutine<T>::current_;
 
     class basic_coroutine_traits {
     public:

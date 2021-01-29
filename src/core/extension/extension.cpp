@@ -1,6 +1,7 @@
 #include <phpext.h>
 #include "core.h"
 #include "time.h"
+#include "util.h"
 
 extern "C" {
     // PHP 扩展模块入口
@@ -15,7 +16,8 @@ extern "C" {
         
         entry
             .declare<core::extension::core>()
-            .declare<core::extension::time>();
+            .declare<core::extension::time>()
+            .declare<core::extension::util>();
         
         return entry;
     }

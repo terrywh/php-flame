@@ -6,11 +6,11 @@ flame\run([
     "service_name"=> "abc",
 ], function() {
     flame\go(function() {
-        flame\time\sleep(100);
+        flame\time\sleep(1000);
         echo "2\n";
     });
     echo "1\n";
-    flame\time\sleep(200);
+    flame\time\sleep(2000);
     echo "3\n";
 });
 ?>

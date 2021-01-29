@@ -12,9 +12,9 @@ namespace core { namespace extension {
     private:
         // 获取一个 snowflake 兼容的唯一标识
         static php::value unique_id(php::parameters& params);
-        // 
+        // 简化多级 KEY 数组读取
         static php::value get(php::parameters& params);
-        //
+        // 简化多级 KEY 数组读取
         static php::value set(php::parameters& params);
         // 封装 snowflake 兼容的简化版本唯一标识生成算法
         class snowflake: public basic_snowflake {

@@ -25,8 +25,10 @@ function utc():string {
 }
 /**
  * 暂停、挂起当前协程（调度执行其他活跃协程），并在 $ms 毫秒后恢复
+ * @param int $ms 毫秒数，最小值 1 毫秒
+ * 
  * 注意：
- *  1. 使用 PHP 内置的 `sleep()`/`usleep()` 函数会阻塞协程调度；
+ *  1. 使用 PHP 内置的 `sleep()`/`usleep()` 函数会阻塞所有协程；
  */
 function sleep(int $ms) {}
 /**

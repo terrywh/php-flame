@@ -14,7 +14,7 @@ namespace core { namespace extension {
     // 参考 zend_execute.c
     void coroutine_traits::init_context(coroutine_context &ctx) {
         ctx.vm_stack = vm_stack_new_page(COROUTINE_PHP_STACK_SIZE, NULL);
-        ctx.vm_stack->top++;
+        ++ctx.vm_stack->top;
         ctx.vm_stack_top = ctx.vm_stack->top;
         ctx.vm_stack_end = ctx.vm_stack->end;
 
@@ -25,7 +25,7 @@ namespace core { namespace extension {
     }
     // 将当前上下文保存到参数容器中
     void coroutine_traits::save_context(coroutine_context &ctx) {
-        ctx.vm_stack = EG(vm_stack);
+        ctx.vm_stack     = EG(vm_stack);
         ctx.vm_stack_top = EG(vm_stack_top);
         ctx.vm_stack_end = EG(vm_stack_end);
         //   ctx.scope = EG(fake_scope);
@@ -46,9 +46,8 @@ namespace core { namespace extension {
         EG(error_handling) = ctx.error_handling;
     }
 
-    coroutine_traits::coroutine_traits() {
-        save_context(gtx_);
-    }
+    coroutine_context coroutine_traits::gtx_;
+    unsigned int      coroutine_traits::cnt_ = 0u;
 
     void coroutine_traits::start() {
         ++cnt_;

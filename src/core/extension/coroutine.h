@@ -24,9 +24,11 @@ namespace core { namespace extension {
     };
     // 
     class coroutine_traits {
+    public:
         static unsigned int      cnt_; // 活跃协程数量
         static coroutine_context gtx_; // 全局运行状态，用于进入退出
                coroutine_context ctx_; // 当前协程运行状态，用于恢复
+    
         // 初始化上下文
         static void init_context(coroutine_context &ctx);
         // 将当前上下文保存到参数容器中
@@ -34,8 +36,6 @@ namespace core { namespace extension {
         // 从参数容器中恢复上下文
         static void restore_context(coroutine_context &ctx);
     public:
-        coroutine_traits();
-
         void  start();
         void  yield();
         void resume();
@@ -45,5 +45,39 @@ namespace core { namespace extension {
     using coroutine = basic_coroutine<coroutine_traits>;
     using coroutine_handler = basic_coroutine_handler<coroutine>;
 }}
+
+
+namespace boost::asio {
+    template <>
+    class async_result<::core::extension::coroutine_handler, void (boost::system::error_code error, std::size_t size)> {
+    public:
+        explicit async_result(::core::extension::coroutine_handler& ch) : ch_(ch), size_(0) {
+            ch_.count_ = &size_;
+        }
+        using completion_handler_type = ::core::extension::coroutine_handler;
+        using return_type = std::size_t;
+        return_type get() {
+            ch_.yield();
+            return size_;
+        }
+    private:
+        ::core::extension::coroutine_handler &ch_;
+        std::size_t size_;
+    };
+
+    template <>
+    class async_result<::core::extension::coroutine_handler, void (boost::system::error_code error)> {
+    public:
+        explicit async_result(::core::extension::coroutine_handler& ch) : ch_(ch) {
+        }
+        using completion_handler_type = ::core::extension::coroutine_handler;
+        using return_type = void;
+        void get() {
+            ch_.yield();
+        }
+    private:
+        ::core::extension::coroutine_handler &ch_;
+    };
+} // namespace boost::asio
 
 #endif // CORE_EXTENSION_COROUTINE_H

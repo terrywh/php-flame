@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 putenv("NO_INTERACTION=1");
+putenv("FLAME_MAX_WORKERS=1");
 /*
    +----------------------------------------------------------------------+
    | Copyright (c) The PHP Group                                          |

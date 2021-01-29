@@ -8,7 +8,8 @@ namespace core { namespace extension {
     void time::declare(php::module_entry& entry) {
         entry 
             - php::function<time::sleep>("flame\\time\\sleep", {
-                {"milliseconds", php::TYPE_INTEGER},
+                php::TYPE_VOID,
+                php::TYPE_INTEGER, // milliseconds
             })
             - php::function<time::now>("flame\\time\\now")
             - php::function<time::iso>("flame\\time\\iso")
@@ -28,8 +29,8 @@ namespace core { namespace extension {
     }
     // 暂定当前协程，并在若干时间后恢复
     php::value time::sleep(php::parameters& params) {
-        $context->co_sleep(std::chrono::milliseconds(static_cast<int>(params[0])), coroutine_handler {coroutine::current()});
+        int ms = std::max(static_cast<int>(params[0]), 1);
+        $context->co_sleep(std::chrono::milliseconds(ms), coroutine_handler {coroutine::current()});
         return nullptr;
     }
-
 }}
