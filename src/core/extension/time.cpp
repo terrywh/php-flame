@@ -7,13 +7,20 @@ namespace core { namespace extension {
 
     void time::declare(php::module_entry& entry) {
         entry 
-            - php::function<time::sleep>("flame\\time\\sleep", {
-                php::TYPE_VOID,
-                php::TYPE_INTEGER, // milliseconds
+            - php::function<time::now>("flame\\time\\now", {
+                { php::TYPE_STRING },
             })
-            - php::function<time::now>("flame\\time\\now")
-            - php::function<time::iso>("flame\\time\\iso")
-            - php::function<time::utc>("flame\\time\\utc");
+            - php::function<time::iso>("flame\\time\\iso", {
+                { php::TYPE_STRING },
+            })
+            - php::function<time::utc>("flame\\time\\utc", {
+                { php::TYPE_STRING },
+            })
+            - php::function<time::sleep>("flame\\time\\sleep", {
+                { php::FAKE_VOID },
+                { php::TYPE_INTEGER, "ms" }, // milliseconds
+            })
+            ;
     }
     // 获取当前时间戳（毫秒）
     php::value time::now(php::parameters& params) {

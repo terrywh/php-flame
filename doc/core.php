@@ -31,9 +31,9 @@ function run(array $options = [], callable $main) {}
  * 注意：
  * 1. 框架使用 固定栈协程 (Fixed-sized Stack Coroutine)，包含 PHP 栈空间在内，单协程占用 ~128kB 内存；
  * 2. 所有启动的协程 在单一的一个线程中 内调度；
- * @param callable $cb 协程函数
+ * @param callable $co 协程函数
  */
-function go(callable $cb) {}
+function go(callable $co) {}
 /**
  * 设置框架消息处理
  * @param string $event 事件名，目前可用的事件如下：

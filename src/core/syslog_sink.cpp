@@ -1,7 +1,8 @@
 #include "syslog_sink.h"
+#include <ostream>
 #include <syslog.h>
 
-namespace core { namespace log {
+namespace core {
     
     int syslog_sink::option_ = LOG_CONS | LOG_PID;
     
@@ -13,7 +14,10 @@ namespace core { namespace log {
         ::closelog();
     }
 
-    void syslog_sink::write(logger::severity_t level, std::string_view log) const {
-        ::syslog(static_cast<int>(level), "%s\n", log);
+    void syslog_sink::prepare(std::ostream& os, logger::severity_t severity) const {
+        os.put( static_cast<char>(static_cast<int>(severity)) );
     }
-}}
+    void syslog_sink::write(const char* data, std::size_t size) const {
+        ::syslog(static_cast<int>(data[0]), "%.*s", size-1, data);
+    }
+}

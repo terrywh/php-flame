@@ -8,6 +8,14 @@ namespace flame\log;
  */
 function reload() {}
 /**
+ * 用于生成一个 Structure Data 日志区段
+ * @return object
+ * @example 例如：
+ * ```
+ * flame\log\debug(flame\log\tagkv(["a"=>"aaaa"]), "b", ["c"=>"cccc"]);
+ */
+function tagkv($tags) {}
+/**
  * 在默认日志中，记录 DEBUG 级别日志, 自动进行 JSON 形式的序列化;
  */
 function debug($x/*, $y, $z  ... */) {}

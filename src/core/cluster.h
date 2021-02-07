@@ -2,28 +2,14 @@
 #ifndef CORE_CLUSTER_H
 #define CORE_CLUSTER_H
 
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/executor_work_guard.hpp>
-#include <boost/process.hpp>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
+#include "vendor.h"
 
 namespace core {
     // 进程组
     class cluster {
     public:
-        cluster();
-        // 判定是否为主进程
-        [[nodiscard]] bool is_main() {
-            return env_.count("FLAME_CUR_WORKER") == 0;
-        }
-        unsigned int evaluate_child_process_count();
-    private:
-        // 当前进程的环境变量
-        boost::process::environment env_;
-    public:
+        // 
+        static unsigned int evaluate_child_process_count();
         class child_process {
             // 工作进程命令行
             std::string cmd_;

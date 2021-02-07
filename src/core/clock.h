@@ -1,9 +1,7 @@
 #ifndef CORE_CLOCK_H
 #define CORE_CLOCK_H
 
-#include <boost/serialization/singleton.hpp>
-#include <fmt/format.h>
-#include <fmt/chrono.h>
+#include "vendor.h"
 
 namespace core {
 

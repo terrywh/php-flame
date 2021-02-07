@@ -1,7 +1,7 @@
 #ifndef CORE_LOG_H
 #define CORE_LOG_H
 
-#include <phpext.h>
+#include "../vendor.h"
 
 namespace core { namespace extension {
 

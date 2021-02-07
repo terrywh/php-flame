@@ -31,15 +31,3 @@ function utc():string {
  *  1. 使用 PHP 内置的 `sleep()`/`usleep()` 函数会阻塞所有协程；
  */
 function sleep(int $ms) {}
-/**
- * 优先级队列实现的定时器集合
- * 一般用于处理需要较大量定时器的场景
- */
-class priority_timer_set {
-    /**
-     * 
-     */
-    function add(int $tick, callable $cb):int {
-        return 0xffffffffff123456;
-    }
-};

@@ -1,7 +1,7 @@
 #ifndef CORE_EXTENSION_CORE_H
 #define CORE_EXTENSION_CORE_H
 
-#include <phpext.h>
+#include "../vendor.h"
 
 namespace core { namespace extension {
 

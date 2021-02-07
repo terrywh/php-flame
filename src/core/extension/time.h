@@ -1,7 +1,8 @@
 #ifndef CORE_EXTENSION_TIME_H
 #define CORE_EXTENSION_TIME_H
 
-#include <phpext.h>
+#include "../vendor.h"
+
 namespace core { namespace extension {
     //
     class time {
