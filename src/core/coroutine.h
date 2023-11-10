@@ -6,13 +6,7 @@
 #ifndef CPP_CORE_COROUTINE_H
 #define CPP_CORE_COROUTINE_H
 
-#include <memory>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/executor.hpp>
-#include <boost/asio/executor_work_guard.hpp>
-#include <boost/asio/post.hpp>
-#include <boost/context/fiber.hpp>
-#include <thread>
+#include "vendor.h"
 
 namespace core {
     // 协程处理器

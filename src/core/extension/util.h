@@ -1,7 +1,7 @@
 #ifndef CORE_EXTENSION_UTIL_H
 #define CORE_EXTENSION_UTIL_H
 
-#include <phpext.h>
+#include "../vendor.h"
 #include "../basic_snowflake.h"
 
 namespace core { namespace extension {

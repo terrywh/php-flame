@@ -4,9 +4,9 @@
 #include "context.h"
 #include "exception.h"
 
-namespace core { namespace log {
+namespace core {
 
-    const char* logger::severity_s[] = {
+    const std::string logger::severity_str[] = {
         "EMERGENCY",
         "ALERT",
         "CRITICAL",
@@ -38,7 +38,7 @@ namespace core { namespace log {
             else if(target == "stderr")
                 return std::unique_ptr<basic_sink>(new stderr_sink());
             else if(target == "syslog") 
-                return std::unique_ptr<basic_sink>(new syslog_sink($context->opt.service.name));
+                return std::unique_ptr<basic_sink>(new syslog_sink($context->option.service.name));
         }
         else if(target == "console")
             return std::unique_ptr<basic_sink>(new stdout_sink());
@@ -47,4 +47,4 @@ namespace core { namespace log {
         
         raise<unknown_error>("failed to create log sink target '{}' unknown", target);
     }
-}}
+}

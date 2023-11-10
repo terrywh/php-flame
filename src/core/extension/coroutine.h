@@ -1,9 +1,8 @@
 #ifndef CORE_EXTENSION_COROUTINE_H
 #define CORE_EXTENSION_COROUTINE_H
 
-#include <phpext.h>
+#include "../vendor.h"
 #include "../coroutine.h"
-#include <memory>
 
 namespace core { namespace extension {
 

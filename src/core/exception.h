@@ -1,8 +1,7 @@
 #ifndef CORE_EXCEPTION_H
 #define CORE_EXCEPTION_H
 
-#include <stdexcept>
-#include <fmt/core.h>
+#include "vendor.h"
 
 namespace core {
 

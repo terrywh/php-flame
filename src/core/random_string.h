@@ -1,11 +1,7 @@
 #ifndef CORE_RANDOM_H
 #define CORE_RANDOM_H
 
-#include <limits>
-#include <random>
-#include <string>
-#include <string_view>
-#include <cstdint>
+#include "vendor.h"
 
 namespace core {
 

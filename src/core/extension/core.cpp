@@ -3,32 +3,49 @@
 #include "coroutine.h"
 #include "../context.h"
 #include "../cluster.h"
-#include <sstream>
 
 namespace core { namespace extension {
     
     void core::declare(php::module_entry& entry) {
         entry
             - php::function<core::run>("flame\\run", {
-                php::TYPE_VOID,
-                php::TYPE_ARRAY,
-                php::FAKE_CALLABLE,
-            })
+                { php::FAKE_VOID },
+                { php::TYPE_ARRAY,    "options"},
+                { php::FAKE_CALLABLE, "main"}, // 主协程
+            });
+        if($context->is_main()) return;
+        // 不在主进程注册功能函数
+        entry
             - php::function<core::go>("flame\\go", {
-                php::TYPE_VOID,
-                php::FAKE_CALLABLE,
+                { php::FAKE_VOID },
+                { php::FAKE_CALLABLE, "co"}, // 协程函数
             })
             - php::function<core::on>("flame\\on", {
-                php::TYPE_VOID,
-                php::TYPE_STRING,   // event
-                php::FAKE_CALLABLE, // handler
+                { php::FAKE_VOID },
+                { php::TYPE_STRING,   "event"   },   // event
+                { php::FAKE_CALLABLE, "handler" }, // handler
             });
     }
-    // 填充选项
-    static void write_ctx_opt(php::array opt) {
-        php::value& service = opt.get("service");
-        if(service.is(php::TYPE_ARRAY)) {
-            $context->opt.service.name = service.as<php::array>().get("name");
+    // 选项
+    static void do_option(php::value& options) {
+        { // service
+            php::value service_name = php::array::get(options, "service.name");
+            if(service_name.is(php::TYPE_STRING))
+                $context->option.service.name = service_name;
+
+            php::process_title( $context->is_main()
+                ? $context->option.service.name + " (php-flame/m)"
+                : $context->option.service.name + " (php-flame/w)");
+        }
+        { // logger
+            $context->logger.reset(new ::core::logger());
+
+            php::value logger_target = php::array::get(options, "logger.target");
+            if(logger_target.is(php::TYPE_ARRAY)) for(auto& entry: php::cast<php::array>(logger_target)) {
+                $context->logger->add_sink( static_cast<std::string_view>(entry.second) );
+            }
+            else
+                $context->logger->add_sink( "console" );
         }
     }
     // 命令行
@@ -39,18 +56,19 @@ namespace core { namespace extension {
     }
     // 框架启动，可选的设置部分选项
     php::value core::run(php::parameters& params) {
-        if(params[0].is(php::TYPE_ARRAY)) write_ctx_opt(params[0]);
-        if(!params[1].is(php::FAKE_CALLABLE)) 
+        if(!params[0].is(php::TYPE_ARRAY))
+            throw php::type_error("A array must be provided as initializing options to the framework.");
+        if(!params[1].is(php::FAKE_CALLABLE))
             throw php::type_error("A callable object must be provided as the main coroutine.");
-
-        $context->env.ppid = ::getppid();
-        $context->env.pid = ::getpid();
+        
+        $context->status.ppid = ::getppid();
+        $context->status.pid  = ::getpid();
+        do_option(params[0]);
 
         cluster c;
         unsigned int child_process_count = c.evaluate_child_process_count();
         // 主进程
-        if(c.is_main()) {
-            php::process_title($context->opt.service.name + " (php-flame/w)");
+        if($context->is_main()) {
             // 启动子进程
             cluster::child_process cp { child_process_count, command_line() };
             cluster::worker_thread wt { 1 };
@@ -62,15 +80,13 @@ namespace core { namespace extension {
             // 注意：上述创建的对象，声明周期在此 if block 范围内；其对应析构会在 run() 后等待、回收相关资源
             $context->io_m.run();
             // 标记状态（尽量在 CPP 侧分离与 PHP 调用关系）
-            if(php::has_error()) $context->env.status |= context::STATUS_ERROR;
+            if(php::has_error()) $context->status.state |= context::STATE_ERROR;
         }
         else {
-            php::process_title($context->opt.service.name + " (php-flame/w)");
             // 子进程工作线程
             unsigned int worker_thread_count = std::max( // 参照进程数量，计算线程数
                 std::thread::hardware_concurrency()/child_process_count, 2u);
             cluster::worker_thread wt {worker_thread_count};
-
             // handle_signal(nullptr, &wt);
             zend_signal(SIGINT, [] (int sig) {
                 std::cout << "main SIGINT\n";
@@ -81,7 +97,7 @@ namespace core { namespace extension {
             // 注意：上述创建的对象，声明周期在此 if block 范围内；其对应析构会在 run() 后等待、回收相关资源
             $context->io_m.run();
             // 标记状态（尽量在 CPP 侧分离与 PHP 调用关系）
-            if(php::has_error()) $context->env.status |= context::STATUS_ERROR;
+            if(php::has_error()) $context->status.state |= context::STATE_ERROR;
         }
         return nullptr;
     }

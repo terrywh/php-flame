@@ -1,15 +1,14 @@
 #ifndef CORE_SNOWFLAKE_H
 #define CORE_SNOWFLAKE_H
 
-#include "context.h"
-#include <cstdint>
+#include "vendor.h"
 
 namespace core { 
 
     class basic_snowflake {
     public:
         static const int64_t default_epoch = 1288834974657;
-        explicit basic_snowflake(int16_t node = $context->env.pid, int64_t epoch = default_epoch);
+        explicit basic_snowflake(int16_t node, int64_t epoch = default_epoch);
         std::int64_t next_id();
 
     protected:
