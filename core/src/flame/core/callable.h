@@ -19,6 +19,7 @@ inline value invoke(std::string_view name) { return callable(name)(); }
 inline value invoke(std::string_view name, parameter_list& argv) { return callable(name)(argv); }
 inline value invoke(std::string_view name, std::initializer_list<value> argv) { return callable(name)(std::move(argv)); }
 
+void handle_exception();
 } // flame::core
 
 #endif // FLAME_CORE_CALLABLE_H
