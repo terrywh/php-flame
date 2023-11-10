@@ -22,8 +22,8 @@ using zend_function_ptr = void(*)(struct _zend_execute_data *execute_data, struc
 class function_entry {
     std::string         name_;
     zend_function_ptr     fn_;
-    argument_entry_list arg_;
-    access_entry        acc_;
+    argument_entry_list  arg_;
+    access_entry         acc_;
 public:
     function_entry(const std::string& name, zend_function_ptr fn, argument_entry_list arg, access_entry acc)
     : name_(name)

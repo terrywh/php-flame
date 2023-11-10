@@ -1,4 +1,4 @@
-#include <flame/core/parameter.h>
+#include "parameter.h"
 #include <php/Zend/zend_API.h>
 #include <boost/assert.hpp>
 #include <iostream>

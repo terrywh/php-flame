@@ -1,6 +1,7 @@
 #ifndef FLAME_PHP_ENTRY_MODULE_H
 #define FLAME_PHP_ENTRY_MODULE_H
 #include "function_entry.h"
+#include "class_entry.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -34,6 +35,7 @@ public:
     module_entry& operator +(on_module_stop&& callback);
 
     module_entry& operator +(function_entry&& entry);
+    module_entry& operator +(class_entry_base& entry);
 
     // 返回 zend_module_entry* 结构指针（隐藏内部类型）
     operator void*();

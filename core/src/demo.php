@@ -1,8 +1,7 @@
 <?php
 hello1();
-hello2("world", 123);
-function test() {
-    hello2("world", "www");
-}
-test();
-echo hello3();
+hello2("world", 2);
+echo hello3(),"\n";
+echo hello4(new DateTime())->format("Y-m-d H:i:s O e"), "\n";
+var_dump(new hello5());
+

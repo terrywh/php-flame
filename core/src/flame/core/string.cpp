@@ -1,4 +1,4 @@
-#include <flame/core/string.h>
+#include "string.h"
 #include <php/Zend/zend_API.h>
 
 namespace flame::core {

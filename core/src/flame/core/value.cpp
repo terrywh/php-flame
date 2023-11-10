@@ -1,7 +1,7 @@
-#include <flame/core/value.h>
+#include "value.h"
 #include <php/Zend/zend_API.h>
 #include <php/Zend/zend_exceptions.h>
-#include <flame/core/exception.h>
+#include "exception.h"
 
 #include <string_view>
 

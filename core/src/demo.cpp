@@ -1,5 +1,5 @@
-#include <flame/core/entry.h>
-#include <flame/core.h>
+#include "flame/core/entry.h"
+#include "flame/core.h"
 #include <iostream>
 namespace core = flame::core;
 
@@ -18,8 +18,10 @@ core::value hello3() {
 }
 
 core::value hello4(core::parameter_list& argv) {
-    
+    return argv[0];
 }
+
+class hello5 {};
 
 extern "C" {
     FLAME_PHP_EXPORT void *get_module() {
@@ -27,7 +29,6 @@ extern "C" {
         demo
             + core::on_module_start([] () {
                 std::cout << "module started!\n";
-                std::set_terminate( flame::core::terminate_handler );
             })
             + core::on_module_stop([] () {
                 std::cout << "module stopped!\n";
@@ -38,9 +39,12 @@ extern "C" {
                 core::byval("size", core::value::type::integer)
             })
             + core::function<hello3>("hello3", core::value::type::string)
-            + core::function<hello4>("hello4", "Date", {
-                core::byval("time", "Date")
+            + core::function<hello4>("hello4", "DateTime", {
+                core::byval("time", "DateTime")
             });
+        core::class_entry<hello5> hello5_("hello5");
+        demo + hello5_;
+
         return demo;
     }
 }

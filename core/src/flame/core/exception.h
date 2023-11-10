@@ -24,6 +24,8 @@ public:
 };
 
 void throw_exception(const exception& e);
+// 异常处理程序 std::set_terminate(...)
+void exception_handler();
 
 } // flame::core
 
