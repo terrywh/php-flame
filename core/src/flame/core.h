@@ -2,6 +2,8 @@
 #define FLAME_CORE_H
 
 #include "core/config.h"
+#include "core/callable.h"
+#include "core/exception.h"
 #include "core/parameter.h"
 #include "core/string.h"
 #include "core/value.h"

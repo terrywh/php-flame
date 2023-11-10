@@ -14,7 +14,9 @@ void hello2(core::parameter_list& argv) {
 }
 
 core::value hello3() {
-    return 123;
+    core::callable rand {"rand"};
+    core::invoke("srand", {1234});
+    return rand();
 }
 
 core::value hello4(core::parameter_list& argv) {
