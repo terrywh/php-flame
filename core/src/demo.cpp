@@ -15,12 +15,13 @@ void hello2(core::parameter_list& argv) {
 
 core::value hello3() {
     core::callable rand {"rand"};
-    core::invoke("srand", {"Abc"});
+    core::invoke("srand", {123456});
     return rand();
 }
 
 core::value hello4(core::parameter_list& argv) {
-    return argv[0];
+    core::object obj = argv[0];
+    return obj.call("format", {"Y-m-d H:i:s O T"});
 }
 
 class hello5 {};
@@ -41,7 +42,7 @@ extern "C" {
                 core::byval("size", core::value::type::integer)
             })
             + core::function<hello3>("hello3", core::value::type::string)
-            + core::function<hello4>("hello4", "DateTime", {
+            + core::function<hello4>("hello4", core::value::type::string, {
                 core::byval("time", "DateTime")
             });
         core::class_entry<hello5> hello5_("hello5");

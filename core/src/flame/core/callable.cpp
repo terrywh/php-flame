@@ -19,7 +19,7 @@ void handle_exception() {
 
 value callable::operator ()() const& {
     zval return_value;
-    call_user_function(nullptr, nullptr, ptr(), &return_value, 0, nullptr);
+    call_user_function(CG(function_table), nullptr, ptr(), &return_value, 0, nullptr);
     handle_exception();
     return value{&return_value};
 }
@@ -29,7 +29,7 @@ value callable::operator ()(parameter_list& argv) const& {
     for (int i=0;i<argv.size();++i) {
         parameters[i] = *argv[i];
     }
-    call_user_function(nullptr, nullptr, ptr(), &return_value, argv.size(), parameters);
+    call_user_function(CG(function_table), nullptr, ptr(), &return_value, argv.size(), parameters);
     handle_exception();
     return value{&return_value};
 }
