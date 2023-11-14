@@ -26,50 +26,51 @@ void argument::type::finalize(void* entry) const {
     }
 }
 
-void argument_entry::finalize(void * entry) const {
+void argument_desc::finalize(void * entry) const {
     auto* e = reinterpret_cast<zend_internal_arg_info*>(entry);
-    e->name = name_.data();
+    zend_string* name = zend_string_init_interned(name_.data(), name_.size(), 1);
+    e->name = ZSTR_VAL(name);
+    // zend_string (interned) 由内部管理
     type_.finalize(&e->type);
     e->default_value = nullptr;
 }
 
-argument_entry byref(const std::string& name, argument::type type) {
-    return argument_entry{name, type, CODE_BY_REFERENCE};
+argument_desc byref(const std::string& name, argument::type type) {
+    return argument_desc{name, type, CODE_BY_REFERENCE};
 }
 
-argument_entry byval(const std::string& name, argument::type type) {
-    return argument_entry{name, type};
+argument_desc byval(const std::string& name, argument::type type) {
+    return argument_desc{name, type};
 }
 
-argument_entry_list::argument_entry_list(argument::type type, std::initializer_list<argument_entry> list)
-: type_(type)
-, list_(std::move(list)) {
+struct argument_entry_store {
+    std::vector<_zend_internal_arg_info> info;
+};
 
-}
+static std::vector<std::shared_ptr<argument_entry_store>> store;
 
-std::size_t argument_entry_list::size() const {
-    return list_.size(); // 首个元素描述必要参数数量
-}
-
-static std::vector< std::unique_ptr<std::vector<_zend_internal_arg_info>> > argument_entry_registry;
-
-void* argument_entry_list::finalize() {
-    auto v = std::make_unique<std::vector<_zend_internal_arg_info>>();
-    v->reserve(list_.size() + 1); // 保证在创建过程中不进行内存重新分配
-
-    auto *rv = reinterpret_cast<zend_internal_function_info*>(&v->emplace_back());
-    std::memset(rv, 0, sizeof(zend_internal_function_info));
-    type_.finalize(&rv->type);
-
-    for (auto& item : list_) {
-        auto& e = v->emplace_back();
-        item.finalize(&e);
+argument_entry::argument_entry(argument::type type, std::initializer_list<argument_desc> list)
+: store_(store.emplace_back(std::make_shared<argument_entry_store>()))
+, size_(list.size()) {
+    store_->info.reserve(list.size()+1);
+    auto *info = reinterpret_cast<zend_internal_function_info*>(&store_->info.emplace_back());
+    info->default_value = nullptr;
+    info->required_num_args = 0;
+    type.finalize(&info->type);
+    for (auto& desc : list) {
+        auto& e = store_->info.emplace_back();
+        desc.finalize(&e);
         if (!ZEND_TYPE_ALLOW_NULL(e.type)) {
-            ++rv->required_num_args;
+            ++info->required_num_args;
         }
     }
+}
 
-    return argument_entry_registry.emplace_back(std::move(v))->data();
+argument_entry::argument_entry(argument_entry&& m) = default;
+argument_entry::~argument_entry() = default;
+
+void* argument_entry::finalize() {
+    return store_->info.data();
 }
 
 } // flame::core

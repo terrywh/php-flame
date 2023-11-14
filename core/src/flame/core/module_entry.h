@@ -22,10 +22,11 @@ public:
     friend class module_entry;
 };
 
-class module_entry_finalizer;
+class class_entry_base;
+class module_entry_store;
 
 class module_entry {
-    std::unique_ptr<module_entry_finalizer> entry_;
+    std::unique_ptr<module_entry_store> entry_;
 
 public:
     module_entry(const std::string& name, const std::string& version);
@@ -35,7 +36,8 @@ public:
     module_entry& operator +(on_module_stop&& callback);
 
     module_entry& operator +(function_entry&& entry);
-    module_entry& operator +(class_entry_base& entry);
+
+    void add(class_entry_base* entry);
 
     // 返回 zend_module_entry* 结构指针（隐藏内部类型）
     operator void*();

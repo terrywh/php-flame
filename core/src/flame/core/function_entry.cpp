@@ -7,8 +7,9 @@ namespace flame::core {
 
 void function_entry::finalize(void* entry) {
     auto* e = reinterpret_cast<zend_function_entry*>(entry);
-    zend_string* name = zend_string_init_interned(name_.data(), name_.size(), true);
-    e->fname = name->val;
+    zend_string* name = zend_string_init_interned(name_.data(), name_.size(), true); // 不释放（等待到进程退出）
+    e->fname = ZSTR_VAL(name);
+    // e->fname = name_.data();
     e->handler = fn_;
     e->arg_info = reinterpret_cast<zend_internal_arg_info*>(arg_.finalize());
     e->num_args = arg_.size();

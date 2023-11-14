@@ -12,7 +12,15 @@ object::object(zend_class_entry* ce) {
     BOOST_ASSERT(Z_REFCOUNT_P(ptr()) == 1);
 }
 
-value object::call(std::string_view name) {
+object::operator _zend_object*() const& {
+    return Z_OBJ_P(ptr());
+}
+
+_zend_object* object::z() const& {
+    return Z_OBJ_P(ptr());
+}
+
+value object::call(const core::string& name) {
     string method{name};
     zval return_value;
     call_user_function(CG(function_table), ptr(), method, &return_value, 0, nullptr);
@@ -20,7 +28,7 @@ value object::call(std::string_view name) {
     return {&return_value};
 }
 
-value object::call(std::string_view name, parameter_list& argv) {
+value object::call(const core::string& name, parameter_list& argv) {
     string method{name};
     zval return_value, parameters [argv.size()];
     for (int i=0;i<argv.size();++i) {
@@ -31,9 +39,22 @@ value object::call(std::string_view name, parameter_list& argv) {
     return {&return_value};
 }
 
-value object::call(std::string_view name, std::initializer_list<value> argv) {
+value object::call(const core::string& name, std::initializer_list<value> argv) {
     parameter_list list { std::move(argv) };
     return call(name, list);
+}
+
+value object::get(const core::string& name) {
+    zval rv;
+    zend_class_entry* scope = EG(fake_scope) ? EG(fake_scope) : zend_get_executed_scope();
+    zval *prop = zend_read_property(scope, z(), name.data(), name.size(), 0, &rv);
+    return value {prop};
+}
+
+void object::set(const core::string& name, const value& v) {
+    zend_class_entry* scope = EG(fake_scope) ? EG(fake_scope) : zend_get_executed_scope();
+    zend_object *zobj = Z_OBJ_P(ptr());
+    zend_update_property(scope, z(), name.data(), name.size(), v);
 }
 
 } // flame::core

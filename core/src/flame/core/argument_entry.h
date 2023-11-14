@@ -1,6 +1,7 @@
 #ifndef FLAME_CORE_ARGUMENT_ENTRY_H
 #define FLAME_CORE_ARGUMENT_ENTRY_H
 #include "value.h"
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -25,26 +26,26 @@ public:
         : name_(name), flag_(0) {}
 
         void finalize(void* entry) const;
-        friend class argument_entry;
+        friend class argument_desc;
     };
     static modifier by_reference;
     static modifier is_variadic;
     static modifier allow_null;
 };
 
-class argument_entry {
+class argument_desc {
 private:
     std::string    name_;
     argument::type type_;
     
 public:
-    argument_entry(const std::string& name, argument::type type, std::uint32_t flag = 0)
+    argument_desc(const std::string& name, argument::type type, std::uint32_t flag = 0)
     : name_(name)
     , type_(type) {}
 
-   ~argument_entry() = default;
+   ~argument_desc() = default;
 
-    argument_entry& operator|(argument::modifier m) {
+    argument_desc& operator|(argument::modifier m) {
         type_.flag_ |= m.flag;
         return *this;
     }
@@ -52,19 +53,22 @@ public:
     void finalize(void* entry) const;
 };
 
-argument_entry byval(const std::string& name, argument::type type);
-argument_entry byref(const std::string& name, argument::type type);
+argument_desc byval(const std::string& name, argument::type type);
+argument_desc byref(const std::string& name, argument::type type);
 
-class argument_entry_list {
-    argument::type        type_; // return type
-    std::vector<argument_entry> list_;
+struct argument_entry_store;
+class argument_entry {
+    std::shared_ptr<argument_entry_store> store_;
+    std::size_t                            size_;
+    // argument::type        type_; // return type
+    // std::vector<argument_entry> list_;
 
 public:
-    argument_entry_list(argument::type type, std::initializer_list<argument_entry> list);
-    argument_entry_list(argument_entry_list&& m) = default;
-   ~argument_entry_list() = default;
+    argument_entry(argument::type type, std::initializer_list<argument_desc> list);
+    argument_entry(argument_entry&& m);
+   ~argument_entry();
     
-    std::size_t size() const;
+    std::size_t size() const { return size_; }
     void * finalize();
 };
 

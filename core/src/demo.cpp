@@ -21,10 +21,26 @@ core::value hello3() {
 
 core::value hello4(core::parameter_list& argv) {
     core::object obj = argv[0];
-    return obj.call("format", {"Y-m-d H:i:s O T"});
+    core::string str = obj.call("format", {"Y-m-d H:i:s O T"});
+    core::object did = argv[1];
+    std::cout << "hello (#4) [" << core::string(did.get("name")) << "]! ";
+    return str;
 }
 
-class hello5 {};
+class hello5 {
+public:
+    hello5() {
+        std::cout << "create\n";
+    }
+
+    void hello() {
+        std::cout << "hello (#5) (world)!\n";
+    }
+
+    ~hello5() {
+        std::cout << "destroy\n";
+    }
+};
 
 extern "C" {
     FLAME_PHP_EXPORT void *get_module() {
@@ -43,11 +59,14 @@ extern "C" {
             })
             + core::function<hello3>("hello3", core::value::type::string)
             + core::function<hello4>("hello4", core::value::type::string, {
-                core::byval("time", "DateTime")
+                core::byval("time", "DateTime"),
+                core::byval("name", core::value::type::object)
             });
-        core::class_entry<hello5> hello5_("hello5");
-        demo + hello5_;
-
+        
+        core::class_entry<hello5>("hello5")
+            + core::method<hello5, &hello5::hello>("hello")
+            + demo;
+        
         return demo;
     }
 }

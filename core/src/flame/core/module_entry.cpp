@@ -8,20 +8,20 @@
 
 namespace flame::core {
 
-class module_entry_finalizer {
+class module_entry_store {
     zend_module_entry entry_;
     std::vector<std::function<void ()>> start_;
     std::vector<std::function<void ()>> stop_;
     std::vector<zend_function_entry> fn_;
-    std::vector<class_entry_base> class_;
+    std::vector<class_entry_base*> class_;
 
     std::string name_;
     std::string version_;
 
-    static module_entry_finalizer* ins_;
+    static module_entry_store* ins_;
     static zend_result on_module_start(int type, int module) {
         std::set_terminate( flame::core::exception_handler );
-        for (auto& ce : ins_->class_) ce.finalize();
+        for (auto& ce : ins_->class_) ce->finalize();
         for (auto& fn : ins_->start_) fn();
         return ZEND_RESULT_CODE::SUCCESS;
     }
@@ -31,7 +31,7 @@ class module_entry_finalizer {
         return ZEND_RESULT_CODE::SUCCESS;
     }
 public:
-    module_entry_finalizer(const std::string& name, const std::string& version)
+    module_entry_store(const std::string& name, const std::string& version)
     : entry_ {
         STANDARD_MODULE_HEADER_EX,
         nullptr, // INI ENTRY
@@ -63,10 +63,10 @@ public:
     friend class module_entry;
 }; // module_entry_finalizer
 
-module_entry_finalizer* module_entry_finalizer::ins_ = nullptr;
+module_entry_store* module_entry_store::ins_ = nullptr;
 
 module_entry::module_entry(const std::string& name, const std::string& version)
-: entry_(std::make_unique<module_entry_finalizer>(name, version)) {
+: entry_(std::make_unique<module_entry_store>(name, version)) {
     
 }
 
@@ -87,9 +87,8 @@ module_entry& module_entry::operator +(function_entry&& entry) {
     return *this;
 }
 
-module_entry& module_entry::operator +(class_entry_base& entry) {
-    entry_->class_.emplace_back(std::move(entry));
-    return *this;
+void module_entry::add(class_entry_base* entry) {
+    entry_->class_.emplace_back(entry);
 }
 
 module_entry::operator void*() {

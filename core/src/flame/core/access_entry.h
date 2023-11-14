@@ -32,10 +32,16 @@ public:
         flag_ |= r.flag_;
         return *this;
     }
+    std::uint32_t finalize() const {
+        return flag_;
+    }
 
-    static access_entry public_;
-    static access_entry private_;
-    static access_entry protected_;
+    static modifier public_;
+    static modifier private_;
+    static modifier protected_;
+    static modifier static_;
+    static modifier final_;
+    static modifier abstract_;
 };
 
 

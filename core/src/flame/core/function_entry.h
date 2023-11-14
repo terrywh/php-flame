@@ -22,14 +22,14 @@ using zend_function_ptr = void(*)(struct _zend_execute_data *execute_data, struc
 class function_entry {
     std::string         name_;
     zend_function_ptr     fn_;
-    argument_entry_list  arg_;
+    argument_entry  arg_;
     access_entry         acc_;
 public:
-    function_entry(const std::string& name, zend_function_ptr fn, argument_entry_list arg, access_entry acc)
+    function_entry(const std::string& name, zend_function_ptr fn, argument_entry&& arg, access_entry acc)
     : name_(name)
     , fn_(fn)
     , arg_(std::move(arg))
-    , acc_(std::move(acc)) { }
+    , acc_(acc) { }
 
     // function_entry(const function_entry& entry) = delete;
     function_entry(function_entry&& entry) = default;
@@ -55,8 +55,7 @@ public:
     }
     template <flame::core::value (*F)()>
     static void handler(struct _zend_execute_data *execute_data, struct _zval_struct *return_value) {
-        flame::core::value r = F();
-        do_return(execute_data, return_value, r);
+        do_return(execute_data, return_value, F());
     }
     template <flame::core::value (*F)(flame::core::parameter_list& list)>
     static void handler(struct _zend_execute_data *execute_data, struct _zval_struct *return_value) {
@@ -72,7 +71,7 @@ function_entry function(const std::string& name) {
     return function_entry(name, function_entry::handler<F>, {value::type::null, {}}, {});
 }
 template <void (*F)(flame::core::parameter_list& list)>
-function_entry function(const std::string& name, std::initializer_list<argument_entry> list) {
+function_entry function(const std::string& name, std::initializer_list<argument_desc> list) {
     return function_entry(name, function_entry::handler<F>, {value::type::null, std::move(list)}, {});
 }
 template <flame::core::value (*F)()>
@@ -80,9 +79,10 @@ function_entry function(const std::string& name, argument::type type) {
     return function_entry(name, function_entry::handler<F>, {type, {}}, {});
 }
 template <flame::core::value (*F)(flame::core::parameter_list& list)>
-function_entry function(const std::string& name, argument::type type, std::initializer_list<argument_entry> list) {
+function_entry function(const std::string& name, argument::type type, std::initializer_list<argument_desc> list) {
     return function_entry(name, function_entry::handler<F>, {type, std::move(list)}, {});
 }
+
 } // flame::core
 
 #endif // FLAME_CORE_ENTRY_FUNCTION_H

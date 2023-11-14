@@ -5,6 +5,7 @@
 #include <cstdint>
 
 struct _zval_struct;
+struct _zend_string;
 
 namespace flame::core {
 
@@ -20,11 +21,13 @@ public:
     : value(std::move(val)) {}
     string(string&& str)
     : value(std::move(str)) {}
-    ~string();
 
     const char* data() const;
     char* data();
     std::size_t size() const;
+
+    operator _zend_string*() const&;
+    _zend_string* z() const&;
 
     friend std::ostream& operator <<(std::ostream& os, const string& str) {
         return os.write(str.data(), str.size());

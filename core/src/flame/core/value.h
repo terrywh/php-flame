@@ -58,7 +58,7 @@ public:
     value(double f);
     value(const char* s);
     value(std::string_view s);
-    ~value();
+    ~value(); // 所有集成对象均使用同样的销毁策略，故无须 virtual 机制
     operator _zval_struct*() const&;
     _zval_struct* ptr() const&;
 
