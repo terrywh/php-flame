@@ -25,6 +25,9 @@ public:
     const char* data() const;
     char* data();
     std::size_t size() const;
+    operator std::string_view() const {
+        return {data(), size()};
+    }
 
     operator _zend_string*() const&;
     _zend_string* z() const&;

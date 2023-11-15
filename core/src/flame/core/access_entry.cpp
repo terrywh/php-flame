@@ -3,11 +3,11 @@
 
 namespace flame::core {
 
-access_entry::modifier access_entry::public_    {ZEND_ACC_PUBLIC   };
-access_entry::modifier access_entry::private_   {ZEND_ACC_PRIVATE  };
-access_entry::modifier access_entry::protected_ {ZEND_ACC_PROTECTED};
-access_entry::modifier access_entry::static_    {ZEND_ACC_STATIC   };
-access_entry::modifier access_entry::final_     {ZEND_ACC_FINAL    };
-access_entry::modifier access_entry::abstract_  {ZEND_ACC_ABSTRACT };
+access_entry::modifier public_    {ZEND_ACC_PUBLIC   };
+access_entry::modifier private_   {ZEND_ACC_PRIVATE  };
+access_entry::modifier protected_ {ZEND_ACC_PROTECTED};
+access_entry::modifier static_    {ZEND_ACC_STATIC   };
+access_entry::modifier final_     {ZEND_ACC_FINAL    };
+access_entry::modifier abstract_  {ZEND_ACC_ABSTRACT };
 
 } // flame::core

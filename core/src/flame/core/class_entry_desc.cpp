@@ -8,6 +8,7 @@ struct _zend_object* class_entry_desc::create_object(struct _zend_class_entry* c
     // 参考 zend_objects_new() 在指定位置初始化
     zend_object* obj = reinterpret_cast<zend_object*>(at + size_);
     zend_object_std_init(obj, ce);
+    object_properties_init(obj, ce);
     create(at);
     return obj;
 }

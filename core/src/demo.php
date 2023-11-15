@@ -12,6 +12,7 @@ class Demo {
 
 echo hello4(new DateTime(), new Demo()), "\n";
 $obj = new hello5();
+$obj->name = "world";
 $obj->hello();
 
 

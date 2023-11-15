@@ -47,14 +47,14 @@ value object::call(const core::string& name, std::initializer_list<value> argv) 
 value object::get(const core::string& name) {
     zval rv;
     zend_class_entry* scope = EG(fake_scope) ? EG(fake_scope) : zend_get_executed_scope();
-    zval *prop = zend_read_property(scope, z(), name.data(), name.size(), 0, &rv);
-    return value {prop};
+    zval* prop = zend_read_property_ex(scope, z(), name, 0, &rv);
+    return {prop};
 }
 
 void object::set(const core::string& name, const value& v) {
     zend_class_entry* scope = EG(fake_scope) ? EG(fake_scope) : zend_get_executed_scope();
     zend_object *zobj = Z_OBJ_P(ptr());
-    zend_update_property(scope, z(), name.data(), name.size(), v);
+    zend_update_property_ex(scope, z(), name, v);
 }
 
 } // flame::core

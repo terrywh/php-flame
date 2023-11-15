@@ -25,6 +25,7 @@ class function_entry {
     argument_entry  arg_;
     access_entry         acc_;
 public:
+    const std::string& name() const { return name_; }
     function_entry(const std::string& name, zend_function_ptr fn, argument_entry&& arg, access_entry acc)
     : name_(name)
     , fn_(fn)
@@ -75,11 +76,11 @@ function_entry function(const std::string& name, std::initializer_list<argument_
     return function_entry(name, function_entry::handler<F>, {value::type::null, std::move(list)}, {});
 }
 template <flame::core::value (*F)()>
-function_entry function(const std::string& name, argument::type type) {
+function_entry function(const std::string& name, argument_desc::type type) {
     return function_entry(name, function_entry::handler<F>, {type, {}}, {});
 }
 template <flame::core::value (*F)(flame::core::parameter_list& list)>
-function_entry function(const std::string& name, argument::type type, std::initializer_list<argument_desc> list) {
+function_entry function(const std::string& name, argument_desc::type type, std::initializer_list<argument_desc> list) {
     return function_entry(name, function_entry::handler<F>, {type, std::move(list)}, {});
 }
 

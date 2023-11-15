@@ -12,7 +12,8 @@ void hello2(core::parameter_list& argv) {
     std::int64_t size = argv[1];
     std::cout << "hello (#" << size << ") [" << name << "]!\n"; 
 }
-
+// xxxxx
+// yyyyy
 core::value hello3() {
     core::callable rand {"rand"};
     core::invoke("srand", {123456});
@@ -20,21 +21,22 @@ core::value hello3() {
 }
 
 core::value hello4(core::parameter_list& argv) {
-    core::object obj = argv[0];
-    core::string str = obj.call("format", {"Y-m-d H:i:s O T"});
-    core::object did = argv[1];
-    std::cout << "hello (#4) [" << core::string(did.get("name")) << "]! ";
+    core::object date = argv[0];
+    core::string str = date.call("format", {"Y-m-d H:i:s O T"});
+    core::object obj = argv[1];
+    std::cout << "hello (#4) [" << static_cast<std::string_view>(obj.get("name")) << "]! \n";
     return str;
 }
 
-class hello5 {
+class hello5 : public core::class_basic<hello5> {
 public:
     hello5() {
         std::cout << "create\n";
     }
 
     void hello() {
-        std::cout << "hello (#5) (world)!\n";
+        std::string_view name = zobj()->get("name");
+        std::cout << "hello (#5) [" << name << "]!\n";
     }
 
     ~hello5() {
@@ -63,9 +65,10 @@ extern "C" {
                 core::byval("name", core::value::type::object)
             });
         
-        core::class_entry<hello5>("hello5")
+        demo.declare<hello5>("hello5")
             + core::method<hello5, &hello5::hello>("hello")
-            + demo;
+            + core::property("world", 5) % core::static_
+            + core::property("name", "default");
         
         return demo;
     }

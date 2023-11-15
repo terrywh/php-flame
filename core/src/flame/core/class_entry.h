@@ -11,10 +11,12 @@ namespace flame::core {
 class module_entry;
 class function_entry;
 class method_entry;
+class property_entry;
+
 struct class_entry_store;
 
 class class_entry_base {
-    std::unique_ptr<class_entry_desc> traits_;
+    std::unique_ptr<class_entry_desc>   desc_;
     std::shared_ptr<class_entry_store> store_;
     
     class_entry_base(std::unique_ptr<class_entry_desc> traits);
@@ -22,20 +24,13 @@ class class_entry_base {
     static void destroy_object(struct _zend_object *obj);
 public:
     static class_entry_base& create(std::unique_ptr<class_entry_desc> traits);
-    struct _zend_class_entry* ce;
     
-    class_entry_base& operator +(function_entry&& method);
-    class_entry_base& operator +(method_entry&& method);
-
-    void operator +(module_entry& module);
+    class_entry_base& operator +(function_entry method);
+    class_entry_base& operator +(method_entry method);
+    class_entry_base& operator +(property_entry property);
 
     void finalize();
 };
-
-template <class T>
-class_entry_base& class_entry(const std::string& name) {
-    return class_entry_base::create(std::make_unique<class_entry_desc_basic<T>>(name));
-}
 
 } // flame::core
 

@@ -9,11 +9,11 @@
 namespace flame::core {
 
 class module_entry_store {
-    zend_module_entry entry_;
-    std::vector<std::function<void ()>> start_;
-    std::vector<std::function<void ()>> stop_;
-    std::vector<zend_function_entry> fn_;
-    std::vector<class_entry_base*> class_;
+    zend_module_entry entry;
+    std::vector<std::function<void ()>> start;
+    std::vector<std::function<void ()>>  stop;
+    std::vector<zend_function_entry> function;
+    std::vector<class_entry_base*>     class_;
 
     std::string name_;
     std::string version_;
@@ -22,17 +22,17 @@ class module_entry_store {
     static zend_result on_module_start(int type, int module) {
         std::set_terminate( flame::core::exception_handler );
         for (auto& ce : ins_->class_) ce->finalize();
-        for (auto& fn : ins_->start_) fn();
+        for (auto& fn : ins_->start) fn();
         return ZEND_RESULT_CODE::SUCCESS;
     }
 
     static zend_result on_module_stop(int type, int module) {
-        for (auto fn : ins_->stop_) fn();
+        for (auto fn : ins_->stop) fn();
         return ZEND_RESULT_CODE::SUCCESS;
     }
 public:
     module_entry_store(const std::string& name, const std::string& version)
-    : entry_ {
+    : entry {
         STANDARD_MODULE_HEADER_EX,
         nullptr, // INI ENTRY
         nullptr, // DEPENDENCIES
@@ -48,16 +48,16 @@ public:
     }
     , name_(name)
     , version_(version) {
-        BOOST_ASSERT(entry_ == nullptr); // 仅允许初始化一个实例
+        BOOST_ASSERT(entry == nullptr); // 仅允许初始化一个实例
         ins_ = this;
     }
 
     void* finalize() {
-        fn_.push_back({});
-        entry_.name = name_.data();
-        entry_.version = version_.data();
-        entry_.functions = fn_.data();
-        return &entry_;
+        function.push_back({});
+        entry.name = name_.data();
+        entry.version = version_.data();
+        entry.functions = function.data();
+        return &entry;
     }
 
     friend class module_entry;
@@ -66,33 +66,33 @@ public:
 module_entry_store* module_entry_store::ins_ = nullptr;
 
 module_entry::module_entry(const std::string& name, const std::string& version)
-: entry_(std::make_unique<module_entry_store>(name, version)) {
+: store_(std::make_unique<module_entry_store>(name, version)) {
     
 }
 
 module_entry::~module_entry() = default;
 
 module_entry& module_entry::operator +(on_module_start&& callback) {
-    entry_->start_.push_back(callback.fn_);
+    store_->start.push_back(callback.fn_);
     return *this;
 }
 
 module_entry& module_entry::operator +(on_module_stop&& callback) {
-    entry_->stop_.push_back(callback.fn_);
+    store_->stop.push_back(callback.fn_);
     return *this;
 }
 
 module_entry& module_entry::operator +(function_entry&& entry) {
-    entry.finalize(&entry_->fn_.emplace_back());
+    entry.finalize(&store_->function.emplace_back());
     return *this;
 }
 
-void module_entry::add(class_entry_base* entry) {
-    entry_->class_.emplace_back(entry);
+void module_entry::append_class_entry(class_entry_base& ce) {
+    store_->class_.emplace_back(&ce);
 }
 
 module_entry::operator void*() {
-    return entry_->finalize();
+    return store_->finalize();
 }
 
 } // flame::core

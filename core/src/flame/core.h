@@ -3,6 +3,7 @@
 
 #include "core/config.h"
 #include "core/callable.h"
+#include "core/class_basic.h"
 #include "core/exception.h"
 #include "core/object.h"
 #include "core/parameter.h"
@@ -14,7 +15,5 @@ namespace flame::core {
 void terminate_handler();
 
 } // flame::core
-
-
 
 #endif // FLAME_CORE_H

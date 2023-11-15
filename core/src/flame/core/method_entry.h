@@ -27,8 +27,8 @@ public:
     , arg_(std::move(arg))
     , acc_(acc) {}
 
-    method_entry& operator |(access_entry::modifier m) {
-        acc_ | m;
+    method_entry& operator %(access_entry::modifier m) {
+        acc_ % m;
         return *this;
     }
 
@@ -71,11 +71,11 @@ method_entry method(const std::string& name, std::initializer_list<argument_desc
     return method_entry(name, method_entry::handler<T, F>, {value::type::null, std::move(list)}, {});
 }
 template <class T, flame::core::value (T::*F)()>
-method_entry method(const std::string& name, argument::type type) {
+method_entry method(const std::string& name, argument_desc::type type) {
     return method_entry(name, method_entry::handler<T, F>, {type, {}}, {});
 }
 template <class T, flame::core::value (T::*F)(flame::core::parameter_list& list)>
-method_entry method(const std::string& name, argument::type type, std::initializer_list<argument_desc> list) {
+method_entry method(const std::string& name, argument_desc::type type, std::initializer_list<argument_desc> list) {
     return method_entry(name, method_entry::handler<T, F>, {type, std::move(list)}, {});
 }
 

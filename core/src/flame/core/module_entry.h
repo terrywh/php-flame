@@ -26,7 +26,8 @@ class class_entry_base;
 class module_entry_store;
 
 class module_entry {
-    std::unique_ptr<module_entry_store> entry_;
+    std::unique_ptr<module_entry_store> store_;
+    void append_class_entry(class_entry_base& ce);
 
 public:
     module_entry(const std::string& name, const std::string& version);
@@ -34,10 +35,14 @@ public:
 
     module_entry& operator +(on_module_start&& callback);
     module_entry& operator +(on_module_stop&& callback);
-
     module_entry& operator +(function_entry&& entry);
 
-    void add(class_entry_base* entry);
+    template <class T>
+    class_entry_base& declare(const std::string& name) {
+        class_entry_base& ce = class_entry_base::create(std::make_unique<class_entry_desc_basic<T>>(name));
+        append_class_entry(ce);
+        return ce;
+    };
 
     // 返回 zend_module_entry* 结构指针（隐藏内部类型）
     operator void*();

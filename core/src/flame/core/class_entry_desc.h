@@ -1,7 +1,6 @@
 #ifndef FLAME_CORE_CLASS_ENTRY_DESC_H
 #define FLAME_CORE_CLASS_ENTRY_DESC_H
-
-#include <memory>
+#include <string>
 
 struct _zend_object;
 struct _zend_class_entry;
@@ -18,6 +17,7 @@ protected:
     virtual void create(void *at) const = 0;
     virtual void destroy(void *at) const = 0;
 public:
+    virtual void do_register(struct _zend_class_entry* ce) {};
     int offset() const { return size_; }
     const std::string& name() const { return name_; }
     struct _zend_object* create_object(struct _zend_class_entry* ce) const;
@@ -30,6 +30,8 @@ template <class T>
 class class_entry_desc_basic: public class_entry_desc {
    
 public:
+    static struct _zend_class_entry* entry;
+
     class_entry_desc_basic(const std::string& name)
     : class_entry_desc(name, size()) { }
 
@@ -44,9 +46,13 @@ public:
     void destroy(void *at) const override {
         reinterpret_cast<T*>(at)->~T();
     }
-    template <class C>
-    friend class_entry_base& class_entry(const std::string& name);
+
+    virtual void do_register(struct _zend_class_entry* pce) {
+        entry = pce;
+    }
 };
+template <class T>
+struct _zend_class_entry* class_entry_desc_basic<T>::entry;
 
 } // flame::core
 

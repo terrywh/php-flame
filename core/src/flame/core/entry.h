@@ -8,5 +8,6 @@
 #include "function_entry.h"
 #include "method_entry.h"
 #include "module_entry.h"
+#include "property_entry.h"
 
 #endif // FLAME_CORE_ENTRY_H

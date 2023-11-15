@@ -28,7 +28,7 @@ public:
     access_entry(const modifier& r)
     : flag_ { r. flag_ } {}
 
-    access_entry& operator |(const modifier& r) {
+    access_entry& operator %(const modifier& r) {
         flag_ |= r.flag_;
         return *this;
     }
@@ -36,14 +36,15 @@ public:
         return flag_;
     }
 
-    static modifier public_;
-    static modifier private_;
-    static modifier protected_;
-    static modifier static_;
-    static modifier final_;
-    static modifier abstract_;
+  
 };
 
+extern access_entry::modifier public_;
+extern access_entry::modifier private_;
+extern access_entry::modifier protected_;
+extern access_entry::modifier static_;
+extern access_entry::modifier final_;
+extern access_entry::modifier abstract_;
 
 } // flame::core
 
