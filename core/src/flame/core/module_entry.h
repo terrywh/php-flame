@@ -1,6 +1,5 @@
 #ifndef FLAME_PHP_ENTRY_MODULE_H
 #define FLAME_PHP_ENTRY_MODULE_H
-#include "function_entry.h"
 #include "class_entry.h"
 #include <functional>
 #include <memory>
@@ -22,7 +21,8 @@ public:
     friend class module_entry;
 };
 
-class class_entry_base;
+class function_entry;
+class constant_entry;
 class module_entry_store;
 
 class module_entry {
@@ -36,6 +36,7 @@ public:
     module_entry& operator +(on_module_start&& callback);
     module_entry& operator +(on_module_stop&& callback);
     module_entry& operator +(function_entry&& entry);
+    module_entry& operator +(constant_entry&& entry);
 
     template <class T>
     class_entry_base& declare(const std::string& name) {

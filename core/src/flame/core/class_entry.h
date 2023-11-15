@@ -12,6 +12,7 @@ class module_entry;
 class function_entry;
 class method_entry;
 class property_entry;
+class constant_entry;
 
 struct class_entry_store;
 
@@ -25,9 +26,10 @@ class class_entry_base {
 public:
     static class_entry_base& create(std::unique_ptr<class_entry_desc> traits);
     
-    class_entry_base& operator +(function_entry method);
-    class_entry_base& operator +(method_entry method);
-    class_entry_base& operator +(property_entry property);
+    class_entry_base& operator +(function_entry&& entry);
+    class_entry_base& operator +(method_entry&&   entry);
+    class_entry_base& operator +(property_entry&& entry);
+    class_entry_base& operator +(constant_entry&& entry);
 
     void finalize();
 };

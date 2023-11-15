@@ -27,9 +27,13 @@ public:
     , arg_(std::move(arg))
     , acc_(acc) {}
 
-    method_entry& operator %(access_entry::modifier m) {
+    method_entry& operator %(access_entry::modifier m) & {
         acc_ % m;
         return *this;
+    }
+    method_entry&& operator %(access_entry::modifier m) && {
+        acc_ % m;
+        return std::move(*this);
     }
 
     static void* fetch(struct _zend_execute_data *execute_data, int offset);

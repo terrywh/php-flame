@@ -17,6 +17,7 @@ protected:
     virtual void create(void *at) const = 0;
     virtual void destroy(void *at) const = 0;
 public:
+    virtual ~class_entry_desc() = default;
     virtual void do_register(struct _zend_class_entry* ce) {};
     int offset() const { return size_; }
     const std::string& name() const { return name_; }
@@ -47,7 +48,7 @@ public:
         reinterpret_cast<T*>(at)->~T();
     }
 
-    virtual void do_register(struct _zend_class_entry* pce) {
+    virtual void do_register(struct _zend_class_entry* pce) override {
         entry = pce;
     }
 };

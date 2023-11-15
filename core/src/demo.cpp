@@ -54,6 +54,7 @@ extern "C" {
             + core::on_module_stop([] () {
                 std::cout << "module stopped!\n";
             })
+            + core::constant("demo\\which", 0)
             + core::function<hello1>("hello1")
             + core::function<hello2>("hello2", {
                 core::byval("name", core::value::type::string),
@@ -67,7 +68,8 @@ extern "C" {
         
         demo.declare<hello5>("hello5")
             + core::method<hello5, &hello5::hello>("hello")
-            + core::property("world", 5) % core::static_
+            + core::property("index", 5) % core::static_
+            + core::constant("which", 6)
             + core::property("name", "default");
         
         return demo;

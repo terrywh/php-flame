@@ -3,15 +3,6 @@
 
 namespace flame::core {
 
-property_entry::property_entry(const std::string& name, const value& def)
-: name_(name)
-, value_(def) {}
-
-property_entry& property_entry::operator %(access_entry::modifier mod) {
-    acc_ % mod;
-    return *this;
-}
-
 void property_entry::finalize(struct _zend_class_entry* ce) {
     std::uint32_t flag = acc_.finalize();
     if (flag == 0) flag |= ZEND_ACC_PUBLIC;

@@ -14,8 +14,18 @@ class property_entry {
     access_entry   acc_;
     
 public:
-    property_entry(const std::string& name, const value& def);
-    property_entry& operator %(access_entry::modifier mod);
+    property_entry(const std::string& name, const value& def)
+    : name_(name)
+    , value_(def) {}
+
+    property_entry& operator %(access_entry::modifier m) & {
+        acc_ % m;
+        return *this;
+    }
+    property_entry&& operator %(access_entry::modifier m) && {
+        acc_ % m;
+        return std::move(*this);
+    }
     void finalize(struct _zend_class_entry* ce);
 };
 

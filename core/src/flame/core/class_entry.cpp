@@ -1,4 +1,5 @@
 #include "class_entry.h"
+#include "constant_entry.h"
 #include "function_entry.h"
 #include "method_entry.h"
 #include "property_entry.h"
@@ -13,6 +14,7 @@ struct class_entry_store {
     std::vector<zend_function_entry> method;
     zend_object_handlers            handler;
     std::vector<property_entry>    property;
+    std::vector<constant_entry>    constant;
 };
 
 static std::map<zend_class_entry*, class_entry_base*> class_registry;
@@ -44,26 +46,30 @@ class_entry_base& class_entry_base::create(std::unique_ptr<class_entry_desc> tra
     return *(new class_entry_base(std::move(traits)));
 }
 
-class_entry_base& class_entry_base::operator +(function_entry method) {
+class_entry_base& class_entry_base::operator +(function_entry&& entry) {
     auto& fn = store_->method.emplace_back();
-    method.finalize(&fn);
+    entry.finalize(&fn);
     fn.flags |= ZEND_ACC_STATIC; // 
     return *this;
 }
 
-class_entry_base& class_entry_base::operator +(method_entry method) {
-    method.finalize(&store_->method.emplace_back());
+class_entry_base& class_entry_base::operator +(method_entry&& entry) {
+    entry.finalize(&store_->method.emplace_back());
     return *this;
 }
 
-class_entry_base& class_entry_base::operator +(property_entry property) {
-    // property.finalize(ce);
-    store_->property.push_back(std::move(property));
+class_entry_base& class_entry_base::operator +(property_entry&& entry) {
+    store_->property.push_back(std::move(entry));
+    return *this;
+}
+
+class_entry_base& class_entry_base::operator +(constant_entry&& entry) {
+    store_->constant.push_back(std::move(entry));
     return *this;
 }
 
 void class_entry_base::finalize() {
-    zend_class_entry entry, *pce;
+    zend_class_entry entry, *ce;
 
     std::memcpy(&store_->handler, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
     store_->handler.offset = desc_->offset();
@@ -76,13 +82,14 @@ void class_entry_base::finalize() {
     }
     
     entry.create_object = create_object;
-    pce = zend_register_internal_class(&entry);
-    desc_->do_register(pce);
-    class_registry[pce] = this; // 此类型的描述信息与注册的类之间建立映射关系
+    ce = zend_register_internal_class(&entry);
+    desc_->do_register(ce);
+    class_registry[ce] = this; // 此类型的描述信息与注册的类之间建立映射关系
 
-    for (auto& property : store_->property) {
-        property.finalize(pce);
-    }
+    for (auto& property : store_->property) property.finalize(ce);
+    store_->property.clear();
+    for (auto& constant : store_->constant) constant.finalize(ce);
+    store_->property.clear();
 }
 
 } // flame::core

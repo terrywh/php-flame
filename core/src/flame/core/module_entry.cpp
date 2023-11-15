@@ -1,4 +1,6 @@
 #include "module_entry.h"
+#include "constant_entry.h"
+#include "function_entry.h"
 #include "exception.h"
 #include <php/Zend/zend_modules.h>
 #include <php/main/php.h>
@@ -14,6 +16,7 @@ class module_entry_store {
     std::vector<std::function<void ()>>  stop;
     std::vector<zend_function_entry> function;
     std::vector<class_entry_base*>     class_;
+    std::vector<constant_entry>      constant;
 
     std::string name_;
     std::string version_;
@@ -21,13 +24,17 @@ class module_entry_store {
     static module_entry_store* ins_;
     static zend_result on_module_start(int type, int module) {
         std::set_terminate( flame::core::exception_handler );
+        for (auto& cs : ins_->constant) cs.finalize(module);
+        ins_->constant.clear();
         for (auto& ce : ins_->class_) ce->finalize();
         for (auto& fn : ins_->start) fn();
+        ins_->start.clear();
         return ZEND_RESULT_CODE::SUCCESS;
     }
 
     static zend_result on_module_stop(int type, int module) {
         for (auto fn : ins_->stop) fn();
+        ins_->stop.clear();
         return ZEND_RESULT_CODE::SUCCESS;
     }
 public:
@@ -84,6 +91,11 @@ module_entry& module_entry::operator +(on_module_stop&& callback) {
 
 module_entry& module_entry::operator +(function_entry&& entry) {
     entry.finalize(&store_->function.emplace_back());
+    return *this;
+}
+
+module_entry& module_entry::operator +(constant_entry&& entry) {
+    store_->constant.push_back(std::move(entry));
     return *this;
 }
 
