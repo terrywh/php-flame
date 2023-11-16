@@ -17,3 +17,4 @@ $obj->name = "world";
 $obj->hello();
 echo "hello (#", hello5::which, ") (world)!\n";
 
+echo ini_get("demo.hello"), "\n";

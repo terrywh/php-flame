@@ -1,6 +1,7 @@
 #include "module_entry.h"
 #include "constant_entry.h"
 #include "function_entry.h"
+#include "ini_entry.h"
 #include "exception.h"
 #include <php/Zend/zend_modules.h>
 #include <php/main/php.h>
@@ -12,11 +13,13 @@ namespace flame::core {
 
 class module_entry_store {
     zend_module_entry entry;
+    std::vector<zend_module_dep>       depend;
     std::vector<std::function<void ()>> start;
     std::vector<std::function<void ()>>  stop;
     std::vector<zend_function_entry> function;
     std::vector<class_entry_base*>     class_;
     std::vector<constant_entry>      constant;
+    std::vector<ini_entry>                ini;
 
     std::string name_;
     std::string version_;
@@ -29,6 +32,12 @@ class module_entry_store {
         for (auto& ce : ins_->class_) ce->finalize();
         for (auto& fn : ins_->start) fn();
         ins_->start.clear();
+        std::vector<zend_ini_entry_def> ini;
+        ini.reserve(ins_->ini.size() + 1);
+        for (auto& ii : ins_->ini) ii.finalize(&ini.emplace_back());
+        ini.push_back({nullptr});
+        zend_register_ini_entries(ini.data(), module);
+        // ini.clear();
         return ZEND_RESULT_CODE::SUCCESS;
     }
 
@@ -57,6 +66,14 @@ public:
     , version_(version) {
         BOOST_ASSERT(entry == nullptr); // 仅允许初始化一个实例
         ins_ = this;
+
+        // 参考 zend_register_module_ex / zend_startup_module_ex 填充依赖描述（似乎没有实现版本比较功能）
+        // 此处仅简单实现，依赖核心模块即可
+        depend.push_back({"standard", nullptr, nullptr,  MODULE_DEP_REQUIRED});
+        depend.push_back({"json", nullptr, nullptr,  MODULE_DEP_REQUIRED});
+        depend.push_back({"SPL", nullptr, nullptr,  MODULE_DEP_REQUIRED});
+        depend.push_back({nullptr});
+        entry.deps = depend.data();
     }
 
     void* finalize() {
@@ -96,6 +113,11 @@ module_entry& module_entry::operator +(function_entry&& entry) {
 
 module_entry& module_entry::operator +(constant_entry&& entry) {
     store_->constant.push_back(std::move(entry));
+    return *this;
+}
+
+module_entry& module_entry::operator +(ini_entry&& entry) {
+    store_->ini.push_back(std::move(entry));
     return *this;
 }
 

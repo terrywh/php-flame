@@ -27,11 +27,11 @@ protected:
     }
 
     static value get_static(const string& name) {
-        return class_static_property{class_entry_desc_basic<T>::entry}.get(name);
+        return class_static_property{class_entry_cache<T>::entry}.get(name);
     }
 
     static void set_static(const string& name, const value& prop) {
-        class_static_property{class_entry_desc_basic<T>::entry}.set(name, prop);
+        class_static_property{class_entry_cache<T>::entry}.set(name, prop);
     }
 };
 

@@ -23,6 +23,7 @@ public:
 
 class function_entry;
 class constant_entry;
+class ini_entry;
 class module_entry_store;
 
 class module_entry {
@@ -37,6 +38,7 @@ public:
     module_entry& operator +(on_module_stop&& callback);
     module_entry& operator +(function_entry&& entry);
     module_entry& operator +(constant_entry&& entry);
+    module_entry& operator +(ini_entry&& entry);
 
     template <class T>
     class_entry_base& declare(const std::string& name) {

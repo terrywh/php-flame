@@ -25,14 +25,21 @@ public:
     void destroy_object(struct _zend_object* obj) const;
 };
 
-class class_entry_base;
+template <class T>
+struct class_entry_cache {
+    static std::string                name;
+    static struct _zend_class_entry* entry;
+};
+
+template <class T>
+struct _zend_class_entry* class_entry_cache<T>::entry;
+template <class T>
+std::string class_entry_cache<T>::name;
 
 template <class T>
 class class_entry_desc_basic: public class_entry_desc {
    
 public:
-    static struct _zend_class_entry* entry;
-
     class_entry_desc_basic(const std::string& name)
     : class_entry_desc(name, size()) { }
 
@@ -49,11 +56,11 @@ public:
     }
 
     virtual void do_register(struct _zend_class_entry* pce) override {
-        entry = pce;
+        class_entry_cache<T>::name = name();
+        class_entry_cache<T>::entry = pce;
     }
 };
-template <class T>
-struct _zend_class_entry* class_entry_desc_basic<T>::entry;
+
 
 } // flame::core
 

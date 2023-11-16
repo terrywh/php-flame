@@ -54,6 +54,7 @@ extern "C" {
             + core::on_module_stop([] () {
                 std::cout << "module stopped!\n";
             })
+            + core::ini("demo.hello", "hello (#6) (world)!") % core::ini_entry::all
             + core::constant("demo\\which", 0)
             + core::function<hello1>("hello1")
             + core::function<hello2>("hello2", {
