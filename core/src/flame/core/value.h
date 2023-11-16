@@ -27,18 +27,19 @@ public:
         return !this->operator==(r);
     }
 
-    static type undefined; // unknown
+    static type undefined;
     static type null;
-    static type boolean; // 仅用于类型比较（实际对应 true / false 两种类型）
     static type integer; // int64
     static type doubles; // float point number (double)
-    static type number; // 仅用于类型比较（实际对应 integer / double 两种类型）
     static type string;
     static type array;
     static type object;
     static type reference;
 
-    static type callable; // 仅用于虚拟的类型描述
+    static type boolean;  // 虚拟类型 true / false
+    static type number;   // 虚拟类型 integer / double
+    static type callable; // 虚拟类型
+    static type mixed;    // 虚拟类型
 };
 
 class parameter_list;

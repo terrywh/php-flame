@@ -18,15 +18,17 @@ const char* type::name() const {
 
 type type::undefined { };
 type type::null      { IS_NULL };
-type type::boolean   { _IS_BOOL, 1 };
 type type::integer   { IS_LONG };
 type type::doubles   { IS_DOUBLE };
-type type::number    { _IS_NUMBER, 1 };
 type type::string    { IS_STRING };
 type type::array     { IS_ARRAY };
 type type::object    { IS_OBJECT };
 type type::reference { IS_REFERENCE };
+
+type type::boolean   { _IS_BOOL, 1 };
+type type::number    { _IS_NUMBER, 1 };
 type type::callable  { IS_CALLABLE, 1 };
+type type::mixed     { IS_MIXED, 1 };
 
 value::value() {}
 
