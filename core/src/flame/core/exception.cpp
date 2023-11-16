@@ -10,10 +10,10 @@
 
 namespace flame::core {
 
-type_error::type_error(value::type expect, const value& value)
+type_error::type_error(flame::core::type expect, const value& value)
 : exception(std::format("(type error) expect '{}', got '{}'", expect.name(), zend_zval_type_name(value))) {}
 
-type_error::type_error(value::type expect)
+type_error::type_error(flame::core::type expect)
 : exception(std::format("(type error) expect '{}'", expect.name())) {}
 
 void throw_exception(const exception& e) {

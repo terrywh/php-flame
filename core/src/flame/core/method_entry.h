@@ -74,7 +74,7 @@ class method<F> {
     method_entry entry_;
 public:
     explicit method(const std::string& name)
-    : entry_{ name, method_entry::handler<T, F>, {value::type::null, {}}, {} } {}
+    : entry_{ name, method_entry::handler<T, F>, {type::null, {}}, {} } {}
     operator method_entry&&() { return std::move(entry_); }
 };
 
@@ -83,7 +83,7 @@ class method<F> {
     method_entry entry_;
 public:
     explicit method(const std::string& name, std::initializer_list<argument_desc> list)
-    : entry_ { name, method_entry::handler<T, F>, {value::type::null, std::move(list)}, {} } {}
+    : entry_ { name, method_entry::handler<T, F>, {type::null, std::move(list)}, {} } {}
     operator method_entry&&() { return std::move(entry_); }
 };
 

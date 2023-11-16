@@ -1,37 +1,32 @@
 #include "value.h"
+#include "exception.h"
 #include <php/Zend/zend_API.h>
 #include <php/Zend/zend_exceptions.h>
-#include "exception.h"
-
+#include <boost/assert.hpp>
 #include <string_view>
 
 namespace flame::core {
 
-bool value::type::operator==(const value::type& r) const {
-    return (code_ == r.code_) ||
-        // BOOLEAN
-        ((code_ == IS_TRUE || code_ == IS_FALSE) && r.code_ ==_IS_BOOL) ||
-        (code_ == _IS_BOOL && (r.code_ == IS_TRUE || r.code_ == IS_FALSE)) ||
-        // NUMBER
-        ((code_ == IS_LONG || code_ == IS_DOUBLE) && r.code_ == _IS_NUMBER) ||
-        (code_ == _IS_NUMBER && (r.code_ == IS_LONG || r.code_ == IS_DOUBLE));
+bool type::operator==(const type& r) const {
+    BOOST_ASSERT(!fake_ && !r.fake_); // 仅真实类型能进行比较
+    return code_ == r.code_;
 }
 
-const char* value::type::name() const {
+const char* type::name() const {
     return zend_get_type_by_const(code_);
 }
 
-value::type value::type::undefined { };
-value::type value::type::null      { IS_NULL };
-value::type value::type::boolean   { _IS_BOOL };
-value::type value::type::integer   { IS_LONG };
-value::type value::type::doubles   { IS_DOUBLE };
-value::type value::type::number    { _IS_NUMBER };
-value::type value::type::string    { IS_STRING };
-value::type value::type::array     { IS_ARRAY };
-value::type value::type::object    { IS_OBJECT };
-value::type value::type::reference { IS_REFERENCE };
-value::type value::type::callable  { IS_CALLABLE };
+type type::undefined { };
+type type::null      { IS_NULL };
+type type::boolean   { _IS_BOOL, 1 };
+type type::integer   { IS_LONG };
+type type::doubles   { IS_DOUBLE };
+type type::number    { _IS_NUMBER, 1 };
+type type::string    { IS_STRING };
+type type::array     { IS_ARRAY };
+type type::object    { IS_OBJECT };
+type type::reference { IS_REFERENCE };
+type type::callable  { IS_CALLABLE, 1 };
 
 value::value() {}
 
@@ -101,8 +96,8 @@ value value::to_reference() {
     return r;
 }
 
-flame::core::value::type value::value::of_type() const {
-    return flame::core::value::type{ zval_get_type(*this) };
+flame::core::type value::value::type() const {
+    return flame::core::type{ zval_get_type(*this) };
 }
 
 value::operator _zval_struct*() const& {
@@ -113,51 +108,61 @@ _zval_struct* value::ptr() const& {
     return const_cast<_zval_struct*>(reinterpret_cast<const _zval_struct*>(&storage_));
 }
 
+bool value::is_boolean() const {
+    if (std::uint8_t typ = value::type(); typ == IS_TRUE || typ == IS_FALSE)
+        return true;
+    return false;
+}
+
+bool value::is_callable() const {
+    return zend_is_callable(ptr(), IS_CALLABLE_SUPPRESS_DEPRECATIONS, nullptr);
+}
+
 value::operator bool() const& {
-    if (value::of_type() == value::type::boolean) {
-        flame::core::throw_exception( flame::core::type_error(value::type::boolean, *this) );
+    if (std::uint8_t typ = value::type(); typ != IS_TRUE && typ != IS_FALSE) {
+        flame::core::throw_exception( flame::core::type_error(type::boolean, *this) );
     }
     return Z_LVAL_P(static_cast<zval*>(*this));
 }
 
 value::operator int() const& {
-    if(value::of_type() != value::type::integer) {
-        flame::core::throw_exception( flame::core::type_error(value::type::integer, *this) );
+    if(value::type() != type::integer) {
+        flame::core::throw_exception( flame::core::type_error(type::integer, *this) );
     }
     return Z_LVAL_P(static_cast<zval*>(*this));
 }
 
 value::operator std::int64_t() const& {
-    if(value::of_type() != value::type::integer) {
-        flame::core::throw_exception( flame::core::type_error(value::type::integer, *this) );
+    if(value::type() != type::integer) {
+        flame::core::throw_exception( flame::core::type_error(type::integer, *this) );
     }
     return Z_LVAL_P(static_cast<zval*>(*this));
 }
 value::operator float() const&{
-    if(value::of_type() != value::type::doubles) {
-        flame::core::throw_exception( flame::core::type_error(value::type::doubles, *this) );
+    if(value::type() != type::doubles) {
+        flame::core::throw_exception( flame::core::type_error(type::doubles, *this) );
     }
     return Z_DVAL_P(static_cast<zval*>(*this));
 }
 
 value::operator double() const&{
-    if(value::of_type() != value::type::doubles) {
-        flame::core::throw_exception( flame::core::type_error(value::type::doubles, *this) );
+    if(value::type() != type::doubles) {
+        flame::core::throw_exception( flame::core::type_error(type::doubles, *this) );
     }
     return Z_DVAL_P(static_cast<zval*>(*this));
 }
 
 value::operator std::string_view() const&{
-    if(value::of_type() != value::type::string) {
-        flame::core::throw_exception( flame::core::type_error(value::type::string, *this) );
+    if(value::type() != type::string) {
+        flame::core::throw_exception( flame::core::type_error(type::string, *this) );
     }
     zend_string* str = Z_STR_P(ptr());
     return {ZSTR_VAL(str), ZSTR_LEN(str)};
 }
 
 value::operator std::string() const& {
-    if(value::of_type() != value::type::integer) {
-        flame::core::throw_exception( flame::core::type_error(value::type::string, *this) );
+    if(value::type() != type::integer) {
+        flame::core::throw_exception( flame::core::type_error(type::string, *this) );
     }
     zend_string* str = Z_STR_P(ptr());
     return {ZSTR_VAL(str), ZSTR_LEN(str)};

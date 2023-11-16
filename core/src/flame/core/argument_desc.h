@@ -1,9 +1,7 @@
 #ifndef FLAME_CORE_ARGUMENT_DESC_H
 #define FLAME_CORE_ARGUMENT_DESC_H
 #include "value.h"
-#include <memory>
 #include <string>
-#include <vector>
 
 namespace flame::core {
 
@@ -18,8 +16,8 @@ public:
         std::uint8_t           code_;
         std::uint32_t          flag_;
     public:
-        type(::flame::core::value::type typ)
-        : code_(typ.code()), flag_(0) { }
+        type(::flame::core::type typ)
+        : code_(typ), flag_(0) { }
         type(const std::string& name)
         : name_(name), flag_(0) { }
         type(const char* name)

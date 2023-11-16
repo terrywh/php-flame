@@ -23,7 +23,7 @@ void method_entry::finalize(void *entry) {
 }
 
 method_entry abstract_method(const std::string& name, access_entry acc) {
-    return method_entry(name, nullptr, {value::type::null, {}}, acc % core::abstract_);
+    return method_entry(name, nullptr, {type::null, {}}, acc % core::abstract_);
 }
 
 } // flame::core

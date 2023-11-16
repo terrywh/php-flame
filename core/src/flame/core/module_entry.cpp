@@ -128,7 +128,7 @@ void module_entry::append_class_entry(class_entry_base& ce) {
 
 module_entry::operator void*() {
     declare<closure>("flame\\core\\__closure") % final_
-        + method<&closure::__invoke>("__invoke", value::type::undefined, {});
+        + method<&closure::__invoke>("__invoke", type::undefined, {});
     return store_->finalize();
 }
 

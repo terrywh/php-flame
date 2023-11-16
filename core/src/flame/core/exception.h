@@ -2,7 +2,6 @@
 #define FLAME_CORE_ERROR_H
 
 #include "value.h"
-#include <stdexcept>
 #include <string>
 
 namespace flame::core {
@@ -19,8 +18,8 @@ public:
 
 class type_error : public exception {
 public:
-    type_error(value::type expect, const value& actual);
-    type_error(value::type expect);
+    type_error(flame::core::type expect, const value& actual);
+    type_error(flame::core::type expect);
 };
 
 void throw_exception(const exception& e);

@@ -70,8 +70,9 @@ extern "C" {
             + core::on_module_stop([] () {
                 std::cout << "module stopped!\n";
             })
-            + core::ini("demo.hello7", "hello (#7) (world)!") % core::ini_entry::all
             + core::constant("demo\\hello0", "hello (#0) (world)!")
+            /*
+            + core::ini("demo.hello7", "hello (#7) (world)!") % core::ini_entry::all
             + core::function<hello1>("hello1")
             + core::function<hello2>("hello2", {
                 core::byval("name", core::value::type::string),
@@ -90,7 +91,7 @@ extern "C" {
         demo.declare<hello5>("hello5")
             + core::method<&hello5::hello>("hello")
             + core::property("index", 5) % core::static_
-            + core::property("name", "default");
+            + core::property("name", "default")*/;
         
         demo.declare<hello6>("hello6")
             + core::constant("hello", "hello (#6) (world)!");

@@ -67,11 +67,11 @@ public:
 
 template <void (*F)()>
 function_entry function(const std::string& name) {
-    return function_entry(name, function_entry::handler<F>, {value::type::null, {}}, {});
+    return function_entry(name, function_entry::handler<F>, {type::null, {}}, {});
 }
 template <void (*F)(flame::core::parameter_list& list)>
 function_entry function(const std::string& name, std::initializer_list<argument_desc> list) {
-    return function_entry(name, function_entry::handler<F>, {value::type::null, std::move(list)}, {});
+    return function_entry(name, function_entry::handler<F>, {type::null, std::move(list)}, {});
 }
 template <flame::core::value (*F)()>
 function_entry function(const std::string& name, argument_desc::type type) {
