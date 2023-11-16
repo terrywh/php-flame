@@ -5,8 +5,6 @@
 #include "argument_entry.h"
 #include "access_entry.h"
 #include <rome/delegate.hpp>
-#include <iostream>
-#include <memory>
 #include <string>
 
 /**

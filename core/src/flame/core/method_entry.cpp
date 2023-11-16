@@ -6,8 +6,9 @@
 
 namespace flame::core {
 
-void* method_entry::fetch(struct _zend_execute_data *execute_data, int offset) {
-    return reinterpret_cast<char*>(getThis()) - offset;
+void* method_entry::fetch(struct _zend_execute_data *execute_data, int offset) { // z2c
+    zend_object* obj = Z_OBJ_P(getThis());
+    return reinterpret_cast<char*>(obj) - offset;
 }
 
 void method_entry::finalize(void *entry) {

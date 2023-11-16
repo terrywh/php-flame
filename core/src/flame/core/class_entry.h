@@ -1,5 +1,6 @@
 #ifndef FLAME_CORE_CLASS_ENTRY_H
 #define FLAME_CORE_CLASS_ENTRY_H
+#include "access_entry.h"
 #include "class_entry_desc.h"
 #include <memory>
 
@@ -19,6 +20,7 @@ struct class_entry_store;
 class class_entry_base {
     std::unique_ptr<class_entry_desc>   desc_;
     std::shared_ptr<class_entry_store> store_;
+    access_entry acc_;
     
     class_entry_base(std::unique_ptr<class_entry_desc> traits);
     static struct _zend_object *create_object(struct _zend_class_entry *ce);
@@ -49,6 +51,8 @@ public:
     class_entry_base& extends(const std::string& name);
     class_entry_base& implements(const std::string& name);
 
+    class_entry_base& operator %(access_entry::modifier m);
+
     void finalize();
 };
 
@@ -62,10 +66,10 @@ template <class T>
 class class_entry_provider_cpp: public class_entry_provider {
 public:
     struct _zend_class_entry* provide() const override {
-        return class_entry_cache<T>::entry;
+        return class_entry_desc_basic<T>::entry;
     }
     const std::string& name() const override {
-        return class_entry_cache<T>::name;
+        return class_entry_desc_basic<T>::name;
     }
 };
 

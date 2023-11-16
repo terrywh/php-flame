@@ -1,6 +1,7 @@
 #ifndef FLAME_CORE_CALLABLE_H
 #define FLAME_CORE_CALLABLE_H
 #include "value.h"
+#include <rome/delegate.hpp>
 
 namespace flame::core {
 
@@ -9,6 +10,11 @@ public:
     using value::value;
     callable(const value& val)
     : value(val) {}
+
+    callable(rome::delegate<void ()>&& cb);
+    callable(rome::delegate<value ()>&& cb);
+    callable(rome::delegate<void (parameter_list&)>&& cb);
+    callable(rome::delegate<value (parameter_list&)>&& cb);
     
     value operator ()() const&;
     value operator ()(parameter_list& argv) const&;

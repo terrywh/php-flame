@@ -1,7 +1,6 @@
 #include "parameter.h"
 #include <php/Zend/zend_API.h>
 #include <boost/assert.hpp>
-#include <iostream>
 
 namespace flame::core {
 

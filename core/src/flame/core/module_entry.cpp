@@ -1,13 +1,14 @@
 #include "module_entry.h"
+#include "closure.h"
 #include "constant_entry.h"
 #include "function_entry.h"
 #include "ini_entry.h"
+#include "method_entry.h"
 #include "exception.h"
 #include <php/Zend/zend_modules.h>
 #include <php/main/php.h>
 #include <boost/assert.hpp>
 #include <vector>
-#include <cstring>
 
 namespace flame::core {
 
@@ -126,6 +127,8 @@ void module_entry::append_class_entry(class_entry_base& ce) {
 }
 
 module_entry::operator void*() {
+    declare<closure>("flame\\core\\__closure") % final_
+        + method<&closure::__invoke>("__invoke", value::type::undefined, {});
     return store_->finalize();
 }
 

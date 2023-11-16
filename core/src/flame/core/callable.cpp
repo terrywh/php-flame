@@ -1,8 +1,10 @@
 #include "callable.h"
 #include "parameter.h"
+#include "class_entry_desc.h"
+#include "closure.h"
 #include <php/Zend/zend_API.h>
 #include <php/Zend/zend_exceptions.h>
-#include <iostream>
+
 
 namespace flame::core {
 // 参考 zend_try_exception_handler 实现
@@ -15,6 +17,29 @@ void handle_exception() {
         }
         std::abort();
     }
+}
+
+template <class S>
+static void create_closure(zval* v, rome::delegate<S>&& fn) {
+    object_init_ex(v, class_entry_desc_basic<closure>::ce);
+    closure* cpp = class_entry_desc_basic<closure>::z2c(Z_OBJ_P(v));
+    cpp->set_delegate(std::move(fn));
+}
+
+callable::callable(rome::delegate<void ()>&& fn) {
+    create_closure<void ()>(ptr(), std::move(fn));
+}
+
+callable::callable(rome::delegate<value ()>&& fn) {
+    create_closure<value ()>(ptr(), std::move(fn));
+}
+
+callable::callable(rome::delegate<void (parameter_list&)>&& fn) {
+    create_closure<void (parameter_list&)>(ptr(), std::move(fn));
+}
+
+callable::callable(rome::delegate<value (parameter_list&)>&& fn) {
+    create_closure<value (parameter_list&)>(ptr(), std::move(fn));
 }
 
 value callable::operator ()() const& {

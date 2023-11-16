@@ -43,6 +43,7 @@ public:
         static type array;
         static type object;
         static type reference;
+        static type callable; // 仅用于虚拟的类型描述
     };
 
 

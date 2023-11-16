@@ -23,26 +23,42 @@ core::value hello3() {
 core::value hello4(core::parameter_list& argv) {
     core::object date = argv[0];
     core::string str = date.call("format", {"Y-m-d H:i:s O T"});
-    core::object obj = argv[1];
-    std::cout << "hello (#4) [" << static_cast<std::string_view>(obj.get("name")) << "]! \n";
+    std::cout << "hello (#4) [" << str << "]! \n";
     return str;
 }
 
 class hello5 : public core::class_basic<hello5> {
 public:
     hello5() {
-        std::cout << "create\n";
+        std::cout << "hello (#5) [";
+        std::cout.flush();
     }
 
     void hello() {
-        std::string_view name = zobj()->get("name");
-        std::cout << "hello (#5) [" << name << "]!\n";
+        std::string_view name = self().get("name");
+        std::cout << name;
+        std::cout.flush();
     }
 
     ~hello5() {
-        std::cout << "destroy\n";
+        std::cout << "]!" << std::endl;
     }
 };
+
+class hello6 {};
+
+core::value hello8() {
+    return core::callable(rome::delegate<void ()>::create([] () {
+        std::cout << "hello (#8) (world)!\n";
+    }));
+}
+
+void hello9(core::parameter_list& argv) {
+    core::object obj = argv[0];
+    core::string prop = argv[1];
+    core::string name = obj.get(prop);
+    std::cout << "hello (#9) [" << name << "]!\n";
+}
 
 extern "C" {
     FLAME_PHP_EXPORT void *get_module() {
@@ -54,8 +70,8 @@ extern "C" {
             + core::on_module_stop([] () {
                 std::cout << "module stopped!\n";
             })
-            + core::ini("demo.hello", "hello (#6) (world)!") % core::ini_entry::all
-            + core::constant("demo\\which", 0)
+            + core::ini("demo.hello7", "hello (#7) (world)!") % core::ini_entry::all
+            + core::constant("demo\\hello0", "hello (#0) (world)!")
             + core::function<hello1>("hello1")
             + core::function<hello2>("hello2", {
                 core::byval("name", core::value::type::string),
@@ -64,15 +80,20 @@ extern "C" {
             + core::function<hello3>("hello3", core::value::type::string)
             + core::function<hello4>("hello4", core::value::type::string, {
                 core::byval("time", "DateTime"),
-                core::byval("name", core::value::type::object)
+            })
+            + core::function<hello8>("hello8", core::value::type::callable)
+            + core::function<hello9>("hello9", {
+                core::byval("date", core::value::type::object),
+                core::byval("prop", core::value::type::string),
             });
         
         demo.declare<hello5>("hello5")
-            + core::method<hello5, &hello5::hello>("hello")
+            + core::method<&hello5::hello>("hello")
             + core::property("index", 5) % core::static_
-            + core::constant("which", 6)
             + core::property("name", "default");
         
+        demo.declare<hello6>("hello6")
+            + core::constant("hello", "hello (#6) (world)!");
         return demo;
     }
 }

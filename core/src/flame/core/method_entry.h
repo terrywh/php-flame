@@ -66,22 +66,44 @@ public:
     }
 };
 
+template <auto>
+class method;
+
 template <class T, void (T::*F)()>
-method_entry method(const std::string& name) {
-    return method_entry(name, method_entry::handler<T, F>, {value::type::null, {}}, {});
-}
+class method<F> {
+    method_entry entry_;
+public:
+    explicit method(const std::string& name)
+    : entry_{ name, method_entry::handler<T, F>, {value::type::null, {}}, {} } {}
+    operator method_entry&&() { return std::move(entry_); }
+};
+
 template <class T, void (T::*F)(flame::core::parameter_list& list)>
-method_entry method(const std::string& name, std::initializer_list<argument_desc> list) {
-    return method_entry(name, method_entry::handler<T, F>, {value::type::null, std::move(list)}, {});
-}
+class method<F> {
+    method_entry entry_;
+public:
+    explicit method(const std::string& name, std::initializer_list<argument_desc> list)
+    : entry_ { name, method_entry::handler<T, F>, {value::type::null, std::move(list)}, {} } {}
+    operator method_entry&&() { return std::move(entry_); }
+};
+
 template <class T, flame::core::value (T::*F)()>
-method_entry method(const std::string& name, argument_desc::type type) {
-    return method_entry(name, method_entry::handler<T, F>, {type, {}}, {});
-}
+class method<F> {
+    method_entry entry_;
+public:
+    explicit method(const std::string& name, argument_desc::type type)
+    : entry_ { name, method_entry::handler<T, F>, {type, {}}, {} } {}
+    operator method_entry&&() { return std::move(entry_); }
+};
+
 template <class T, flame::core::value (T::*F)(flame::core::parameter_list& list)>
-method_entry method(const std::string& name, argument_desc::type type, std::initializer_list<argument_desc> list) {
-    return method_entry(name, method_entry::handler<T, F>, {type, std::move(list)}, {});
-}
+class method<F> {
+    method_entry entry_;
+public:
+    explicit method(const std::string& name, argument_desc::type type, std::initializer_list<argument_desc> list)
+    : entry_ { name, method_entry::handler<T, F>, {type, std::move(list)}, {} } {}
+    operator method_entry&&() { return std::move(entry_); }
+};
 
 method_entry abstract_method(const std::string& name, access_entry acc);
 

@@ -1,7 +1,5 @@
 #include "function_entry.h"
 #include <php/Zend/zend_API.h>
-#include <iostream>
-#include <vector>
 
 namespace flame::core {
 

@@ -12,6 +12,11 @@ object::object(zend_class_entry* ce) {
     BOOST_ASSERT(Z_REFCOUNT_P(ptr()) == 1);
 }
 
+object::object(struct _zend_object* obj) {
+    ZVAL_OBJ(ptr(), obj);
+    Z_ADDREF_P(ptr());
+}
+
 object::operator _zend_object*() const& {
     return Z_OBJ_P(ptr());
 }

@@ -13,6 +13,7 @@ class object: public value {
 public:
     using value::value;
     object(struct _zend_class_entry* ce);
+    object(struct _zend_object* obj);
     object(const value& v)
     : value(v) {}
     object(value&& v)

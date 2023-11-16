@@ -52,6 +52,7 @@ void class_entry_base::implements(std::unique_ptr<class_entry_provider> entry) {
 class_entry_base::class_entry_base(std::unique_ptr<class_entry_desc> traits)
 : desc_(std::move(traits))
 , store_(std::make_unique<class_entry_store>()) { // class_entry_base 不会被销毁
+
 }    
 
 class_entry_base& class_entry_base::create(std::unique_ptr<class_entry_desc> traits) {
@@ -90,6 +91,11 @@ class_entry_base& class_entry_base::implements(const std::string& name) {
     return *this;
 }
 
+class_entry_base& class_entry_base::operator %(access_entry::modifier m) {
+    acc_ % m;
+    return *this;
+}
+
 void class_entry_base::finalize() {
     zend_class_entry entry, *ce;
 
@@ -113,8 +119,10 @@ void class_entry_base::finalize() {
             desc_->name().data(), store_->extend->name().data());
         ce = zend_register_internal_class(&entry);
     }
-    desc_->do_register(ce);
+    desc_->do_register(ce, this);
     class_registry[ce] = this; // 此类型的描述信息与注册的类之间建立映射关系
+
+    ce->ce_flags |= acc_.finalize();
 
     for (auto& interface : store_->implement) {
         if (zend_class_entry* ie = interface->provide(); ie) zend_class_implements(ce, 1, ie);

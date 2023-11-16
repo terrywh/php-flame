@@ -21,17 +21,17 @@ class class_basic {
 
 protected:
     // 返回当前 CPP 实例对应的 PHP 对象
-    object* zobj() const {
-        return reinterpret_cast<object*>(
-            const_cast<char*>(reinterpret_cast<const char*>(this)) + class_entry_desc_basic<T>::size());
+    object self() const {
+        struct _zend_object* obj = class_entry_desc_basic<T>::c2z(const_cast<class_basic<T>*>(this));
+        return object{obj};
     }
 
     static value get_static(const string& name) {
-        return class_static_property{class_entry_cache<T>::entry}.get(name);
+        return class_static_property{class_entry_desc_basic<T>::entry}.get(name);
     }
 
     static void set_static(const string& name, const value& prop) {
-        class_static_property{class_entry_cache<T>::entry}.set(name, prop);
+        class_static_property{class_entry_desc_basic<T>::entry}.set(name, prop);
     }
 };
 

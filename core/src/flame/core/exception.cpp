@@ -57,7 +57,7 @@ void exception_handler() {
     catch (const std::exception& x) {
         std::cerr << "std::terminate called after throwing an exception:\n"
             << "      type: " << boost::core::demangle(typeid(x).name())
-            << "   what() : " << x.what() << '\n';
+            << "    what(): " << x.what() << '\n';
     }
     catch(...) {
         std::fputs( "unknown exception\n", stderr);

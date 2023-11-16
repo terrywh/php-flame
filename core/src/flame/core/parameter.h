@@ -1,6 +1,7 @@
 #ifndef FLAME_CORE_PARAMS_H
 #define FLAME_CORE_PARAMS_H
 #include "value.h"
+#include <boost/assert.hpp>
 #include <vector>
 /**
  *  Forward declarations
@@ -29,6 +30,7 @@ public:
         return list_.end();
     }
     inline value& operator [](int index) {
+        BOOST_ASSERT(index < list_.size());
         return list_[index];
     }
     // 检查调用参数与参数声明是否匹配，若不匹配抛出错误并返回 false 否则返回 true

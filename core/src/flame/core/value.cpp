@@ -31,6 +31,7 @@ value::type value::type::string    { IS_STRING };
 value::type value::type::array     { IS_ARRAY };
 value::type value::type::object    { IS_OBJECT };
 value::type value::type::reference { IS_REFERENCE };
+value::type value::type::callable  { IS_CALLABLE };
 
 value::value() {}
 
