@@ -4,7 +4,8 @@
 namespace core = flame::core;
 
 void hello1() {
-    std::cout << "hello (#1) (world)!\n"; 
+    std::string_view bin = core::runtime::get().C("PHP_BINARY");
+    std::cout << "hello (#1) [" << bin << "]!\n"; 
 }
 
 void hello2(core::parameter_list& argv) {
@@ -12,8 +13,7 @@ void hello2(core::parameter_list& argv) {
     std::int64_t size = argv[1];
     std::cout << "hello (#" << size << ") [" << name << "]!\n"; 
 }
-// xxxxx
-// yyyyy
+
 core::value hello3() {
     core::callable rand {"rand"};
     core::invoke("srand", {123456});
@@ -31,13 +31,11 @@ class hello5 : public core::class_basic<hello5> {
 public:
     hello5() {
         std::cout << "hello (#5) [";
-        std::cout.flush();
     }
 
     void hello() {
         std::string_view name = self().get("name");
         std::cout << name;
-        std::cout.flush();
     }
 
     ~hello5() {
@@ -48,8 +46,9 @@ public:
 class hello6 {};
 
 core::value hello8() {
-    return core::callable(rome::delegate<void ()>::create([] () {
-        std::cout << "hello (#8) (world)!\n";
+    return core::callable(rome::delegate<void (core::parameter_list& argv)>::create([] (core::parameter_list& argv) {
+        std::string_view name = argv[0];
+        std::cout << "hello (#8) (" << name << ")!\n";
     }));
 }
 
@@ -71,27 +70,26 @@ extern "C" {
                 std::cout << "module stopped!\n";
             })
             + core::constant("demo\\hello0", "hello (#0) (world)!")
-            /*
             + core::ini("demo.hello7", "hello (#7) (world)!") % core::ini_entry::all
             + core::function<hello1>("hello1")
             + core::function<hello2>("hello2", {
-                core::byval("name", core::value::type::string),
-                core::byval("size", core::value::type::integer)
+                core::byval("name", core::type::string),
+                core::byval("size", core::type::integer)
             })
-            + core::function<hello3>("hello3", core::value::type::string)
-            + core::function<hello4>("hello4", core::value::type::string, {
+            + core::function<hello3>("hello3", core::type::string)
+            + core::function<hello4>("hello4", core::type::string, {
                 core::byval("time", "DateTime"),
             })
-            + core::function<hello8>("hello8", core::value::type::callable)
+            + core::function<hello8>("hello8", core::type::callable)
             + core::function<hello9>("hello9", {
-                core::byval("date", core::value::type::object),
-                core::byval("prop", core::value::type::string),
+                core::byval("date", core::type::object),
+                core::byval("prop", core::type::string),
             });
         
         demo.declare<hello5>("hello5")
             + core::method<&hello5::hello>("hello")
             + core::property("index", 5) % core::static_
-            + core::property("name", "default")*/;
+            + core::property("name", "default");
         
         demo.declare<hello6>("hello6")
             + core::constant("hello", "hello (#6) (world)!");

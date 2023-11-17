@@ -21,5 +21,5 @@ demo_hello5();
 echo hello6::hello, "\n";
 echo ini_get("demo.hello7"), "\n";
 $cb = hello8();
-call_user_func($cb);
+call_user_func($cb, new DateTime());
 echo hello9(new Demo(), "name"), "\n";

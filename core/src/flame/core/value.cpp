@@ -163,7 +163,7 @@ value::operator std::string_view() const&{
 }
 
 value::operator std::string() const& {
-    if(value::type() != type::integer) {
+    if(value::type() != type::string) {
         flame::core::throw_exception( flame::core::type_error(type::string, *this) );
     }
     zend_string* str = Z_STR_P(ptr());

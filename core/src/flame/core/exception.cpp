@@ -69,5 +69,4 @@ void exception_handler() {
     std::abort();
 }
 
-
 } // flame::core

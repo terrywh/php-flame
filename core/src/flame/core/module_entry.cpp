@@ -5,6 +5,7 @@
 #include "ini_entry.h"
 #include "method_entry.h"
 #include "exception.h"
+#include "runtime.h"
 #include <php/Zend/zend_modules.h>
 #include <php/main/php.h>
 #include <boost/assert.hpp>
@@ -13,7 +14,8 @@
 namespace flame::core {
 
 class module_entry_store {
-    zend_module_entry entry;
+    std::unique_ptr<runtime>                r;
+    zend_module_entry                   entry;
     std::vector<zend_module_dep>       depend;
     std::vector<std::function<void ()>> start;
     std::vector<std::function<void ()>>  stop;
@@ -28,6 +30,7 @@ class module_entry_store {
     static module_entry_store* ins_;
     static zend_result on_module_start(int type, int module) {
         std::set_terminate( flame::core::exception_handler );
+        ins_->r = std::make_unique<runtime>();
         for (auto& cs : ins_->constant) cs.finalize(module);
         ins_->constant.clear();
         for (auto& ce : ins_->class_) ce->finalize();
